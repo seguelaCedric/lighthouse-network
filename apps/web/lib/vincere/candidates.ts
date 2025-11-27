@@ -1,0 +1,281 @@
+/**
+ * Vincere Candidates API
+ *
+ * Functions for interacting with Vincere candidate data.
+ */
+
+import { getVincereClient, VincereClient } from './client';
+import { VINCERE_FIELD_KEYS, VINCERE_INDUSTRY_IDS } from './constants';
+
+/**
+ * Vincere candidate from API
+ */
+export interface VincereCandidate {
+  id: number;
+  first_name: string;
+  last_name: string;
+  name: string;
+  email: string;
+  primary_email?: string;
+  phone?: string;
+  mobile?: string;
+  date_of_birth?: string;
+  gender?: string;
+  nationality?: string;
+  current_location?: string;
+  job_title?: string;
+  summary?: string;
+  created_date: string;
+  updated_date?: string;
+  registration_date?: string;
+}
+
+/**
+ * Vincere custom field from API
+ */
+export interface VincereCustomField {
+  key: string;
+  name: string;
+  field_value?: string;
+  field_values?: number[];
+  date_value?: string;
+  element_value_groups?: unknown;
+}
+
+/**
+ * Vincere search result
+ */
+export interface VincereSearchResult {
+  result: {
+    items: Array<{
+      id: number;
+      name?: string;
+      first_name?: string;
+      last_name?: string;
+      primary_email?: string;
+    }>;
+    total: number;
+  };
+}
+
+/**
+ * Search for candidates by email
+ */
+export async function searchByEmail(
+  email: string,
+  client?: VincereClient
+): Promise<VincereCandidate | null> {
+  const vincere = client ?? getVincereClient();
+
+  const query = `primary_email:${email}#`;
+  const encodedQuery = encodeURIComponent(query);
+
+  const result = await vincere.get<VincereSearchResult>(
+    `/candidate/search/fl=id,name,first_name,last_name,primary_email?q=${encodedQuery}`
+  );
+
+  const items = result?.result?.items ?? [];
+
+  if (items.length === 0) {
+    return null;
+  }
+
+  // Get full candidate details
+  return getById(items[0].id, client);
+}
+
+/**
+ * Get candidate by Vincere ID
+ */
+export async function getById(
+  vincereId: number,
+  client?: VincereClient
+): Promise<VincereCandidate | null> {
+  const vincere = client ?? getVincereClient();
+
+  try {
+    const candidate = await vincere.get<VincereCandidate>(`/candidate/${vincereId}`);
+    return candidate;
+  } catch (error) {
+    if (error instanceof Error && error.message.includes('404')) {
+      return null;
+    }
+    throw error;
+  }
+}
+
+/**
+ * Get custom fields for a candidate
+ */
+export async function getCustomFields(
+  vincereId: number,
+  client?: VincereClient
+): Promise<Record<string, VincereCustomField>> {
+  const vincere = client ?? getVincereClient();
+
+  const fields = await vincere.get<VincereCustomField[]>(
+    `/candidate/${vincereId}/customfield`
+  );
+
+  // Index by field key for easy lookup
+  const indexed: Record<string, VincereCustomField> = {};
+  for (const field of fields ?? []) {
+    indexed[field.key] = field;
+  }
+
+  return indexed;
+}
+
+/**
+ * Get candidates updated since a given date
+ */
+export async function getUpdatedSince(
+  since: Date,
+  limit: number = 100,
+  client?: VincereClient
+): Promise<VincereCandidate[]> {
+  const vincere = client ?? getVincereClient();
+
+  const sinceISO = since.toISOString();
+  const { yacht, villa } = VINCERE_INDUSTRY_IDS;
+
+  // Search for candidates in yacht/villa industries updated since date
+  const query = `(industry_id:${yacht}# OR industry_id:${villa}#) AND last_update:[${sinceISO} TO NOW]#`;
+  const encodedQuery = encodeURIComponent(query);
+
+  const result = await vincere.get<VincereSearchResult>(
+    `/candidate/search/fl=id,name,first_name,last_name,primary_email,last_update?q=${encodedQuery}&start=0&limit=${limit}`
+  );
+
+  const items = result?.result?.items ?? [];
+
+  // Fetch full details for each candidate
+  const candidates: VincereCandidate[] = [];
+  for (const item of items) {
+    const candidate = await getById(item.id, client);
+    if (candidate) {
+      candidates.push(candidate);
+    }
+  }
+
+  return candidates;
+}
+
+/**
+ * Get a candidate with their custom fields
+ */
+export async function getCandidateWithCustomFields(
+  vincereId: number,
+  client?: VincereClient
+): Promise<{ candidate: VincereCandidate; customFields: Record<string, VincereCustomField> } | null> {
+  const vincere = client ?? getVincereClient();
+
+  const candidate = await getById(vincereId, vincere);
+  if (!candidate) {
+    return null;
+  }
+
+  const customFields = await getCustomFields(vincereId, vincere);
+
+  return { candidate, customFields };
+}
+
+/**
+ * Update candidate custom fields
+ */
+export async function updateCustomFields(
+  vincereId: number,
+  fields: Array<{
+    fieldKey: string;
+    fieldValue?: string;
+    fieldValues?: number[];
+    dateValue?: string;
+  }>,
+  client?: VincereClient
+): Promise<void> {
+  const vincere = client ?? getVincereClient();
+
+  const data = fields.map(({ fieldKey, fieldValue, fieldValues, dateValue }) => ({
+    element_value_groups: null,
+    field_key: fieldKey,
+    ...(fieldValue !== undefined && { field_value: fieldValue }),
+    ...(fieldValues !== undefined && { field_values: fieldValues }),
+    ...(dateValue !== undefined && { date_value: dateValue }),
+  }));
+
+  await vincere.patch(`/candidate/${vincereId}/customfields`, { data });
+}
+
+/**
+ * Create a new candidate in Vincere
+ */
+export async function createCandidate(
+  data: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone?: string;
+    mobile?: string;
+    dateOfBirth?: string;
+    gender?: string;
+    nationality?: string;
+    currentLocation?: string;
+    jobTitle?: string;
+    summary?: string;
+  },
+  client?: VincereClient
+): Promise<{ id: number }> {
+  const vincere = client ?? getVincereClient();
+
+  const result = await vincere.post<{ id: number }>('/candidate', {
+    first_name: data.firstName,
+    last_name: data.lastName,
+    primary_email: data.email,
+    phone: data.phone,
+    mobile: data.mobile,
+    date_of_birth: data.dateOfBirth,
+    gender: data.gender,
+    nationality: data.nationality,
+    current_location: data.currentLocation,
+    job_title: data.jobTitle,
+    summary: data.summary,
+  });
+
+  return result;
+}
+
+/**
+ * Helper to get a specific custom field value
+ */
+export function getFieldValue(
+  customFields: Record<string, VincereCustomField>,
+  fieldKey: keyof typeof VINCERE_FIELD_KEYS
+): string | number | number[] | null {
+  const key = VINCERE_FIELD_KEYS[fieldKey];
+  const field = customFields[key];
+
+  if (!field) return null;
+
+  // Return the appropriate value type
+  if (field.date_value) return field.date_value;
+  if (field.field_values && field.field_values.length > 0) {
+    return field.field_values.length === 1 ? field.field_values[0] : field.field_values;
+  }
+  if (field.field_value) return field.field_value;
+
+  return null;
+}
+
+/**
+ * Helper to get boolean custom field (1=Yes, 2=No)
+ */
+export function getBooleanFieldValue(
+  customFields: Record<string, VincereCustomField>,
+  fieldKey: keyof typeof VINCERE_FIELD_KEYS
+): boolean | null {
+  const value = getFieldValue(customFields, fieldKey);
+  if (value === null) return null;
+  if (value === 1) return true;
+  if (value === 2) return false;
+  return null;
+}

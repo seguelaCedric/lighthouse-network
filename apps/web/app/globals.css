@@ -1,0 +1,800 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+/* ============================================
+   LIGHTHOUSE CREW NETWORK
+   Luxury Color Token System
+   Premium Yacht Crew Recruitment Platform
+   ============================================ */
+
+:root {
+  /* Base */
+  --background: #FAFAF8;
+  --foreground: #1A1816;
+
+  /* ----------------------------------------
+     PRIMARY PALETTE - CHAMPAGNE GOLD
+     ---------------------------------------- */
+  --gold-50: #FDFBF7;
+  --gold-100: #F9F5EB;
+  --gold-200: #F0E6D0;
+  --gold-300: #E1D4B5;
+  --gold-400: #CBBA8E;
+  --gold-500: #B49A5E;
+  --gold-600: #9A7F45;
+  --gold-700: #7D6636;
+  --gold-800: #5E4D29;
+  --gold-900: #3D3219;
+
+  /* ----------------------------------------
+     PRIMARY PALETTE - MIDNIGHT NAVY
+     ---------------------------------------- */
+  --navy-50: #F4F6F9;
+  --navy-100: #E4E9F0;
+  --navy-200: #C5CFE0;
+  --navy-300: #94A3C4;
+  --navy-400: #5E6F94;
+  --navy-500: #3D4F6F;
+  --navy-600: #2A3A54;
+  --navy-700: #1C2840;
+  --navy-800: #111827;
+  --navy-900: #0A0F1A;
+
+  /* ----------------------------------------
+     ACCENT - BURGUNDY
+     ---------------------------------------- */
+  --burgundy-50: #FDF5F6;
+  --burgundy-100: #F9E6E9;
+  --burgundy-200: #F0C5CC;
+  --burgundy-300: #E09AA6;
+  --burgundy-400: #C4697A;
+  --burgundy-500: #9E3B4D;
+  --burgundy-600: #7D2D3D;
+  --burgundy-700: #5E222E;
+  --burgundy-800: #3F1720;
+  --burgundy-900: #2A1015;
+
+  /* ----------------------------------------
+     SEMANTIC - SUCCESS (Emerald)
+     ---------------------------------------- */
+  --success-50: #F0FAF6;
+  --success-100: #D1F2E4;
+  --success-200: #A7E4CD;
+  --success-300: #6DD1AE;
+  --success-400: #3AB889;
+  --success-500: #1D9A6C;
+  --success-600: #167A55;
+  --success-700: #115E42;
+  --success-800: #0D4532;
+  --success-900: #092E22;
+
+  /* ----------------------------------------
+     SEMANTIC - WARNING (Warm Amber)
+     ---------------------------------------- */
+  --warning-50: #FFFBF5;
+  --warning-100: #FEF3E2;
+  --warning-200: #FDE4BD;
+  --warning-300: #FBCE8A;
+  --warning-400: #F7B355;
+  --warning-500: #E69A2E;
+  --warning-600: #C47F1A;
+  --warning-700: #9C6315;
+  --warning-800: #744A10;
+  --warning-900: #4D310B;
+
+  /* ----------------------------------------
+     SEMANTIC - ERROR (Deep Rose)
+     ---------------------------------------- */
+  --error-50: #FEF5F5;
+  --error-100: #FCE8E8;
+  --error-200: #F9CECE;
+  --error-300: #F3A5A5;
+  --error-400: #E97777;
+  --error-500: #D64545;
+  --error-600: #B33636;
+  --error-700: #8C2A2A;
+  --error-800: #661F1F;
+  --error-900: #441515;
+
+  /* ----------------------------------------
+     NEUTRALS - WARM GRAYS
+     ---------------------------------------- */
+  --gray-50: #FAFAF8;
+  --gray-100: #F5F4F1;
+  --gray-200: #E8E6E1;
+  --gray-300: #D4D1CA;
+  --gray-400: #A8A49B;
+  --gray-500: #7D796F;
+  --gray-600: #5C5850;
+  --gray-700: #433F38;
+  --gray-800: #2A2722;
+  --gray-900: #1A1816;
+
+  /* ----------------------------------------
+     SURFACE COLORS
+     ---------------------------------------- */
+  --surface-white: #FFFFFF;
+  --surface-cream: #FDFBF7;
+  --surface-ivory: #F9F7F2;
+  --surface-overlay-light: rgba(253, 251, 247, 0.95);
+  --surface-overlay-dark: rgba(17, 24, 39, 0.7);
+}
+
+/* Dark mode overrides */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0A0F1A;
+    --foreground: #F5F4F1;
+  }
+}
+
+/* ============================================
+   TAILWIND THEME CONFIGURATION
+   ============================================ */
+@theme inline {
+  /* Base colors */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  /* Fonts */
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* Typography Font Families */
+  --font-cormorant: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --font-inter: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-jetbrains: "JetBrains Mono", "SF Mono", Consolas, "Liberation Mono", monospace;
+
+  /* Primary Gold */
+  --color-gold-50: var(--gold-50);
+  --color-gold-100: var(--gold-100);
+  --color-gold-200: var(--gold-200);
+  --color-gold-300: var(--gold-300);
+  --color-gold-400: var(--gold-400);
+  --color-gold-500: var(--gold-500);
+  --color-gold-600: var(--gold-600);
+  --color-gold-700: var(--gold-700);
+  --color-gold-800: var(--gold-800);
+  --color-gold-900: var(--gold-900);
+
+  /* Primary Navy */
+  --color-navy-50: var(--navy-50);
+  --color-navy-100: var(--navy-100);
+  --color-navy-200: var(--navy-200);
+  --color-navy-300: var(--navy-300);
+  --color-navy-400: var(--navy-400);
+  --color-navy-500: var(--navy-500);
+  --color-navy-600: var(--navy-600);
+  --color-navy-700: var(--navy-700);
+  --color-navy-800: var(--navy-800);
+  --color-navy-900: var(--navy-900);
+
+  /* Burgundy Accent */
+  --color-burgundy-50: var(--burgundy-50);
+  --color-burgundy-100: var(--burgundy-100);
+  --color-burgundy-200: var(--burgundy-200);
+  --color-burgundy-300: var(--burgundy-300);
+  --color-burgundy-400: var(--burgundy-400);
+  --color-burgundy-500: var(--burgundy-500);
+  --color-burgundy-600: var(--burgundy-600);
+  --color-burgundy-700: var(--burgundy-700);
+  --color-burgundy-800: var(--burgundy-800);
+  --color-burgundy-900: var(--burgundy-900);
+
+  /* Success (Emerald) */
+  --color-success-50: var(--success-50);
+  --color-success-100: var(--success-100);
+  --color-success-200: var(--success-200);
+  --color-success-300: var(--success-300);
+  --color-success-400: var(--success-400);
+  --color-success-500: var(--success-500);
+  --color-success-600: var(--success-600);
+  --color-success-700: var(--success-700);
+  --color-success-800: var(--success-800);
+  --color-success-900: var(--success-900);
+
+  /* Warning (Warm Amber) */
+  --color-warning-50: var(--warning-50);
+  --color-warning-100: var(--warning-100);
+  --color-warning-200: var(--warning-200);
+  --color-warning-300: var(--warning-300);
+  --color-warning-400: var(--warning-400);
+  --color-warning-500: var(--warning-500);
+  --color-warning-600: var(--warning-600);
+  --color-warning-700: var(--warning-700);
+  --color-warning-800: var(--warning-800);
+  --color-warning-900: var(--warning-900);
+
+  /* Error (Deep Rose) */
+  --color-error-50: var(--error-50);
+  --color-error-100: var(--error-100);
+  --color-error-200: var(--error-200);
+  --color-error-300: var(--error-300);
+  --color-error-400: var(--error-400);
+  --color-error-500: var(--error-500);
+  --color-error-600: var(--error-600);
+  --color-error-700: var(--error-700);
+  --color-error-800: var(--error-800);
+  --color-error-900: var(--error-900);
+
+  /* Neutrals (Warm Grays) */
+  --color-gray-50: var(--gray-50);
+  --color-gray-100: var(--gray-100);
+  --color-gray-200: var(--gray-200);
+  --color-gray-300: var(--gray-300);
+  --color-gray-400: var(--gray-400);
+  --color-gray-500: var(--gray-500);
+  --color-gray-600: var(--gray-600);
+  --color-gray-700: var(--gray-700);
+  --color-gray-800: var(--gray-800);
+  --color-gray-900: var(--gray-900);
+
+  /* Surfaces */
+  --color-surface-white: var(--surface-white);
+  --color-surface-cream: var(--surface-cream);
+  --color-surface-ivory: var(--surface-ivory);
+
+  /* Box Shadows */
+  --shadow-xs: 0px 1px 2px rgba(26, 24, 22, 0.04);
+  --shadow-sm: 0px 2px 4px rgba(26, 24, 22, 0.06), 0px 1px 2px rgba(26, 24, 22, 0.04);
+  --shadow-md: 0px 4px 8px rgba(26, 24, 22, 0.08), 0px 2px 4px rgba(26, 24, 22, 0.04);
+  --shadow-lg: 0px 8px 16px rgba(26, 24, 22, 0.1), 0px 4px 8px rgba(26, 24, 22, 0.04);
+  --shadow-xl: 0px 16px 32px rgba(26, 24, 22, 0.12), 0px 8px 16px rgba(26, 24, 22, 0.06);
+  --shadow-gold: 0px 4px 12px rgba(180, 154, 94, 0.3);
+  --shadow-inner: inset 0px 2px 4px rgba(26, 24, 22, 0.06);
+
+  /* Border Radius */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-2xl: 20px;
+
+  /* Background Gradients */
+  --background-image-gold-gradient: linear-gradient(135deg, #CBBA8E 0%, #B49A5E 100%);
+  --background-image-gold-gradient-hover: linear-gradient(135deg, #B49A5E 0%, #9A7F45 100%);
+  --background-image-gold-shimmer: linear-gradient(90deg, #B49A5E 0%, #E1D4B5 50%, #B49A5E 100%);
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+body {
+  background: var(--gray-50);
+  color: var(--gray-800);
+  font-family: var(--font-inter);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2 {
+  font-family: var(--font-cormorant);
+}
+
+/* ============================================
+   GRADIENT UTILITIES
+   ============================================ */
+.gradient-chrome-light {
+  background: linear-gradient(135deg, #E8E6E1 0%, #FFFFFF 50%, #D4D1CA 100%);
+}
+
+.gradient-chrome-dark {
+  background: linear-gradient(135deg, #5C5850 0%, #7D796F 50%, #433F38 100%);
+}
+
+.gradient-gold {
+  background: linear-gradient(135deg, #CBBA8E 0%, #B49A5E 50%, #9A7F45 100%);
+}
+
+.gradient-gold-shimmer {
+  background: linear-gradient(90deg, #B49A5E 0%, #E1D4B5 50%, #B49A5E 100%);
+}
+
+.gradient-navy {
+  background: linear-gradient(135deg, #2A3A54 0%, #111827 100%);
+}
+
+.gradient-burgundy {
+  background: linear-gradient(135deg, #C4697A 0%, #9E3B4D 50%, #7D2D3D 100%);
+}
+
+/* Text gradient utility */
+.text-gradient-gold {
+  background: linear-gradient(135deg, #CBBA8E 0%, #B49A5E 50%, #9A7F45 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ============================================
+   TYPOGRAPHY SYSTEM
+   Premium Editorial Typography
+   ============================================ */
+
+/* Font Family Utilities */
+.font-cormorant {
+  font-family: var(--font-cormorant);
+}
+
+.font-inter {
+  font-family: var(--font-inter);
+}
+
+.font-mono {
+  font-family: var(--font-jetbrains);
+}
+
+/* Safe area padding for mobile */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ============================================
+   RESPONSIVE TYPOGRAPHY SCALING
+   ============================================ */
+
+/* Display Hero - Responsive */
+.display-hero {
+  font-family: var(--font-cormorant);
+  font-size: clamp(40px, 8vw, 80px);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--navy-800);
+}
+
+/* Display XL - Responsive */
+.display-xl {
+  font-family: var(--font-cormorant);
+  font-size: clamp(32px, 6vw, 64px);
+  font-weight: 600;
+  line-height: 1.125;
+  letter-spacing: -0.02em;
+  color: var(--navy-800);
+}
+
+/* Display LG - Responsive */
+.display-lg {
+  font-family: var(--font-cormorant);
+  font-size: clamp(28px, 4vw, 48px);
+  font-weight: 500;
+  line-height: 1.17;
+  letter-spacing: -0.01em;
+  color: var(--navy-800);
+}
+
+/* Heading styles */
+.heading-h1 {
+  font-family: var(--font-cormorant);
+  font-size: clamp(24px, 3vw, 36px);
+  font-weight: 600;
+  line-height: 1.22;
+  letter-spacing: -0.01em;
+  color: var(--navy-800);
+}
+
+.heading-h2 {
+  font-family: var(--font-cormorant);
+  font-size: clamp(22px, 2.5vw, 30px);
+  font-weight: 500;
+  line-height: 1.27;
+  letter-spacing: 0;
+  color: var(--navy-800);
+}
+
+.heading-h3 {
+  font-family: var(--font-inter);
+  font-size: clamp(18px, 2vw, 24px);
+  font-weight: 600;
+  line-height: 1.33;
+  letter-spacing: 0;
+  color: var(--navy-800);
+}
+
+.heading-h4 {
+  font-family: var(--font-inter);
+  font-size: clamp(16px, 1.5vw, 20px);
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0;
+  color: var(--navy-800);
+}
+
+.heading-h5 {
+  font-family: var(--font-inter);
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.44;
+  letter-spacing: 0.01em;
+  color: var(--navy-800);
+}
+
+.heading-h6 {
+  font-family: var(--font-inter);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  color: var(--navy-800);
+}
+
+/* Body styles */
+.body-xl {
+  font-family: var(--font-inter);
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--gray-600);
+}
+
+.body-lg {
+  font-family: var(--font-inter);
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.56;
+  color: var(--gray-600);
+}
+
+.body-md {
+  font-family: var(--font-inter);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.625;
+  color: var(--gray-600);
+}
+
+.body-sm {
+  font-family: var(--font-inter);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.57;
+  color: var(--gray-500);
+}
+
+.body-xs {
+  font-family: var(--font-inter);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--gray-400);
+}
+
+/* Label styles */
+.label-lg {
+  font-family: var(--font-inter);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.43;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gray-500);
+}
+
+.label-md {
+  font-family: var(--font-inter);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.33;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gray-500);
+}
+
+.label-sm {
+  font-family: var(--font-inter);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gray-500);
+}
+
+/* Special styles */
+.quote {
+  font-family: var(--font-cormorant);
+  font-size: 24px;
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--navy-600);
+}
+
+.stat-number {
+  font-family: var(--font-inter);
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--navy-800);
+}
+
+.price {
+  font-family: var(--font-inter);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--navy-800);
+}
+
+/* Link styles */
+.text-link {
+  font-family: var(--font-inter);
+  color: var(--gold-600);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.2s ease;
+}
+
+.text-link:hover {
+  color: var(--gold-700);
+}
+
+/* ============================================
+   COMPONENT CLASSES
+   Reusable UI Components
+   ============================================ */
+
+/* Primary Button - Gold Gradient */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #CBBA8E 0%, #B49A5E 100%);
+  color: var(--navy-900);
+  font-family: var(--font-inter);
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0px 4px 12px rgba(180, 154, 94, 0.3);
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, #B49A5E 0%, #9A7F45 100%);
+  transform: translateY(-2px);
+  box-shadow: 0px 6px 16px rgba(180, 154, 94, 0.4);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0px 2px 8px rgba(180, 154, 94, 0.3);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Secondary Button - Navy Outline */
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 24px;
+  background: transparent;
+  color: var(--navy-700);
+  font-family: var(--font-inter);
+  font-weight: 600;
+  font-size: 14px;
+  border-radius: 8px;
+  border: 2px solid var(--navy-200);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: var(--navy-50);
+  border-color: var(--navy-300);
+  color: var(--navy-800);
+}
+
+.btn-secondary:active {
+  background: var(--navy-100);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Card Component */
+.card {
+  background: var(--surface-white);
+  border: 1px solid var(--gray-200);
+  border-radius: 12px;
+  box-shadow: 0px 2px 4px rgba(26, 24, 22, 0.06), 0px 1px 2px rgba(26, 24, 22, 0.04);
+  transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: 0px 8px 16px rgba(26, 24, 22, 0.1), 0px 4px 8px rgba(26, 24, 22, 0.04);
+}
+
+/* Input Component */
+.input {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--surface-white);
+  border: 1px solid var(--gray-300);
+  border-radius: 8px;
+  font-family: var(--font-inter);
+  font-size: 14px;
+  color: var(--gray-800);
+  transition: all 0.2s ease;
+}
+
+.input::placeholder {
+  color: var(--gray-400);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--gold-500);
+  box-shadow: 0 0 0 3px rgba(180, 154, 94, 0.15);
+}
+
+.input:disabled {
+  background: var(--gray-100);
+  cursor: not-allowed;
+}
+
+/* Sidebar Navigation Item - Dark Theme */
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  color: var(--gray-300);
+  font-family: var(--font-inter);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sidebar-nav-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--gray-100);
+}
+
+.sidebar-nav-item.active {
+  background: linear-gradient(135deg, #CBBA8E 0%, #B49A5E 100%);
+  color: var(--navy-900);
+  font-weight: 600;
+}
+
+/* Badge - Premium */
+.badge-premium {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, #CBBA8E 0%, #B49A5E 100%);
+  color: var(--navy-900);
+  font-family: var(--font-inter);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 4px;
+}
+
+/* Badge - Available */
+.badge-available {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  background: var(--success-100);
+  color: var(--success-700);
+  font-family: var(--font-inter);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: 4px;
+}
+
+/* Match Score Progress Bar */
+.match-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--gray-200);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.match-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #B49A5E 0%, #CBBA8E 100%);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+/* ============================================
+   MOBILE OPTIMIZATION
+   Touch-friendly styles for mobile devices
+   ============================================ */
+
+/* Prevent iOS zoom on form inputs - ensure 16px minimum font size */
+@media screen and (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  /* Minimum readable text size */
+  .text-xs {
+    font-size: 13px;
+  }
+
+  /* Touch-friendly spacing */
+  .touch-spacing {
+    padding: 12px 16px;
+  }
+}
+
+/* Safe area insets for notched devices */
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+.pr-safe {
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+.pl-safe {
+  padding-left: env(safe-area-inset-left, 0px);
+}
+
+/* Touch target minimum size helper (44x44px) */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Mobile-first responsive container padding */
+.container-mobile {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+@media (min-width: 640px) {
+  .container-mobile {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container-mobile {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+}
+
+/* Smooth scrolling for mobile */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Improve tap highlight on mobile */
+@media (hover: none) and (pointer: coarse) {
+  .tap-highlight {
+    -webkit-tap-highlight-color: rgba(180, 154, 94, 0.2);
+  }
+
+  /* Remove hover states on touch devices */
+  .no-hover-touch:hover {
+    background-color: inherit;
+  }
+}

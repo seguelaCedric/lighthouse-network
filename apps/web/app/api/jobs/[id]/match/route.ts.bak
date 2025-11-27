@@ -1,0 +1,287 @@
+// ============================================================================
+// API Route: Match Candidates
+// ============================================================================
+// POST /api/jobs/[id]/match
+// 
+// Finds and ranks candidates for a job using:
+// 1. Vector similarity search (pgvector)
+// 2. Hard requirement filtering
+// 3. AI-powered ranking with reasoning
+// ============================================================================
+
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+import { 
+  rankCandidates, 
+  generateEmbedding, 
+  buildJobEmbeddingText 
+} from '@lighthouse/ai';
+import { z } from 'zod';
+
+// Request validation
+const matchRequestSchema = z.object({
+  limit: z.number().min(1).max(50).default(10),
+  verification_tiers: z.array(z.enum(['basic', 'identity', 'verified', 'premium'])).optional(),
+  availability_statuses: z.array(z.enum(['available', 'looking', 'employed'])).optional(),
+  exclude_submitted: z.boolean().default(true),
+});
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const startTime = Date.now();
+  
+  try {
+    const jobId = params.id;
+    const body = await request.json();
+    const options = matchRequestSchema.parse(body);
+
+    // Initialize Supabase
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    // Get job details
+    const { data: job, error: jobError } = await supabase
+      .from('jobs')
+      .select('*')
+      .eq('id', jobId)
+      .single();
+
+    if (jobError || !job) {
+      return NextResponse.json(
+        { success: false, error: 'Job not found' },
+        { status: 404 }
+      );
+    }
+
+    // Ensure job has embedding
+    let jobEmbedding = job.embedding;
+    if (!jobEmbedding) {
+      const embeddingText = buildJobEmbeddingText({
+        title: job.title,
+        vessel_type: job.vessel_type,
+        vessel_size_meters: job.vessel_size_meters,
+        contract_type: job.contract_type,
+        primary_region: job.primary_region,
+        requirements: job.requirements,
+      });
+      jobEmbedding = await generateEmbedding(embeddingText);
+      
+      // Save embedding for future use
+      await supabase
+        .from('jobs')
+        .update({ embedding: jobEmbedding })
+        .eq('id', jobId);
+    }
+
+    // Get candidates already submitted to this job (to exclude)
+    let excludeIds: string[] = [];
+    if (options.exclude_submitted) {
+      const { data: submissions } = await supabase
+        .from('submissions')
+        .select('candidate_id')
+        .eq('job_id', jobId);
+      
+      excludeIds = submissions?.map(s => s.candidate_id) || [];
+    }
+
+    // Vector search for similar candidates
+    const { data: vectorResults, error: searchError } = await supabase.rpc(
+      'match_candidates_by_embedding',
+      {
+        query_embedding: jobEmbedding,
+        match_threshold: 0.5,
+        match_count: options.limit * 3, // Get more for filtering
+        p_verification_tiers: options.verification_tiers || ['verified', 'premium'],
+        p_availability_statuses: options.availability_statuses || ['available', 'looking'],
+        p_exclude_ids: excludeIds,
+      }
+    );
+
+    if (searchError) {
+      console.error('Vector search error:', searchError);
+      throw new Error('Candidate search failed');
+    }
+
+    if (!vectorResults || vectorResults.length === 0) {
+      return NextResponse.json({
+        success: true,
+        matches: [],
+        meta: {
+          job_id: jobId,
+          candidates_searched: 0,
+          candidates_matched: 0,
+          search_time_ms: Date.now() - startTime,
+        },
+      });
+    }
+
+    // Filter by hard requirements
+    const requirements = job.requirements || {};
+    const filtered = vectorResults.filter((c: any) => {
+      // Required certifications
+      if (requirements.certifications_required?.includes('STCW') && !c.has_stcw) {
+        return false;
+      }
+      if (requirements.certifications_required?.includes('ENG1') && !c.has_eng1) {
+        return false;
+      }
+
+      // Required visas
+      if (requirements.visas_required?.includes('Schengen') && !c.has_schengen) {
+        return false;
+      }
+      if (requirements.visas_required?.includes('B1/B2') && !c.has_b1b2) {
+        return false;
+      }
+
+      // Minimum experience
+      if (requirements.experience_years_min) {
+        if (!c.years_experience || c.years_experience < requirements.experience_years_min) {
+          return false;
+        }
+      }
+
+      // Non-smoker requirement
+      if (requirements.non_smoker === true && c.is_smoker === true) {
+        return false;
+      }
+
+      // No visible tattoos requirement
+      if (requirements.no_visible_tattoos === true && c.has_visible_tattoos === true) {
+        return false;
+      }
+
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      return NextResponse.json({
+        success: true,
+        matches: [],
+        meta: {
+          job_id: jobId,
+          candidates_searched: vectorResults.length,
+          candidates_after_filter: 0,
+          candidates_matched: 0,
+          search_time_ms: Date.now() - startTime,
+          filter_note: 'All candidates filtered out by hard requirements',
+        },
+      });
+    }
+
+    // Prepare candidates for AI ranking
+    const candidatesForRanking = filtered.slice(0, options.limit * 2).map((c: any) => ({
+      id: c.id,
+      name: `${c.first_name} ${c.last_name?.charAt(0) || ''}.`,
+      position: c.primary_position || 'Not specified',
+      experience_years: c.years_experience || 0,
+      certifications: [
+        c.has_stcw ? 'STCW' : null,
+        c.has_eng1 ? 'ENG1' : null,
+        c.highest_license,
+      ].filter(Boolean) as string[],
+      visas: [
+        c.has_schengen ? 'Schengen' : null,
+        c.has_b1b2 ? 'B1/B2' : null,
+        c.has_c1d ? 'C1/D' : null,
+      ].filter(Boolean) as string[],
+      nationality: c.nationality || 'Unknown',
+      availability: c.availability_status,
+      is_smoker: c.is_smoker,
+      has_tattoos: c.has_visible_tattoos,
+      verification_tier: c.verification_tier,
+      similarity_score: c.similarity,
+    }));
+
+    // Build job description for AI
+    const jobDescription = [
+      `Position: ${job.title}`,
+      job.vessel_type ? `Vessel: ${job.vessel_type}` : null,
+      job.vessel_size_meters ? `Size: ${job.vessel_size_meters}m` : null,
+      job.contract_type ? `Contract: ${job.contract_type}` : null,
+      job.primary_region ? `Region: ${job.primary_region}` : null,
+      job.salary_min || job.salary_max 
+        ? `Salary: ${job.salary_min || '?'} - ${job.salary_max || '?'} ${job.salary_currency}/month`
+        : null,
+    ].filter(Boolean).join('\n');
+
+    // AI ranking
+    const rankings = await rankCandidates(
+      jobDescription,
+      requirements,
+      candidatesForRanking
+    );
+
+    // Build final matches with full candidate data
+    const candidateMap = new Map(filtered.map((c: any) => [c.id, c]));
+    
+    const matches = rankings
+      .slice(0, options.limit)
+      .map(ranking => {
+        const candidate = candidateMap.get(ranking.candidate_id);
+        if (!candidate) return null;
+
+        return {
+          candidate: {
+            id: candidate.id,
+            first_name: candidate.first_name,
+            last_name: candidate.last_name,
+            primary_position: candidate.primary_position,
+            years_experience: candidate.years_experience,
+            nationality: candidate.nationality,
+            verification_tier: candidate.verification_tier,
+            availability_status: candidate.availability_status,
+            available_from: candidate.available_from,
+            has_stcw: candidate.has_stcw,
+            has_eng1: candidate.has_eng1,
+            highest_license: candidate.highest_license,
+            has_schengen: candidate.has_schengen,
+            has_b1b2: candidate.has_b1b2,
+            is_smoker: candidate.is_smoker,
+            has_visible_tattoos: candidate.has_visible_tattoos,
+            profile_summary: candidate.profile_summary,
+          },
+          match_score: ranking.match_score,
+          match_reasoning: ranking.summary,
+          strengths: ranking.strengths,
+          concerns: ranking.concerns,
+        };
+      })
+      .filter(Boolean);
+
+    const endTime = Date.now();
+
+    return NextResponse.json({
+      success: true,
+      matches,
+      meta: {
+        job_id: jobId,
+        job_title: job.title,
+        candidates_searched: vectorResults.length,
+        candidates_after_filter: filtered.length,
+        candidates_ranked: candidatesForRanking.length,
+        candidates_returned: matches.length,
+        search_time_ms: endTime - startTime,
+      },
+    });
+
+  } catch (error) {
+    console.error('Matching error:', error);
+    
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid request', details: error.errors },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json(
+      { success: false, error: 'Matching failed' },
+      { status: 500 }
+    );
+  }
+}

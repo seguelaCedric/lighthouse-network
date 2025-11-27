@@ -1,0 +1,213 @@
+// ============================================================================
+// API Route: Parse Brief
+// ============================================================================
+// POST /api/briefs/parse
+// 
+// Parses a raw job brief into structured requirements using AI.
+// Supports both JSON response and streaming for real-time UI updates.
+// ============================================================================
+
+import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+// TODO: Uncomment when @lighthouse/ai package is available
+// import { parseBrief, generateEmbedding, buildJobEmbeddingText } from '@lighthouse/ai';
+const parseBrief = async (content: string) => ({ parsed: content });
+const generateEmbedding = async (text: string) => [];
+const buildJobEmbeddingText = (data: unknown) => '';
+import { z } from 'zod';
+
+// Request validation schema
+const parseRequestSchema = z.object({
+  content: z.string().min(10, 'Brief content too short'),
+  client_id: z.string().uuid().optional(),
+  source: z.enum(['whatsapp', 'email', 'portal', 'phone']).default('portal'),
+  source_identifier: z.string().optional(),
+});
+
+export async function POST(request: NextRequest) {
+  try {
+    // Parse and validate request
+    const body = await request.json();
+    const { content, client_id, source, source_identifier } = parseRequestSchema.parse(body);
+
+    // Initialize Supabase client
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    // Get client context if client_id provided
+    let clientContext = undefined;
+    if (client_id) {
+      const { data: client } = await supabase
+        .from('organizations')
+        .select('name, vessel_name, vessel_type, vessel_size_meters')
+        .eq('id', client_id)
+        .single();
+
+      if (client) {
+        clientContext = {
+          name: client.name,
+          vessel_name: client.vessel_name,
+          vessel_type: client.vessel_type,
+          vessel_size: client.vessel_size_meters,
+        };
+      }
+    }
+
+    // Parse the brief using AI
+    const parsed = await parseBrief(content, clientContext);
+
+    // Create brief record in database
+    const { data: brief, error: briefError } = await supabase
+      .from('briefs')
+      .insert({
+        source,
+        source_identifier,
+        raw_content: content,
+        client_id,
+        parsed_at: new Date().toISOString(),
+        parsed_requirements: parsed,
+        parsing_confidence: parsed.confidence,
+        parsing_ambiguities: parsed.ambiguities,
+        status: parsed.confidence > 0.7 ? 'parsed' : 'new', // Low confidence = needs review
+      })
+      .select()
+      .single();
+
+    if (briefError) {
+      console.error('Failed to save brief:', briefError);
+      throw new Error('Failed to save brief to database');
+    }
+
+    // If high confidence, we can optionally auto-convert to job draft
+    let jobDraft = null;
+    if (parsed.confidence >= 0.8) {
+      // Generate embedding for the job
+      const embeddingText = buildJobEmbeddingText({
+        title: parsed.position,
+        vessel_type: parsed.vessel?.type,
+        vessel_size_meters: parsed.vessel?.size_max,
+        contract_type: parsed.contract?.type,
+        primary_region: parsed.location?.region,
+        requirements: parsed.requirements,
+      });
+      const embedding = await generateEmbedding(embeddingText);
+
+      // Create job draft
+      const { data: job, error: jobError } = await supabase
+        .from('jobs')
+        .insert({
+          title: parsed.position,
+          position_category: parsed.position_category,
+          client_id,
+          vessel_name: parsed.vessel?.name,
+          vessel_type: parsed.vessel?.type,
+          vessel_size_meters: parsed.vessel?.size_max,
+          contract_type: parsed.contract?.type,
+          start_date: parsed.contract?.start_date,
+          end_date: parsed.contract?.end_date,
+          rotation_schedule: parsed.contract?.rotation,
+          primary_region: parsed.location?.region,
+          itinerary: parsed.location?.itinerary,
+          salary_min: parsed.compensation?.salary_min,
+          salary_max: parsed.compensation?.salary_max,
+          salary_currency: parsed.compensation?.currency || 'EUR',
+          benefits: parsed.compensation?.benefits,
+          requirements: parsed.requirements || {},
+          status: 'draft',
+          visibility: 'private',
+          embedding,
+        })
+        .select()
+        .single();
+
+      if (!jobError && job) {
+        // Update brief with job reference
+        await supabase
+          .from('briefs')
+          .update({
+            converted_to_job_id: job.id,
+            converted_at: new Date().toISOString(),
+            status: 'converted',
+          })
+          .eq('id', brief.id);
+
+        jobDraft = job;
+      }
+    }
+
+    // Return result
+    return NextResponse.json({
+      success: true,
+      brief: {
+        id: brief.id,
+        status: brief.status,
+        confidence: parsed.confidence,
+      },
+      parsed,
+      job_draft: jobDraft ? {
+        id: jobDraft.id,
+        title: jobDraft.title,
+        status: jobDraft.status,
+      } : null,
+      needs_clarification: parsed.ambiguities.length > 0,
+      clarification_questions: parsed.ambiguities.length > 0 
+        ? generateClarificationQuestions(parsed)
+        : [],
+    });
+
+  } catch (error) {
+    console.error('Brief parsing error:', error);
+    
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid request', details: error.errors },
+        { status: 400 }
+      );
+    }
+
+    return NextResponse.json(
+      { success: false, error: 'Failed to parse brief' },
+      { status: 500 }
+    );
+  }
+}
+
+// Generate clarification questions based on ambiguities
+function generateClarificationQuestions(parsed: any): string[] {
+  const questions: string[] = [];
+
+  // Based on missing critical info
+  if (!parsed.contract?.start_date) {
+    questions.push('When do you need them to start?');
+  }
+  if (!parsed.compensation?.salary_min && !parsed.compensation?.salary_max) {
+    questions.push("What's your salary budget for this position?");
+  }
+  if (!parsed.vessel?.type && ['deck', 'engineering'].includes(parsed.position_category)) {
+    questions.push('Is this for a motor or sailing yacht?');
+  }
+  if (!parsed.vessel?.size_max && !parsed.vessel?.size_min) {
+    questions.push("What size yacht is this for?");
+  }
+  if (!parsed.contract?.type) {
+    questions.push('Is this a permanent, rotational, or seasonal position?');
+  }
+  if (!parsed.location?.region) {
+    questions.push('What area will the yacht be cruising?');
+  }
+
+  // Based on explicit ambiguities from AI
+  for (const ambiguity of parsed.ambiguities || []) {
+    if (ambiguity.toLowerCase().includes('experience') && !questions.some(q => q.includes('experience'))) {
+      questions.push('How many years of experience are you looking for?');
+    }
+    if (ambiguity.toLowerCase().includes('language') && !questions.some(q => q.includes('language'))) {
+      questions.push('Are there any specific language requirements?');
+    }
+  }
+
+  // Deduplicate and limit
+  return [...new Set(questions)].slice(0, 4);
+}

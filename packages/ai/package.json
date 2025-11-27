@@ -1,0 +1,46 @@
+{
+  "name": "@lighthouse/ai",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI functionality for Lighthouse Crew Network",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./brief-parser": {
+      "import": "./dist/brief-parser/index.mjs",
+      "require": "./dist/brief-parser/index.js",
+      "types": "./dist/brief-parser/index.d.ts"
+    },
+    "./matcher": {
+      "import": "./dist/matcher/index.mjs",
+      "require": "./dist/matcher/index.js",
+      "types": "./dist/matcher/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "ai": "^3.4.0",
+    "@ai-sdk/anthropic": "^0.0.50",
+    "@ai-sdk/openai": "^0.0.60",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.3"
+  },
+  "peerDependencies": {
+    "@supabase/supabase-js": "^2.39.0"
+  }
+}
