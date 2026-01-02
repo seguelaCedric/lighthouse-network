@@ -161,8 +161,7 @@ export async function POST(
       .from("jobs")
       .update({ applications_count: (job as { applications_count?: number }).applications_count ?? 0 + 1 })
       .eq("id", jobId)
-      .then(() => {})
-      .catch((err) => console.error("Failed to increment applications count:", err));
+      .then(() => {}, (err) => console.error("Failed to increment applications count:", err));
 
     // Create alert/notification for agency recruiters
     const { data: agencyUsers } = await supabase
@@ -188,8 +187,7 @@ export async function POST(
       supabase
         .from("alerts")
         .insert(alerts)
-        .then(() => {})
-        .catch((err) => console.error("Failed to create alerts:", err));
+        .then(() => {}, (err) => console.error("Failed to create alerts:", err));
     }
 
     return NextResponse.json(

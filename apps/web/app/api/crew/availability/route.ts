@@ -111,8 +111,7 @@ export async function PATCH(request: NextRequest) {
         },
         performed_by: userData.id,
       })
-      .then(() => {})
-      .catch((err) => console.error("Failed to log activity:", err));
+      .then(() => {}, (err) => console.error("Failed to log activity:", err));
 
     return NextResponse.json({
       data: updatedCandidate,

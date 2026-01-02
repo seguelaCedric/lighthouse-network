@@ -46,7 +46,7 @@ export async function GET(
     }
 
     // Increment view count (fire and forget)
-    supabase.rpc("increment_job_views", { p_job_id: id }).catch((err) => {
+    supabase.rpc("increment_job_views", { p_job_id: id }).then(() => {}, (err) => {
       console.error("Failed to increment views:", err);
     });
 

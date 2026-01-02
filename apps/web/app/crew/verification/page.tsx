@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import DocumentList from "@/components/documents/DocumentList";
 
 export const metadata = {
   title: "Verification | Lighthouse Crew Network",
@@ -379,6 +380,21 @@ export default async function CrewVerificationPage() {
               )}
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Documents Section */}
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="border-b border-gray-100 px-6 py-4">
+          <h2 className="font-serif text-lg font-semibold text-navy-800">
+            My Documents
+          </h2>
+          <p className="mt-1 text-sm text-gray-600">
+            Upload and manage your CV, certifications, and other documents
+          </p>
+        </div>
+        <div className="p-6">
+          <DocumentList candidateId={candidate.id} isRecruiter={false} />
         </div>
       </div>
 

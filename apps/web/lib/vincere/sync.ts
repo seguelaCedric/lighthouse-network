@@ -5,8 +5,17 @@
  */
 
 import type { Candidate, CandidateInsert, PositionCategory, ContractType } from '../../../../packages/database/types';
-import type { VincereCandidate, VincereCustomField } from './candidates';
+import type { VincereCandidate, VincereCustomField, VincereFunctionalExpertise, VincereLocation, VincerecandidateStatus } from './candidates';
 import { getFieldValue, getBooleanFieldValue } from './candidates';
+
+/**
+ * Extended data from additional Vincere endpoints
+ */
+export interface VincereExtendedData {
+  functionalExpertises?: VincereFunctionalExpertise[];
+  currentLocation?: VincereLocation | null;
+  candidateStatus?: VincerecandidateStatus | null;
+}
 import {
   VINCERE_FIELD_KEYS,
   VINCERE_NATIONALITY_MAP,
@@ -171,7 +180,8 @@ export function standardizePosition(rawPosition: string | null | undefined): {
  */
 export function mapVincereToCandidate(
   vincereData: VincereCandidate,
-  customFields: Record<string, VincereCustomField>
+  customFields: Record<string, VincereCustomField>,
+  extendedData?: VincereExtendedData
 ): Partial<CandidateInsert> {
   // Helper to get field values using our typed keys
   const getField = (key: keyof typeof VINCERE_FIELD_KEYS) =>
@@ -240,6 +250,32 @@ export function mapVincereToCandidate(
   else if (smokerValue === 2) is_smoker = false;
   // Note: smokerValue === 3 means "social" - we could store this differently if needed
 
+  // Process extended data if provided
+  // Note: functional expertises will be appended to profile_summary since there's no 'skills' column
+  const skillsFromExpertises = extendedData?.functionalExpertises?.map(e => e.name) ?? [];
+
+  // Use current location from extended data if available, fallback to basic data
+  const locationFromExtended = extendedData?.currentLocation;
+  const currentLocationString = locationFromExtended
+    ? [locationFromExtended.city, locationFromExtended.country].filter(Boolean).join(', ') || locationFromExtended.name
+    : vincereData.current_location;
+
+  // Map candidate status to availability_status
+  // Common Vincere statuses: "Active", "Placed", "Do Not Use", "Inactive", etc.
+  let availability_status_from_vincere: 'available' | 'notice_period' | 'not_looking' | 'on_contract' | null = null;
+  if (extendedData?.candidateStatus) {
+    const statusName = extendedData.candidateStatus.name?.toLowerCase() ?? '';
+    if (statusName.includes('active') || statusName.includes('available')) {
+      availability_status_from_vincere = 'available';
+    } else if (statusName.includes('placed') || statusName.includes('contract')) {
+      availability_status_from_vincere = 'on_contract';
+    } else if (statusName.includes('notice')) {
+      availability_status_from_vincere = 'notice_period';
+    } else if (statusName.includes('inactive') || statusName.includes('not')) {
+      availability_status_from_vincere = 'not_looking';
+    }
+  }
+
   return {
     // External ID
     vincere_id: vincereData.id.toString(),
@@ -257,8 +293,8 @@ export function mapVincereToCandidate(
     nationality: vincereData.nationality ?? null,
     second_nationality,
 
-    // Location
-    current_location: vincereData.current_location ?? null,
+    // Location (prefer extended data)
+    current_location: currentLocationString ?? null,
 
     // Professional
     primary_position,
@@ -300,14 +336,22 @@ export function mapVincereToCandidate(
     partner_position: getField('partnerPosition') as string | null,
     couple_position,
 
-    // Profile
-    profile_summary: vincereData.summary ?? null,
+    // Profile - include skills from functional expertises in summary
+    profile_summary: [
+      vincereData.summary,
+      skillsFromExpertises.length > 0 ? `\n\nSkills: ${skillsFromExpertises.join(', ')}` : null,
+    ].filter(Boolean).join('') || null,
 
     // Verification (default for synced candidates)
-    verification_tier: 0,
+    verification_tier: 'unverified' as const,
 
-    // Availability status (default)
-    availability_status: 'unknown',
+    // Availability status - prefer Vincere status, then available_from date, else omit
+    // DB enum: 'available' | 'notice_period' | 'not_looking' | 'on_contract'
+    ...(availability_status_from_vincere
+      ? { availability_status: availability_status_from_vincere }
+      : available_from
+        ? { availability_status: 'available' as const }
+        : {}),
 
     // Timestamps
     last_synced_at: new Date().toISOString(),

@@ -78,7 +78,7 @@ export async function GET(
 
     // Transform data for client view (privacy-protected)
     const candidates = (submissions || []).map((submission) => {
-      const candidate = submission.candidates as Record<string, unknown> | null;
+      const candidate = submission.candidates as unknown as Record<string, unknown> | null;
 
       return {
         submissionId: submission.id,

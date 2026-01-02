@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useJobs, useAddCandidateToJob } from "@/hooks/useJobs";
 import { cn } from "@/lib/utils";
-import type { Job } from "../../../../../packages/database/types";
+import type { Job } from "@lighthouse/database";
 
 interface AddToJobModalProps {
   open: boolean;

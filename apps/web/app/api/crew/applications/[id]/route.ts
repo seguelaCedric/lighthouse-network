@@ -262,7 +262,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     }
 
     // Notify the agency (fire and forget)
-    const jobTitle = (application.job as { title: string } | null)?.title || "Unknown Position";
+    const jobTitle = (application.job as unknown as { title: string } | null)?.title || "Unknown Position";
     supabase
       .from("alerts")
       .insert({
@@ -275,8 +275,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         action_url: `/jobs/${application.job_id}/applications`,
         priority: "normal",
       })
-      .then(() => {})
-      .catch((err) => console.error("Failed to create alert:", err));
+      .then(() => {}, (err) => console.error("Failed to create alert:", err));
 
     return NextResponse.json({
       success: true,

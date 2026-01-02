@@ -22,6 +22,8 @@ const tierConfig: Record<
     iconClassName: string;
     badgeClassName: string;
     labelClassName: string;
+    color: string;
+    description: string;
   }
 > = {
   unverified: {
@@ -31,6 +33,8 @@ const tierConfig: Record<
     iconClassName: "text-gray-400",
     badgeClassName: "bg-white border border-gray-300 border-dashed",
     labelClassName: "text-gray-500",
+    color: "#9ca3af",
+    description: "Complete verification steps to unlock more opportunities",
   },
   basic: {
     label: "Basic Verified",
@@ -39,6 +43,8 @@ const tierConfig: Record<
     iconClassName: "text-blue-600",
     badgeClassName: "bg-blue-50 border border-blue-200",
     labelClassName: "text-blue-700",
+    color: "#2563eb",
+    description: "Email verified and CV uploaded",
   },
   identity: {
     label: "Identity Verified",
@@ -47,6 +53,8 @@ const tierConfig: Record<
     iconClassName: "text-success-600",
     badgeClassName: "bg-success-50 border border-success-200",
     labelClassName: "text-success-700",
+    color: "#16a34a",
+    description: "Identity document verified",
   },
   references: {
     label: "References Verified",
@@ -55,6 +63,8 @@ const tierConfig: Record<
     iconClassName: "text-gold-600",
     badgeClassName: "bg-gold-50 border border-gold-200",
     labelClassName: "text-gold-700",
+    color: "#ca8a04",
+    description: "Professional references verified",
   },
   verified: {
     label: "Fully Verified",
@@ -63,6 +73,8 @@ const tierConfig: Record<
     iconClassName: "text-success-700",
     badgeClassName: "bg-success-100 border border-success-300",
     labelClassName: "text-success-800",
+    color: "#15803d",
+    description: "All verification steps completed",
   },
   premium: {
     label: "Premium Verified",
@@ -71,6 +83,8 @@ const tierConfig: Record<
     iconClassName: "text-gold-800",
     badgeClassName: "bg-gradient-to-br from-gold-200 to-gold-300 border border-gold-400 shadow-sm shadow-gold-200/50",
     labelClassName: "text-gold-800 font-semibold",
+    color: "#a16207",
+    description: "Premium verified with enhanced screening",
   },
 };
 

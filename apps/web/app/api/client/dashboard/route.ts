@@ -143,8 +143,8 @@ export async function GET() {
       .limit(4);
 
     const shortlistedCandidates = (recentShortlisted || []).map((s) => {
-      const candidate = s.candidates as Record<string, unknown> | null;
-      const job = s.jobs as Record<string, unknown> | null;
+      const candidate = s.candidates as unknown as Record<string, unknown> | null;
+      const job = s.jobs as unknown as Record<string, unknown> | null;
 
       return {
         id: s.id,
@@ -190,8 +190,8 @@ export async function GET() {
       .limit(4);
 
     const interviews = (upcomingInterviews || []).map((i) => {
-      const candidate = i.candidates as Record<string, unknown> | null;
-      const job = i.jobs as Record<string, unknown> | null;
+      const candidate = i.candidates as unknown as Record<string, unknown> | null;
+      const job = i.jobs as unknown as Record<string, unknown> | null;
 
       return {
         id: i.id,

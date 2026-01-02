@@ -76,8 +76,8 @@ export async function GET() {
 
     // Transform data for client view
     const transformedInterviews = (interviews || []).map((interview) => {
-      const job = interview.jobs as Record<string, unknown> | null;
-      const candidate = interview.candidates as Record<string, unknown> | null;
+      const job = interview.jobs as unknown as Record<string, unknown> | null;
+      const candidate = interview.candidates as unknown as Record<string, unknown> | null;
 
       return {
         id: interview.id,

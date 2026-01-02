@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { matchRequestSchema } from "@/lib/validations/job";
-import { matchCandidatesForJob, MatchResult } from "@lighthouse/ai/matcher";
+import { matchCandidatesForJob } from "@lighthouse/ai";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const { limit } = parseResult.data;
 
     // Use the new matching engine
-    const matches: MatchResult[] = await matchCandidatesForJob(
+    const matches = await matchCandidatesForJob(
       supabase,
       jobId,
       { limit }

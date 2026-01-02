@@ -164,16 +164,11 @@ export function AddReferenceForm({
             </label>
             <Select
               value={formData.relationship}
-              onValueChange={(value) => handleChange("relationship", value)}
+              onChange={(e) => handleChange("relationship", e.target.value)}
               disabled={isSubmitting}
-            >
-              <option value="">Select relationship...</option>
-              {RELATIONSHIP_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </Select>
+              options={RELATIONSHIP_OPTIONS}
+              placeholder="Select relationship..."
+            />
           </div>
 
           {/* Vessel/Company */}

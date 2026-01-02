@@ -1,0 +1,556 @@
+import { Metadata } from "next";
+import Image from "next/image";
+import Link from "next/link";
+import { PublicHeader } from "@/components/pricing/PublicHeader";
+import { PublicFooter } from "@/components/pricing/PublicFooter";
+import { TeamMemberCard } from "@/components/marketing/TeamMemberCard";
+import { Button } from "@/components/ui/button";
+import {
+  Users,
+  Award,
+  Globe,
+  Heart,
+  Target,
+  Ship,
+  Home,
+  ArrowRight,
+  CheckCircle,
+  Quote,
+  Star,
+  Zap,
+  Shield,
+  Clock,
+  Sparkles,
+} from "lucide-react";
+
+export const metadata: Metadata = {
+  title: "About Us | Lighthouse Careers",
+  description:
+    "Learn about Lighthouse Careers - over 14 years of yacht crew and private household staff recruitment expertise. Meet our team of industry specialists.",
+};
+
+const stats = [
+  { value: "44,000+", label: "Candidates" },
+  { value: "200+", label: "Placements/Year" },
+  { value: "14+", label: "Years Experience" },
+  { value: "450+", label: "Satisfied Clients" },
+];
+
+const values = [
+  {
+    icon: Heart,
+    title: "Passion",
+    description:
+      "We love what we do. Our team has real-world experience in the industries we serve.",
+  },
+  {
+    icon: Target,
+    title: "Precision",
+    description:
+      "We take time to understand your needs and match you with the right opportunities.",
+  },
+  {
+    icon: Award,
+    title: "Excellence",
+    description:
+      "Only the highest quality candidates make it through our rigorous vetting process.",
+  },
+  {
+    icon: Globe,
+    title: "Global Reach",
+    description:
+      "We serve clients and candidates worldwide, with deep local market knowledge.",
+  },
+];
+
+const team = [
+  {
+    name: "Milica Seguela",
+    role: "Director / Captains and Pursers",
+    bio: "Milica heads up the team and offers a wealth of experience, having spent her entire career in the service industry – from working in luxury hotels, to private households, cruise ships and the yachting industry. She has a Hotel Management degree and over a decade experience in placing senior crew in the yacht crew recruitment sector, as well as household staff.",
+    languages: "English, French, Serbo-Croatian",
+    email: "ms@lighthouse-careers.com",
+    image: "https://www.lighthouse-careers.com/wp-content/uploads/2024/12/Milica-after-AI-filter.png",
+    linkedin: "https://www.linkedin.com/in/milica-seguela-53a4b814/",
+    facebook: "https://www.facebook.com/profile.php?id=100006010186497",
+  },
+  {
+    name: "Phil Richards",
+    role: "Engineering department",
+    bio: "With a 16-year tenure in the yachting industry, Phil honed his expertise as a Chief Engineer aboard a number of vessels. Progressing to the role of a Technical Manager. Passionate about steering engineers' career paths, he remains dedicated to nurturing talent and providing invaluable industry guidance to both candidates and clients.",
+    email: "pr@lighthouse-careers.com",
+    image: "https://www.lighthouse-careers.com/wp-content/uploads/2024/12/Phil.png",
+    linkedin: "https://www.linkedin.com/in/phil-richards-a1906985/",
+  },
+  {
+    name: "Joaneen Botha",
+    role: "Deck department",
+    bio: "With over 10 years at sea, Joaneen rose to Chief Stew on yachts over 100 meters, mastering crew dynamics and vessel needs. After studying in New York, she thrived as an international recruitment consultant in the Netherlands, specializing in top talent. Her dual expertise in yachting and recruitment uniquely positions her to connect exceptional candidates with luxury yacht roles.",
+    email: "jb@lighthouse-careers.com",
+    image: "https://www.lighthouse-careers.com/wp-content/uploads/2025/01/JOANEEN-3.png",
+    linkedin: "https://www.linkedin.com/in/joaneenbotha",
+  },
+  {
+    name: "Waldi Coetzee",
+    role: "Interior Department",
+    bio: "Having spent 11 years on yachts up to 100m, and another 3 years as Crew Coordinator, Waldi now draws on her deep maritime experience as a recruiter. She matches seasoned interior crew with yachts, using her firsthand understanding of vessel needs and team dynamics to build the perfect onboard teams. Dedicated to finding the perfect match every time!",
+    email: "wc@lighthouse-careers.com",
+    image: "https://www.lighthouse-careers.com/wp-content/uploads/2025/12/PHOTO-2025-12-01-16-29-31.jpg",
+  },
+  {
+    name: "Charlie Cartledge",
+    role: "Deck Department",
+    bio: "Charlie is British and grew up in the coastal town of Dover. With a BA in Sports Journalism and a deep-rooted passion for sports, they have shaped a diverse career path that blends communication with technical expertise. Over the past three years, he has gained valuable experience in yacht recruitment, focusing on the Deck department.",
+    email: "cc@lighthouse-careers.com",
+    image: "https://www.lighthouse-careers.com/wp-content/uploads/2024/12/Charlie-scaled.jpg",
+    linkedin: "https://www.linkedin.com/in/charles-cartledge/",
+  },
+  {
+    name: "Laura Hayes",
+    role: "Interior department",
+    bio: "Laura has over four years of hands-on experience onboard yachts, working her way up to a Head of House. Now, she's channelling her passion for the yachting world into yacht crew recruitment, where she can leverage her first-hand knowledge to help build strong, reliable interior teams.",
+    email: "lh@lighthouse-careers.com",
+    image: "https://www.lighthouse-careers.com/wp-content/uploads/2025/03/PHOTO-2025-03-18-11-34-54.jpg",
+  },
+  {
+    name: "Britt McBride",
+    role: "Interior department / Specialist roles",
+    bio: "Britt is an Australian national. She is a fully qualified nurse with over a decade of hospital experience and over four years working aboard yachts as a nurse and housekeeper. She remains dedicated to nurturing talent and offering valuable industry insight to candidates coming from similar backgrounds.",
+    email: "bm@lighthouse-careers.com",
+    image: "https://www.lighthouse-careers.com/wp-content/uploads/2025/05/Britt-Headshot-1.jpeg",
+  },
+  {
+    name: "Ornela Grmusa",
+    role: "Administrator",
+    bio: "Ornela is Croatian, who lived and worked in the UK for many years. Coming from a seaside town, she loves everything to do with the sea. Ornela previously worked on board cruise liners, as well as in admin roles. She now looks after all things admin and ensures smooth running of our daily business.",
+    languages: "English, Italian, Croatian",
+    email: "admin@lighthouse-careers.com",
+    image: "https://www.lighthouse-careers.com/wp-content/uploads/2024/12/Ornela.png",
+  },
+  {
+    name: "Kaoutar Zahouane",
+    role: "Admin/ Digital Marketing",
+    bio: "Kaoutar grew up in Morocco and moved to France in 2017 to pursue a career in International Business Management. With a Master's degree in Marketing, she is particularly passionate about digital marketing and is keen to gain more experience in the recruitment industry.",
+    languages: "Arabic, French, English",
+    image: "https://www.lighthouse-careers.com/wp-content/uploads/2024/12/Kaoutar.png",
+  },
+];
+
+const testimonials = [
+  {
+    quote: "I wanted to say a few words of thanks for your all your time and efforts over the past few years, working on behalf of Axioma and indeed the other vessels I have worked on. You and your team has always been a massive help in trying to help find us the right candidate for the right job in this ever expanding and delicate industry.",
+    name: "Tom Filby",
+    role: "Captain M/Y Axioma",
+    image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Capture-decran-2020-02-23-a-12.27.53-150x150-1.png",
+  },
+  {
+    quote: "I've had the pleasure of knowing Milica, and using Milica's services as a crew agent for many years at two different agencies. Her attention to what I'm looking for in a crew member, fast response and flexibility and understanding of feedback has always impressed me, and I look forward to continuing working with her also now when branching out on her own.",
+    name: "Carl Westerlund",
+    role: "Captain 101m M/Y",
+    image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Carl-Westerlund.png",
+  },
+  {
+    quote: "Milica is always my first call when looking for new crew. Milica helped me get my first command 3 years ago and ever since has supplied me with great candidates for all positions onboard. I can always rely on her judgement and honesty on potential crew and to act fast when I need. I wish her luck with this new venture and look forward to a continued professional affiliation.",
+    name: "Mark Sinnatt",
+    role: "Captain M/Y GLOBAL",
+    image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Mark-Sinnatt.png",
+  },
+  {
+    quote: "Due to her industry knowledge, great candidates she has provided over the years and great sense of urgency and limitations a yacht can have, I decided to reintroduce and appoint Milica's agency to represent our fleet of yachts in the yacht recruitment world. In no time she gained a thorough understanding of our new management structure and fleet needs.",
+    name: "Alina C.",
+    role: "Owner's Fleet Representative",
+    image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Alina-C.png",
+  },
+];
+
+export default function AboutPage() {
+  return (
+    <div className="min-h-screen bg-white">
+      <PublicHeader />
+
+      {/* Hero Section */}
+      <section className="relative overflow-hidden py-24 sm:py-32">
+        {/* Rich navy gradient */}
+        <div className="absolute inset-0 bg-gradient-to-b from-navy-800 via-navy-900 to-[#0c1525]" />
+
+        {/* Warm champagne ambient light from top */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(195,165,120,0.15),transparent_60%)]" />
+
+        {/* Subtle side accents for depth */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_80%_at_0%_50%,rgba(195,165,120,0.06),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_80%_at_100%_50%,rgba(195,165,120,0.06),transparent_50%)]" />
+
+        {/* Art Deco sunburst pattern */}
+        <div className="absolute inset-0 opacity-[0.15]">
+          <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <radialGradient id="sunburst-fade" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#C3A578" stopOpacity="1"/>
+                <stop offset="100%" stopColor="#C3A578" stopOpacity="0.3"/>
+              </radialGradient>
+            </defs>
+            <g stroke="url(#sunburst-fade)" strokeWidth="0.5" fill="none">
+              {/* Radiating lines from center */}
+              {[...Array(36)].map((_, i) => {
+                const angle = (i * 10) * (Math.PI / 180);
+                const x2 = 50 + 70 * Math.cos(angle);
+                const y2 = 50 + 70 * Math.sin(angle);
+                return <line key={i} x1="50%" y1="50%" x2={`${x2}%`} y2={`${y2}%`} />;
+              })}
+            </g>
+            {/* Concentric arcs */}
+            <circle cx="50%" cy="50%" r="15%" fill="none" stroke="#C3A578" strokeWidth="0.3" opacity="0.5"/>
+            <circle cx="50%" cy="50%" r="30%" fill="none" stroke="#C3A578" strokeWidth="0.3" opacity="0.4"/>
+            <circle cx="50%" cy="50%" r="45%" fill="none" stroke="#C3A578" strokeWidth="0.3" opacity="0.3"/>
+          </svg>
+        </div>
+
+        <div className="relative mx-auto max-w-4xl px-4 text-center sm:px-6">
+          <div className="mb-6 inline-flex items-center rounded-full border border-gold-500/30 bg-gold-500/10 px-5 py-2 text-sm font-medium text-gold-300">
+            <Award className="mr-2 h-4 w-4" />
+            Trusted by the World&apos;s Finest Yachts &amp; Estates
+          </div>
+
+          <h1 className="font-serif text-4xl font-semibold text-white sm:text-5xl lg:text-6xl">
+            We Don&apos;t Just Fill Positions.<br />
+            <span className="text-gold-400">We Build Legacies.</span>
+          </h1>
+
+          <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-300 sm:text-xl">
+            From superyachts cruising the Mediterranean to private estates serving royalty,
+            we&apos;ve spent 14+ years placing exceptional people in extraordinary roles.
+            Our team has walked in your shoes, we know what excellence looks like.
+          </p>
+
+          <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <Link href="/hire">
+              <Button size="lg">
+                Find Talent
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
+            <Link href="/join">
+              <Button
+                variant="secondary"
+                size="lg"
+                className="border-white/20 text-white hover:bg-white/10"
+              >
+                Find Work
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats */}
+      <section className="relative -mt-12 z-10">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6">
+          <div className="grid grid-cols-2 gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-xl sm:grid-cols-4 sm:gap-8 sm:p-8">
+            {stats.map((stat) => (
+              <div key={stat.label} className="text-center">
+                <div className="font-serif text-3xl font-bold text-gold-600 sm:text-4xl">
+                  {stat.value}
+                </div>
+                <div className="mt-1 text-sm text-gray-600">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Mission Section */}
+      <section className="py-20 sm:py-28">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="grid items-center gap-12 lg:grid-cols-2">
+            <div>
+              <h2 className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl">
+                Finding the Perfect Fit.<br />
+                <span className="text-gold-600">Every Single Time.</span>
+              </h2>
+              <p className="mt-6 text-lg text-gray-600">
+                Our entire team has real industry experience, from luxury hotels and cruise ships
+                to superyachts and private estates. We don&apos;t just recruit for these roles,
+                we&apos;ve lived them.
+              </p>
+              <p className="mt-4 text-gray-600">
+                That firsthand knowledge means we understand what you actually need, the discretion
+                required in a high-profile household, the teamwork dynamics on a busy yacht,
+                the small details that separate a good hire from a great one.
+              </p>
+              <p className="mt-4 text-gray-600">
+                Every candidate we send has been personally interviewed and thoroughly vetted.
+                We take the time to understand both sides, so we can make matches that last.
+              </p>
+
+              <div className="mt-8 flex flex-wrap gap-4">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <CheckCircle className="h-5 w-5 text-gold-500" />
+                  Rigorous vetting process
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <CheckCircle className="h-5 w-5 text-gold-500" />
+                  Industry expertise
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <CheckCircle className="h-5 w-5 text-gold-500" />
+                  Personal service
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="rounded-2xl bg-navy-900 p-6 text-white">
+                <Ship className="mb-4 h-10 w-10 text-gold-400" />
+                <h3 className="font-semibold">Yacht Crew</h3>
+                <p className="mt-2 text-sm text-gray-400">
+                  All departments from Captain to Deckhand
+                </p>
+              </div>
+              <div className="rounded-2xl bg-gold-50 p-6">
+                <Home className="mb-4 h-10 w-10 text-gold-600" />
+                <h3 className="font-semibold text-navy-900">Private Staff</h3>
+                <p className="mt-2 text-sm text-gray-600">
+                  Butlers, managers, housekeepers & more
+                </p>
+              </div>
+              <div className="rounded-2xl bg-gold-50 p-6">
+                <Users className="mb-4 h-10 w-10 text-gold-600" />
+                <h3 className="font-semibold text-navy-900">Global Network</h3>
+                <p className="mt-2 text-sm text-gray-600">
+                  Candidates across 50+ countries
+                </p>
+              </div>
+              <div className="rounded-2xl bg-navy-900 p-6 text-white">
+                <Award className="mb-4 h-10 w-10 text-gold-400" />
+                <h3 className="font-semibold">Vetted Talent</h3>
+                <p className="mt-2 text-sm text-gray-400">
+                  Rigorous screening process
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Why We're Different */}
+      <section className="bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 py-20 sm:py-28">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="mb-16 text-center">
+            <h2 className="font-serif text-3xl font-semibold text-white sm:text-4xl">
+              Why Clients Choose Us Over Other Agencies
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-gray-400">
+              In a sea of recruitment agencies, here&apos;s what sets us apart.
+            </p>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gold-500/20">
+                <Sparkles className="h-6 w-6 text-gold-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-white">We&apos;ve Done the Job</h3>
+              <p className="mt-2 text-sm text-gray-400">
+                Our recruiters have worked on yachts and in private households. We know the difference between a good CV and a great crew member.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gold-500/20">
+                <Clock className="h-6 w-6 text-gold-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-white">24-Hour Response</h3>
+              <p className="mt-2 text-sm text-gray-400">
+                Yacht emergencies don&apos;t wait. Neither do we. Get qualified candidates in your inbox within 24 hours of your brief.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gold-500/20">
+                <Shield className="h-6 w-6 text-gold-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-white">Discretion Guaranteed</h3>
+              <p className="mt-2 text-sm text-gray-400">
+                We serve royalty, billionaires, and high-profile families. Your privacy isn&apos;t just respected, it&apos;s protected.
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gold-500/20">
+                <Zap className="h-6 w-6 text-gold-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-white">No Time Wasters</h3>
+              <p className="mt-2 text-sm text-gray-400">
+                Every candidate is interviewed, vetted, and reference-checked before they reach you. We value your time as much as ours.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Values Section */}
+      <section className="bg-gray-50 py-20 sm:py-28">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="mb-16 text-center">
+            <h2 className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl">
+              Our Values
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-gray-600">
+              The principles that guide everything we do.
+            </p>
+          </div>
+
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            {values.map((value) => {
+              const Icon = value.icon;
+              return (
+                <div
+                  key={value.title}
+                  className="group rounded-2xl border border-gray-200 bg-white p-6 text-center transition-all hover:-translate-y-1 hover:shadow-xl"
+                >
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-gold-400 to-gold-600 shadow-lg shadow-gold-500/25 transition-transform group-hover:scale-110">
+                    <Icon className="h-8 w-8 text-white" />
+                  </div>
+                  <h3 className="mb-2 text-lg font-semibold text-navy-900">
+                    {value.title}
+                  </h3>
+                  <p className="text-sm text-gray-600">{value.description}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="py-20 sm:py-28">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="mb-16 text-center">
+            <div className="mb-4 flex items-center justify-center gap-1">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} className="h-6 w-6 fill-gold-400 text-gold-400" />
+              ))}
+            </div>
+            <p className="mb-2 text-sm font-medium text-gold-600">Rated 5/5 by Captains &amp; Fleet Managers</p>
+            <h2 className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl">
+              Don&apos;t Take Our Word For It
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-gray-600">
+              Hear from the captains, fleet managers, and principals who trust us with their most important hires.
+            </p>
+          </div>
+
+          <div className="grid gap-8 md:grid-cols-2">
+            {testimonials.map((testimonial) => (
+              <div
+                key={testimonial.name}
+                className="relative rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all hover:shadow-lg sm:p-8"
+              >
+                <Quote className="absolute right-6 top-6 h-8 w-8 text-gold-200" />
+                <div className="mb-4 flex gap-0.5">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-4 w-4 fill-gold-400 text-gold-400" />
+                  ))}
+                </div>
+                <p className="text-gray-600 leading-relaxed">
+                  &ldquo;{testimonial.quote}&rdquo;
+                </p>
+                <div className="mt-6 flex items-center gap-4">
+                  <Image
+                    src={testimonial.image}
+                    alt={testimonial.name}
+                    width={48}
+                    height={48}
+                    className="rounded-full object-cover"
+                  />
+                  <div>
+                    <div className="font-semibold text-navy-900">
+                      {testimonial.name}
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {testimonial.role}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Team Section */}
+      <section className="bg-gray-50 py-20 sm:py-28">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="mb-16 text-center">
+            <h2 className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl">
+              The People Behind Your Perfect Hire
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-gray-600">
+              Former yacht crew. Private household veterans. Hospitality experts.
+              We&apos;ve lived the life, now we help you find people who will excel at it.
+            </p>
+          </div>
+
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+            {team.map((member) => (
+              <TeamMemberCard key={member.name} member={member} />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="relative overflow-hidden bg-navy-900 py-20 sm:py-28">
+        <div className="absolute inset-0 opacity-30">
+          <div className="absolute left-1/4 top-0 h-96 w-96 rounded-full bg-gold-500/20 blur-3xl" />
+          <div className="absolute bottom-0 right-1/4 h-64 w-64 rounded-full bg-blue-500/20 blur-3xl" />
+        </div>
+
+        <div className="relative mx-auto max-w-4xl px-4 text-center sm:px-6">
+          <h2 className="font-serif text-3xl font-semibold text-white sm:text-4xl">
+            Ready to Work With Us?
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-gray-400">
+            Whether you&apos;re looking for exceptional crew or your next career
+            opportunity, we&apos;re here to help.
+          </p>
+          <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <Link href="/contact">
+              <Button size="lg">
+                Contact Us
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
+            <Link href="/job-board">
+              <Button
+                variant="secondary"
+                size="lg"
+                className="border-white/20 text-white hover:bg-white/10"
+              >
+                View Open Positions
+              </Button>
+            </Link>
+          </div>
+
+          <div className="mt-12 flex flex-col items-center gap-4 text-gray-400 sm:flex-row sm:justify-center sm:gap-8">
+            <a
+              href="mailto:admin@lighthouse-careers.com"
+              className="transition-colors hover:text-gold-400"
+            >
+              admin@lighthouse-careers.com
+            </a>
+            <span className="hidden sm:inline">|</span>
+            <a
+              href="tel:+33451088780"
+              className="transition-colors hover:text-gold-400"
+            >
+              +33 451 088 780
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <PublicFooter />
+    </div>
+  );
+}

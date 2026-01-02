@@ -1,0 +1,1231 @@
+"use client";
+
+import { useState, useEffect, useMemo, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { PublicHeader } from "@/components/pricing/PublicHeader";
+import { PublicFooter } from "@/components/pricing/PublicFooter";
+import {
+  Search,
+  Loader2,
+  MapPin,
+  Briefcase,
+  CheckCircle,
+  Globe,
+  Star,
+  ArrowRight,
+  Mail,
+  Phone,
+  Sparkles,
+  Award,
+  Building2,
+  Languages,
+  Shield,
+  Target,
+  Heart,
+  Calendar,
+  GraduationCap,
+  FileCheck,
+  Users,
+  RefreshCw,
+  Filter,
+  ChevronDown,
+  X,
+} from "lucide-react";
+
+// Staff role options for private households + yacht crew (for testing)
+// Yacht crew roles
+const YACHT_CREW_ROLES = new Set([
+  "deckhand", "chief-stewardess", "stewardess", "engineer",
+  "captain", "first-officer", "bosun"
+]);
+
+const STAFF_ROLES = [
+  // Yacht Crew (for testing with current data)
+  { value: "deckhand", label: "Deckhand" },
+  { value: "chief-stewardess", label: "Chief Stewardess" },
+  { value: "stewardess", label: "Stewardess" },
+  { value: "engineer", label: "Engineer" },
+  { value: "captain", label: "Captain" },
+  { value: "first-officer", label: "First Officer" },
+  { value: "bosun", label: "Bosun" },
+  // Private Household Staff
+  { value: "butler", label: "Butler" },
+  { value: "estate-manager", label: "Estate Manager" },
+  { value: "house-manager", label: "House Manager" },
+  { value: "personal-assistant", label: "Personal Assistant" },
+  { value: "housekeeper", label: "Housekeeper" },
+  { value: "nanny", label: "Nanny" },
+  { value: "governess", label: "Governess" },
+  { value: "chef", label: "Private Chef" },
+  { value: "chauffeur", label: "Chauffeur" },
+  { value: "security", label: "Security / Close Protection" },
+  { value: "laundress", label: "Laundress" },
+  { value: "valet", label: "Valet" },
+  { value: "caretaker", label: "Property Caretaker" },
+  { value: "couple", label: "Household Couple" },
+];
+
+const TIMELINE_OPTIONS = [
+  { value: "asap", label: "As soon as possible" },
+  { value: "1-month", label: "Within 1 month" },
+  { value: "3-months", label: "Within 3 months" },
+  { value: "flexible", label: "Flexible / Just exploring" },
+];
+
+// Sort options for results
+const SORT_OPTIONS = [
+  { value: "match_score", label: "Best Match", desc: true },
+  { value: "experience_years", label: "Most Experienced", desc: true },
+  { value: "experience_years_asc", label: "Least Experienced", desc: false },
+] as const;
+
+// Experience filter ranges
+const EXPERIENCE_FILTERS = [
+  { value: "all", label: "Any Experience" },
+  { value: "0-3", label: "0-3 years" },
+  { value: "3-5", label: "3-5 years" },
+  { value: "5-10", label: "5-10 years" },
+  { value: "10+", label: "10+ years" },
+];
+
+// Availability filter options
+// Note: Availability is based on last known status - always verify directly with candidate
+const AVAILABILITY_FILTERS = [
+  { value: "all", label: "Any Availability" },
+  { value: "immediate", label: "Listed as Available" },
+  { value: "soon", label: "Listed as Available Soon" },
+];
+
+interface WorkHistoryEntry {
+  employer: string;
+  position: string;
+  duration: string;
+  dates: string;
+  details?: string;
+}
+
+interface AnonymizedCandidate {
+  id: string;
+  display_name: string;
+  avatar_url: string | null;
+  position: string;
+  experience_years: number;
+  rich_bio: string;
+  career_highlights: string[];
+  experience_summary: string;
+  work_history?: WorkHistoryEntry[];
+  languages: string[];
+  nationality: string;
+  availability: string;
+  match_score: number;
+  key_strengths: string[];
+  qualifications: string[];
+  notable_employers: string[];
+  why_good_fit: string;
+  employee_qualities: string[];
+  longevity_assessment: string;
+  education_summary?: string;
+  reference_count?: number;
+  properties_managed?: number;
+  years_in_private_service?: number;
+  specializations?: string[];
+  certifications_count?: number;
+}
+
+interface SearchFormData {
+  role: string;
+  location: string;
+  timeline: string;
+  requirements: string;
+}
+
+function MatchPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Initialize form from URL params
+  const [formData, setFormData] = useState<SearchFormData>({
+    role: searchParams.get("role") || "",
+    location: searchParams.get("location") || "",
+    timeline: searchParams.get("timeline") || "",
+    requirements: searchParams.get("requirements") || "",
+  });
+
+  const [candidates, setCandidates] = useState<AnonymizedCandidate[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [showFilters, setShowFilters] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Sorting and filtering state
+  const [sortBy, setSortBy] = useState<string>("match_score");
+  const [experienceFilter, setExperienceFilter] = useState<string>("all");
+  const [availabilityFilter, setAvailabilityFilter] = useState<string>("all");
+  const [languageFilter, setLanguageFilter] = useState<string>("all");
+  const [showResultFilters, setShowResultFilters] = useState(false);
+
+  // Get unique languages from candidates for filter dropdown
+  const availableLanguages = useMemo(() => {
+    const langs = new Set<string>();
+    candidates.forEach((c) => {
+      c.languages.forEach((lang) => langs.add(lang));
+    });
+    return Array.from(langs).sort();
+  }, [candidates]);
+
+  // Filter and sort candidates
+  const filteredAndSortedCandidates = useMemo(() => {
+    let result = [...candidates];
+
+    // Apply experience filter
+    if (experienceFilter !== "all") {
+      result = result.filter((c) => {
+        const years = c.experience_years;
+        switch (experienceFilter) {
+          case "0-3":
+            return years >= 0 && years <= 3;
+          case "3-5":
+            return years > 3 && years <= 5;
+          case "5-10":
+            return years > 5 && years <= 10;
+          case "10+":
+            return years > 10;
+          default:
+            return true;
+        }
+      });
+    }
+
+    // Apply availability filter
+    if (availabilityFilter !== "all") {
+      result = result.filter((c) => {
+        const avail = c.availability.toLowerCase();
+        switch (availabilityFilter) {
+          case "immediate":
+            return avail.includes("immediate");
+          case "soon":
+            return avail.includes("immediate") || avail.includes("soon") || avail.includes("within");
+          default:
+            return true;
+        }
+      });
+    }
+
+    // Apply language filter
+    if (languageFilter !== "all") {
+      result = result.filter((c) => c.languages.includes(languageFilter));
+    }
+
+    // Apply sorting
+    result.sort((a, b) => {
+      switch (sortBy) {
+        case "match_score":
+          return b.match_score - a.match_score;
+        case "experience_years":
+          return b.experience_years - a.experience_years;
+        case "experience_years_asc":
+          return a.experience_years - b.experience_years;
+        default:
+          return b.match_score - a.match_score;
+      }
+    });
+
+    return result;
+  }, [candidates, sortBy, experienceFilter, availabilityFilter, languageFilter]);
+
+  // Check if any filters are active
+  const hasActiveFilters = experienceFilter !== "all" || availabilityFilter !== "all" || languageFilter !== "all";
+
+  // Reset all filters
+  const resetFilters = () => {
+    setExperienceFilter("all");
+    setAvailabilityFilter("all");
+    setLanguageFilter("all");
+    setSortBy("match_score");
+  };
+
+  // Email capture state
+  const [showEmailCapture, setShowEmailCapture] = useState(false);
+  const [email, setEmail] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
+  // Auto-search if URL has params
+  useEffect(() => {
+    if (searchParams.get("role")) {
+      handleSearch();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handleSearch = async () => {
+    if (!formData.role) {
+      setError("Please select a role");
+      return;
+    }
+
+    setError(null);
+    setIsLoading(true);
+    setHasSearched(true);
+    setShowFilters(false);
+
+    // Update URL with search params
+    const params = new URLSearchParams();
+    if (formData.role) params.set("role", formData.role);
+    if (formData.location) params.set("location", formData.location);
+    if (formData.timeline) params.set("timeline", formData.timeline);
+    if (formData.requirements) params.set("requirements", formData.requirements);
+    router.replace(`/match?${params.toString()}`, { scroll: false });
+
+    try {
+      const response = await fetch("/api/public/brief-match/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Search failed");
+      }
+
+      const data = await response.json();
+      setCandidates(data.candidates || []);
+    } catch (err) {
+      console.error("Brief match error:", err);
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEmailSubmit = async () => {
+    if (!email || !email.includes("@")) {
+      setError("Please enter a valid email");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/inquiries/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "brief_match",
+          email,
+          brief: formData,
+          matched_count: candidates.length,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Submission failed");
+      }
+
+      setSubmitted(true);
+    } catch (err) {
+      console.error("Email submit error:", err);
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const getRoleLabel = (value: string) => {
+    return STAFF_ROLES.find((r) => r.value === value)?.label || value;
+  };
+
+  // Determine if current search is for yacht crew
+  const isYachtCrewSearch = YACHT_CREW_ROLES.has(formData.role);
+  const contextLabel = isYachtCrewSearch ? "Yacht" : "Household";
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <PublicHeader />
+
+      {/* Hero Section */}
+      <section className="relative bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 pt-24 pb-12">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-gold-500/10 via-transparent to-transparent" />
+        <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+          <div className="max-w-3xl mx-auto text-center">
+            <div className="inline-flex items-center gap-2 rounded-full bg-gold-500/20 px-4 py-2 text-sm font-medium text-gold-400 mb-6">
+              <Sparkles className="h-4 w-4" />
+              AI-Powered Candidate Matching
+            </div>
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              Find Your Perfect
+              <span className="text-gold-400"> Crew & Staff</span>
+            </h1>
+            <p className="text-xl text-gray-300">
+              Our AI instantly matches your requirements against 44,000+ vetted yacht crew and private staff professionals
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Main Content */}
+      <section className="py-12">
+        <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            {/* Sidebar - Search Filters */}
+            <div className="lg:col-span-4">
+              <div className={`lg:sticky lg:top-28 ${showFilters ? "" : "hidden lg:block"}`}>
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
+                  <div className="bg-gradient-to-r from-navy-900 to-navy-800 px-5 py-4">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                        <Filter className="h-5 w-5 text-gold-400" />
+                        Search Criteria
+                      </h2>
+                      {hasSearched && (
+                        <button
+                          onClick={() => setShowFilters(!showFilters)}
+                          className="lg:hidden text-gray-300 hover:text-white text-sm"
+                        >
+                          {showFilters ? "Hide" : "Show"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="p-5 space-y-5">
+                    {/* Role Selection */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Role *
+                      </label>
+                      <select
+                        value={formData.role}
+                        onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                        className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 transition-colors text-sm"
+                      >
+                        <option value="">Select a role...</option>
+                        {STAFF_ROLES.map((role) => (
+                          <option key={role.value} value={role.value}>
+                            {role.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Location */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Location
+                      </label>
+                      <div className="relative">
+                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <input
+                          type="text"
+                          value={formData.location}
+                          onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                          placeholder="e.g., London, Monaco..."
+                          className="w-full rounded-lg border border-gray-300 pl-10 pr-4 py-3 text-gray-900 focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 transition-colors text-sm"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Timeline */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Timeline
+                      </label>
+                      <select
+                        value={formData.timeline}
+                        onChange={(e) => setFormData({ ...formData, timeline: e.target.value })}
+                        className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 transition-colors text-sm"
+                      >
+                        <option value="">Any timeline</option>
+                        {TIMELINE_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Requirements */}
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                        Special Requirements
+                      </label>
+                      <textarea
+                        value={formData.requirements}
+                        onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
+                        placeholder="e.g., Must speak French, Buckingham Palace trained..."
+                        rows={3}
+                        className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 transition-colors resize-none text-sm"
+                      />
+                    </div>
+
+                    {error && !hasSearched && (
+                      <p className="text-sm text-red-600">{error}</p>
+                    )}
+
+                    <Button
+                      onClick={handleSearch}
+                      className="w-full"
+                      size="lg"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                          Searching...
+                        </>
+                      ) : hasSearched ? (
+                        <>
+                          <RefreshCw className="mr-2 h-5 w-5" />
+                          Update Search
+                        </>
+                      ) : (
+                        <>
+                          <Search className="mr-2 h-5 w-5" />
+                          Find Candidates
+                        </>
+                      )}
+                    </Button>
+
+                    <p className="text-center text-xs text-gray-500">
+                      Results are anonymized. No commitment required.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Quick Help Card */}
+                {hasSearched && (
+                  <div className="mt-6 bg-gradient-to-br from-navy-900 to-navy-800 rounded-2xl p-5 text-white">
+                    <h3 className="font-semibold mb-2 flex items-center gap-2">
+                      <Phone className="h-4 w-4 text-gold-400" />
+                      Need Help?
+                    </h3>
+                    <p className="text-sm text-gray-300 mb-3">
+                      Speak directly with a recruitment consultant
+                    </p>
+                    <a
+                      href="tel:+33451088780"
+                      className="inline-flex items-center gap-2 text-gold-400 hover:text-gold-300 font-medium text-sm"
+                    >
+                      +33 451 088 780
+                      <ArrowRight className="h-4 w-4" />
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Main Results Area */}
+            <div className="lg:col-span-8">
+              {/* Mobile Filter Toggle */}
+              {hasSearched && !showFilters && (
+                <button
+                  onClick={() => setShowFilters(true)}
+                  className="lg:hidden mb-4 flex items-center gap-2 text-sm font-medium text-navy-600 hover:text-navy-700"
+                >
+                  <Filter className="h-4 w-4" />
+                  Edit Search Criteria
+                </button>
+              )}
+
+              {/* Loading State */}
+              {isLoading && (
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-16 text-center">
+                  <div className="relative mx-auto mb-6 h-20 w-20">
+                    <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
+                    <div className="absolute inset-0 animate-spin rounded-full border-4 border-transparent border-t-gold-500"></div>
+                    <Sparkles className="absolute inset-0 m-auto h-8 w-8 text-gold-500" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    Searching our candidate database...
+                  </h3>
+                  <p className="text-gray-600">
+                    Our AI is matching your requirements against 44,000+ professionals
+                  </p>
+                </div>
+              )}
+
+              {/* Initial State - No Search Yet */}
+              {!hasSearched && !isLoading && (
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 lg:p-12 flex flex-col items-center justify-center min-h-[400px]">
+                  <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-gold-100">
+                    <Search className="h-8 w-8 text-gold-600" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2 text-center">
+                    Start Your Search
+                  </h3>
+                  <p className="text-gray-600 max-w-md mx-auto mb-6 text-center">
+                    Select a role and enter your requirements to instantly see matching candidates
+                    from our database of 44,000+ vetted professionals.
+                  </p>
+                  <div className="flex flex-wrap justify-center gap-3">
+                    {STAFF_ROLES.slice(0, 6).map((role) => (
+                      <button
+                        key={role.value}
+                        onClick={() => {
+                          setFormData({ ...formData, role: role.value });
+                        }}
+                        className="rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gold-100 hover:text-gold-700 transition-colors"
+                      >
+                        {role.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Results */}
+              {hasSearched && !isLoading && (
+                <>
+                  {/* Results Header */}
+                  <div className="mb-6">
+                    <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
+                      <div>
+                        <h2 className="text-2xl font-bold text-gray-900">
+                          {candidates.length > 0 ? (
+                            <>
+                              {filteredAndSortedCandidates.length === candidates.length ? (
+                                <>{candidates.length} Matching{" "}</>
+                              ) : (
+                                <>{filteredAndSortedCandidates.length} of {candidates.length}{" "}</>
+                              )}
+                              <span className="text-gold-600">{getRoleLabel(formData.role)}</span>{" "}
+                              Candidates
+                            </>
+                          ) : (
+                            "No Exact Matches Found"
+                          )}
+                        </h2>
+                        <p className="text-gray-600 mt-1">
+                          {candidates.length > 0
+                            ? "Preview of candidates matching your requirements"
+                            : "Our team can help find the perfect candidate for your needs"}
+                        </p>
+                      </div>
+                      {candidates.length > 0 && (
+                        <div className="flex items-center gap-2 bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-medium">
+                          <Sparkles className="h-4 w-4" />
+                          AI Matched
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Filter & Sort Controls */}
+                    {candidates.length > 0 && (
+                      <div className="bg-white rounded-xl border border-gray-200 p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <button
+                            onClick={() => setShowResultFilters(!showResultFilters)}
+                            className="flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-gray-900"
+                          >
+                            <Filter className="h-4 w-4" />
+                            Filter & Sort
+                            <ChevronDown className={`h-4 w-4 transition-transform ${showResultFilters ? "rotate-180" : ""}`} />
+                          </button>
+                          {hasActiveFilters && (
+                            <button
+                              onClick={resetFilters}
+                              className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+                            >
+                              <X className="h-4 w-4" />
+                              Clear filters
+                            </button>
+                          )}
+                        </div>
+
+                        {showResultFilters && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-3 border-t border-gray-100">
+                            {/* Sort By */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-500 mb-1">
+                                Sort By
+                              </label>
+                              <select
+                                value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value)}
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-gold-500 focus:ring-1 focus:ring-gold-500"
+                              >
+                                {SORT_OPTIONS.map((option) => (
+                                  <option key={option.value} value={option.value}>
+                                    {option.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            {/* Experience Filter */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-500 mb-1">
+                                Experience
+                              </label>
+                              <select
+                                value={experienceFilter}
+                                onChange={(e) => setExperienceFilter(e.target.value)}
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-gold-500 focus:ring-1 focus:ring-gold-500"
+                              >
+                                {EXPERIENCE_FILTERS.map((option) => (
+                                  <option key={option.value} value={option.value}>
+                                    {option.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            {/* Availability Filter */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-500 mb-1">
+                                Availability
+                              </label>
+                              <select
+                                value={availabilityFilter}
+                                onChange={(e) => setAvailabilityFilter(e.target.value)}
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-gold-500 focus:ring-1 focus:ring-gold-500"
+                              >
+                                {AVAILABILITY_FILTERS.map((option) => (
+                                  <option key={option.value} value={option.value}>
+                                    {option.label}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            {/* Language Filter */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-500 mb-1">
+                                Language
+                              </label>
+                              <select
+                                value={languageFilter}
+                                onChange={(e) => setLanguageFilter(e.target.value)}
+                                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-gold-500 focus:ring-1 focus:ring-gold-500"
+                              >
+                                <option value="all">Any Language</option>
+                                {availableLanguages.map((lang) => (
+                                  <option key={lang} value={lang}>
+                                    {lang}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Active Filters Display */}
+                        {hasActiveFilters && !showResultFilters && (
+                          <div className="flex flex-wrap gap-2 pt-2">
+                            {experienceFilter !== "all" && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-gold-100 px-3 py-1 text-xs font-medium text-gold-700">
+                                {EXPERIENCE_FILTERS.find((f) => f.value === experienceFilter)?.label}
+                                <button onClick={() => setExperienceFilter("all")} className="hover:text-gold-900">
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </span>
+                            )}
+                            {availabilityFilter !== "all" && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-gold-100 px-3 py-1 text-xs font-medium text-gold-700">
+                                {AVAILABILITY_FILTERS.find((f) => f.value === availabilityFilter)?.label}
+                                <button onClick={() => setAvailabilityFilter("all")} className="hover:text-gold-900">
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </span>
+                            )}
+                            {languageFilter !== "all" && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-gold-100 px-3 py-1 text-xs font-medium text-gold-700">
+                                {languageFilter}
+                                <button onClick={() => setLanguageFilter("all")} className="hover:text-gold-900">
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {filteredAndSortedCandidates.length > 0 ? (
+                    <>
+                      {/* Candidate Cards */}
+                      <div className="space-y-8">
+                        {filteredAndSortedCandidates.map((candidate, index) => (
+                          <div
+                            key={candidate.id}
+                            className="group relative rounded-2xl border border-gray-200 bg-white shadow-lg hover:shadow-xl hover:border-gold-200 transition-all duration-300 overflow-hidden"
+                          >
+                            {/* Top Banner with Match Score */}
+                            <div className="bg-gradient-to-r from-navy-900 via-navy-800 to-navy-900 px-4 sm:px-8 py-5">
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                                <div className="flex items-center gap-4 sm:gap-5">
+                                  {/* Blurred Avatar or Fallback */}
+                                  <div className="relative flex-shrink-0">
+                                    {candidate.avatar_url ? (
+                                      <div className="relative h-20 w-20 rounded-xl overflow-hidden ring-2 ring-white/20">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                          src={candidate.avatar_url}
+                                          alt=""
+                                          className="h-full w-full object-cover blur-[6px] scale-110"
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-br from-navy-800/30 to-navy-900/40" />
+                                      </div>
+                                    ) : (
+                                      <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-gradient-to-br from-gold-400 to-gold-600 text-white text-3xl font-bold ring-2 ring-white/20">
+                                        {candidate.display_name?.charAt(0) || String.fromCharCode(65 + index)}
+                                      </div>
+                                    )}
+                                    {/* Verified Badge */}
+                                    <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-green-500 ring-2 ring-white">
+                                      <Shield className="h-4 w-4 text-white" />
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <h3 className="font-bold text-white text-2xl">
+                                      {candidate.display_name || `Candidate ${String.fromCharCode(65 + index)}`}
+                                    </h3>
+                                    <p className="text-gold-400 font-semibold text-lg">
+                                      {candidate.position}
+                                    </p>
+                                  </div>
+                                </div>
+                                {/* Match Score */}
+                                <div className="text-right">
+                                  <div className="flex items-center gap-2 justify-end mb-1">
+                                    <Star className="h-6 w-6 text-gold-400 fill-gold-400" />
+                                    <span className="text-4xl font-bold text-white">
+                                      {Math.round(candidate.match_score * 100)}%
+                                    </span>
+                                  </div>
+                                  <p className="text-sm text-gray-400 uppercase tracking-wider">Match Score</p>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Key Metrics Bar */}
+                            <div className="bg-gray-50 border-b border-gray-100 px-4 sm:px-8 py-4">
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                                <div className="flex flex-wrap items-center gap-4 sm:gap-8">
+                                  <div className="flex items-center gap-2">
+                                    <Briefcase className="h-5 w-5 text-navy-600" />
+                                    <span className="font-bold text-navy-900">{candidate.experience_years}+ years</span>
+                                    <span className="text-gray-500">experience</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <Globe className="h-5 w-5 text-navy-600" />
+                                    <span className="text-gray-700">{candidate.nationality}</span>
+                                  </div>
+                                  {candidate.languages.length > 0 && (
+                                    <div className="flex items-center gap-2">
+                                      <Languages className="h-5 w-5 text-navy-600" />
+                                      <span className="text-gray-700">{candidate.languages.join(", ")}</span>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2 bg-gray-100 text-gray-600 px-4 py-2 rounded-full font-medium" title="Availability should be verified directly">
+                                  <Calendar className="h-5 w-5" />
+                                  {candidate.availability}
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Main Content */}
+                            <div className="p-4 sm:p-8">
+                              {/* WHY THEY'RE THE RIGHT FIT - Primary Hook */}
+                              {candidate.why_good_fit && (
+                                <div className="mb-6 bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 rounded-xl p-6 border border-green-200">
+                                  <div className="flex items-center gap-2 text-sm font-bold text-green-800 mb-3">
+                                    <Target className="h-5 w-5" />
+                                    Why They&apos;re The Right Fit For Your {contextLabel}
+                                  </div>
+                                  <p className="text-green-900 leading-relaxed text-lg">
+                                    {candidate.why_good_fit}
+                                  </p>
+                                </div>
+                              )}
+
+                              {/* Professional Summary */}
+                              <div className="mb-6">
+                                <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                                  <FileCheck className="h-5 w-5 text-navy-600" />
+                                  Professional Summary
+                                </h4>
+                                <p className="text-gray-700 leading-relaxed text-lg">
+                                  {candidate.rich_bio}
+                                </p>
+                              </div>
+
+                              {/* Skills & Qualities Section */}
+                              <div className="space-y-6 mb-6">
+                                {/* Professional Qualities - Full Width */}
+                                {candidate.employee_qualities?.length > 0 && (
+                                  <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl border border-purple-200 p-5">
+                                    <h5 className="text-sm font-bold text-purple-900 uppercase tracking-wide mb-4 flex items-center gap-2">
+                                      <Heart className="h-5 w-5 text-purple-600" />
+                                      Professional Qualities
+                                    </h5>
+                                    <div className="flex flex-wrap gap-2">
+                                      {candidate.employee_qualities.slice(0, 8).map((quality, i) => (
+                                        <span
+                                          key={i}
+                                          className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-purple-700 border border-purple-200 shadow-sm"
+                                        >
+                                          <CheckCircle className="h-4 w-4 text-purple-500" />
+                                          {quality}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {/* Longevity & Stability Assessment */}
+                                {candidate.longevity_assessment && (
+                                  <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl border border-blue-200 p-5">
+                                    <h5 className="text-sm font-bold text-blue-900 uppercase tracking-wide mb-3 flex items-center gap-2">
+                                      <Calendar className="h-5 w-5 text-blue-600" />
+                                      Career Stability
+                                    </h5>
+                                    <p className="text-blue-800 leading-relaxed">
+                                      {candidate.longevity_assessment}
+                                    </p>
+                                  </div>
+                                )}
+
+                                {/* Qualifications & Core Competencies - Two Columns on larger screens */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                  {/* Qualifications & Certifications */}
+                                  {candidate.qualifications?.length > 0 && (
+                                    <div className="bg-gradient-to-br from-gold-50 to-amber-50 rounded-xl border border-gold-200 p-5">
+                                      <h5 className="text-sm font-bold text-gold-900 uppercase tracking-wide mb-4 flex items-center gap-2">
+                                        <GraduationCap className="h-5 w-5 text-gold-600" />
+                                        Qualifications & Training
+                                      </h5>
+                                      <div className="flex flex-wrap gap-2">
+                                        {candidate.qualifications.slice(0, 6).map((qual, i) => (
+                                          <span
+                                            key={i}
+                                            className="inline-flex items-center rounded-lg bg-white px-3 py-2 text-sm font-medium text-gold-800 border border-gold-300"
+                                          >
+                                            <Award className="h-4 w-4 mr-2 text-gold-600" />
+                                            {qual}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Key Strengths */}
+                                  {candidate.key_strengths?.length > 0 && (
+                                    <div className="bg-white rounded-xl border border-gray-200 p-5">
+                                      <h5 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4 flex items-center gap-2">
+                                        <Sparkles className="h-5 w-5 text-navy-600" />
+                                        Core Competencies
+                                      </h5>
+                                      <div className="flex flex-wrap gap-2">
+                                        {candidate.key_strengths.slice(0, 6).map((strength, i) => (
+                                          <span
+                                            key={i}
+                                            className="inline-flex items-center rounded-full bg-navy-100 px-4 py-2 text-sm font-medium text-navy-700"
+                                          >
+                                            {strength}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Career Highlights & Previous Employment - Two Columns */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                  {/* Career Highlights */}
+                                  {candidate.career_highlights?.length > 0 && (
+                                    <div className="bg-white rounded-xl border border-gray-200 p-5">
+                                      <h5 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4 flex items-center gap-2">
+                                        <Star className="h-5 w-5 text-gold-500" />
+                                        Career Achievements
+                                      </h5>
+                                      <ul className="space-y-3">
+                                        {candidate.career_highlights.slice(0, 5).map((highlight, i) => (
+                                          <li
+                                            key={i}
+                                            className="flex items-start gap-3 text-gray-700"
+                                          >
+                                            <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                                            <span>{highlight}</span>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+
+                                  {/* Work History */}
+                                  {candidate.work_history && candidate.work_history.length > 0 ? (
+                                    <div className="bg-white rounded-xl border border-gray-200 p-5">
+                                      <h5 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4 flex items-center gap-2">
+                                        <Briefcase className="h-5 w-5 text-navy-600" />
+                                        Work History
+                                      </h5>
+                                      <div className="space-y-3">
+                                        {candidate.work_history.slice(0, 5).map((job, i) => (
+                                          <div
+                                            key={i}
+                                            className="bg-gray-50 rounded-lg px-4 py-3 border-l-4 border-navy-500"
+                                          >
+                                            <div className="flex justify-between items-start gap-2">
+                                              <div className="font-semibold text-gray-900">{job.employer}</div>
+                                              {job.duration && (
+                                                <span className="text-xs font-medium text-navy-600 bg-navy-50 px-2 py-1 rounded whitespace-nowrap">
+                                                  {job.duration}
+                                                </span>
+                                              )}
+                                            </div>
+                                            <div className="text-sm text-gray-700 mt-1">{job.position}</div>
+                                            <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-gray-500">
+                                              {job.dates && <span>{job.dates}</span>}
+                                              {job.details && <span className="text-gray-400">•</span>}
+                                              {job.details && <span>{job.details}</span>}
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ) : candidate.notable_employers?.length > 0 && (
+                                    <div className="bg-white rounded-xl border border-gray-200 p-5">
+                                      <h5 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4 flex items-center gap-2">
+                                        <Building2 className="h-5 w-5 text-navy-600" />
+                                        Previous Employment
+                                      </h5>
+                                      <div className="space-y-2">
+                                        {candidate.notable_employers.slice(0, 5).map((employer, i) => (
+                                          <div
+                                            key={i}
+                                            className="flex items-center gap-3 text-gray-700 bg-gray-50 rounded-lg px-4 py-3"
+                                          >
+                                            <div className="h-2.5 w-2.5 rounded-full bg-navy-500" />
+                                            {employer}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Bottom Stats Bar */}
+                              <div className="bg-gray-50 rounded-xl border border-gray-200 p-5 mb-6">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+                                  <div>
+                                    <div className="text-3xl font-bold text-navy-900">{candidate.experience_years}+</div>
+                                    <div className="text-sm text-gray-500 uppercase tracking-wide">Years Experience</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-3xl font-bold text-navy-900">{candidate.languages.length}</div>
+                                    <div className="text-sm text-gray-500 uppercase tracking-wide">Languages</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-3xl font-bold text-navy-900">{candidate.qualifications?.length || 0}+</div>
+                                    <div className="text-sm text-gray-500 uppercase tracking-wide">Certifications</div>
+                                  </div>
+                                  <div>
+                                    <div className="flex items-center justify-center gap-2">
+                                      <Users className="h-6 w-6 text-green-600" />
+                                      <span className="text-3xl font-bold text-navy-900">✓</span>
+                                    </div>
+                                    <div className="text-sm text-gray-500 uppercase tracking-wide">References Available</div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* CTA Footer */}
+                              <div className="flex items-center justify-between pt-5 border-t border-gray-200">
+                                <p className="text-gray-500 italic">
+                                  Full CV, references, and contact details available upon request
+                                </p>
+                                <button
+                                  onClick={() => setShowEmailCapture(true)}
+                                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-gold-500 to-gold-600 text-white font-semibold rounded-xl hover:from-gold-600 hover:to-gold-700 transition-all shadow-lg hover:shadow-xl group"
+                                >
+                                  <span>Request Full Profile</span>
+                                  <ArrowRight className="h-5 w-5 group-hover:translate-x-0.5 transition-transform" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Bottom CTA */}
+                      <div className="mt-10 rounded-2xl bg-gradient-to-r from-navy-900 to-navy-800 p-8 text-center">
+                        <h3 className="text-2xl font-bold text-white mb-3">
+                          Ready to Connect With These Candidates?
+                        </h3>
+                        <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
+                          Enter your email and a dedicated consultant will send you detailed profiles
+                          with CVs, references, and contact options within 24 hours.
+                        </p>
+                        <Button
+                          onClick={() => setShowEmailCapture(true)}
+                          size="lg"
+                          className="min-w-[250px]"
+                        >
+                          Get Full Candidate Profiles
+                          <ArrowRight className="ml-2 h-5 w-5" />
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
+                    /* No Results */
+                    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-16 text-center">
+                      <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gray-100">
+                        <Search className="h-10 w-10 text-gray-400" />
+                      </div>
+                      <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                        No Exact Matches Found
+                      </h3>
+                      <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                        We couldn&apos;t find an exact match for your criteria, but our team specializes
+                        in finding exceptional candidates for unique requirements.
+                      </p>
+                      <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                        <Button onClick={() => setShowEmailCapture(true)}>
+                          Speak to a Consultant
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                        <Button variant="secondary" onClick={() => setShowFilters(true)}>
+                          <RefreshCw className="mr-2 h-4 w-4" />
+                          Adjust Criteria
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Email Capture Modal */}
+      {showEmailCapture && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
+            {!submitted ? (
+              <>
+                <div className="bg-gradient-to-r from-navy-900 to-navy-800 px-6 py-5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gold-500/20">
+                        <Mail className="h-5 w-5 text-gold-400" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-white">Get Full Profiles</h3>
+                        <p className="text-sm text-gray-300">We&apos;ll send detailed CVs within 24 hours</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setShowEmailCapture(false)}
+                      className="text-gray-400 hover:text-white transition-colors"
+                    >
+                      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="p-6 space-y-5">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Your email address *
+                    </label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="you@company.com"
+                        className="w-full rounded-lg border border-gray-300 pl-10 pr-4 py-3 text-gray-900 focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  {error && showEmailCapture && (
+                    <p className="text-sm text-red-600">{error}</p>
+                  )}
+
+                  <Button
+                    onClick={handleEmailSubmit}
+                    disabled={isSubmitting}
+                    className="w-full"
+                    size="lg"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        Send Me Full Profiles
+                        <ArrowRight className="ml-2 h-5 w-5" />
+                      </>
+                    )}
+                  </Button>
+
+                  <p className="text-center text-xs text-gray-500">
+                    No spam, ever. Your information is kept confidential.
+                  </p>
+
+                  <div className="pt-4 border-t border-gray-200 text-center">
+                    <p className="text-sm text-gray-600 mb-2">
+                      Prefer to speak directly?
+                    </p>
+                    <a
+                      href="tel:+33451088780"
+                      className="inline-flex items-center gap-2 text-gold-600 hover:text-gold-700 font-medium"
+                    >
+                      <Phone className="h-4 w-4" />
+                      +33 451 088 780
+                    </a>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="p-8 text-center">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+                  <CheckCircle className="h-8 w-8 text-green-600" />
+                </div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                  Thank You!
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  A consultant will review your requirements and send you detailed
+                  candidate profiles within 24 hours.
+                </p>
+                <Button onClick={() => setShowEmailCapture(false)} variant="secondary">
+                  Close
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <PublicFooter />
+    </div>
+  );
+}
+
+export default function MatchPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-gold-500" />
+        </div>
+      }
+    >
+      <MatchPageContent />
+    </Suspense>
+  );
+}

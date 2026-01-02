@@ -4,9 +4,47 @@
       "command": "npx",
       "args": [
         "-y",
-        "@executeautomation/playwright-mcp-server"
+        "@playwright/mcp@latest"
       ],
+      "alwaysAllow": [
+        "browser_navigate",
+        "browser_snapshot",
+        "browser_click",
+        "browser_type",
+        "browser_press_key",
+        "browser_take_screenshot",
+        "browser_close",
+        "browser_resize",
+        "browser_console_messages",
+        "browser_handle_dialog",
+        "browser_evaluate",
+        "browser_file_upload",
+        "browser_fill_form",
+        "browser_install",
+        "browser_navigate_back",
+        "browser_network_requests",
+        "browser_run_code",
+        "browser_select_option",
+        "browser_tabs",
+        "browser_wait_for",
+        "browser_drag",
+        "browser_hover"
+      ]
+    },
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@anthropic/mcp-server-context7"
+      ],
+      "env": {
+        "CONTEXT7_API_KEY": "ctx7sk-6694b879-506e-4aa1-bf72-ed06119458dc"
+      },
       "alwaysAllow": ["*"]
+    },
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=ozcuponldhepkdjmemvm&features=storage%2Cbranching%2Cfunctions%2Cdevelopment%2Cdebugging%2Cdatabase%2Caccount%2Cdocs"
     }
   }
 }

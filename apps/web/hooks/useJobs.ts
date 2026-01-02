@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { Job, PaginatedResponse } from "../../../../packages/database/types";
+import type { Job, PaginatedResponse } from "@lighthouse/database";
 
 export interface JobSearchParams {
   search?: string;

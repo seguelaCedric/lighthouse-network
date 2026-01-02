@@ -12,7 +12,7 @@ const sendMessageSchema = z.object({
   to: z.string().min(10, "Phone number is required"),
   body: z.string().optional(),
   template: z.string().optional(),
-  templateData: z.record(z.string()).optional(),
+  templateData: z.record(z.string(), z.string()).optional(),
 });
 
 // POST - Send a WhatsApp message
@@ -115,6 +115,6 @@ export async function sendToCandidateSchema() {
   return z.object({
     candidateId: z.string().uuid(),
     template: z.string(),
-    templateData: z.record(z.string()).optional(),
+    templateData: z.record(z.string(), z.string()).optional(),
   });
 }

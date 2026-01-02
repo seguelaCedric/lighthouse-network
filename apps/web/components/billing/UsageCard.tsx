@@ -109,21 +109,21 @@ export function UsageCard({
           icon={Users}
           label="Candidates"
           used={usage?.candidates?.used || 0}
-          limit={usage?.candidates?.limit}
+          limit={usage?.candidates?.limit ?? null}
           color="navy"
         />
         <UsageItem
           icon={Briefcase}
           label="Active Jobs"
           used={usage?.active_jobs?.used || 0}
-          limit={usage?.active_jobs?.limit}
+          limit={usage?.active_jobs?.limit ?? null}
           color="success"
         />
         <UsageItem
           icon={Users}
           label="Team Members"
           used={usage?.team_members?.used || 0}
-          limit={usage?.team_members?.limit}
+          limit={usage?.team_members?.limit ?? null}
           color="navy"
         />
 

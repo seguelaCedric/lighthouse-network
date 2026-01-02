@@ -80,10 +80,10 @@ export function ChangePlanModal({
 
   // Features comparison
   const addedFeatures = newPlan.features.filter(
-    (f: string) => !currentPlan?.features.includes(f)
+    (f) => !currentPlan?.features.includes(f)
   );
   const removedFeatures = currentPlan?.features.filter(
-    (f: string) => !newPlan.features.includes(f)
+    (f) => !newPlan.features.includes(f)
   ) || [];
 
   const featureNames: Record<string, string> = {

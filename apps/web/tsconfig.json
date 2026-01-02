@@ -19,7 +19,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@lighthouse/database": ["../../packages/database/types"]
     }
   },
   "include": [

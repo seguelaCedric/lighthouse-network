@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
         );
 
         // Add organization ID
-        candidateData.organization_id = userData.organization_id;
+        (candidateData as Record<string, unknown>).organization_id = userData.organization_id;
 
         // Check if candidate exists in our database
         const { data: existingCandidate } = await supabase

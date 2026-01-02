@@ -177,6 +177,36 @@ export class VincereClient {
   async delete<T = unknown>(endpoint: string): Promise<T> {
     return this.request<T>('DELETE', endpoint);
   }
+
+  /**
+   * GET request that returns raw binary data (for file downloads)
+   */
+  async getRaw(endpoint: string): Promise<ArrayBuffer> {
+    const token = await this.getToken();
+
+    const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
+
+    const headers: Record<string, string> = {
+      'id-token': token,
+      'x-api-key': this.config.apiKey,
+    };
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new VincereApiError(
+        `Vincere API error: ${response.status} ${response.statusText}`,
+        response.status,
+        errorText
+      );
+    }
+
+    return response.arrayBuffer();
+  }
 }
 
 /**

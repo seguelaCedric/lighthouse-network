@@ -1,11 +1,11 @@
 import { cn } from "@/lib/utils";
-import { forwardRef } from "react";
+import { forwardRef, type ElementType } from "react";
 
 // Typography component props
 interface TypographyProps {
   children: React.ReactNode;
   className?: string;
-  as?: keyof JSX.IntrinsicElements;
+  as?: ElementType;
 }
 
 // =====================================================
@@ -503,7 +503,7 @@ const variantStyles: Record<TypographyVariant, string> = {
   "code": "font-mono text-[14px] font-normal leading-[22px] text-navy-700",
 };
 
-const variantElements: Record<TypographyVariant, keyof JSX.IntrinsicElements> = {
+const variantElements: Record<TypographyVariant, ElementType> = {
   "display-hero": "h1",
   "display-xl": "h1",
   "display-lg": "h2",

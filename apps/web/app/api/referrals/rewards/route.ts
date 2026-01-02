@@ -118,7 +118,7 @@ export async function GET(request: NextRequest) {
 
     // Format rewards with readable descriptions
     const formatReward = (reward: (typeof rewards)[0]) => {
-      const referral = reward.referral as { referred: { first_name: string; last_name: string } | null } | null
+      const referral = reward.referral as unknown as { referred: { first_name: string; last_name: string } | null } | null
       const referredName = referral?.referred
         ? `${referral.referred.first_name} ${referral.referred.last_name?.charAt(0) || ''}.`
         : 'Unknown'

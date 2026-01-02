@@ -139,7 +139,7 @@ export default function CrewReferralsPage() {
       <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
           <p className="text-error-600">{error}</p>
-          <Button variant="outline" onClick={fetchData} className="mt-4">
+          <Button variant="secondary" onClick={fetchData} className="mt-4">
             <RefreshCw className="mr-2 size-4" />
             Retry
           </Button>
@@ -167,7 +167,7 @@ export default function CrewReferralsPage() {
         </div>
 
         <Button
-          variant="outline"
+          variant="secondary"
           size="sm"
           onClick={fetchData}
           className="hidden sm:flex"

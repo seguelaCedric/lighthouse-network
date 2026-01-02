@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { Candidate, PaginatedResponse } from "../../../../packages/database/types";
+import type { Candidate, PaginatedResponse } from "@lighthouse/database";
 
 export interface CandidateSearchParams {
   search?: string;
@@ -12,11 +12,21 @@ export interface CandidateSearchParams {
   limit?: number;
   sortBy?: string;
   sortOrder?: "asc" | "desc";
+  // AI/Semantic search options
+  semantic?: boolean; // Enable AI-powered semantic search (default: true)
+  threshold?: number; // Similarity threshold for vector search (0-1, default: 0.3)
+}
+
+// Extended response type that includes hybrid search metadata
+export interface CandidateSearchResponse extends PaginatedResponse<Candidate> {
+  searchType?: "hybrid" | "keyword";
+  vectorMatches?: number;
+  keywordMatches?: number;
 }
 
 async function fetchCandidates(
   params: CandidateSearchParams
-): Promise<PaginatedResponse<Candidate>> {
+): Promise<CandidateSearchResponse> {
   const searchParams = new URLSearchParams();
 
   if (params.search) searchParams.set("search", params.search);
@@ -30,6 +40,11 @@ async function fetchCandidates(
   if (params.limit) searchParams.set("limit", String(params.limit));
   if (params.sortBy) searchParams.set("sortBy", params.sortBy);
   if (params.sortOrder) searchParams.set("sortOrder", params.sortOrder);
+  // AI search options - semantic search is enabled by default on the API
+  if (params.semantic !== undefined)
+    searchParams.set("semantic", String(params.semantic));
+  if (params.threshold !== undefined)
+    searchParams.set("threshold", String(params.threshold));
 
   const response = await fetch(`/api/candidates?${searchParams.toString()}`);
 

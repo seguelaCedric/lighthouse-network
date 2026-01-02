@@ -236,7 +236,13 @@ export function MobileHeader({
 
             {/* Logout */}
             <div className="border-t border-gray-100 p-4">
-              <button className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-burgundy-600 hover:bg-burgundy-50">
+              <button
+                onClick={async () => {
+                  const { signOut } = await import("@/lib/auth/actions");
+                  await signOut();
+                }}
+                className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-burgundy-600 hover:bg-burgundy-50"
+              >
                 <LogOut className="size-5" />
                 Sign Out
               </button>

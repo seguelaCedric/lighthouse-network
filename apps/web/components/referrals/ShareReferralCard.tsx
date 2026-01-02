@@ -82,7 +82,7 @@ export function ShareReferralCard({
           <p className="truncate font-mono text-sm text-navy-900">{link}</p>
         </div>
         <Button
-          variant={copied ? "primary" : "outline"}
+          variant={copied ? "primary" : "secondary"}
           size="sm"
           onClick={handleCopy}
           className="shrink-0"
@@ -178,7 +178,7 @@ export function ShareReferralCard({
             </p>
 
             <div className="mt-4 flex justify-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => setShowQR(false)}>
+              <Button variant="secondary" size="sm" onClick={() => setShowQR(false)}>
                 Close
               </Button>
               <Button

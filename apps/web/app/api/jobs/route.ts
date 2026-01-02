@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { jobQuerySchema, createJobSchema } from "@/lib/validations/job";
-import type { Job, PaginatedResponse } from "../../../../../packages/database/types";
+import type { Job, PaginatedResponse } from "@lighthouse/database";
 
 export async function GET(request: NextRequest) {
   try {

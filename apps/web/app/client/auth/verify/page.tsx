@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -16,7 +16,7 @@ import { verifyMagicLink } from "@/lib/auth/client-actions";
 
 type VerifyState = "loading" | "success" | "error";
 
-export default function ClientVerifyPage() {
+function ClientVerifyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [state, setState] = useState<VerifyState>("loading");
@@ -153,5 +153,24 @@ export default function ClientVerifyPage() {
         )}
       </div>
     </div>
+  );
+}
+
+function VerifyLoadingSkeleton() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900">
+      <div className="text-center">
+        <Loader2 className="mx-auto size-10 animate-spin text-gold-500" />
+        <p className="mt-3 text-gray-400">Loading...</p>
+      </div>
+    </div>
+  );
+}
+
+export default function ClientVerifyPage() {
+  return (
+    <Suspense fallback={<VerifyLoadingSkeleton />}>
+      <ClientVerifyContent />
+    </Suspense>
   );
 }

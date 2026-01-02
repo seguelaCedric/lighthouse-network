@@ -317,7 +317,7 @@ export function PayoutRequestModal({
           <div className="flex gap-3">
             <Button
               type="button"
-              variant="outline"
+              variant="secondary"
               onClick={onClose}
               className="flex-1"
             >

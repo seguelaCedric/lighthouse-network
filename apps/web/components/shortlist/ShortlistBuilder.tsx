@@ -146,7 +146,7 @@ function DraggableCandidate({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h4 className="font-semibold text-navy-900 truncate">{candidate.name}</h4>
-            <AvailabilityBadge status={candidate.availability} size="sm" />
+            <AvailabilityBadge status={candidate.availability} className="text-xs" />
           </div>
           <p className="text-sm text-gray-600">{candidate.position}</p>
           <div className="mt-1 flex items-center gap-3 text-xs text-gray-500">

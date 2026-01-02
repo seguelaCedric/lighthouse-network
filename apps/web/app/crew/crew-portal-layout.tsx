@@ -21,8 +21,7 @@ import {
   Gift,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { signOutCandidate } from "@/lib/auth/candidate-actions";
 
 export interface CrewUser {
   id: string;
@@ -49,7 +48,6 @@ const navItems = [
 
 export function CrewPortalLayout({ children, user }: CrewPortalLayoutProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
@@ -58,9 +56,7 @@ export function CrewPortalLayout({ children, user }: CrewPortalLayoutProps) {
     user.availabilityStatus === "actively_looking";
 
   const handleSignOut = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/");
+    await signOutCandidate();
   };
 
   return (

@@ -237,7 +237,7 @@ export function PhoneNoteModal({
                 </span>
                 <Button
                   size="sm"
-                  variant={timerRunning ? "outline" : "primary"}
+                  variant={timerRunning ? "secondary" : "primary"}
                   onClick={() => setTimerRunning(!timerRunning)}
                 >
                   {timerRunning ? "Stop" : "Start"}
@@ -378,7 +378,7 @@ export function PhoneNoteModal({
 
         {/* Actions */}
         <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose}>
             Cancel
           </Button>
           <Button

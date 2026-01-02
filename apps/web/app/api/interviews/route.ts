@@ -99,9 +99,9 @@ export async function GET(request: NextRequest) {
 
     // Transform data
     const transformedInterviews = (interviews || []).map((interview) => {
-      const job = interview.jobs as Record<string, unknown> | null;
-      const candidate = interview.candidates as Record<string, unknown> | null;
-      const client = interview.clients as Record<string, unknown> | null;
+      const job = interview.jobs as unknown as Record<string, unknown> | null;
+      const candidate = interview.candidates as unknown as Record<string, unknown> | null;
+      const client = interview.clients as unknown as Record<string, unknown> | null;
 
       return {
         id: interview.id,

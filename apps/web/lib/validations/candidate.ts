@@ -54,9 +54,13 @@ export const candidateQuerySchema = z.object({
       "last_name",
       "years_experience",
       "verification_tier",
+      "similarity", // For AI search results
     ])
     .default("created_at"),
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
+  // AI/Semantic search options
+  semantic: z.coerce.boolean().default(true), // Enable AI-powered semantic search by default
+  threshold: z.coerce.number().min(0).max(1).default(0.3), // Similarity threshold for vector search
 });
 
 export type CandidateQuery = z.infer<typeof candidateQuerySchema>;

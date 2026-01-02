@@ -30,6 +30,8 @@ export type VerificationEventType =
   | 'tier_changed'
   | 'email_verified'
   | 'cv_uploaded'
+  | 'cv_approved'
+  | 'cv_rejected'
   | 'id_uploaded'
   | 'id_verified'
   | 'reference_added'
@@ -216,6 +218,7 @@ export interface Candidate extends BaseEntity {
   phone: string | null;
   whatsapp: string | null;
   photo_url: string | null;
+  avatar_url: string | null;  // Profile photo from Vincere sync
 
   // Demographics
   date_of_birth: string | null;
@@ -297,6 +300,8 @@ export interface Candidate extends BaseEntity {
 
   // CV tracking
   cv_url: string | null;                   // NEW
+  cv_status: 'not_uploaded' | 'pending' | 'approved' | 'rejected';  // NEW
+  cv_document_id: string | null;           // NEW
 
   // ID verification
   id_verified_at: string | null;           // NEW
@@ -312,6 +317,11 @@ export interface Candidate extends BaseEntity {
   profile_summary: string | null;
   ai_summary: string | null;
   search_keywords: string[] | null;
+
+  // Generated Bio (5-paragraph candidate brief)
+  bio_full: string | null;
+  bio_generated_at: string | null;
+  bio_generation_version: number | null;
 
   // Source
   source: string | null;
@@ -1035,7 +1045,7 @@ export type RewardType = 'signup_bonus' | 'application_bonus' | 'placement_bonus
 
 export type RewardTrigger = 'signup' | 'application' | 'placement';
 
-export type PaymentMethod = 'bank_transfer' | 'paypal' | 'revolut' | 'wise' | 'credit';
+export type PayoutMethod = 'bank_transfer' | 'paypal' | 'revolut' | 'wise' | 'credit';
 
 export interface Referral extends BaseEntity {
   // Who referred
@@ -1102,7 +1112,7 @@ export interface ReferralReward extends Omit<BaseEntity, 'updated_at'> {
   approved_at: string | null;
   approved_by: string | null;
   paid_at: string | null;
-  payment_method: PaymentMethod | null;
+  payout_method: PayoutMethod | null;
   payment_reference: string | null;
 
   // Meta
@@ -1110,7 +1120,7 @@ export interface ReferralReward extends Omit<BaseEntity, 'updated_at'> {
 }
 
 export type ReferralRewardInsert = Omit<ReferralReward, 'id' | 'created_at'>;
-export type ReferralRewardUpdate = Partial<Pick<ReferralReward, 'status' | 'approved_at' | 'approved_by' | 'paid_at' | 'payment_method' | 'payment_reference' | 'notes'>>;
+export type ReferralRewardUpdate = Partial<Pick<ReferralReward, 'status' | 'approved_at' | 'approved_by' | 'paid_at' | 'payout_method' | 'payment_reference' | 'notes'>>;
 
 export interface ReferralSettings {
   id: string;
@@ -1404,4 +1414,249 @@ export interface BillingOverview {
   recent_invoices: Invoice[];
   pending_placement_fees: PlacementFee[];
   total_pending_fees: number; // in cents
+}
+
+// =============================================================================
+// Employer Portal Types
+// =============================================================================
+
+// Employer account tier
+export type EmployerAccountTier = "basic" | "verified" | "premium";
+
+// Employer vetting status
+export type EmployerVettingStatus = "pending" | "scheduled" | "completed" | "rejected";
+
+// Employer hiring type
+export type EmployerHiringFor = "yacht" | "household" | "both";
+
+// Employer account
+export interface EmployerAccount {
+  id: string;
+  email: string;
+  contact_name: string;
+  phone: string | null;
+  company_name: string | null;
+  // What they're hiring for
+  hiring_for: EmployerHiringFor | null;
+  vessel_name: string | null;
+  vessel_type: string | null;
+  vessel_size_meters: number | null;
+  property_type: string | null;
+  property_location: string | null;
+  positions_needed: string[] | null;
+  timeline: string | null;
+  // Access control
+  tier: EmployerAccountTier;
+  vetting_status: EmployerVettingStatus;
+  vetted_at: string | null;
+  vetted_by: string | null;
+  // Magic link auth
+  magic_token: string | null;
+  magic_token_expires_at: string | null;
+  last_login_at: string | null;
+  // Assignment
+  assigned_agency_id: string | null;
+  assigned_recruiter_id: string | null;
+  // Tracking
+  source_url: string | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+  utm_campaign: string | null;
+  // Timestamps
+  created_at: string;
+  updated_at: string;
+}
+
+// Employer account for insert
+export interface EmployerAccountInsert {
+  email: string;
+  contact_name: string;
+  phone?: string | null;
+  company_name?: string | null;
+  hiring_for?: EmployerHiringFor | null;
+  vessel_name?: string | null;
+  vessel_type?: string | null;
+  vessel_size_meters?: number | null;
+  property_type?: string | null;
+  property_location?: string | null;
+  positions_needed?: string[] | null;
+  timeline?: string | null;
+  tier?: EmployerAccountTier;
+  vetting_status?: EmployerVettingStatus;
+  source_url?: string | null;
+  utm_source?: string | null;
+  utm_medium?: string | null;
+  utm_campaign?: string | null;
+}
+
+// Employer account for update
+export interface EmployerAccountUpdate {
+  contact_name?: string;
+  phone?: string | null;
+  company_name?: string | null;
+  hiring_for?: EmployerHiringFor | null;
+  vessel_name?: string | null;
+  vessel_type?: string | null;
+  vessel_size_meters?: number | null;
+  property_type?: string | null;
+  property_location?: string | null;
+  positions_needed?: string[] | null;
+  timeline?: string | null;
+  tier?: EmployerAccountTier;
+  vetting_status?: EmployerVettingStatus;
+  vetted_at?: string | null;
+  vetted_by?: string | null;
+  magic_token?: string | null;
+  magic_token_expires_at?: string | null;
+  last_login_at?: string | null;
+  assigned_agency_id?: string | null;
+  assigned_recruiter_id?: string | null;
+}
+
+// Employer session
+export interface EmployerSession {
+  id: string;
+  employer_id: string;
+  session_token: string;
+  expires_at: string;
+  created_at: string;
+  user_agent: string | null;
+  ip_address: string | null;
+}
+
+// Employer session with account data (returned from validate_employer_session)
+export interface EmployerSessionWithAccount {
+  employer_id: string;
+  email: string;
+  contact_name: string;
+  company_name: string | null;
+  tier: EmployerAccountTier;
+  vetting_status: EmployerVettingStatus;
+}
+
+// =============================================================================
+// Employer Briefs Types
+// =============================================================================
+
+// Brief status
+export type EmployerBriefStatus =
+  | "draft"
+  | "submitted"
+  | "reviewing"
+  | "matching"
+  | "shortlisted"
+  | "closed";
+
+// Brief candidate status (employer's decision)
+export type EmployerBriefCandidateStatus =
+  | "pending"
+  | "interested"
+  | "not_interested"
+  | "interview_requested";
+
+// Employer brief
+export interface EmployerBrief {
+  id: string;
+  employer_id: string;
+  title: string;
+  hiring_for: EmployerHiringFor;
+  // Vessel details
+  vessel_name: string | null;
+  vessel_type: string | null;
+  vessel_size_meters: number | null;
+  // Property details
+  property_type: string | null;
+  property_location: string | null;
+  // Position requirements
+  positions_needed: string[];
+  experience_years_min: number | null;
+  certifications_required: string[] | null;
+  languages_required: string[] | null;
+  additional_requirements: string | null;
+  // Timeline and contract
+  timeline: string | null;
+  contract_type: string | null;
+  start_date: string | null;
+  // Status and tracking
+  status: EmployerBriefStatus;
+  candidates_matched: number;
+  // Internal notes
+  notes: string | null;
+  // Assignment
+  assigned_recruiter_id: string | null;
+  // Timestamps
+  created_at: string;
+  updated_at: string;
+}
+
+// Employer brief for insert
+export interface EmployerBriefInsert {
+  employer_id: string;
+  title: string;
+  hiring_for: EmployerHiringFor;
+  vessel_name?: string | null;
+  vessel_type?: string | null;
+  vessel_size_meters?: number | null;
+  property_type?: string | null;
+  property_location?: string | null;
+  positions_needed: string[];
+  experience_years_min?: number | null;
+  certifications_required?: string[] | null;
+  languages_required?: string[] | null;
+  additional_requirements?: string | null;
+  timeline?: string | null;
+  contract_type?: string | null;
+  start_date?: string | null;
+  status?: EmployerBriefStatus;
+  notes?: string | null;
+  assigned_recruiter_id?: string | null;
+}
+
+// Employer brief for update
+export interface EmployerBriefUpdate {
+  title?: string;
+  hiring_for?: EmployerHiringFor;
+  vessel_name?: string | null;
+  vessel_type?: string | null;
+  vessel_size_meters?: number | null;
+  property_type?: string | null;
+  property_location?: string | null;
+  positions_needed?: string[];
+  experience_years_min?: number | null;
+  certifications_required?: string[] | null;
+  languages_required?: string[] | null;
+  additional_requirements?: string | null;
+  timeline?: string | null;
+  contract_type?: string | null;
+  start_date?: string | null;
+  status?: EmployerBriefStatus;
+  candidates_matched?: number;
+  notes?: string | null;
+  assigned_recruiter_id?: string | null;
+}
+
+// Employer brief candidate (shortlist entry)
+export interface EmployerBriefCandidate {
+  id: string;
+  brief_id: string;
+  candidate_id: string;
+  match_score: number | null;
+  match_reasons: string[] | null;
+  employer_status: EmployerBriefCandidateStatus;
+  employer_notes: string | null;
+  employer_feedback_at: string | null;
+  internal_notes: string | null;
+  added_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Brief with related data
+export interface EmployerBriefWithCandidates extends EmployerBrief {
+  candidates?: EmployerBriefCandidate[];
+}
+
+// Brief candidate with candidate details
+export interface EmployerBriefCandidateWithDetails extends EmployerBriefCandidate {
+  candidate?: Candidate;
 }

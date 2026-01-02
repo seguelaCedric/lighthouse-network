@@ -219,15 +219,89 @@ export const POSITION_MAPPING: Record<string, { standard: string; category: stri
   'crew chef': { standard: 'Crew Chef', category: 'galley' },
   'cook': { standard: 'Cook', category: 'galley' },
 
-  // Other
+  // Childcare
   'nanny': { standard: 'Nanny', category: 'childcare' },
   'governess': { standard: 'Governess', category: 'childcare' },
+  'au pair': { standard: 'Au Pair', category: 'childcare' },
+  'tutor': { standard: 'Tutor', category: 'childcare' },
+
+  // Medical
   'nurse': { standard: 'Nurse', category: 'medical' },
   'medic': { standard: 'Medic', category: 'medical' },
+  'paramedic': { standard: 'Paramedic', category: 'medical' },
+
+  // Security
   'security': { standard: 'Security Officer', category: 'security' },
+  'security officer': { standard: 'Security Officer', category: 'security' },
+  'close protection officer': { standard: 'CPO', category: 'security' },
+  'cpo': { standard: 'CPO', category: 'security' },
+  'bodyguard': { standard: 'CPO', category: 'security' },
+
+  // Management
   'yacht manager': { standard: 'Yacht Manager', category: 'management' },
-  'personal assistant': { standard: 'PA', category: 'other' },
-  'pa': { standard: 'PA', category: 'other' },
+  'personal assistant': { standard: 'PA', category: 'management' },
+  'pa': { standard: 'PA', category: 'management' },
+  'executive assistant': { standard: 'Executive Assistant', category: 'management' },
+  'ea': { standard: 'Executive Assistant', category: 'management' },
+  'chief of staff': { standard: 'Chief of Staff', category: 'management' },
+
+  // Villa/Estate - Management
+  'estate manager': { standard: 'Estate Manager', category: 'villa' },
+  'property manager': { standard: 'Estate Manager', category: 'villa' },
+  'house manager': { standard: 'House Manager', category: 'villa' },
+  'household manager': { standard: 'House Manager', category: 'villa' },
+  'villa manager': { standard: 'Villa Manager', category: 'villa' },
+  'chalet manager': { standard: 'Chalet Manager', category: 'villa' },
+
+  // Villa/Estate - Service Staff
+  'butler': { standard: 'Butler', category: 'villa' },
+  'head butler': { standard: 'Head Butler', category: 'villa' },
+  'senior butler': { standard: 'Senior Butler', category: 'villa' },
+  'junior butler': { standard: 'Junior Butler', category: 'villa' },
+  'footman': { standard: 'Footman', category: 'villa' },
+  'valet': { standard: 'Valet', category: 'villa' },
+  'lady\'s maid': { standard: 'Lady\'s Maid', category: 'villa' },
+
+  // Villa/Estate - Housekeeping
+  'head housekeeper': { standard: 'Head Housekeeper', category: 'villa' },
+  'housekeeper': { standard: 'Housekeeper', category: 'villa' },
+  'executive housekeeper': { standard: 'Executive Housekeeper', category: 'villa' },
+  'housemaid': { standard: 'Housemaid', category: 'villa' },
+  'maid': { standard: 'Housemaid', category: 'villa' },
+  'laundress': { standard: 'Laundress', category: 'villa' },
+
+  // Villa/Estate - Kitchen
+  'private chef': { standard: 'Private Chef', category: 'villa' },
+  'family chef': { standard: 'Private Chef', category: 'villa' },
+  'estate chef': { standard: 'Private Chef', category: 'villa' },
+  'kitchen assistant': { standard: 'Kitchen Assistant', category: 'villa' },
+
+  // Villa/Estate - Outdoor & Maintenance
+  'chauffeur': { standard: 'Chauffeur', category: 'villa' },
+  'driver': { standard: 'Chauffeur', category: 'villa' },
+  'head gardener': { standard: 'Head Gardener', category: 'villa' },
+  'gardener': { standard: 'Gardener', category: 'villa' },
+  'groundskeeper': { standard: 'Groundskeeper', category: 'villa' },
+  'maintenance manager': { standard: 'Maintenance Manager', category: 'villa' },
+  'handyman': { standard: 'Handyman', category: 'villa' },
+  'pool technician': { standard: 'Pool Technician', category: 'villa' },
+  'caretaker': { standard: 'Caretaker', category: 'villa' },
+
+  // Villa/Estate - Service Couples
+  'couple': { standard: 'Couple', category: 'villa' },
+  'house couple': { standard: 'House Couple', category: 'villa' },
+  'estate couple': { standard: 'Estate Couple', category: 'villa' },
+  'caretaker couple': { standard: 'Caretaker Couple', category: 'villa' },
+
+  // Other/Specialist
+  'massage therapist': { standard: 'Massage Therapist', category: 'other' },
+  'yoga instructor': { standard: 'Yoga Instructor', category: 'other' },
+  'fitness trainer': { standard: 'Fitness Trainer', category: 'other' },
+  'personal trainer': { standard: 'Personal Trainer', category: 'other' },
+  'dive instructor': { standard: 'Dive Instructor', category: 'other' },
+  'water sports instructor': { standard: 'Water Sports Instructor', category: 'other' },
+  'florist': { standard: 'Florist', category: 'other' },
+  'sommelier': { standard: 'Sommelier', category: 'other' },
 };
 
 /**

@@ -231,13 +231,15 @@ export default function LoginPage() {
       <div className="relative w-full max-w-md">
         {/* Logo */}
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-navy-900 shadow-lg">
-            <Anchor className="size-7 text-gold-400" />
-          </div>
+          <Link href="/" className="inline-block">
+            <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-navy-900 shadow-lg">
+              <Anchor className="size-7 text-gold-400" />
+            </div>
+          </Link>
           <h1 className="font-serif text-4xl font-semibold text-navy-800">
-            Lighthouse Network
+            Crew Sign In
           </h1>
-          <p className="text-sm text-gray-500">Premium Yacht Crew Recruitment</p>
+          <p className="text-sm text-gray-500">Find your next yacht or household position</p>
         </div>
 
         {/* Login Card */}
@@ -422,14 +424,23 @@ export default function LoginPage() {
                 href="/auth/register"
                 className="font-medium text-gold-600 hover:text-gold-700"
               >
-                Register as Crew
-              </Link>{" "}
-              or{" "}
-              <button className="font-medium text-navy-600 hover:text-navy-700">
-                Contact Us
-              </button>
+                Create your profile
+              </Link>
             </p>
           </div>
+        </div>
+
+        {/* Employer Link */}
+        <div className="mt-4 text-center">
+          <p className="text-sm text-gray-500">
+            Looking to hire?{" "}
+            <Link
+              href="/employer/login"
+              className="font-medium text-navy-600 hover:text-navy-700"
+            >
+              Employer Portal
+            </Link>
+          </p>
         </div>
 
         {/* Trust badges */}

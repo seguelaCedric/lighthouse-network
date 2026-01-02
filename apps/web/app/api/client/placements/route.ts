@@ -71,8 +71,8 @@ export async function GET() {
 
     // Transform data
     const transformedPlacements = (placements || []).map((placement) => {
-      const job = placement.jobs as Record<string, unknown> | null;
-      const candidate = placement.candidates as Record<string, unknown> | null;
+      const job = placement.jobs as unknown as Record<string, unknown> | null;
+      const candidate = placement.candidates as unknown as Record<string, unknown> | null;
 
       return {
         id: placement.id,

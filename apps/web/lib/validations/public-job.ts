@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { JobRequirements } from "@lighthouse/database";
 
 // Position categories for public jobs
 export const positionCategorySchema = z.enum([
@@ -122,7 +123,7 @@ export interface PublicJob {
   salary_currency: string;
   salary_period: string;
   benefits: string | null;
-  requirements: Record<string, unknown>;
+  requirements: JobRequirements;
   is_urgent: boolean;
   apply_deadline: string | null;
   applications_count: number;

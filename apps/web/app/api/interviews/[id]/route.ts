@@ -97,9 +97,9 @@ export async function GET(
       );
     }
 
-    const job = interview.jobs as Record<string, unknown> | null;
-    const candidate = interview.candidates as Record<string, unknown> | null;
-    const client = interview.clients as Record<string, unknown> | null;
+    const job = interview.jobs as unknown as Record<string, unknown> | null;
+    const candidate = interview.candidates as unknown as Record<string, unknown> | null;
+    const client = interview.clients as unknown as Record<string, unknown> | null;
 
     return NextResponse.json({
       data: {
@@ -245,7 +245,7 @@ export async function PATCH(
       });
 
       // Send notification to client
-      const candidate = interview.candidates as Record<string, unknown> | null;
+      const candidate = interview.candidates as unknown as Record<string, unknown> | null;
       const candidateName = candidate
         ? `${candidate.first_name} ${(candidate.last_name as string)?.charAt(0)}.`
         : "Candidate";
@@ -268,8 +268,8 @@ export async function PATCH(
 
       // Send email notifications if configured
       if (isResendConfigured()) {
-        const job = interview.jobs as Record<string, unknown> | null;
-        const client = interview.clients as Record<string, unknown> | null;
+        const job = interview.jobs as unknown as Record<string, unknown> | null;
+        const client = interview.clients as unknown as Record<string, unknown> | null;
 
         const formattedDate = new Date(scheduledAt).toLocaleDateString("en-GB", {
           weekday: "long",

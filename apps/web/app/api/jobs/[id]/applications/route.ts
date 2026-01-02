@@ -8,7 +8,7 @@ import { trackReferralApplication } from "@/lib/referrals";
 import type {
   ApplicationWithDetails,
   PaginatedResponse,
-} from "../../../../../../../packages/database/types";
+} from "@lighthouse/database";
 
 interface RouteParams {
   params: Promise<{ id: string }>;

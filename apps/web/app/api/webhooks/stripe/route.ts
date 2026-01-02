@@ -202,7 +202,7 @@ async function handleSubscriptionPaymentFailed(
   const supabase = await createClient()
 
   // Get agency ID from invoice metadata or customer
-  let agencyId = invoice.subscription_details?.metadata?.agency_id
+  let agencyId = (invoice as unknown as { subscription_details?: { metadata?: { agency_id?: string } } }).subscription_details?.metadata?.agency_id
 
   if (!agencyId && invoice.customer) {
     const customer = await stripe.customers.retrieve(invoice.customer as string)

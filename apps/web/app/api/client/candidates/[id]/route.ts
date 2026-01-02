@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getClientSessionFromCookie } from "@/lib/auth/client-session";
+import { anonymizeBio } from "@lighthouse/ai";
 
 /**
  * GET /api/client/candidates/[id]
@@ -90,7 +91,8 @@ export async function GET(
         languages,
         smoker,
         visible_tattoos,
-        profile_photo_url
+        profile_photo_url,
+        bio_full
       `)
       .eq("id", candidateId)
       .single();
@@ -148,7 +150,7 @@ export async function GET(
     });
 
     // Build response based on access level
-    const job = submission.jobs as Record<string, unknown>;
+    const job = submission.jobs as unknown as { id: string; title: string; client_id: string };
 
     const profileData = {
       // Basic info (always visible)
@@ -183,6 +185,19 @@ export async function GET(
       // Personal (non-sensitive)
       smoker: candidate.smoker,
       visibleTattoos: candidate.visible_tattoos,
+
+      // Bio - full for full access, anonymized for limited access
+      bio: hasFullAccess
+        ? candidate.bio_full
+        : candidate.bio_full
+          ? anonymizeBio(
+              candidate.bio_full,
+              candidate.first_name,
+              candidate.last_name,
+              candidate.nationality,
+              candidate.primary_position
+            )
+          : null,
 
       // Match info from submission
       matchScore: submission.match_score,

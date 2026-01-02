@@ -302,22 +302,22 @@ export async function generateEmbeddings(texts: string[]): Promise<number[][]> {
 
 // Build embedding text for a candidate
 export function buildCandidateEmbeddingText(candidate: {
-  primary_position?: string;
-  secondary_positions?: string[];
-  years_experience?: number;
-  preferred_yacht_types?: string[];
-  preferred_yacht_size_min?: number;
-  preferred_yacht_size_max?: number;
-  preferred_contract_types?: string[];
-  preferred_regions?: string[];
-  has_stcw?: boolean;
-  has_eng1?: boolean;
-  highest_license?: string;
-  has_schengen?: boolean;
-  has_b1b2?: boolean;
-  nationality?: string;
-  is_smoker?: boolean;
-  has_visible_tattoos?: boolean;
+  primary_position?: string | null;
+  secondary_positions?: string[] | null;
+  years_experience?: number | null;
+  preferred_yacht_types?: string[] | null;
+  preferred_yacht_size_min?: number | null;
+  preferred_yacht_size_max?: number | null;
+  preferred_contract_types?: string[] | null;
+  preferred_regions?: string[] | null;
+  has_stcw?: boolean | null;
+  has_eng1?: boolean | null;
+  highest_license?: string | null;
+  has_schengen?: boolean | null;
+  has_b1b2?: boolean | null;
+  nationality?: string | null;
+  is_smoker?: boolean | null;
+  has_visible_tattoos?: boolean | null;
 }): string {
   const parts: string[] = [];
 
@@ -398,7 +398,145 @@ export function buildJobEmbeddingText(job: {
 }
 
 // ----------------------------------------------------------------------------
-// EXPORTS
+// EXPORTS (all exported inline above)
 // ----------------------------------------------------------------------------
 
-export { models };
+// Re-export from submodules for compatibility
+export { parseBrief as parseBriefFromModule, BriefParseError, BriefParser, type BriefParsedData as BriefParsedDataFromModule, type ClientContext, briefParsedDataSchema } from './brief-parser/index';
+export { matchCandidatesForJob, type MatchResult, type MatchCandidatesOptions, type MatchingOptions, type MatchingResult, findMatchingCandidates, MATCHING_CONFIG } from './matcher/index';
+
+// Re-export new modules (with aliases to avoid conflicts with existing exports)
+export {
+  buildCandidateEmbeddingText as buildUnifiedCandidateEmbeddingText,
+  buildClientSafeEmbeddingText,
+  buildJobEmbeddingText as buildUnifiedJobEmbeddingText,
+  estimateTokens,
+  isWithinTokenLimit,
+  type CandidateProfile,
+  type CandidateDocument,
+  type CandidateInterviewNote,
+  type CandidateReference,
+  type JobProfile,
+  type Visibility,
+} from './embedding/build-candidate-text';
+
+export {
+  rerankDocuments,
+  rerankCandidatesForJob,
+  batchRerankCandidates,
+  type RerankDocument,
+  type RerankResult,
+  type RerankOptions,
+  type CandidateForRerank,
+  type JobForRerank,
+} from './rerank/index';
+
+export {
+  sanitizeMatchResult,
+  sanitizeMatchResults,
+  simplifyBreakdown,
+  breakdownToPercentages,
+} from './matcher/sanitize';
+
+export {
+  type RecruiterMatchResult,
+  type ClientMatchResult,
+  type PublicMatchResult,
+  type CandidateData,
+  type JobData,
+  type MatchBreakdown,
+  type UserType,
+  type MatchingMetadata,
+} from './matcher/types';
+
+export {
+  chunkCVText,
+  estimateChunkCount,
+  getSectionWeights,
+  type CVChunk,
+  type CVSectionType,
+  type ChunkingOptions,
+} from './embedding/cv-chunker';
+
+// ----------------------------------------------------------------------------
+// V4 AGENTIC SEARCH (Query Parser + Agentic Judge)
+// ----------------------------------------------------------------------------
+export {
+  // Types
+  type ParsedQuery,
+  type AgenticExplanation,
+  type CandidateProfile as AgenticCandidateProfile,
+  type Verdict,
+  type V4SearchResult,
+  type V4SearchResponse,
+  type V4SearchRequest,
+  type PipelineStats,
+  // Query Parser
+  parseQuery,
+  parseQuerySafe,
+  // Agentic Judge
+  evaluateCandidate,
+  evaluateCandidates,
+  evaluateCandidatesSafe,
+  scoreToVerdict,
+  getVerdictStyle,
+} from './agentic-search';
+
+// ----------------------------------------------------------------------------
+// CV EXTRACTION (AI-powered structured data extraction from CVs)
+// ----------------------------------------------------------------------------
+export {
+  // Main extraction function
+  extractFromCV,
+  extractFromCVSafe,
+  // Helpers
+  deriveBooleanFlags,
+  buildSearchKeywords,
+  calculateTotalExperienceMonths,
+  // Position taxonomy
+  normalizePosition,
+  getAllStandardPositions,
+  POSITION_TAXONOMY,
+  // Types
+  type CVExtractionResult,
+  type CVExtractionRequest,
+  type CVExtractionResponse,
+  type CVExtractionQueueItem,
+  type PositionExtracted,
+  type PositionCategory,
+  type CertificationDetail,
+  type CertificationCategory,
+  type LicenseDetail,
+  type LicenseType,
+  type LanguageDetail,
+  type LanguageProficiency,
+  type YachtExperience,
+  type VillaExperience,
+  type EducationDetail,
+  type ReferenceDetail,
+  // Schemas (for validation)
+  cvExtractionResultSchema,
+  positionCategorySchema,
+} from './cv-extraction';
+
+// ----------------------------------------------------------------------------
+// BIO GENERATION (AI-powered candidate bio generation)
+// ----------------------------------------------------------------------------
+export {
+  // Main generation function
+  generateCandidateBio,
+  generateCandidateBioSafe,
+  // Anonymization utilities
+  anonymizeBio,
+  obfuscateName,
+  bioContainsName,
+  // Prompts (for customization)
+  BIO_GENERATION_SYSTEM_PROMPT,
+  buildBioGenerationPrompt,
+  // Types
+  type BioGenerationRequest,
+  type BioGenerationResult,
+  type BioGenerationCandidate,
+  // Version constant
+  BIO_GENERATION_VERSION,
+} from './bio-generation';

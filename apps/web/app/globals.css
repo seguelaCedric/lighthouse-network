@@ -16,29 +16,30 @@
      PRIMARY PALETTE - CHAMPAGNE GOLD
      ---------------------------------------- */
   --gold-50: #FDFBF7;
-  --gold-100: #F9F5EB;
-  --gold-200: #F0E6D0;
-  --gold-300: #E1D4B5;
-  --gold-400: #CBBA8E;
+  --gold-100: #F9F4E8;
+  --gold-200: #F0E5CA;
+  --gold-300: #E3CFA3;
+  --gold-400: #D4B87A;
   --gold-500: #B49A5E;
-  --gold-600: #9A7F45;
-  --gold-700: #7D6636;
-  --gold-800: #5E4D29;
-  --gold-900: #3D3219;
+  --gold-600: #8F7A4A;
+  --gold-700: #6B5C38;
+  --gold-800: #4A4028;
+  --gold-900: #2E281A;
 
   /* ----------------------------------------
      PRIMARY PALETTE - MIDNIGHT NAVY
+     (Lighter palette - navy-800 is now #3D4F6F)
      ---------------------------------------- */
-  --navy-50: #F4F6F9;
-  --navy-100: #E4E9F0;
-  --navy-200: #C5CFE0;
-  --navy-300: #94A3C4;
-  --navy-400: #5E6F94;
-  --navy-500: #3D4F6F;
-  --navy-600: #2A3A54;
-  --navy-700: #1C2840;
-  --navy-800: #111827;
-  --navy-900: #0A0F1A;
+  --navy-50: #F7F8FA;
+  --navy-100: #EEF1F5;
+  --navy-200: #D5DCE8;
+  --navy-300: #B0BDD3;
+  --navy-400: #8496B5;
+  --navy-500: #5E7291;
+  --navy-600: #4D6180;
+  --navy-700: #455875;
+  --navy-800: #3D4F6F;
+  --navy-900: #2A3A54;
 
   /* ----------------------------------------
      ACCENT - BURGUNDY
@@ -252,9 +253,9 @@
   --radius-2xl: 20px;
 
   /* Background Gradients */
-  --background-image-gold-gradient: linear-gradient(135deg, #CBBA8E 0%, #B49A5E 100%);
-  --background-image-gold-gradient-hover: linear-gradient(135deg, #B49A5E 0%, #9A7F45 100%);
-  --background-image-gold-shimmer: linear-gradient(90deg, #B49A5E 0%, #E1D4B5 50%, #B49A5E 100%);
+  --background-image-gold-gradient: linear-gradient(135deg, #D4B87A 0%, #B49A5E 100%);
+  --background-image-gold-gradient-hover: linear-gradient(135deg, #B49A5E 0%, #8F7A4A 100%);
+  --background-image-gold-shimmer: linear-gradient(90deg, #B49A5E 0%, #E3CFA3 50%, #B49A5E 100%);
 }
 
 /* ============================================
@@ -285,15 +286,15 @@ h2 {
 }
 
 .gradient-gold {
-  background: linear-gradient(135deg, #CBBA8E 0%, #B49A5E 50%, #9A7F45 100%);
+  background: linear-gradient(135deg, #D4B87A 0%, #B49A5E 50%, #8F7A4A 100%);
 }
 
 .gradient-gold-shimmer {
-  background: linear-gradient(90deg, #B49A5E 0%, #E1D4B5 50%, #B49A5E 100%);
+  background: linear-gradient(90deg, #B49A5E 0%, #E3CFA3 50%, #B49A5E 100%);
 }
 
 .gradient-navy {
-  background: linear-gradient(135deg, #2A3A54 0%, #111827 100%);
+  background: linear-gradient(135deg, #4D6180 0%, #3D4F6F 100%);
 }
 
 .gradient-burgundy {
@@ -302,7 +303,7 @@ h2 {
 
 /* Text gradient utility */
 .text-gradient-gold {
-  background: linear-gradient(135deg, #CBBA8E 0%, #B49A5E 50%, #9A7F45 100%);
+  background: linear-gradient(135deg, #D4B87A 0%, #B49A5E 50%, #8F7A4A 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -543,7 +544,7 @@ h2 {
   align-items: center;
   justify-content: center;
   padding: 12px 24px;
-  background: linear-gradient(135deg, #CBBA8E 0%, #B49A5E 100%);
+  background: linear-gradient(135deg, #D4B87A 0%, #B49A5E 100%);
   color: var(--navy-900);
   font-family: var(--font-inter);
   font-weight: 600;
@@ -556,7 +557,7 @@ h2 {
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, #B49A5E 0%, #9A7F45 100%);
+  background: linear-gradient(135deg, #B49A5E 0%, #8F7A4A 100%);
   transform: translateY(-2px);
   box-shadow: 0px 6px 16px rgba(180, 154, 94, 0.4);
 }
@@ -666,7 +667,7 @@ h2 {
 }
 
 .sidebar-nav-item.active {
-  background: linear-gradient(135deg, #CBBA8E 0%, #B49A5E 100%);
+  background: linear-gradient(135deg, #D4B87A 0%, #B49A5E 100%);
   color: var(--navy-900);
   font-weight: 600;
 }
@@ -676,7 +677,7 @@ h2 {
   display: inline-flex;
   align-items: center;
   padding: 4px 10px;
-  background: linear-gradient(135deg, #CBBA8E 0%, #B49A5E 100%);
+  background: linear-gradient(135deg, #D4B87A 0%, #B49A5E 100%);
   color: var(--navy-900);
   font-family: var(--font-inter);
   font-size: 11px;
@@ -712,7 +713,7 @@ h2 {
 
 .match-bar-fill {
   height: 100%;
-  background: linear-gradient(90deg, #B49A5E 0%, #CBBA8E 100%);
+  background: linear-gradient(90deg, #B49A5E 0%, #D4B87A 100%);
   border-radius: 3px;
   transition: width 0.3s ease;
 }

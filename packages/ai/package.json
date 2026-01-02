@@ -5,22 +5,27 @@
   "description": "AI functionality for Lighthouse Crew Network",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
+  "types": "./index.ts",
   "exports": {
     ".": {
+      "types": "./index.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.js"
     },
     "./brief-parser": {
+      "types": "./brief-parser/index.ts",
       "import": "./dist/brief-parser/index.mjs",
-      "require": "./dist/brief-parser/index.js",
-      "types": "./dist/brief-parser/index.d.ts"
+      "require": "./dist/brief-parser/index.js"
     },
     "./matcher": {
+      "types": "./matcher/index.ts",
       "import": "./dist/matcher/index.mjs",
-      "require": "./dist/matcher/index.js",
-      "types": "./dist/matcher/index.d.ts"
+      "require": "./dist/matcher/index.js"
+    },
+    "./agentic-search": {
+      "types": "./agentic-search/index.ts",
+      "import": "./dist/agentic-search/index.mjs",
+      "require": "./dist/agentic-search/index.js"
     }
   },
   "scripts": {

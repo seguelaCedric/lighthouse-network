@@ -54,12 +54,22 @@ export {
   createCandidate,
   getFieldValue,
   getBooleanFieldValue,
+  // Additional endpoints
+  getFunctionalExpertises,
+  getCurrentLocation,
+  getCandidateStatus,
+  getFullCandidateData,
 } from './candidates';
 
 export type {
   VincereCandidate,
   VincereCustomField,
   VincereSearchResult,
+  // Additional types
+  VincereFunctionalExpertise,
+  VincereLocation,
+  VincerecandidateStatus,
+  VincereExtendedCandidateData,
 } from './candidates';
 
 // Sync/Mapping
@@ -73,3 +83,56 @@ export {
   mapCandidateToVincere,
   getInterviewNotes,
 } from './sync';
+
+export type { VincereExtendedData } from './sync';
+
+// Jobs API
+export {
+  getJobById,
+  getJobCustomFields,
+  getJobWithCustomFields,
+  getJobFieldValue,
+  mapVincereToJob,
+  searchJobs,
+} from './jobs';
+
+export type {
+  VincereJob,
+  VincereJobSearchResult,
+} from './jobs';
+
+// Files API
+export {
+  getCandidateFiles,
+  getCandidateCVFile,
+  getCandidatePhotoFile,
+  downloadFile,
+  downloadCandidateCV,
+  downloadCandidatePhoto,
+  getFileExtension,
+  isPDF,
+  isWordDocument,
+  isImage,
+  VINCERE_FILE_TYPES,
+} from './files';
+
+export type {
+  VincereFile,
+  VincereFileType,
+} from './files';
+
+// Document Classifier
+export {
+  classifyDocument,
+  classifyDocuments,
+  summarizeClassifications,
+  getDocumentTypeLabel,
+} from './document-classifier';
+
+export type {
+  DocumentType,
+  ClassificationConfidence,
+  ClassificationMethod,
+  ClassificationResult,
+  ClassificationSummary,
+} from './document-classifier';

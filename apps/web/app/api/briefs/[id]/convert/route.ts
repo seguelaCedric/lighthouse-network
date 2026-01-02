@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { convertToJobSchema } from "@/lib/validations/brief";
-import type { BriefParsedData, Job, PositionCategory, ContractType } from "../../../../../../../packages/database/types";
+import type { BriefParsedData, Job, PositionCategory, ContractType } from "@lighthouse/database";
 
 interface RouteParams {
   params: Promise<{ id: string }>;

@@ -14,7 +14,10 @@ export type EmailTemplate =
   | "welcome_client"
   | "welcome_candidate"
   | "client_portal_invite"
-  | "client_magic_link";
+  | "client_magic_link"
+  | "employer_welcome"
+  | "employer_magic_link"
+  | "employer_brief_received";
 
 // Template data types
 export interface BriefReceivedData {
@@ -106,6 +109,31 @@ export interface InterviewScheduledClientData {
   location?: string;
   meetingLink?: string;
   interviewType?: string;
+}
+
+// Employer email template data types
+export interface EmployerWelcomeData {
+  contactName: string;
+  email: string;
+  magicLink: string;
+  hiringFor?: "yacht" | "household" | "both";
+  companyName?: string;
+}
+
+export interface EmployerMagicLinkData {
+  contactName: string;
+  magicLink: string;
+  expiresIn?: string;
+}
+
+export interface EmployerBriefReceivedData {
+  contactName: string;
+  briefTitle: string;
+  positions: string[];
+  hiringFor: "yacht" | "household" | "both";
+  vesselName?: string;
+  propertyLocation?: string;
+  timeline?: string;
 }
 
 // Template generators
@@ -531,6 +559,151 @@ export function interviewScheduledClientEmail(data: InterviewScheduledClientData
 
   return {
     subject: `Interview Scheduled: ${data.candidateName} for ${data.position}`,
+    html: baseTemplate(content),
+    text: generatePlainText(content),
+  };
+}
+
+// ============================================
+// Employer Portal Email Templates
+// ============================================
+
+export function employerWelcomeEmail(data: EmployerWelcomeData) {
+  const hiringForText =
+    data.hiringFor === "yacht"
+      ? "yacht crew"
+      : data.hiringFor === "household"
+        ? "private staff"
+        : "yacht crew and private staff";
+
+  const content = `
+    <h1>Welcome to Lighthouse!</h1>
+    <p>Hi ${data.contactName},</p>
+    <p>Thank you for registering with Lighthouse Crew${data.companyName ? ` on behalf of ${data.companyName}` : ""}. We're excited to help you find exceptional ${hiringForText}.</p>
+
+    <p style="text-align:center;">
+      <a href="${data.magicLink}" class="button">Access Your Portal</a>
+    </p>
+
+    <div class="info-box">
+      <p style="margin:0 0 15px; font-weight:600; color:#1a2b4a;">Here's how it works:</p>
+      <ul style="margin:0;">
+        <li><strong>Submit a brief</strong> — Tell us exactly what you're looking for</li>
+        <li><strong>We match candidates</strong> — Our AI and expert team find the best fits</li>
+        <li><strong>Review your shortlist</strong> — See verified candidates matched to your needs</li>
+        <li><strong>Interview & hire</strong> — We coordinate everything seamlessly</li>
+      </ul>
+    </div>
+
+    <p><strong>What sets us apart:</strong></p>
+    <ul>
+      <li><span class="highlight">AI-powered matching</span> for faster, more accurate results</li>
+      <li>All candidates are <span class="highlight">reference-checked and verified</span></li>
+      <li>Dedicated support from experienced industry professionals</li>
+      <li>Transparent process with real-time updates</li>
+    </ul>
+
+    <p>Questions? Simply reply to this email — we're here to help.</p>
+
+    <p>Welcome aboard,<br>The Lighthouse Crew Team</p>
+  `;
+
+  return {
+    subject: "Welcome to Lighthouse Crew!",
+    html: baseTemplate(content),
+    text: generatePlainText(content),
+  };
+}
+
+export function employerMagicLinkEmail(data: EmployerMagicLinkData) {
+  const expiresText = data.expiresIn || "1 hour";
+
+  const content = `
+    <h1>Sign in to Lighthouse</h1>
+    <p>Hi ${data.contactName},</p>
+    <p>Click the button below to sign in to your employer portal.</p>
+
+    <p style="text-align:center;">
+      <a href="${data.magicLink}" class="button">Sign In</a>
+    </p>
+
+    <p style="font-size: 13px; color: #6b7280;">This link expires in ${expiresText}. If you didn't request this link, you can safely ignore this email.</p>
+
+    <div class="divider"></div>
+
+    <p style="font-size: 13px; color: #6b7280;">If the button doesn't work, copy and paste this link into your browser:</p>
+    <p style="font-size: 12px; word-break: break-all; color: #6b7280;">${data.magicLink}</p>
+
+    <p>Best regards,<br>The Lighthouse Crew Team</p>
+  `;
+
+  return {
+    subject: "Sign in to Lighthouse",
+    html: baseTemplate(content),
+    text: generatePlainText(content),
+  };
+}
+
+export function employerBriefReceivedEmail(data: EmployerBriefReceivedData) {
+  const positionsList = data.positions.slice(0, 3).join(", ");
+  const morePositions = data.positions.length > 3 ? ` +${data.positions.length - 3} more` : "";
+
+  const timelineText = {
+    immediate: "Immediately",
+    "1_month": "Within 1 month",
+    "3_months": "1-3 months",
+    exploring: "Just exploring",
+  }[data.timeline || ""] || data.timeline;
+
+  const content = `
+    <h1>Brief Received!</h1>
+    <p>Hi ${data.contactName},</p>
+    <p>Thank you for submitting your hiring brief. Our team is now reviewing your requirements and will begin matching candidates right away.</p>
+
+    <div class="info-box">
+      <div class="info-row">
+        <span class="info-label">Brief</span>
+        <span class="info-value">${data.briefTitle}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Positions</span>
+        <span class="info-value">${positionsList}${morePositions}</span>
+      </div>
+      ${data.vesselName ? `
+      <div class="info-row">
+        <span class="info-label">Vessel</span>
+        <span class="info-value">${data.vesselName}</span>
+      </div>
+      ` : ""}
+      ${data.propertyLocation ? `
+      <div class="info-row">
+        <span class="info-label">Location</span>
+        <span class="info-value">${data.propertyLocation}</span>
+      </div>
+      ` : ""}
+      ${timelineText ? `
+      <div class="info-row">
+        <span class="info-label">Timeline</span>
+        <span class="info-value">${timelineText}</span>
+      </div>
+      ` : ""}
+    </div>
+
+    <p><strong>What happens next?</strong></p>
+    <ul>
+      <li>Our AI analyzes your requirements against our candidate database</li>
+      <li>An experienced recruiter reviews the matches</li>
+      <li>You'll receive a curated shortlist within <strong>24-48 hours</strong></li>
+      <li>Review candidates and provide feedback directly in your portal</li>
+    </ul>
+
+    <p>We'll notify you as soon as your shortlist is ready. In the meantime, you can track progress in your portal.</p>
+
+    <p>Best regards,<br>The Lighthouse Crew Team</p>
+  `;
+
+  return {
+    subject: `Brief Received: ${data.briefTitle}`,
     html: baseTemplate(content),
     text: generatePlainText(content),
   };

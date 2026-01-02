@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { parseRequestSchema } from "@/lib/validations/brief";
-import type { BriefParsedData } from "../../../../../../../packages/database/types";
-import { parseBrief, BriefParseError } from "@lighthouse/ai/brief-parser";
+import type { BriefParsedData } from "@lighthouse/database";
+import { parseBriefFromModule as parseBrief, BriefParseError } from "@lighthouse/ai";
 
 interface RouteParams {
   params: Promise<{ id: string }>;

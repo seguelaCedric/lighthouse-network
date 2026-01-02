@@ -43,18 +43,30 @@ export async function syncInvoiceFromStripe(
 ): Promise<void> {
   const supabase = await createClient()
 
-  const stripeInvoice = await stripe.invoices.retrieve(stripeInvoiceId, {
+  const stripeInvoiceRaw = await stripe.invoices.retrieve(stripeInvoiceId, {
     expand: ['lines.data'],
   })
 
-  // Get agency ID from subscription metadata or customer metadata
-  let agencyId = stripeInvoice.subscription_details?.metadata?.agency_id
+  // Cast to extended type to access all invoice properties
+  type InvoiceWithAllProps = Stripe.Invoice & {
+    tax?: number | null
+    total_tax_amounts?: Array<{ amount: number }>
+    due_date?: number | null
+    invoice_pdf?: string | null
+    customer_name?: string | null
+    customer_email?: string | null
+  }
+  const stripeInvoice = stripeInvoiceRaw as InvoiceWithAllProps
 
-  if (!agencyId && stripeInvoice.customer) {
-    const customer = await stripe.customers.retrieve(
-      stripeInvoice.customer as string
-    )
-    if ('metadata' in customer) {
+  // Get agency ID from customer metadata
+  let agencyId: string | undefined
+
+  if (stripeInvoice.customer) {
+    const customerId = typeof stripeInvoice.customer === 'string'
+      ? stripeInvoice.customer
+      : stripeInvoice.customer.id
+    const customer = await stripe.customers.retrieve(customerId) as Stripe.Customer
+    if (!('deleted' in customer)) {
       agencyId = customer.metadata?.agency_id
     }
   }
@@ -74,13 +86,19 @@ export async function syncInvoiceFromStripe(
   const invoiceNumber =
     stripeInvoice.number || (await generateInvoiceNumber())
 
+  // Calculate total tax from total_tax_amounts array
+  const totalTax = stripeInvoice.total_tax_amounts?.reduce(
+    (sum, taxAmount) => sum + taxAmount.amount,
+    0
+  ) || 0
+
   const invoiceData = {
     stripe_invoice_id: stripeInvoice.id,
     agency_id: agencyId,
     invoice_number: invoiceNumber,
     status: mapStripeInvoiceStatus(stripeInvoice.status),
     subtotal: stripeInvoice.subtotal,
-    tax_amount: stripeInvoice.tax || 0,
+    tax_amount: totalTax,
     total: stripeInvoice.total,
     amount_paid: stripeInvoice.amount_paid,
     amount_due: stripeInvoice.amount_due,
@@ -135,14 +153,18 @@ export async function syncInvoiceFromStripe(
     await supabase.from('invoice_items').delete().eq('invoice_id', invoiceId)
 
     // Insert new line items
-    for (const line of stripeInvoice.lines.data) {
+    type LineItemWithAllProps = Stripe.InvoiceLineItem & {
+      unit_amount_excluding_tax?: string | null
+    }
+    for (const lineRaw of stripeInvoice.lines.data) {
+      const line = lineRaw as LineItemWithAllProps
       await supabase.from('invoice_items').insert({
         invoice_id: invoiceId,
         description: line.description || 'Subscription',
         item_type: 'subscription',
         quantity: line.quantity || 1,
         unit_amount: line.unit_amount_excluding_tax
-          ? parseInt(line.unit_amount_excluding_tax as string)
+          ? parseInt(line.unit_amount_excluding_tax)
           : line.amount,
         amount: line.amount,
         currency: line.currency.toUpperCase(),
@@ -251,7 +273,10 @@ export async function voidInvoice(invoiceId: string): Promise<void> {
 export async function handleInvoicePaid(stripeInvoiceId: string): Promise<void> {
   const supabase = await createClient()
 
-  const stripeInvoice = await stripe.invoices.retrieve(stripeInvoiceId)
+  type InvoiceWithPaymentIntent = Stripe.Invoice & {
+    payment_intent?: string | Stripe.PaymentIntent | null
+  }
+  const stripeInvoice = await stripe.invoices.retrieve(stripeInvoiceId) as InvoiceWithPaymentIntent
 
   await supabase
     .from('invoices')
@@ -265,9 +290,10 @@ export async function handleInvoicePaid(stripeInvoiceId: string): Promise<void> 
 
   // Record payment if there's a payment intent
   if (stripeInvoice.payment_intent) {
-    const paymentIntent = await stripe.paymentIntents.retrieve(
-      stripeInvoice.payment_intent as string
-    )
+    const paymentIntentId = typeof stripeInvoice.payment_intent === 'string'
+      ? stripeInvoice.payment_intent
+      : stripeInvoice.payment_intent.id
+    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId) as Stripe.PaymentIntent
 
     const { data: invoice } = await supabase
       .from('invoices')

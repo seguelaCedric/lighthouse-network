@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { updateJobSchema } from "@/lib/validations/job";
-import type { JobWithStats, ApplicationStage } from "../../../../../../packages/database/types";
+import type { JobWithStats, ApplicationStage } from "@lighthouse/database";
 
 interface RouteParams {
   params: Promise<{ id: string }>;

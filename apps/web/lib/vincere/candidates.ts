@@ -113,17 +113,26 @@ export async function getCustomFields(
 ): Promise<Record<string, VincereCustomField>> {
   const vincere = client ?? getVincereClient();
 
-  const fields = await vincere.get<VincereCustomField[]>(
-    `/candidate/${vincereId}/customfield`
-  );
+  try {
+    // Note: Vincere API uses plural "customfields" for GET
+    const fields = await vincere.get<VincereCustomField[]>(
+      `/candidate/${vincereId}/customfields`
+    );
 
-  // Index by field key for easy lookup
-  const indexed: Record<string, VincereCustomField> = {};
-  for (const field of fields ?? []) {
-    indexed[field.key] = field;
+    // Index by field key for easy lookup
+    const indexed: Record<string, VincereCustomField> = {};
+    for (const field of fields ?? []) {
+      indexed[field.key] = field;
+    }
+
+    return indexed;
+  } catch (error) {
+    // Return empty object if candidate has no custom fields (404)
+    if (error instanceof Error && error.message.includes('404')) {
+      return {};
+    }
+    throw error;
   }
-
-  return indexed;
 }
 
 /**
@@ -278,4 +287,155 @@ export function getBooleanFieldValue(
   if (value === 1) return true;
   if (value === 2) return false;
   return null;
+}
+
+// ============================================================================
+// ADDITIONAL CANDIDATE ENDPOINTS
+// ============================================================================
+
+/**
+ * Vincere functional expertise (skills/specializations)
+ */
+export interface VincereFunctionalExpertise {
+  id: number;
+  name: string;
+  parent_id?: number;
+  description?: string;
+}
+
+/**
+ * Vincere location
+ */
+export interface VincereLocation {
+  id: number;
+  name: string;
+  city?: string;
+  country?: string;
+  country_code?: string;
+  region?: string;
+}
+
+/**
+ * Vincere candidate status
+ */
+export interface VincerecandidateStatus {
+  id: number;
+  name: string;
+  status_type?: string;
+  is_active?: boolean;
+}
+
+/**
+ * Get functional expertises for a candidate
+ * Endpoint: GET /candidate/{id}/functionalexpertises
+ */
+export async function getFunctionalExpertises(
+  vincereId: number,
+  client?: VincereClient
+): Promise<VincereFunctionalExpertise[]> {
+  const vincere = client ?? getVincereClient();
+
+  try {
+    const expertises = await vincere.get<VincereFunctionalExpertise[]>(
+      `/candidate/${vincereId}/functionalexpertises`
+    );
+    return expertises ?? [];
+  } catch (error) {
+    // Return empty array if candidate has no functional expertises (404)
+    if (error instanceof Error && error.message.includes('404')) {
+      return [];
+    }
+    throw error;
+  }
+}
+
+/**
+ * Get current location for a candidate
+ * Endpoint: GET /candidate/{id}/currentlocation
+ */
+export async function getCurrentLocation(
+  vincereId: number,
+  client?: VincereClient
+): Promise<VincereLocation | null> {
+  const vincere = client ?? getVincereClient();
+
+  try {
+    const location = await vincere.get<VincereLocation>(
+      `/candidate/${vincereId}/currentlocation`
+    );
+    return location ?? null;
+  } catch (error) {
+    // Return null if candidate has no current location (404)
+    if (error instanceof Error && error.message.includes('404')) {
+      return null;
+    }
+    throw error;
+  }
+}
+
+/**
+ * Get candidate status
+ * Endpoint: GET /candidate/{id}/candidatestatus
+ */
+export async function getCandidateStatus(
+  vincereId: number,
+  client?: VincereClient
+): Promise<VincerecandidateStatus | null> {
+  const vincere = client ?? getVincereClient();
+
+  try {
+    const status = await vincere.get<VincerecandidateStatus>(
+      `/candidate/${vincereId}/candidatestatus`
+    );
+    return status ?? null;
+  } catch (error) {
+    // Return null if candidate has no status (404)
+    if (error instanceof Error && error.message.includes('404')) {
+      return null;
+    }
+    throw error;
+  }
+}
+
+/**
+ * Extended candidate data including all additional endpoints
+ */
+export interface VincereExtendedCandidateData {
+  candidate: VincereCandidate;
+  customFields: Record<string, VincereCustomField>;
+  functionalExpertises: VincereFunctionalExpertise[];
+  currentLocation: VincereLocation | null;
+  candidateStatus: VincerecandidateStatus | null;
+}
+
+/**
+ * Get full candidate data including all related endpoints
+ */
+export async function getFullCandidateData(
+  vincereId: number,
+  client?: VincereClient
+): Promise<VincereExtendedCandidateData | null> {
+  const vincere = client ?? getVincereClient();
+
+  const candidate = await getById(vincereId, vincere);
+  if (!candidate) {
+    return null;
+  }
+
+  // Fetch all additional data in parallel
+  const [customFields, functionalExpertises, currentLocation, candidateStatus] =
+    await Promise.all([
+      getCustomFields(vincereId, vincere),
+      getFunctionalExpertises(vincereId, vincere),
+      getCurrentLocation(vincereId, vincere),
+      getCandidateStatus(vincereId, vincere),
+    ]);
+
+  return {
+    candidate,
+    customFields,
+    functionalExpertises,
+    currentLocation,
+    candidateStatus,
+  };
 }

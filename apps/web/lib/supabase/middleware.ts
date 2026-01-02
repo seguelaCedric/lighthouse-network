@@ -7,6 +7,10 @@ const recruiterProtectedRoutes = [
   '/candidates',
   '/briefs',
   '/settings',
+  '/interviews',
+  '/clients',
+  '/jobs',
+  '/verification',
 ];
 
 // Candidate/Crew routes that require authentication

@@ -1,4 +1,7 @@
-import { getTwilioClient, getWhatsAppNumber } from "./client";
+import { getTwilioClient, getWhatsAppNumber, isTwilioConfigured } from "./client";
+
+// Re-export isTwilioConfigured for convenience
+export { isTwilioConfigured };
 
 export interface SendWhatsAppMessageParams {
   to: string;

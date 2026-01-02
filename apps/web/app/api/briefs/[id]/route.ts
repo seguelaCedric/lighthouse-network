@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { updateBriefSchema } from "@/lib/validations/brief";
-import type { Brief } from "../../../../../../packages/database/types";
+import type { Brief } from "@lighthouse/database";
 
 interface RouteParams {
   params: Promise<{ id: string }>;

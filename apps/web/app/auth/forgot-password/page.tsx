@@ -193,12 +193,15 @@ export default function ForgotPasswordPage() {
               </p>
 
               {/* Open Email Client */}
-              <Button variant="outline" className="w-full" asChild>
-                <a href="https://mail.google.com" target="_blank" rel="noopener noreferrer">
-                  <Mail className="mr-2 size-4" />
-                  Open Email App
-                </a>
-              </Button>
+              <a
+                href="https://mail.google.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-md border-[1.5px] border-navy-800 bg-transparent px-6 py-3 text-sm font-medium text-navy-800 transition-all duration-200 hover:bg-navy-50 active:bg-navy-100 sm:h-10"
+              >
+                <Mail className="mr-2 size-4" />
+                Open Email App
+              </a>
 
               {/* Back to Login */}
               <div className="mt-4">

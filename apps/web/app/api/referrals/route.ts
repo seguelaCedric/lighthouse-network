@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
 
     // Format response
     const formattedReferrals = referrals?.map((r) => {
-      const referred = r.referred as { first_name: string; last_name: string; photo_url: string | null } | null
+      const referred = r.referred as unknown as { first_name: string; last_name: string; photo_url: string | null } | null
       return {
         id: r.id,
         referred_name: referred

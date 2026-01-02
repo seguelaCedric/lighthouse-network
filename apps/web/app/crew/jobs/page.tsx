@@ -210,7 +210,7 @@ function JobDetailModal({
   onApply: () => void;
   isApplying: boolean;
 }) {
-  const requirements = job.requirements as Record<string, unknown>;
+  const requirements = job.requirements;
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-20">

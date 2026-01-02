@@ -20,6 +20,7 @@ import {
   User,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { signOut } from "@/lib/auth/actions";
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -162,6 +163,18 @@ export function AppShell({ children }: AppShellProps) {
               </div>
             )}
           </div>
+          {/* Logout Button */}
+          <button
+            onClick={() => signOut()}
+            className={cn(
+              "mt-2 flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-navy-300 transition-colors hover:bg-navy-800 hover:text-white",
+              sidebarCollapsed && "justify-center px-2"
+            )}
+            title={sidebarCollapsed ? "Sign Out" : undefined}
+          >
+            <LogOut className="size-5" />
+            {!sidebarCollapsed && <span>Sign Out</span>}
+          </button>
         </div>
       </aside>
 

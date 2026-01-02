@@ -5,6 +5,13 @@ import { getOrCreateStripeCustomer } from './customers'
 
 type BillingCycle = 'monthly' | 'yearly'
 
+// Extended Stripe Subscription type to include all properties used
+type StripeSubscription = Stripe.Subscription & {
+  current_period_start: number
+  current_period_end: number
+  canceled_at?: number | null
+}
+
 interface CreateSubscriptionResult {
   subscriptionId: string
   clientSecret: string | null
@@ -56,7 +63,7 @@ export async function createSubscription(
       agency_id: agencyId,
       plan_slug: planSlug,
     },
-  })
+  }) as unknown as StripeSubscription
 
   // Save subscription to database
   await supabase.from('agency_subscriptions').upsert({
@@ -74,8 +81,13 @@ export async function createSubscription(
     ).toISOString(),
   })
 
-  const invoice = subscription.latest_invoice as Stripe.Invoice
-  const paymentIntent = invoice.payment_intent as Stripe.PaymentIntent | null
+  type InvoiceWithPaymentIntent = Stripe.Invoice & {
+    payment_intent?: string | Stripe.PaymentIntent | null
+  }
+  const invoice = subscription.latest_invoice as InvoiceWithPaymentIntent
+  const paymentIntent = typeof invoice.payment_intent === 'object'
+    ? invoice.payment_intent
+    : null
 
   return {
     subscriptionId: subscription.id,
@@ -198,7 +210,7 @@ export async function updateSubscription(
   // Get current subscription from Stripe
   const currentSub = await stripe.subscriptions.retrieve(
     sub.stripe_subscription_id
-  )
+  ) as unknown as StripeSubscription
 
   // Update subscription
   await stripe.subscriptions.update(sub.stripe_subscription_id, {
@@ -249,7 +261,7 @@ export async function syncSubscriptionFromStripe(
 ): Promise<void> {
   const supabase = await createClient()
 
-  const stripeSub = await stripe.subscriptions.retrieve(stripeSubscriptionId)
+  const stripeSub = await stripe.subscriptions.retrieve(stripeSubscriptionId) as unknown as StripeSubscription
   const agencyId = stripeSub.metadata?.agency_id
 
   if (!agencyId) {
