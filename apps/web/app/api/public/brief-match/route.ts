@@ -9,7 +9,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
-import { generateEmbedding, anonymizeBio } from '@lighthouse/ai';
+import { generateEmbedding, anonymizeBio, type ReferenceDetail } from '@lighthouse/ai';
 import { generateObject } from 'ai';
 import { openai } from '@ai-sdk/openai';
 
@@ -814,6 +814,7 @@ export async function POST(request: NextRequest) {
         certifications_extracted,
         licenses_extracted,
         education_extracted,
+        references_extracted,
         highest_license,
         has_stcw,
         has_eng1,
@@ -985,7 +986,8 @@ export async function POST(request: NextRequest) {
               c.first_name,
               c.last_name,
               c.nationality,
-              c.primary_position
+              c.primary_position,
+              c.references_extracted as ReferenceDetail[] | null
             )
           : null;
 

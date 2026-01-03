@@ -342,41 +342,95 @@ function MatchPageContent() {
   const contextLabel = isYachtCrewSearch ? "Yacht" : "Household";
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50">
       <PublicHeader />
 
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 pt-24 pb-12">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-gold-500/10 via-transparent to-transparent" />
+      {/* Hero Section - Luxury Styled */}
+      <section className="relative overflow-hidden pt-28 pb-16">
+        {/* Rich navy gradient */}
+        <div className="absolute inset-0 bg-gradient-to-b from-navy-800 via-navy-900 to-[#0c1525]" />
+
+        {/* Warm champagne ambient light from top */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(195,165,120,0.15),transparent_60%)]" />
+
+        {/* Subtle side accents for depth */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_80%_at_0%_50%,rgba(195,165,120,0.06),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_80%_at_100%_50%,rgba(195,165,120,0.06),transparent_50%)]" />
+
+        {/* Art Deco sunburst pattern */}
+        <div className="absolute inset-0 opacity-[0.15]">
+          <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <radialGradient id="sunburst-fade" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#C3A578" stopOpacity="1"/>
+                <stop offset="100%" stopColor="#C3A578" stopOpacity="0.3"/>
+              </radialGradient>
+            </defs>
+            <g stroke="url(#sunburst-fade)" strokeWidth="0.5" fill="none">
+              {/* Radiating lines from center */}
+              {[...Array(36)].map((_, i) => {
+                const angle = (i * 10) * (Math.PI / 180);
+                const x2 = Math.round((50 + 70 * Math.cos(angle)) * 100) / 100;
+                const y2 = Math.round((50 + 70 * Math.sin(angle)) * 100) / 100;
+                return <line key={i} x1="50%" y1="50%" x2={`${x2}%`} y2={`${y2}%`} />;
+              })}
+            </g>
+            {/* Concentric arcs */}
+            <circle cx="50%" cy="50%" r="15%" fill="none" stroke="#C3A578" strokeWidth="0.3" opacity="0.5"/>
+            <circle cx="50%" cy="50%" r="30%" fill="none" stroke="#C3A578" strokeWidth="0.3" opacity="0.4"/>
+            <circle cx="50%" cy="50%" r="45%" fill="none" stroke="#C3A578" strokeWidth="0.3" opacity="0.3"/>
+          </svg>
+        </div>
+
         <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 rounded-full bg-gold-500/20 px-4 py-2 text-sm font-medium text-gold-400 mb-6">
+            {/* Elegant badge */}
+            <div className="inline-flex items-center gap-2 rounded-full border border-gold-500/30 bg-gold-500/10 px-5 py-2.5 text-sm font-medium text-gold-300 mb-8 backdrop-blur-sm">
               <Sparkles className="h-4 w-4" />
               AI-Powered Candidate Matching
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            <h1 className="font-cormorant text-5xl sm:text-6xl lg:text-7xl font-semibold tracking-tight text-white mb-6">
               Find Your Perfect
-              <span className="text-gold-400"> Crew & Staff</span>
+              <span className="block text-gradient-gold">Crew & Staff</span>
             </h1>
-            <p className="text-xl text-gray-300">
+            <p className="mx-auto max-w-2xl text-lg text-white/90 sm:text-xl">
               Our AI instantly matches your requirements against 44,000+ vetted yacht crew and private staff professionals
             </p>
+            {/* Trust indicators */}
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-sm text-gray-400">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-gold-400" />
+                <span>Anonymized Results</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-gold-400" />
+                <span>No Commitment</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-gold-400" />
+                <span>Instant Matches</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Main Content */}
-      <section className="py-12">
+      <section className="py-8 bg-gray-50">
         <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {/* Sidebar - Search Filters */}
+            {/* Sidebar - Search Filters - Luxury Styled */}
             <div className="lg:col-span-4">
               <div className={`lg:sticky lg:top-28 ${showFilters ? "" : "hidden lg:block"}`}>
-                <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
-                  <div className="bg-gradient-to-r from-navy-900 to-navy-800 px-5 py-4">
-                    <div className="flex items-center justify-between">
-                      <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                        <Filter className="h-5 w-5 text-gold-400" />
+                <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden ring-1 ring-black/5">
+                  {/* Elegant header with gradient */}
+                  <div className="relative bg-gradient-to-r from-navy-900 via-navy-800 to-navy-900 px-6 py-5">
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-gold-500/10 via-transparent to-transparent" />
+                    <div className="relative flex items-center justify-between">
+                      <h2 className="text-lg font-semibold text-white flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold-500/20 ring-1 ring-gold-500/30">
+                          <Filter className="h-4 w-4 text-gold-400" />
+                        </div>
                         Search Criteria
                       </h2>
                       {hasSearched && (
@@ -390,16 +444,16 @@ function MatchPageContent() {
                     </div>
                   </div>
 
-                  <div className="p-5 space-y-5">
+                  <div className="p-6 space-y-5">
                     {/* Role Selection */}
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
-                        Role *
+                      <label className="block text-sm font-semibold text-navy-900 mb-2">
+                        Role <span className="text-gold-600">*</span>
                       </label>
                       <select
                         value={formData.role}
                         onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                        className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 transition-colors text-sm"
+                        className="w-full rounded-xl border border-gray-200 px-4 py-3.5 text-gray-900 bg-gray-50/50 focus:bg-white focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 transition-all text-sm font-medium"
                       >
                         <option value="">Select a role...</option>
                         {STAFF_ROLES.map((role) => (
@@ -412,30 +466,30 @@ function MatchPageContent() {
 
                     {/* Location */}
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className="block text-sm font-semibold text-navy-900 mb-2">
                         Location
                       </label>
                       <div className="relative">
-                        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gold-500" />
                         <input
                           type="text"
                           value={formData.location}
                           onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                           placeholder="e.g., London, Monaco..."
-                          className="w-full rounded-lg border border-gray-300 pl-10 pr-4 py-3 text-gray-900 focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 transition-colors text-sm"
+                          className="w-full rounded-xl border border-gray-200 pl-11 pr-4 py-3.5 text-gray-900 bg-gray-50/50 focus:bg-white focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 transition-all text-sm placeholder:text-gray-400"
                         />
                       </div>
                     </div>
 
                     {/* Timeline */}
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className="block text-sm font-semibold text-navy-900 mb-2">
                         Timeline
                       </label>
                       <select
                         value={formData.timeline}
                         onChange={(e) => setFormData({ ...formData, timeline: e.target.value })}
-                        className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 transition-colors text-sm"
+                        className="w-full rounded-xl border border-gray-200 px-4 py-3.5 text-gray-900 bg-gray-50/50 focus:bg-white focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 transition-all text-sm font-medium"
                       >
                         <option value="">Any timeline</option>
                         {TIMELINE_OPTIONS.map((option) => (
@@ -448,7 +502,7 @@ function MatchPageContent() {
 
                     {/* Requirements */}
                     <div>
-                      <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label className="block text-sm font-semibold text-navy-900 mb-2">
                         Special Requirements
                       </label>
                       <textarea
@@ -456,17 +510,17 @@ function MatchPageContent() {
                         onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
                         placeholder="e.g., Must speak French, Buckingham Palace trained..."
                         rows={3}
-                        className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 transition-colors resize-none text-sm"
+                        className="w-full rounded-xl border border-gray-200 px-4 py-3.5 text-gray-900 bg-gray-50/50 focus:bg-white focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 transition-all resize-none text-sm placeholder:text-gray-400"
                       />
                     </div>
 
                     {error && !hasSearched && (
-                      <p className="text-sm text-red-600">{error}</p>
+                      <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
                     )}
 
                     <Button
                       onClick={handleSearch}
-                      className="w-full"
+                      className="w-full shadow-lg shadow-gold-500/20"
                       size="lg"
                       disabled={isLoading}
                     >
@@ -494,23 +548,28 @@ function MatchPageContent() {
                   </div>
                 </div>
 
-                {/* Quick Help Card */}
+                {/* Quick Help Card - Luxury Styled */}
                 {hasSearched && (
-                  <div className="mt-6 bg-gradient-to-br from-navy-900 to-navy-800 rounded-2xl p-5 text-white">
-                    <h3 className="font-semibold mb-2 flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-gold-400" />
-                      Need Help?
-                    </h3>
-                    <p className="text-sm text-gray-300 mb-3">
-                      Speak directly with a recruitment consultant
-                    </p>
-                    <a
-                      href="tel:+33451088780"
-                      className="inline-flex items-center gap-2 text-gold-400 hover:text-gold-300 font-medium text-sm"
-                    >
-                      +33 451 088 780
-                      <ArrowRight className="h-4 w-4" />
-                    </a>
+                  <div className="mt-6 relative overflow-hidden bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 rounded-2xl p-6 text-white shadow-xl">
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-gold-500/20 via-transparent to-transparent" />
+                    <div className="relative">
+                      <h3 className="font-semibold mb-2 flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold-500/20 ring-1 ring-gold-500/30">
+                          <Phone className="h-4 w-4 text-gold-400" />
+                        </div>
+                        Need Help?
+                      </h3>
+                      <p className="text-sm text-gray-300 mb-4">
+                        Speak directly with a recruitment consultant
+                      </p>
+                      <a
+                        href="tel:+33451088780"
+                        className="inline-flex items-center gap-2 text-gold-400 hover:text-gold-300 font-semibold text-sm group"
+                      >
+                        +33 451 088 780
+                        <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
+                      </a>
+                    </div>
                   </div>
                 )}
               </div>
@@ -529,48 +588,79 @@ function MatchPageContent() {
                 </button>
               )}
 
-              {/* Loading State */}
+              {/* Loading State - Luxury Styled */}
               {isLoading && (
-                <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-16 text-center">
-                  <div className="relative mx-auto mb-6 h-20 w-20">
-                    <div className="absolute inset-0 rounded-full border-4 border-gray-200"></div>
-                    <div className="absolute inset-0 animate-spin rounded-full border-4 border-transparent border-t-gold-500"></div>
-                    <Sparkles className="absolute inset-0 m-auto h-8 w-8 text-gold-500" />
+                <div className="relative overflow-hidden bg-white rounded-2xl shadow-xl border border-gray-100 p-16 text-center">
+                  {/* Subtle animated background */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-gold-50/50 via-white to-navy-50/30" />
+                  <div className="relative">
+                    <div className="relative mx-auto mb-8 h-24 w-24">
+                      {/* Outer glow ring */}
+                      <div className="absolute inset-0 rounded-full bg-gold-500/10 animate-pulse"></div>
+                      {/* Spinner track */}
+                      <div className="absolute inset-2 rounded-full border-4 border-gray-100"></div>
+                      {/* Animated spinner */}
+                      <div className="absolute inset-2 animate-spin rounded-full border-4 border-transparent border-t-gold-500 border-r-gold-300"></div>
+                      {/* Center icon */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center shadow-lg shadow-gold-500/30">
+                          <Sparkles className="h-6 w-6 text-white" />
+                        </div>
+                      </div>
+                    </div>
+                    <h3 className="heading-h2 mb-3">
+                      Searching our candidate database...
+                    </h3>
+                    <p className="body-md max-w-md mx-auto">
+                      Our AI is matching your requirements against 44,000+ professionals
+                    </p>
+                    {/* Progress dots */}
+                    <div className="flex justify-center gap-2 mt-6">
+                      <div className="h-2 w-2 rounded-full bg-gold-400 animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                      <div className="h-2 w-2 rounded-full bg-gold-400 animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                      <div className="h-2 w-2 rounded-full bg-gold-400 animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    </div>
                   </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    Searching our candidate database...
-                  </h3>
-                  <p className="text-gray-600">
-                    Our AI is matching your requirements against 44,000+ professionals
-                  </p>
                 </div>
               )}
 
-              {/* Initial State - No Search Yet */}
+              {/* Initial State - No Search Yet - Luxury Styled */}
               {!hasSearched && !isLoading && (
-                <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 lg:p-12 flex flex-col items-center justify-center min-h-[400px]">
-                  <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-gold-100">
-                    <Search className="h-8 w-8 text-gold-600" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2 text-center">
-                    Start Your Search
-                  </h3>
-                  <p className="text-gray-600 max-w-md mx-auto mb-6 text-center">
-                    Select a role and enter your requirements to instantly see matching candidates
-                    from our database of 44,000+ vetted professionals.
-                  </p>
-                  <div className="flex flex-wrap justify-center gap-3">
-                    {STAFF_ROLES.slice(0, 6).map((role) => (
-                      <button
-                        key={role.value}
-                        onClick={() => {
-                          setFormData({ ...formData, role: role.value });
-                        }}
-                        className="rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gold-100 hover:text-gold-700 transition-colors"
-                      >
-                        {role.label}
-                      </button>
-                    ))}
+                <div className="relative overflow-hidden bg-white rounded-2xl shadow-xl border border-gray-100 p-8 lg:p-12 flex flex-col items-center justify-center min-h-[450px]">
+                  {/* Decorative background */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-gold-50/30 via-white to-navy-50/20" />
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-gold-100/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                  <div className="absolute bottom-0 left-0 w-48 h-48 bg-navy-100/30 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+
+                  <div className="relative">
+                    {/* Icon with glow */}
+                    <div className="mx-auto mb-8 relative">
+                      <div className="absolute inset-0 bg-gold-400/20 rounded-2xl blur-xl scale-150"></div>
+                      <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-gold-400 to-gold-600 shadow-lg shadow-gold-500/30">
+                        <Search className="h-10 w-10 text-white" />
+                      </div>
+                    </div>
+                    <h3 className="heading-h2 mb-3 text-center">
+                      Start Your Search
+                    </h3>
+                    <p className="body-md max-w-md mx-auto mb-8 text-center">
+                      Select a role and enter your requirements to instantly see matching candidates
+                      from our database of 44,000+ vetted professionals.
+                    </p>
+                    {/* Quick role pills */}
+                    <div className="flex flex-wrap justify-center gap-3">
+                      {STAFF_ROLES.slice(0, 6).map((role) => (
+                        <button
+                          key={role.value}
+                          onClick={() => {
+                            setFormData({ ...formData, role: role.value });
+                          }}
+                          className="rounded-full bg-white border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-700 hover:border-gold-300 hover:bg-gold-50 hover:text-gold-700 transition-all shadow-sm hover:shadow-md"
+                        >
+                          {role.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
@@ -578,11 +668,11 @@ function MatchPageContent() {
               {/* Results */}
               {hasSearched && !isLoading && (
                 <>
-                  {/* Results Header */}
-                  <div className="mb-6">
-                    <div className="flex items-center justify-between flex-wrap gap-4 mb-4">
+                  {/* Results Header - Luxury Styled */}
+                  <div className="mb-8">
+                    <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
                       <div>
-                        <h2 className="text-2xl font-bold text-gray-900">
+                        <h2 className="heading-h1">
                           {candidates.length > 0 ? (
                             <>
                               {filteredAndSortedCandidates.length === candidates.length ? (
@@ -590,43 +680,45 @@ function MatchPageContent() {
                               ) : (
                                 <>{filteredAndSortedCandidates.length} of {candidates.length}{" "}</>
                               )}
-                              <span className="text-gold-600">{getRoleLabel(formData.role)}</span>{" "}
+                              <span className="text-gradient-gold">{getRoleLabel(formData.role)}</span>{" "}
                               Candidates
                             </>
                           ) : (
                             "No Exact Matches Found"
                           )}
                         </h2>
-                        <p className="text-gray-600 mt-1">
+                        <p className="body-md mt-2">
                           {candidates.length > 0
                             ? "Preview of candidates matching your requirements"
                             : "Our team can help find the perfect candidate for your needs"}
                         </p>
                       </div>
                       {candidates.length > 0 && (
-                        <div className="flex items-center gap-2 bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-medium">
+                        <div className="badge-available flex items-center gap-2 px-5 py-2.5">
                           <Sparkles className="h-4 w-4" />
                           AI Matched
                         </div>
                       )}
                     </div>
 
-                    {/* Filter & Sort Controls */}
+                    {/* Filter & Sort Controls - Luxury Styled */}
                     {candidates.length > 0 && (
-                      <div className="bg-white rounded-xl border border-gray-200 p-4">
-                        <div className="flex items-center justify-between mb-3">
+                      <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+                        <div className="flex items-center justify-between mb-4">
                           <button
                             onClick={() => setShowResultFilters(!showResultFilters)}
-                            className="flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-gray-900"
+                            className="flex items-center gap-2 text-sm font-semibold text-navy-800 hover:text-navy-900 transition-colors"
                           >
-                            <Filter className="h-4 w-4" />
-                            Filter & Sort
-                            <ChevronDown className={`h-4 w-4 transition-transform ${showResultFilters ? "rotate-180" : ""}`} />
+                            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-navy-100">
+                              <Filter className="h-3.5 w-3.5 text-navy-600" />
+                            </div>
+                            Filter & Sort Results
+                            <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${showResultFilters ? "rotate-180" : ""}`} />
                           </button>
                           {hasActiveFilters && (
                             <button
                               onClick={resetFilters}
-                              className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+                              className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-600 transition-colors"
                             >
                               <X className="h-4 w-4" />
                               Clear filters
@@ -746,84 +838,88 @@ function MatchPageContent() {
 
                   {filteredAndSortedCandidates.length > 0 ? (
                     <>
-                      {/* Candidate Cards */}
+                      {/* Candidate Cards - Using Design System */}
                       <div className="space-y-8">
                         {filteredAndSortedCandidates.map((candidate, index) => (
                           <div
                             key={candidate.id}
-                            className="group relative rounded-2xl border border-gray-200 bg-white shadow-lg hover:shadow-xl hover:border-gold-200 transition-all duration-300 overflow-hidden"
+                            className="card group relative overflow-hidden hover:shadow-xl transition-all duration-500"
                           >
-                            {/* Top Banner with Match Score */}
-                            <div className="bg-gradient-to-r from-navy-900 via-navy-800 to-navy-900 px-4 sm:px-8 py-5">
-                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            {/* Top Banner with Match Score - Design System */}
+                            <div className="relative gradient-navy px-4 sm:px-8 py-6">
+                              {/* Decorative gold accent */}
+                              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-gold-500/10 via-transparent to-transparent" />
+                              <div className="absolute bottom-0 left-0 right-0 h-px gradient-gold-shimmer opacity-30" />
+
+                              <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                                 <div className="flex items-center gap-4 sm:gap-5">
-                                  {/* Blurred Avatar or Fallback */}
+                                  {/* Blurred Avatar or Fallback - Enhanced */}
                                   <div className="relative flex-shrink-0">
                                     {candidate.avatar_url ? (
-                                      <div className="relative h-20 w-20 rounded-xl overflow-hidden ring-2 ring-white/20">
+                                      <div className="relative h-20 w-20 rounded-xl overflow-hidden ring-2 ring-gold-500/30 shadow-lg">
                                         {/* eslint-disable-next-line @next/next/no-img-element */}
                                         <img
                                           src={candidate.avatar_url}
                                           alt=""
                                           className="h-full w-full object-cover blur-[6px] scale-110"
                                         />
-                                        <div className="absolute inset-0 bg-gradient-to-br from-navy-800/30 to-navy-900/40" />
+                                        <div className="absolute inset-0 bg-gradient-to-br from-navy-800/30 to-navy-900/50" />
                                       </div>
                                     ) : (
-                                      <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-gradient-to-br from-gold-400 to-gold-600 text-white text-3xl font-bold ring-2 ring-white/20">
+                                      <div className="flex h-20 w-20 items-center justify-center rounded-xl gradient-gold text-white text-3xl font-bold ring-2 ring-gold-500/30 shadow-lg shadow-gold">
                                         {candidate.display_name?.charAt(0) || String.fromCharCode(65 + index)}
                                       </div>
                                     )}
-                                    {/* Verified Badge */}
-                                    <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-green-500 ring-2 ring-white">
+                                    {/* Verified Badge - Premium */}
+                                    <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 ring-2 ring-white shadow-lg">
                                       <Shield className="h-4 w-4 text-white" />
                                     </div>
                                   </div>
                                   <div>
-                                    <h3 className="font-bold text-white text-2xl">
+                                    <h3 className="font-cormorant font-semibold text-white text-2xl tracking-tight">
                                       {candidate.display_name || `Candidate ${String.fromCharCode(65 + index)}`}
                                     </h3>
-                                    <p className="text-gold-400 font-semibold text-lg">
+                                    <p className="text-gold-400 font-medium text-lg font-inter">
                                       {candidate.position}
                                     </p>
                                   </div>
                                 </div>
-                                {/* Match Score */}
+                                {/* Match Score - Design System */}
                                 <div className="text-right">
-                                  <div className="flex items-center gap-2 justify-end mb-1">
-                                    <Star className="h-6 w-6 text-gold-400 fill-gold-400" />
-                                    <span className="text-4xl font-bold text-white">
-                                      {Math.round(candidate.match_score * 100)}%
-                                    </span>
+                                  <div className="inline-flex flex-col items-end bg-white/5 backdrop-blur-sm rounded-xl px-5 py-3 border border-white/10">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <Star className="h-5 w-5 text-gold-400 fill-gold-400" />
+                                      <span className="font-inter text-3xl font-bold tracking-tight text-white">
+                                        {Math.round(candidate.match_score * 100)}%
+                                      </span>
+                                    </div>
+                                    <p className="font-inter text-[10px] font-medium uppercase tracking-widest text-gold-400/80">Match Score</p>
                                   </div>
-                                  <p className="text-sm text-gray-400 uppercase tracking-wider">Match Score</p>
                                 </div>
                               </div>
                             </div>
 
-                            {/* Key Metrics Bar */}
-                            <div className="bg-gray-50 border-b border-gray-100 px-4 sm:px-8 py-4">
-                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                                <div className="flex flex-wrap items-center gap-4 sm:gap-8">
-                                  <div className="flex items-center gap-2">
-                                    <Briefcase className="h-5 w-5 text-navy-600" />
-                                    <span className="font-bold text-navy-900">{candidate.experience_years}+ years</span>
-                                    <span className="text-gray-500">experience</span>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <Globe className="h-5 w-5 text-navy-600" />
-                                    <span className="text-gray-700">{candidate.nationality}</span>
-                                  </div>
-                                  {candidate.languages.length > 0 && (
-                                    <div className="flex items-center gap-2">
-                                      <Languages className="h-5 w-5 text-navy-600" />
-                                      <span className="text-gray-700">{candidate.languages.join(", ")}</span>
-                                    </div>
-                                  )}
+                            {/* Key Metrics Bar - Design System */}
+                            <div className="bg-surface-ivory border-b border-gray-200 px-4 sm:px-8 py-4">
+                              <div className="flex flex-wrap items-center gap-4 sm:gap-8">
+                                <div className="flex items-center gap-2">
+                                  <Briefcase className="h-5 w-5 text-gold-600" />
+                                  <span className="heading-h6">{candidate.experience_years}+ years</span>
+                                  <span className="body-sm">experience</span>
                                 </div>
-                                <div className="flex items-center gap-2 bg-gray-100 text-gray-600 px-4 py-2 rounded-full font-medium" title="Availability should be verified directly">
-                                  <Calendar className="h-5 w-5" />
-                                  {candidate.availability}
+                                <div className="flex items-center gap-2">
+                                  <Globe className="h-5 w-5 text-gold-600" />
+                                  <span className="body-md text-navy-800">{candidate.nationality}</span>
+                                </div>
+                                {candidate.languages.length > 0 && (
+                                  <div className="flex items-center gap-2">
+                                    <Languages className="h-5 w-5 text-gold-600" />
+                                    <span className="body-md text-navy-800">{candidate.languages.join(", ")}</span>
+                                  </div>
+                                )}
+                                <div className="flex items-center gap-2">
+                                  <Calendar className="h-5 w-5 text-gold-600" />
+                                  <span className="badge-available">{candidate.availability}</span>
                                 </div>
                               </div>
                             </div>
@@ -832,12 +928,12 @@ function MatchPageContent() {
                             <div className="p-4 sm:p-8">
                               {/* WHY THEY'RE THE RIGHT FIT - Primary Hook */}
                               {candidate.why_good_fit && (
-                                <div className="mb-6 bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 rounded-xl p-6 border border-green-200">
-                                  <div className="flex items-center gap-2 text-sm font-bold text-green-800 mb-3">
+                                <div className="mb-6 bg-gradient-to-r from-success-50 via-success-100 to-success-50 rounded-xl p-6 border border-success-200">
+                                  <div className="label-md text-success-700 mb-3 flex items-center gap-2">
                                     <Target className="h-5 w-5" />
                                     Why They&apos;re The Right Fit For Your {contextLabel}
                                   </div>
-                                  <p className="text-green-900 leading-relaxed text-lg">
+                                  <p className="body-lg text-success-800">
                                     {candidate.why_good_fit}
                                   </p>
                                 </div>
@@ -845,31 +941,35 @@ function MatchPageContent() {
 
                               {/* Professional Summary */}
                               <div className="mb-6">
-                                <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                                  <FileCheck className="h-5 w-5 text-navy-600" />
+                                <h4 className="label-md mb-3 flex items-center gap-2">
+                                  <FileCheck className="h-5 w-5 text-gold-600" />
                                   Professional Summary
                                 </h4>
-                                <p className="text-gray-700 leading-relaxed text-lg">
-                                  {candidate.rich_bio}
-                                </p>
+                                <div className="space-y-4">
+                                  {candidate.rich_bio.split(/(?<=[.!?])\s+(?=[A-Z])/).map((paragraph, i) => (
+                                    <p key={i} className="body-lg">
+                                      {paragraph.trim()}
+                                    </p>
+                                  ))}
+                                </div>
                               </div>
 
                               {/* Skills & Qualities Section */}
                               <div className="space-y-6 mb-6">
                                 {/* Professional Qualities - Full Width */}
                                 {candidate.employee_qualities?.length > 0 && (
-                                  <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-xl border border-purple-200 p-5">
-                                    <h5 className="text-sm font-bold text-purple-900 uppercase tracking-wide mb-4 flex items-center gap-2">
-                                      <Heart className="h-5 w-5 text-purple-600" />
+                                  <div className="bg-gradient-to-br from-burgundy-50 to-burgundy-100 rounded-xl border border-burgundy-200 p-5">
+                                    <h5 className="label-md text-burgundy-700 mb-4 flex items-center gap-2">
+                                      <Heart className="h-5 w-5 text-burgundy-500" />
                                       Professional Qualities
                                     </h5>
                                     <div className="flex flex-wrap gap-2">
                                       {candidate.employee_qualities.slice(0, 8).map((quality, i) => (
                                         <span
                                           key={i}
-                                          className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-purple-700 border border-purple-200 shadow-sm"
+                                          className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-burgundy-700 border border-burgundy-200 shadow-xs"
                                         >
-                                          <CheckCircle className="h-4 w-4 text-purple-500" />
+                                          <CheckCircle className="h-4 w-4 text-burgundy-500" />
                                           {quality}
                                         </span>
                                       ))}
@@ -879,12 +979,12 @@ function MatchPageContent() {
 
                                 {/* Longevity & Stability Assessment */}
                                 {candidate.longevity_assessment && (
-                                  <div className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl border border-blue-200 p-5">
-                                    <h5 className="text-sm font-bold text-blue-900 uppercase tracking-wide mb-3 flex items-center gap-2">
-                                      <Calendar className="h-5 w-5 text-blue-600" />
+                                  <div className="bg-gradient-to-br from-navy-50 to-navy-100 rounded-xl border border-navy-200 p-5">
+                                    <h5 className="label-md text-navy-700 mb-3 flex items-center gap-2">
+                                      <Calendar className="h-5 w-5 text-navy-500" />
                                       Career Stability
                                     </h5>
-                                    <p className="text-blue-800 leading-relaxed">
+                                    <p className="body-md text-navy-800">
                                       {candidate.longevity_assessment}
                                     </p>
                                   </div>
@@ -894,8 +994,8 @@ function MatchPageContent() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                   {/* Qualifications & Certifications */}
                                   {candidate.qualifications?.length > 0 && (
-                                    <div className="bg-gradient-to-br from-gold-50 to-amber-50 rounded-xl border border-gold-200 p-5">
-                                      <h5 className="text-sm font-bold text-gold-900 uppercase tracking-wide mb-4 flex items-center gap-2">
+                                    <div className="bg-gradient-to-br from-gold-50 to-gold-100 rounded-xl border border-gold-200 p-5">
+                                      <h5 className="label-md text-gold-700 mb-4 flex items-center gap-2">
                                         <GraduationCap className="h-5 w-5 text-gold-600" />
                                         Qualifications & Training
                                       </h5>
@@ -903,9 +1003,9 @@ function MatchPageContent() {
                                         {candidate.qualifications.slice(0, 6).map((qual, i) => (
                                           <span
                                             key={i}
-                                            className="inline-flex items-center rounded-lg bg-white px-3 py-2 text-sm font-medium text-gold-800 border border-gold-300"
+                                            className="badge-premium"
                                           >
-                                            <Award className="h-4 w-4 mr-2 text-gold-600" />
+                                            <Award className="h-4 w-4 mr-2" />
                                             {qual}
                                           </span>
                                         ))}
@@ -915,9 +1015,9 @@ function MatchPageContent() {
 
                                   {/* Key Strengths */}
                                   {candidate.key_strengths?.length > 0 && (
-                                    <div className="bg-white rounded-xl border border-gray-200 p-5">
-                                      <h5 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4 flex items-center gap-2">
-                                        <Sparkles className="h-5 w-5 text-navy-600" />
+                                    <div className="bg-surface-cream rounded-xl border border-gray-200 p-5">
+                                      <h5 className="label-md mb-4 flex items-center gap-2">
+                                        <Sparkles className="h-5 w-5 text-gold-600" />
                                         Core Competencies
                                       </h5>
                                       <div className="flex flex-wrap gap-2">
@@ -938,8 +1038,8 @@ function MatchPageContent() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                   {/* Career Highlights */}
                                   {candidate.career_highlights?.length > 0 && (
-                                    <div className="bg-white rounded-xl border border-gray-200 p-5">
-                                      <h5 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4 flex items-center gap-2">
+                                    <div className="bg-surface-cream rounded-xl border border-gray-200 p-5">
+                                      <h5 className="label-md mb-4 flex items-center gap-2">
                                         <Star className="h-5 w-5 text-gold-500" />
                                         Career Achievements
                                       </h5>
@@ -947,9 +1047,9 @@ function MatchPageContent() {
                                         {candidate.career_highlights.slice(0, 5).map((highlight, i) => (
                                           <li
                                             key={i}
-                                            className="flex items-start gap-3 text-gray-700"
+                                            className="flex items-start gap-3 body-sm text-navy-700"
                                           >
-                                            <CheckCircle className="h-5 w-5 text-green-500 mt-0.5 flex-shrink-0" />
+                                            <CheckCircle className="h-5 w-5 text-success-500 mt-0.5 flex-shrink-0" />
                                             <span>{highlight}</span>
                                           </li>
                                         ))}
@@ -959,9 +1059,9 @@ function MatchPageContent() {
 
                                   {/* Work History */}
                                   {candidate.work_history && candidate.work_history.length > 0 ? (
-                                    <div className="bg-white rounded-xl border border-gray-200 p-5">
-                                      <h5 className="text-sm font-bold text-gray-900 uppercase tracking-wide mb-4 flex items-center gap-2">
-                                        <Briefcase className="h-5 w-5 text-navy-600" />
+                                    <div className="bg-surface-cream rounded-xl border border-gray-200 p-5">
+                                      <h5 className="label-md mb-4 flex items-center gap-2">
+                                        <Briefcase className="h-5 w-5 text-gold-600" />
                                         Work History
                                       </h5>
                                       <div className="space-y-3">
@@ -1010,42 +1110,42 @@ function MatchPageContent() {
                                 </div>
                               </div>
 
-                              {/* Bottom Stats Bar */}
-                              <div className="bg-gray-50 rounded-xl border border-gray-200 p-5 mb-6">
+                              {/* Bottom Stats Bar - Design System */}
+                              <div className="bg-surface-ivory rounded-xl border border-gray-200 p-5 mb-6">
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
                                   <div>
-                                    <div className="text-3xl font-bold text-navy-900">{candidate.experience_years}+</div>
-                                    <div className="text-sm text-gray-500 uppercase tracking-wide">Years Experience</div>
+                                    <div className="stat-number text-3xl text-gradient-gold">{candidate.experience_years}+</div>
+                                    <div className="label-sm">Years Experience</div>
                                   </div>
                                   <div>
-                                    <div className="text-3xl font-bold text-navy-900">{candidate.languages.length}</div>
-                                    <div className="text-sm text-gray-500 uppercase tracking-wide">Languages</div>
+                                    <div className="stat-number text-3xl text-gradient-gold">{candidate.languages.length}</div>
+                                    <div className="label-sm">Languages</div>
                                   </div>
                                   <div>
-                                    <div className="text-3xl font-bold text-navy-900">{candidate.qualifications?.length || 0}+</div>
-                                    <div className="text-sm text-gray-500 uppercase tracking-wide">Certifications</div>
+                                    <div className="stat-number text-3xl text-gradient-gold">{candidate.qualifications?.length || 0}+</div>
+                                    <div className="label-sm">Certifications</div>
                                   </div>
                                   <div>
                                     <div className="flex items-center justify-center gap-2">
-                                      <Users className="h-6 w-6 text-green-600" />
-                                      <span className="text-3xl font-bold text-navy-900">✓</span>
+                                      <Users className="h-6 w-6 text-success-500" />
+                                      <span className="stat-number text-3xl text-success-500">✓</span>
                                     </div>
-                                    <div className="text-sm text-gray-500 uppercase tracking-wide">References Available</div>
+                                    <div className="label-sm">References Available</div>
                                   </div>
                                 </div>
                               </div>
 
-                              {/* CTA Footer */}
+                              {/* CTA Footer - Design System */}
                               <div className="flex items-center justify-between pt-5 border-t border-gray-200">
-                                <p className="text-gray-500 italic">
+                                <p className="quote text-gray-500 text-base">
                                   Full CV, references, and contact details available upon request
                                 </p>
                                 <button
                                   onClick={() => setShowEmailCapture(true)}
-                                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-gold-500 to-gold-600 text-white font-semibold rounded-xl hover:from-gold-600 hover:to-gold-700 transition-all shadow-lg hover:shadow-xl group"
+                                  className="btn-primary group"
                                 >
                                   <span>Request Full Profile</span>
-                                  <ArrowRight className="h-5 w-5 group-hover:translate-x-0.5 transition-transform" />
+                                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-0.5 transition-transform" />
                                 </button>
                               </div>
                             </div>
@@ -1053,47 +1153,50 @@ function MatchPageContent() {
                         ))}
                       </div>
 
-                      {/* Bottom CTA */}
-                      <div className="mt-10 rounded-2xl bg-gradient-to-r from-navy-900 to-navy-800 p-8 text-center">
-                        <h3 className="text-2xl font-bold text-white mb-3">
-                          Ready to Connect With These Candidates?
-                        </h3>
-                        <p className="text-gray-300 mb-6 max-w-2xl mx-auto">
-                          Enter your email and a dedicated consultant will send you detailed profiles
-                          with CVs, references, and contact options within 24 hours.
-                        </p>
-                        <Button
-                          onClick={() => setShowEmailCapture(true)}
-                          size="lg"
-                          className="min-w-[250px]"
-                        >
-                          Get Full Candidate Profiles
-                          <ArrowRight className="ml-2 h-5 w-5" />
-                        </Button>
+                      {/* Bottom CTA - Design System */}
+                      <div className="mt-10 rounded-2xl gradient-navy p-8 text-center relative overflow-hidden">
+                        {/* Decorative gold accent */}
+                        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-gold-500/10 via-transparent to-transparent" />
+                        <div className="relative">
+                          <h3 className="font-cormorant text-2xl sm:text-3xl font-medium text-white mb-3">
+                            Ready to Connect With These Candidates?
+                          </h3>
+                          <p className="font-inter text-base sm:text-lg text-gray-300 mb-6 max-w-2xl mx-auto">
+                            Enter your email and a dedicated consultant will send you detailed profiles
+                            with CVs, references, and contact options within 24 hours.
+                          </p>
+                          <button
+                            onClick={() => setShowEmailCapture(true)}
+                            className="btn-primary min-w-[250px] shadow-gold"
+                          >
+                            Get Full Candidate Profiles
+                            <ArrowRight className="ml-2 h-5 w-5" />
+                          </button>
+                        </div>
                       </div>
                     </>
                   ) : (
-                    /* No Results */
-                    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-16 text-center">
-                      <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gray-100">
-                        <Search className="h-10 w-10 text-gray-400" />
+                    /* No Results - Design System */
+                    <div className="card p-16 text-center">
+                      <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gold-50">
+                        <Search className="h-10 w-10 text-gold-400" />
                       </div>
-                      <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                      <h3 className="heading-h3 mb-3">
                         No Exact Matches Found
                       </h3>
-                      <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                      <p className="body-md mb-8 max-w-md mx-auto">
                         We couldn&apos;t find an exact match for your criteria, but our team specializes
                         in finding exceptional candidates for unique requirements.
                       </p>
                       <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                        <Button onClick={() => setShowEmailCapture(true)}>
+                        <button onClick={() => setShowEmailCapture(true)} className="btn-primary">
                           Speak to a Consultant
                           <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
-                        <Button variant="secondary" onClick={() => setShowFilters(true)}>
+                        </button>
+                        <button onClick={() => setShowFilters(true)} className="btn-secondary">
                           <RefreshCw className="mr-2 h-4 w-4" />
                           Adjust Criteria
-                        </Button>
+                        </button>
                       </div>
                     </div>
                   )}

@@ -97,6 +97,8 @@ interface CandidateToProcess {
 async function getCandidatesToProcess(): Promise<CandidateToProcess[]> {
   log(`Fetching candidates needing extraction (limit: ${CONFIG.limit})...`);
 
+  const MIN_CV_TEXT_LENGTH = 100; // Minimum chars for a usable CV
+
   // If specific candidate ID provided
   if (CONFIG.candidateId) {
     const { data: candidate, error: candError } = await supabase
@@ -110,29 +112,44 @@ async function getCandidatesToProcess(): Promise<CandidateToProcess[]> {
       return [];
     }
 
-    // Get their latest CV (documents use entity_type/entity_id pattern)
-    const { data: doc, error: docError } = await supabase
+    // Get ALL CVs and pick the best one (most text, excluding logo versions)
+    const { data: docs } = await supabase
       .from('documents')
-      .select('id, extracted_text')
+      .select('id, name, extracted_text')
       .eq('entity_type', 'candidate')
       .eq('entity_id', CONFIG.candidateId)
       .eq('type', 'cv')
-      .not('extracted_text', 'is', null)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
+      .not('extracted_text', 'is', null);
 
-    if (docError || !doc) {
-      logError(`No CV document found for candidate: ${CONFIG.candidateId}`);
+    if (!docs || docs.length === 0) {
+      logError(`No CV documents found for candidate: ${CONFIG.candidateId}`);
       return [];
     }
+
+    // Filter out logo versions and CVs with minimal text
+    const validDocs = docs.filter((doc) => {
+      if (doc.name?.toLowerCase().includes('logo')) return false;
+      if (!doc.extracted_text || doc.extracted_text.length < MIN_CV_TEXT_LENGTH) return false;
+      return true;
+    });
+
+    if (validDocs.length === 0) {
+      logError(`No valid CV found for candidate: ${CONFIG.candidateId} (${docs.length} docs, all filtered - logo or minimal text)`);
+      return [];
+    }
+
+    // Pick the one with most content
+    validDocs.sort((a, b) => (b.extracted_text?.length || 0) - (a.extracted_text?.length || 0));
+    const bestDoc = validDocs[0];
+
+    log(`Selected CV: ${bestDoc.name} (${bestDoc.extracted_text?.length || 0} chars)`);
 
     return [
       {
         candidate_id: candidate.id,
         candidate_name: `${candidate.first_name} ${candidate.last_name}`,
-        document_id: doc.id,
-        cv_text: doc.extracted_text,
+        document_id: bestDoc.id,
+        cv_text: bestDoc.extracted_text!,
       },
     ];
   }
@@ -158,31 +175,48 @@ async function getCandidatesToProcess(): Promise<CandidateToProcess[]> {
   const filterType = CONFIG.force ? 'all (force mode)' : 'without extraction';
   log(`Found ${candidates.length} candidates ${filterType}`);
 
-  // For each candidate, get their latest CV document
+  // For each candidate, get the BEST CV document (most text, excluding logo versions)
   const results: CandidateToProcess[] = [];
 
   for (const candidate of candidates) {
     if (results.length >= CONFIG.limit) break;
 
-    const { data: doc } = await supabase
+    // Get all CV documents for this candidate
+    const { data: docs } = await supabase
       .from('documents')
-      .select('id, extracted_text')
+      .select('id, name, extracted_text')
       .eq('entity_type', 'candidate')
       .eq('entity_id', candidate.id)
       .eq('type', 'cv')
-      .not('extracted_text', 'is', null)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
+      .not('extracted_text', 'is', null);
 
-    if (doc && doc.extracted_text) {
-      results.push({
-        candidate_id: candidate.id,
-        candidate_name: `${candidate.first_name} ${candidate.last_name}`,
-        document_id: doc.id,
-        cv_text: doc.extracted_text,
-      });
+    if (!docs || docs.length === 0) continue;
+
+    // Filter out logo versions and CVs with minimal text
+    // Logo CVs are image-based PDFs that can't be properly extracted
+    const validDocs = docs.filter((doc) => {
+      // Skip logo versions (image-based PDFs)
+      if (doc.name?.toLowerCase().includes('logo')) return false;
+      // Skip CVs with insufficient text
+      if (!doc.extracted_text || doc.extracted_text.length < MIN_CV_TEXT_LENGTH) return false;
+      return true;
+    });
+
+    if (validDocs.length === 0) {
+      log(`  ⚠ ${candidate.first_name} ${candidate.last_name}: No valid CV found (${docs.length} docs, all filtered out)`);
+      continue;
     }
+
+    // Sort by text length descending - pick the one with most content
+    validDocs.sort((a, b) => (b.extracted_text?.length || 0) - (a.extracted_text?.length || 0));
+    const bestDoc = validDocs[0];
+
+    results.push({
+      candidate_id: candidate.id,
+      candidate_name: `${candidate.first_name} ${candidate.last_name}`,
+      document_id: bestDoc.id,
+      cv_text: bestDoc.extracted_text!,
+    });
   }
 
   log(`Found ${results.length} candidates with CV documents to process`);

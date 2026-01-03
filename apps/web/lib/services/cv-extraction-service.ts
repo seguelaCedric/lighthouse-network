@@ -148,29 +148,48 @@ export class CVExtractionService {
   }
 
   /**
-   * Get the latest CV document for a candidate
+   * Get the BEST CV document for a candidate (most text content, excluding logo versions)
    */
   async getLatestCVDocument(candidateId: string): Promise<{
     id: string;
     extracted_text: string;
     created_at: string;
   } | null> {
-    const { data, error } = await this.supabase
+    const MIN_CV_TEXT_LENGTH = 100;
+
+    // Get ALL CVs for this candidate
+    const { data: docs, error } = await this.supabase
       .from('documents')
-      .select('id, extracted_text, created_at')
+      .select('id, name, extracted_text, created_at')
       .eq('entity_type', 'candidate')
       .eq('entity_id', candidateId)
       .eq('type', 'cv')
-      .not('extracted_text', 'is', null)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
+      .not('extracted_text', 'is', null);
 
-    if (error || !data) {
+    if (error || !docs || docs.length === 0) {
       return null;
     }
 
-    return data;
+    // Filter out logo versions and CVs with minimal text
+    const validDocs = docs.filter((doc: { name?: string; extracted_text?: string }) => {
+      // Skip logo versions (image-based PDFs that can't be properly extracted)
+      if (doc.name?.toLowerCase().includes('logo')) return false;
+      // Skip CVs with insufficient text
+      if (!doc.extracted_text || doc.extracted_text.length < MIN_CV_TEXT_LENGTH) return false;
+      return true;
+    });
+
+    if (validDocs.length === 0) {
+      return null;
+    }
+
+    // Sort by text length descending - pick the one with most content
+    validDocs.sort(
+      (a: { extracted_text?: string }, b: { extracted_text?: string }) =>
+        (b.extracted_text?.length || 0) - (a.extracted_text?.length || 0)
+    );
+
+    return validDocs[0];
   }
 
   /**

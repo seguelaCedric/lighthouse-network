@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getClientSessionFromCookie } from "@/lib/auth/client-session";
-import { anonymizeBio } from "@lighthouse/ai";
+import { anonymizeBio, type ReferenceDetail } from "@lighthouse/ai";
 
 /**
  * GET /api/client/candidates/[id]
@@ -92,7 +92,8 @@ export async function GET(
         smoker,
         visible_tattoos,
         profile_photo_url,
-        bio_full
+        bio_full,
+        references_extracted
       `)
       .eq("id", candidateId)
       .single();
@@ -195,7 +196,8 @@ export async function GET(
               candidate.first_name,
               candidate.last_name,
               candidate.nationality,
-              candidate.primary_position
+              candidate.primary_position,
+              candidate.references_extracted as ReferenceDetail[] | null
             )
           : null,
 
