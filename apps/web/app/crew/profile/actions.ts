@@ -39,6 +39,14 @@ export interface CandidateProfile {
   // Availability
   availabilityStatus: "available" | "looking" | "employed" | "unavailable";
   availableFrom: string | null;
+  // Preferences
+  industryPreference: "yacht" | "household" | "both" | null;
+  preferencesCompletedAt: string | null;
+  yachtPrimaryPosition: string | null;
+  householdPrimaryPosition: string | null;
+  householdLocations: string[] | null;
+  // Verification
+  verificationTier: string | null;
   // Special circumstances
   isSmoker: boolean | null;
   hasTattoos: boolean | null;
@@ -53,7 +61,9 @@ export interface CandidateProfile {
   hasEng1: boolean;
   eng1Expiry: string | null;
   hasSchengen: boolean | null;
+  schengenExpiry: string | null;
   hasB1B2: boolean | null;
+  b1b2Expiry: string | null;
   hasC1D: boolean | null;
   jobSearchNotes: string | null;
 }
@@ -91,70 +101,24 @@ export async function getProfileData(): Promise<ProfileData | null> {
 
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    console.log("[getProfileData] Step 1 - No auth user found");
+  console.log("[getProfileData] Auth check - user:", user?.id, "email:", user?.email, "error:", authError?.message);
+
+  if (!user || !user.email) {
+    console.log("[getProfileData] No user or email - returning null");
     return null;
   }
 
-  console.log("[getProfileData] Step 1 - Auth user found:", user.id);
-
-  // Get user record - try to find by auth_id
+  // Get user record (auth_id -> user_id mapping)
   const { data: userData, error: userError } = await supabase
     .from("users")
     .select("id")
     .eq("auth_id", user.id)
-    .single();
+    .maybeSingle();
 
-  console.log("[getProfileData] Step 2 - Users table lookup. Found:", !!userData, "Error:", userError?.message);
-
-  // If user record not found, try to find candidate directly by auth user email
-  let candidateUserId = userData?.id;
-  let candidateFoundByEmailWithoutUserId = false;
-
-  if (!userData) {
-    // User record doesn't exist yet - try to find candidate by email
-    const { data: candidateByEmail, error: candidateByEmailError } = await supabase
-      .from("candidates")
-      .select("id, user_id")
-      .eq("email", user.email)
-      .single();
-
-    console.log("[getProfileData] Step 3 - Candidate email lookup. Found:", !!candidateByEmail, "Error:", candidateByEmailError?.message);
-
-    if (candidateByEmail?.user_id) {
-      candidateUserId = candidateByEmail.user_id;
-      console.log("[getProfileData] Step 3a - Using user_id from candidate:", candidateUserId);
-    } else if (candidateByEmail && !candidateByEmail.user_id) {
-      // Candidate exists but has no user_id link (e.g., Vincere import)
-      // We'll use email-based lookup instead
-      console.log("[getProfileData] Step 3b - Candidate found but no user_id, will use email-based lookup");
-      candidateFoundByEmailWithoutUserId = true;
-    } else {
-      console.log("[getProfileData] Step 3c - No candidate found by email");
-    }
-  } else {
-    console.log("[getProfileData] Step 3 - User record found, using ID:", candidateUserId);
-  }
-
-  // If we don't have a user_id reference and didn't find by email, we can't proceed
-  if (!candidateUserId && !candidateFoundByEmailWithoutUserId) {
-    console.log("[getProfileData] REDIRECT: No candidateUserId and no email match");
-    return null;
-  }
-
-  console.log("[getProfileData] Step 4 - candidateUserId:", candidateUserId, ", candidateFoundByEmailWithoutUserId:", candidateFoundByEmailWithoutUserId);
-
-  // Debug: Log all the IDs we're working with
-  console.log("[getProfileData] DEBUG - auth user.id (auth_id):", user.id);
-  console.log("[getProfileData] DEBUG - auth user.email:", user.email);
-  console.log("[getProfileData] DEBUG - candidateUserId (users.id):", candidateUserId);
-
-  // Get candidate with related data
-  // Try to find by user_id first, but if that fails, try by email (candidates from Vincere may have null user_id)
-  let candidate = null;
-  let candidateError = null;
+  console.log("[getProfileData] Users table lookup - userData:", userData?.id, "error:", userError?.message);
 
   const candidateFields = `
     id,
@@ -180,6 +144,11 @@ export async function getProfileData(): Promise<ProfileData | null> {
     preferred_yacht_size_max,
     preferred_contract_types,
     preferred_regions,
+    industry_preference,
+    yacht_primary_position,
+    household_primary_position,
+    household_locations,
+    preferences_completed_at,
     salary_currency,
     desired_salary_min,
     desired_salary_max,
@@ -199,53 +168,51 @@ export async function getProfileData(): Promise<ProfileData | null> {
     has_schengen,
     has_b1b2,
     has_c1d,
+    verification_tier,
     job_search_notes
   `;
 
-  // If we already know we found candidate by email without user_id, skip user_id lookup
-  if (candidateFoundByEmailWithoutUserId) {
-    console.log("[getProfileData] Step 5 - Skipping user_id lookup, using email directly");
-  } else if (candidateUserId) {
-    // First attempt: query by user_id
-    const { data: candidateByUserId, error: errorByUserId } = await supabase
+  let candidate = null;
+  let candidateError = null;
+
+  // Try to find candidate by user_id if user record exists
+  if (userData) {
+    const result = await supabase
       .from("candidates")
       .select(candidateFields)
-      .eq("user_id", candidateUserId)
-      .single();
-
-    if (candidateByUserId) {
-      candidate = candidateByUserId;
-      console.log("[getProfileData] Step 5 - Candidate profile lookup by user_id. Found: true");
-    } else {
-      console.log("[getProfileData] Step 5a - Candidate not found by user_id. Error:", errorByUserId?.message);
-    }
+      .eq("user_id", userData.id)
+      .maybeSingle();
+    
+    candidate = result.data;
+    candidateError = result.error;
+    console.log("[getProfileData] Candidate lookup by user_id - found:", !!candidate, "error:", candidateError?.message);
   }
 
-  // If no candidate found yet, try by email
-  if (!candidate) {
-    console.log("[getProfileData] Step 5b - Trying email fallback. Looking for:", user.email);
-
-    const { data: candidateByEmail, error: errorByEmail } = await supabase
+  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
+  if (!candidate && user.email) {
+    const result = await supabase
       .from("candidates")
       .select(candidateFields)
       .eq("email", user.email)
-      .single();
-
-    if (candidateByEmail) {
-      candidate = candidateByEmail;
-      console.log("[getProfileData] Step 5b - Candidate profile found by email. Found: true");
-    } else {
-      candidateError = errorByEmail;
-      console.log("[getProfileData] Step 5b - Candidate profile lookup by email. Found: false, Error:", candidateError?.message);
-    }
+      .maybeSingle();
+    
+    candidate = result.data;
+    candidateError = result.error;
+    console.log("[getProfileData] Candidate lookup by email - found:", !!candidate, "error:", candidateError?.message);
   }
 
-  if (!candidate) {
-    console.log("[getProfileData] REDIRECT: No candidate profile found");
+  // Check for errors (excluding PGRST116 which means no rows found)
+  if (candidateError && candidateError.code && candidateError.code !== "PGRST116") {
+    console.error("[getProfileData] Error fetching candidate:", candidateError);
     return null;
   }
 
-  console.log("[getProfileData] SUCCESS - All auth checks passed. Candidate:", candidate.id);
+  if (!candidate) {
+    console.log("[getProfileData] No candidate found - returning null");
+    return null;
+  }
+
+  console.log("[getProfileData] Success - candidate ID:", candidate.id);
 
   // Get certifications
   const { data: certifications } = await supabase
@@ -306,6 +273,12 @@ export async function getProfileData(): Promise<ProfileData | null> {
       preferredYachtSizeMax: candidate.preferred_yacht_size_max,
       preferredContractTypes: candidate.preferred_contract_types,
       preferredRegions: candidate.preferred_regions,
+      industryPreference: candidate.industry_preference,
+      preferencesCompletedAt: candidate.preferences_completed_at,
+      yachtPrimaryPosition: candidate.yacht_primary_position,
+      householdPrimaryPosition: candidate.household_primary_position,
+      householdLocations: candidate.household_locations,
+      verificationTier: candidate.verification_tier,
       salaryCurrency: candidate.salary_currency,
       salaryMin: candidate.desired_salary_min,
       salaryMax: candidate.desired_salary_max,
@@ -323,7 +296,9 @@ export async function getProfileData(): Promise<ProfileData | null> {
       hasEng1: candidate.has_eng1 || false,
       eng1Expiry: candidate.eng1_expiry,
       hasSchengen: candidate.has_schengen,
+      schengenExpiry: null, // Column doesn't exist in database yet (migration 046 not run)
       hasB1B2: candidate.has_b1b2,
+      b1b2Expiry: null, // Column doesn't exist in database yet (migration 046 not run)
       hasC1D: candidate.has_c1d,
       jobSearchNotes: candidate.job_search_notes,
     },
@@ -372,22 +347,40 @@ export async function updatePersonalInfo(data: {
     return { success: false, error: "Not authenticated" };
   }
 
+  // Get user record (auth_id -> user_id mapping)
   const { data: userData } = await supabase
     .from("users")
     .select("id")
     .eq("auth_id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (!userData) {
-    return { success: false, error: "User not found" };
+  let candidate = null;
+
+  // Try to find candidate by user_id if user record exists
+  if (userData) {
+    const { data: candidateByUserId } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("user_id", userData.id)
+      .maybeSingle();
+
+    if (candidateByUserId) {
+      candidate = candidateByUserId;
+    }
   }
 
-  // Get candidate ID for sync
-  const { data: candidate } = await supabase
-    .from("candidates")
-    .select("id")
-    .eq("user_id", userData.id)
-    .single();
+  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
+  if (!candidate && user.email) {
+    const { data: candidateByEmail } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("email", user.email)
+      .maybeSingle();
+
+    if (candidateByEmail) {
+      candidate = candidateByEmail;
+    }
+  }
 
   if (!candidate) {
     return { success: false, error: "Candidate not found" };
@@ -459,22 +452,40 @@ export async function updateProfessionalDetails(data: {
     return { success: false, error: "Not authenticated" };
   }
 
+  // Get user record (auth_id -> user_id mapping)
   const { data: userData } = await supabase
     .from("users")
     .select("id")
     .eq("auth_id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (!userData) {
-    return { success: false, error: "User not found" };
+  let candidate = null;
+
+  // Try to find candidate by user_id if user record exists
+  if (userData) {
+    const { data: candidateByUserId } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("user_id", userData.id)
+      .maybeSingle();
+
+    if (candidateByUserId) {
+      candidate = candidateByUserId;
+    }
   }
 
-  // Get candidate ID for sync
-  const { data: candidate } = await supabase
-    .from("candidates")
-    .select("id")
-    .eq("user_id", userData.id)
-    .single();
+  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
+  if (!candidate && user.email) {
+    const { data: candidateByEmail } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("email", user.email)
+      .maybeSingle();
+
+    if (candidateByEmail) {
+      candidate = candidateByEmail;
+    }
+  }
 
   if (!candidate) {
     return { success: false, error: "Candidate not found" };
@@ -542,22 +553,40 @@ export async function updateWorkPreferences(data: {
     return { success: false, error: "Not authenticated" };
   }
 
+  // Get user record (auth_id -> user_id mapping)
   const { data: userData } = await supabase
     .from("users")
     .select("id")
     .eq("auth_id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (!userData) {
-    return { success: false, error: "User not found" };
+  let candidate = null;
+
+  // Try to find candidate by user_id if user record exists
+  if (userData) {
+    const { data: candidateByUserId } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("user_id", userData.id)
+      .maybeSingle();
+
+    if (candidateByUserId) {
+      candidate = candidateByUserId;
+    }
   }
 
-  // Get candidate ID for sync
-  const { data: candidate } = await supabase
-    .from("candidates")
-    .select("id")
-    .eq("user_id", userData.id)
-    .single();
+  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
+  if (!candidate && user.email) {
+    const { data: candidateByEmail } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("email", user.email)
+      .maybeSingle();
+
+    if (candidateByEmail) {
+      candidate = candidateByEmail;
+    }
+  }
 
   if (!candidate) {
     return { success: false, error: "Candidate not found" };
@@ -627,22 +656,40 @@ export async function updateSpecialCircumstances(data: {
     return { success: false, error: "Not authenticated" };
   }
 
+  // Get user record (auth_id -> user_id mapping)
   const { data: userData } = await supabase
     .from("users")
     .select("id")
     .eq("auth_id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (!userData) {
-    return { success: false, error: "User not found" };
+  let candidate = null;
+
+  // Try to find candidate by user_id if user record exists
+  if (userData) {
+    const { data: candidateByUserId } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("user_id", userData.id)
+      .maybeSingle();
+
+    if (candidateByUserId) {
+      candidate = candidateByUserId;
+    }
   }
 
-  // Get candidate ID for sync
-  const { data: candidate } = await supabase
-    .from("candidates")
-    .select("id")
-    .eq("user_id", userData.id)
-    .single();
+  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
+  if (!candidate && user.email) {
+    const { data: candidateByEmail } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("email", user.email)
+      .maybeSingle();
+
+    if (candidateByEmail) {
+      candidate = candidateByEmail;
+    }
+  }
 
   if (!candidate) {
     return { success: false, error: "Candidate not found" };
@@ -695,7 +742,9 @@ export async function updateCertificationStatus(data: {
   hasEng1?: boolean;
   eng1Expiry?: string;
   hasSchengen?: boolean;
+  schengenExpiry?: string;
   hasB1B2?: boolean;
+  b1b2Expiry?: string;
 }): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
 
@@ -707,22 +756,40 @@ export async function updateCertificationStatus(data: {
     return { success: false, error: "Not authenticated" };
   }
 
+  // Get user record (auth_id -> user_id mapping)
   const { data: userData } = await supabase
     .from("users")
     .select("id")
     .eq("auth_id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (!userData) {
-    return { success: false, error: "User not found" };
+  let candidate = null;
+
+  // Try to find candidate by user_id if user record exists
+  if (userData) {
+    const { data: candidateByUserId } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("user_id", userData.id)
+      .maybeSingle();
+
+    if (candidateByUserId) {
+      candidate = candidateByUserId;
+    }
   }
 
-  // Get candidate ID for sync
-  const { data: candidate } = await supabase
-    .from("candidates")
-    .select("id")
-    .eq("user_id", userData.id)
-    .single();
+  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
+  if (!candidate && user.email) {
+    const { data: candidateByEmail } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("email", user.email)
+      .maybeSingle();
+
+    if (candidateByEmail) {
+      candidate = candidateByEmail;
+    }
+  }
 
   if (!candidate) {
     return { success: false, error: "Candidate not found" };
@@ -733,16 +800,18 @@ export async function updateCertificationStatus(data: {
   };
 
   if (data.hasStcw !== undefined) updateData.has_stcw = data.hasStcw;
-  if (data.stcwExpiry !== undefined) updateData.stcw_expiry = data.stcwExpiry;
+  if (data.stcwExpiry !== undefined) updateData.stcw_expiry = data.stcwExpiry || null;
   if (data.hasEng1 !== undefined) updateData.has_eng1 = data.hasEng1;
-  if (data.eng1Expiry !== undefined) updateData.eng1_expiry = data.eng1Expiry;
+  if (data.eng1Expiry !== undefined) updateData.eng1_expiry = data.eng1Expiry || null;
   if (data.hasSchengen !== undefined) updateData.has_schengen = data.hasSchengen;
+  if (data.schengenExpiry !== undefined) updateData.schengen_expiry = data.schengenExpiry || null;
   if (data.hasB1B2 !== undefined) updateData.has_b1b2 = data.hasB1B2;
+  if (data.b1b2Expiry !== undefined) updateData.b1b2_expiry = data.b1b2Expiry || null;
 
   const { error } = await supabase
     .from("candidates")
     .update(updateData)
-    .eq("user_id", userData.id);
+    .eq("id", candidate.id);
 
   if (error) {
     console.error("Error updating certification status:", error);
@@ -756,7 +825,9 @@ export async function updateCertificationStatus(data: {
     has_eng1: data.hasEng1,
     eng1_expiry: data.eng1Expiry,
     has_schengen: data.hasSchengen,
+    schengen_expiry: data.schengenExpiry,
     has_b1b2: data.hasB1B2,
+    b1b2_expiry: data.b1b2Expiry,
   }).catch((err) => console.error("Vincere sync failed for certification update:", err));
 
   revalidatePath("/crew/profile/edit");
@@ -784,21 +855,40 @@ export async function addCertification(data: {
     return { success: false, error: "Not authenticated" };
   }
 
+  // Get user record (auth_id -> user_id mapping)
   const { data: userData } = await supabase
     .from("users")
     .select("id")
     .eq("auth_id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (!userData) {
-    return { success: false, error: "User not found" };
+  let candidate = null;
+
+  // Try to find candidate by user_id if user record exists
+  if (userData) {
+    const { data: candidateByUserId } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("user_id", userData.id)
+      .maybeSingle();
+
+    if (candidateByUserId) {
+      candidate = candidateByUserId;
+    }
   }
 
-  const { data: candidate } = await supabase
-    .from("candidates")
-    .select("id")
-    .eq("user_id", userData.id)
-    .single();
+  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
+  if (!candidate && user.email) {
+    const { data: candidateByEmail } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("email", user.email)
+      .maybeSingle();
+
+    if (candidateByEmail) {
+      candidate = candidateByEmail;
+    }
+  }
 
   if (!candidate) {
     return { success: false, error: "Candidate not found" };
@@ -815,9 +905,9 @@ export async function addCertification(data: {
       expiry_date: data.expiryDate,
     })
     .select("id")
-    .single();
+    .maybeSingle();
 
-  if (error) {
+  if (error || !certification) {
     console.error("Error adding certification:", error);
     return { success: false, error: "Failed to add certification" };
   }
@@ -923,32 +1013,39 @@ export async function updateProfilePhoto(formData: FormData): Promise<{
     return { success: false, error: "Not authenticated" };
   }
 
-  // Get user and candidate info
+  // Get user record (auth_id -> user_id mapping)
   const { data: userData } = await supabase
     .from("users")
     .select("id")
     .eq("auth_id", user.id)
-    .single();
+    .maybeSingle();
 
   let candidateId: string | null = null;
 
+  // Try to find candidate by user_id if user record exists
   if (userData) {
-    const { data: candidate } = await supabase
+    const { data: candidateByUserId } = await supabase
       .from("candidates")
       .select("id")
       .eq("user_id", userData.id)
-      .single();
-    candidateId = candidate?.id || null;
+      .maybeSingle();
+
+    if (candidateByUserId) {
+      candidateId = candidateByUserId.id;
+    }
   }
 
-  // Fallback to email lookup if no user record
-  if (!candidateId) {
+  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
+  if (!candidateId && user.email) {
     const { data: candidateByEmail } = await supabase
       .from("candidates")
       .select("id")
       .eq("email", user.email)
-      .single();
-    candidateId = candidateByEmail?.id || null;
+      .maybeSingle();
+
+    if (candidateByEmail) {
+      candidateId = candidateByEmail.id;
+    }
   }
 
   if (!candidateId) {
@@ -1052,15 +1149,44 @@ export async function updateCertificationChecklist(data: {
 }): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
 
-  // Get authenticated user and candidate
+  // Get authenticated user
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Not authenticated" };
 
-  const { data: candidate } = await supabase
-    .from("candidates")
+  // Get user record (auth_id -> user_id mapping)
+  const { data: userData } = await supabase
+    .from("users")
     .select("id")
-    .eq("user_id", user.id)
-    .single();
+    .eq("auth_id", user.id)
+    .maybeSingle();
+
+  let candidate = null;
+
+  // Try to find candidate by user_id if user record exists
+  if (userData) {
+    const { data: candidateByUserId } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("user_id", userData.id)
+      .maybeSingle();
+
+    if (candidateByUserId) {
+      candidate = candidateByUserId;
+    }
+  }
+
+  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
+  if (!candidate && user.email) {
+    const { data: candidateByEmail } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("email", user.email)
+      .maybeSingle();
+
+    if (candidateByEmail) {
+      candidate = candidateByEmail;
+    }
+  }
 
   if (!candidate) return { success: false, error: "Candidate not found" };
 

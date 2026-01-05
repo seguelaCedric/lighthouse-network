@@ -37,6 +37,7 @@ import { ProfessionalDetailsForm } from "@/components/profile/ProfessionalDetail
 import { CertificationsForm } from "@/components/profile/CertificationsForm";
 import { PersonalDetailsForm } from "@/components/profile/PersonalDetailsForm";
 import { ProfileCompletionCard } from "@/components/profile/ProfileCompletionCard";
+import { calculateProfileCompletion } from "@/lib/profile-completion";
 
 // Position options by candidate type
 const basePositionOption = { value: "", label: "Select position..." };
@@ -394,6 +395,8 @@ export function ProfileEditClient({ data }: { data: ProfileData }) {
     candidate.hasStcw === true ? "yes" : candidate.hasStcw === false ? "no" : ""
   );
   const [stcwExpiry, setStcwExpiry] = React.useState(candidate.stcwExpiry || "");
+  const [schengenExpiry, setSchengenExpiry] = React.useState(candidate.schengenExpiry || "");
+  const [b1b2Expiry, setB1b2Expiry] = React.useState(candidate.b1b2Expiry || "");
 
   // Personal Details
   const [smoker, setSmoker] = React.useState(
@@ -421,18 +424,48 @@ export function ProfileEditClient({ data }: { data: ProfileData }) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: candidate } = await supabase
-        .from("candidates")
+      // Three-tier candidate lookup pattern:
+      // 1. Look up users table by auth_id to get internal user ID
+      const { data: userData } = await supabase
+        .from("users")
         .select("id")
-        .eq("user_id", user.id)
-        .single();
+        .eq("auth_id", user.id)
+        .maybeSingle();
 
-      if (!candidate) return;
+      let candidateId: string | null = null;
+
+      // 2. If user found, look up candidate by user_id
+      if (userData) {
+        const { data: candidateByUserId } = await supabase
+          .from("candidates")
+          .select("id")
+          .eq("user_id", userData.id)
+          .maybeSingle();
+
+        if (candidateByUserId) {
+          candidateId = candidateByUserId.id;
+        }
+      }
+
+      // 3. Fallback: look up candidate by email (for Vincere-imported candidates)
+      if (!candidateId && user.email) {
+        const { data: candidateByEmail } = await supabase
+          .from("candidates")
+          .select("id")
+          .eq("email", user.email)
+          .maybeSingle();
+
+        if (candidateByEmail) {
+          candidateId = candidateByEmail.id;
+        }
+      }
+
+      if (!candidateId) return;
 
       const { data: certifications } = await supabase
         .from("candidate_certifications")
         .select("*")
-        .eq("candidate_id", candidate.id);
+        .eq("candidate_id", candidateId);
 
       if (certifications && certifications.length > 0) {
         setCertificationChecklist(
@@ -491,7 +524,9 @@ export function ProfileEditClient({ data }: { data: ProfileData }) {
               hasEng1: hasENG1 === "yes" ? true : hasENG1 === "no" ? false : undefined,
               eng1Expiry: eng1Expiry || undefined,
               hasSchengen: hasSchengen === "yes" ? true : hasSchengen === "no" ? false : undefined,
+              schengenExpiry: schengenExpiry || undefined,
               hasB1B2: hasB1B2 === "yes" ? true : hasB1B2 === "no" ? false : undefined,
+              b1b2Expiry: b1b2Expiry || undefined,
             });
 
             // Save certification checklist to candidate_certifications table
@@ -588,7 +623,9 @@ export function ProfileEditClient({ data }: { data: ProfileData }) {
       hasENG1,
       eng1Expiry,
       hasSchengen,
+      schengenExpiry,
       hasB1B2,
+      b1b2Expiry,
       certificationChecklist,
       // Details fields
       smoker,
@@ -648,7 +685,9 @@ export function ProfileEditClient({ data }: { data: ProfileData }) {
     hasENG1,
     eng1Expiry,
     hasSchengen,
+    schengenExpiry,
     hasB1B2,
+    b1b2Expiry,
     certificationChecklist,
     // Details fields
     smoker,
@@ -686,7 +725,8 @@ export function ProfileEditClient({ data }: { data: ProfileData }) {
           candidateType,
           primaryPosition, secondaryPositions, jobSearchNotes,
           highestLicense,
-          hasSTCW, stcwExpiry, hasENG1, eng1Expiry, hasSchengen, hasB1B2,
+          hasSTCW, stcwExpiry, hasENG1, eng1Expiry,
+          hasSchengen, schengenExpiry, hasB1B2, b1b2Expiry,
           smoker, hasTattoos, tattooLocation, maritalStatus, couplePosition,
           partnerName, partnerPosition,
         });
@@ -714,43 +754,50 @@ export function ProfileEditClient({ data }: { data: ProfileData }) {
       candidateType,
       primaryPosition, secondaryPositions, jobSearchNotes,
       highestLicense,
-      hasSTCW, stcwExpiry, hasENG1, eng1Expiry, hasSchengen, hasB1B2,
+      hasSTCW, stcwExpiry, hasENG1, eng1Expiry,
+      hasSchengen, schengenExpiry, hasB1B2, b1b2Expiry,
       smoker, hasTattoos, tattooLocation, maritalStatus, couplePosition,
       partnerName, partnerPosition,
     ]
   );
 
-  // Calculate overall profile completion percentage
-  const overallProgress = React.useMemo(() => {
-    const requiredFields = [
-      firstName, lastName, dateOfBirth, nationality, email, phone,
-      candidateType, primaryPosition,
-      candidateType === "other" ? jobSearchNotes : true,
-    ];
-    const optionalFields = [
-      gender, secondNationality, whatsapp, currentLocation,
-      secondaryPositions.length > 0,
-      hasSchengen,
-      candidateType !== "household_staff" ? hasB1B2 : null,
-      candidateType === "yacht_crew" || candidateType === "both" ? hasSTCW : null,
-      candidateType === "yacht_crew" || candidateType === "both" ? hasENG1 : null,
-      smoker, hasTattoos, maritalStatus,
-    ];
-
-    const filledRequired = requiredFields.filter(Boolean).length;
-    const filledOptional = optionalFields.filter(Boolean).length;
-
-    // Weight: 70% required, 30% optional
-    return Math.round(
-      (filledRequired / requiredFields.length) * 70 +
-      (filledOptional / optionalFields.length) * 30
-    );
+  const profileCompletion = React.useMemo(() => {
+    return calculateProfileCompletion({
+      firstName,
+      lastName,
+      email,
+      phone,
+      dateOfBirth,
+      nationality,
+      currentLocation,
+      candidateType,
+      primaryPosition,
+      avatarUrl: profilePhotoUrl,
+      hasStcw: hasSTCW === "yes",
+      hasEng1: hasENG1 === "yes",
+      industryPreference: candidate.industryPreference,
+      verificationTier: candidate.verificationTier,
+      documents,
+    });
   }, [
-    firstName, lastName, dateOfBirth, nationality, email, phone,
-    candidateType, primaryPosition, gender, secondNationality, whatsapp,
-    currentLocation, secondaryPositions, hasSchengen, hasB1B2,
-    hasSTCW, hasENG1, smoker, hasTattoos, maritalStatus
+    firstName,
+    lastName,
+    email,
+    phone,
+    dateOfBirth,
+    nationality,
+    currentLocation,
+    candidateType,
+    primaryPosition,
+    profilePhotoUrl,
+    hasSTCW,
+    hasENG1,
+    candidate.industryPreference,
+    candidate.verificationTier,
+    documents,
   ]);
+
+  const overallProgress = profileCompletion.score;
 
   // Helper functions for wizard navigation
   const currentStepIndex = profileSteps.indexOf(currentStep);
@@ -791,7 +838,9 @@ export function ProfileEditClient({ data }: { data: ProfileData }) {
     hasENG1: hasENG1 === "yes" ? true : hasENG1 === "no" ? false : undefined,
     eng1ExpiryDate: eng1Expiry,
     hasSchengen: hasSchengen === "yes" ? true : hasSchengen === "no" ? false : undefined,
+    schengenExpiryDate: schengenExpiry,
     hasB1B2: hasB1B2 === "yes" ? true : hasB1B2 === "no" ? false : undefined,
+    b1b2ExpiryDate: b1b2Expiry,
     smoker: smoker === "yes" ? true : smoker === "no" ? false : null,
     hasTattoos: hasTattoos === "yes" ? true : hasTattoos === "no" ? false : null,
     maritalStatus,
@@ -799,6 +848,29 @@ export function ProfileEditClient({ data }: { data: ProfileData }) {
     partnerName,
     partnerPosition,
   };
+
+  const jobPreferencesCount = React.useMemo(() => {
+    let count = 0;
+    if (candidate.industryPreference) count += 1;
+    if (candidate.yachtPrimaryPosition || candidate.householdPrimaryPosition) {
+      count += 1;
+    }
+    if (
+      (candidate.preferredRegions?.length || 0) > 0 ||
+      (candidate.householdLocations?.length || 0) > 0
+    ) {
+      count += 1;
+    }
+    return count;
+  }, [
+    candidate.industryPreference,
+    candidate.yachtPrimaryPosition,
+    candidate.householdPrimaryPosition,
+    candidate.preferredRegions,
+    candidate.householdLocations,
+  ]);
+
+  const hasJobPreferences = Boolean(candidate.industryPreference);
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -859,6 +931,19 @@ export function ProfileEditClient({ data }: { data: ProfileData }) {
               </div>
             </div>
 
+            <div className="mb-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-medium text-navy-900">Profile completion</span>
+                <span className="text-gray-500">{overallProgress}%</span>
+              </div>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-200">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-gold-400 to-gold-500 transition-all duration-500"
+                  style={{ width: `${overallProgress}%` }}
+                />
+              </div>
+            </div>
+
             {/* Step content */}
             <div className="bg-white rounded-xl border border-gray-200 p-8 shadow-sm">
               {currentStep === "personal" && (
@@ -914,16 +999,20 @@ export function ProfileEditClient({ data }: { data: ProfileData }) {
             setHasSTCW={setHasSTCW}
             stcwExpiry={stcwExpiry}
             setSTCWExpiry={setStcwExpiry}
-            certificationChecklist={certificationChecklist}
-            setCertificationChecklist={setCertificationChecklist}
-            hasSchengen={hasSchengen}
-            setHasSchengen={setHasSchengen}
-            hasB1B2={hasB1B2}
-            setHasB1B2={setHasB1B2}
             hasENG1={hasENG1}
             setHasENG1={setHasENG1}
             eng1Expiry={eng1Expiry}
             setENG1Expiry={setEng1Expiry}
+            hasSchengen={hasSchengen}
+            setHasSchengen={setHasSchengen}
+            schengenExpiry={schengenExpiry}
+            setSchengenExpiry={setSchengenExpiry}
+            hasB1B2={hasB1B2}
+            setHasB1B2={setHasB1B2}
+            b1b2Expiry={b1b2Expiry}
+            setB1B2Expiry={setB1b2Expiry}
+            certificationChecklist={certificationChecklist}
+            setCertificationChecklist={setCertificationChecklist}
           />
         )}
 
@@ -954,9 +1043,11 @@ export function ProfileEditClient({ data }: { data: ProfileData }) {
           overallProgress={overallProgress}
           onEditProfile={() => setCurrentStep("personal")}
           onBackToDashboard={() => router.push("/crew/dashboard")}
-          hasJobPreferences={false}
-          jobPreferencesCount={0}
-          documentCount={0}
+          hasJobPreferences={hasJobPreferences}
+          jobPreferencesCount={jobPreferencesCount}
+          documentCount={documents.length}
+          actions={profileCompletion.actions}
+          isIdentityVerified={profileCompletion.isIdentityVerified}
         />
       )}
             </div>

@@ -3,7 +3,7 @@
 import * as React from "react";
 import { CheckCircle2, ArrowRight, FileText, Settings, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { type ProfileCompletionAction } from "@/lib/profile-completion";
 
 interface ProfileCompletionCardProps {
   overallProgress: number;
@@ -14,6 +14,9 @@ interface ProfileCompletionCardProps {
   jobPreferencesCount?: number;
   // Documents data
   documentCount?: number;
+  // Completion detail
+  actions?: ProfileCompletionAction[];
+  isIdentityVerified?: boolean;
 }
 
 export function ProfileCompletionCard({
@@ -23,8 +26,11 @@ export function ProfileCompletionCard({
   hasJobPreferences = false,
   jobPreferencesCount = 0,
   documentCount = 0,
+  actions = [],
+  isIdentityVerified = false,
 }: ProfileCompletionCardProps) {
-  const isProfileComplete = overallProgress >= 90;
+  const isProfileComplete = overallProgress >= 95;
+  const actionableItems = actions;
 
   return (
     <div className="space-y-8">
@@ -38,7 +44,9 @@ export function ProfileCompletionCard({
         </h2>
         <p className="text-gray-600">
           {isProfileComplete
-            ? "Your profile is looking excellent. You're ready to start applying for positions."
+            ? isIdentityVerified
+              ? "Your profile is looking excellent. You're ready to start applying for positions."
+              : "Your profile is ready. Identity verification is pending review by our team."
             : `You've completed ${overallProgress}% of your profile. Keep going to maximize your visibility.`}
         </p>
 
@@ -144,6 +152,35 @@ export function ProfileCompletionCard({
         </a>
       </div>
 
+      {(actionableItems.length > 0 || !isIdentityVerified) && (
+        <div className="rounded-lg border border-gold-200 bg-gold-50 p-4">
+          <h4 className="mb-2 text-sm font-semibold text-gold-900">
+            What&apos;s left to reach 100%
+          </h4>
+          <ul className="space-y-2 text-sm text-gold-800">
+            {actionableItems.map((action) => (
+              <li key={action.id} className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="mt-0.5 size-1.5 rounded-full bg-gold-600" />
+                  <a href={action.href} className="font-medium hover:text-gold-700">
+                    {action.label}
+                  </a>
+                </div>
+                <span className="rounded-full bg-gold-100 px-2 py-0.5 text-xs font-semibold text-gold-700">
+                  +{action.percentageBoost}%
+                </span>
+              </li>
+            ))}
+            {!isIdentityVerified && (
+              <li className="flex items-center gap-2 text-gold-700">
+                <span className="mt-0.5 size-1.5 rounded-full bg-gold-600" />
+                <span>Identity verification pending (reviewed by our team)</span>
+              </li>
+            )}
+          </ul>
+        </div>
+      )}
+
       {/* Action Buttons */}
       <div className="flex flex-col gap-3 sm:flex-row sm:justify-between">
         <Button variant="secondary" onClick={onEditProfile} leftIcon={<Eye className="size-4" />}>
@@ -153,29 +190,6 @@ export function ProfileCompletionCard({
           Back to Dashboard
         </Button>
       </div>
-
-      {/* Completion Tips (if not 100%) */}
-      {!isProfileComplete && (
-        <div className="rounded-lg border border-gold-200 bg-gold-50 p-4">
-          <h4 className="mb-2 text-sm font-semibold text-gold-900">
-            Tips to Complete Your Profile
-          </h4>
-          <ul className="space-y-1 text-sm text-gold-800">
-            <li className="flex items-start gap-2">
-              <span className="mt-0.5 text-gold-600">•</span>
-              <span>Fill in all required fields marked with an asterisk (*)</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="mt-0.5 text-gold-600">•</span>
-              <span>Add your certifications and licenses to stand out</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="mt-0.5 text-gold-600">•</span>
-              <span>Provide as much detail as possible to increase visibility</span>
-            </li>
-          </ul>
-        </div>
-      )}
     </div>
   );
 }

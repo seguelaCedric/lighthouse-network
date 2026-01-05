@@ -2,6 +2,11 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { getPositionDisplayName } from "@/lib/utils/format-position";
+import {
+  calculateProfileCompletion,
+  type ProfileCompletionAction,
+} from "@/lib/profile-completion";
 
 /**
  * Dashboard data types
@@ -25,13 +30,7 @@ export interface DashboardCandidate {
   preferredRegions: string[] | null;
 }
 
-export interface ProfileAction {
-  id: string;
-  label: string;
-  percentageBoost: number;
-  completed: boolean;
-  href: string;
-}
+export type ProfileAction = ProfileCompletionAction;
 
 export interface MatchedJob {
   id: string;
@@ -42,7 +41,7 @@ export interface MatchedJob {
   salaryMin: number | null;
   salaryMax: number | null;
   currency: string;
-  matchPercentage: number;
+  matchPercentage?: number; // Optional - only set when position is relevant
   postedDays: number;
   urgent: boolean;
   contractType: string | null;
@@ -85,140 +84,190 @@ export interface DashboardData {
   applications: CandidateApplication[];
   alerts: Alert[];
   preferences: JobPreferences;
+  isIdentityVerified: boolean;
+}
+/**
+ * Normalize a position string for comparison
+ */
+function normalizePosition(position: string): string {
+  return position.toLowerCase().trim()
+    .replace(/stewardess/g, "stew")
+    .replace(/chief stew/g, "chief stew")
+    .replace(/\s+/g, " ");
 }
 
 /**
- * Calculate profile completeness score based on PRD weights
+ * Check if a job title matches any of the candidate's sought positions
+ * SIMPLE LOGIC: Does the job title contain the position they're looking for?
+ * (Strict containment only; no related-role matching.)
  */
-function calculateProfileCompleteness(candidate: {
-  first_name: string;
-  last_name: string;
-  email: string | null;
-  phone: string | null;
-  date_of_birth: string | null;
-  nationality: string | null;
-  current_location: string | null;
+function getPositionMatchLevel(
+  jobTitle: string,
+  candidateSoughtPositions: string[]
+): "match" | "none" {
+  const normalizedJob = normalizePosition(jobTitle);
+
+  // Simple check: does the job title contain any position they're seeking?
+  for (const position of candidateSoughtPositions) {
+    const normalizedPos = normalizePosition(position);
+
+    // Skip empty or "other"
+    if (!normalizedPos || normalizedPos === "other") continue;
+
+    // Direct containment check only (job title must include sought position)
+    if (normalizedJob.includes(normalizedPos)) {
+      return "match";
+    }
+  }
+
+  return "none";
+}
+
+/**
+ * Build the list of positions a candidate is seeking
+ * Priority: Preference positions (WANT) > Profile positions (DO)
+ * Note: Historical positions (positions_held) are intentionally excluded
+ * to ensure job matching only considers current/desired roles.
+ */
+function resolveIndustryPreference(candidate: {
+  industry_preference?: string | null;
+  candidate_type?: string | null;
+}): "yacht" | "household" | "both" | null {
+  if (candidate.industry_preference === "yacht" || candidate.industry_preference === "household" || candidate.industry_preference === "both") {
+    return candidate.industry_preference;
+  }
+  if (candidate.candidate_type === "yacht_crew") return "yacht";
+  if (candidate.candidate_type === "household_staff") return "household";
+  if (candidate.candidate_type === "both") return "both";
+  return null;
+}
+
+function buildSoughtPositions(
+  candidate: {
   primary_position: string | null;
-  years_experience: number | null;
-  photo_url: string | null;
-  preferred_yacht_types: string[] | null;
-  preferred_regions: string[] | null;
-  has_stcw: boolean;
-  has_eng1: boolean;
-  verification_tier: string;
-  candidate_type: string | null;
-  industry_preference: string | null;
-  documents: Array<{ type: string }>;
-}): { score: number; actions: ProfileAction[] } {
-  const actions: ProfileAction[] = [];
+  secondary_positions: string[] | null;
+  yacht_primary_position?: string | null;
+  yacht_secondary_positions?: string[] | null;
+  household_primary_position?: string | null;
+  household_secondary_positions?: string[] | null;
+  industry_preference?: string | null;
+  candidate_type?: string | null;
+  },
+  options?: { includeSecondary?: boolean }
+): string[] {
+  const positions = new Set<string>();
+  const includeSecondary = options?.includeSecondary ?? true;
+  const industryPreference = resolveIndustryPreference(candidate);
+  const includeYacht = industryPreference === "yacht" || industryPreference === "both";
+  const includeHousehold = industryPreference === "household" || industryPreference === "both";
+
+  // Priority 1: Preference positions (what they WANT)
+  if (includeYacht && candidate.yacht_primary_position) {
+    positions.add(candidate.yacht_primary_position);
+  }
+  if (includeHousehold && candidate.household_primary_position) {
+    positions.add(candidate.household_primary_position);
+  }
+  if (includeSecondary && includeYacht && candidate.yacht_secondary_positions?.length) {
+    candidate.yacht_secondary_positions.forEach(p => positions.add(p));
+  }
+  if (includeSecondary && includeHousehold && candidate.household_secondary_positions?.length) {
+    candidate.household_secondary_positions.forEach(p => positions.add(p));
+  }
+
+  // Priority 2: Profile positions (what they DO)
+  if (positions.size === 0) {
+    if (candidate.primary_position) {
+      positions.add(candidate.primary_position);
+    }
+    if (includeSecondary && candidate.secondary_positions?.length) {
+      candidate.secondary_positions.forEach(p => positions.add(p));
+    }
+  }
+
+  // Note: We intentionally do NOT include positions_held (historical positions)
+  // for job matching. A Captain who previously worked as a Stewardess shouldn't
+  // see interior jobs in their "Jobs For You" - only current/desired positions matter.
+
+  // Format all position names for display
+  return Array.from(positions)
+    .filter(Boolean)
+    .map(p => getPositionDisplayName(p));
+}
+
+/**
+ * Calculate a match score based on candidate profile and job
+ */
+function calculateMatchScore(
+  job: {
+    title: string;
+    primary_region: string | null;
+    contract_type: string | null;
+    salary_min: number | null;
+    salary_max: number | null;
+  },
+  candidate: {
+    primary_position: string | null;
+    secondary_positions: string[] | null;
+    positions_held: string[] | null;
+    position_category: string | null;
+    preferred_regions: string[] | null;
+    preferred_contract_types: string[] | null;
+    desired_salary_min: number | null;
+    desired_salary_max: number | null;
+    // Preference positions (what they WANT to do)
+    yacht_primary_position?: string | null;
+    yacht_secondary_positions?: string[] | null;
+    household_primary_position?: string | null;
+    household_secondary_positions?: string[] | null;
+    industry_preference?: string | null;
+    candidate_type?: string | null;
+  }
+): { score: number; matchType: "match" | "none" } {
   let score = 0;
 
-  // Basic info (15%): name, email, phone, dob, nationality, location
-  const basicInfoComplete =
-    candidate.first_name &&
-    candidate.last_name &&
-    candidate.email &&
-    candidate.phone &&
-    candidate.date_of_birth &&
-    candidate.nationality &&
-    candidate.current_location;
-  if (basicInfoComplete) {
-    score += 15;
-  } else {
-    actions.push({
-      id: "basic-info",
-      label: "Complete personal details",
-      percentageBoost: 15,
-      completed: false,
-      href: "/crew/profile/edit#personal",
-    });
+  // Build the list of positions they're seeking
+  const soughtPositions = buildSoughtPositions(candidate, { includeSecondary: false });
+
+  // Position match is the most important factor (50 points max)
+  const matchType = getPositionMatchLevel(job.title, soughtPositions);
+
+  if (matchType === "match") {
+    score += 50;
+  }
+  // No match = 0 points
+
+  // Region match (25 points)
+  if (candidate.preferred_regions && job.primary_region) {
+    const jobRegion = job.primary_region.toLowerCase();
+    const matchesRegion = candidate.preferred_regions.some(
+      (r) =>
+        r.toLowerCase().includes(jobRegion) ||
+        jobRegion.includes(r.toLowerCase())
+    );
+    if (matchesRegion) {
+      score += 25;
+    }
   }
 
-  // Professional profile (20%): role category and position
-  const professionalComplete =
-    candidate.primary_position && candidate.candidate_type;
-  if (professionalComplete) {
-    score += 20;
-  } else {
-    actions.push({
-      id: "professional",
-      label: "Add professional details",
-      percentageBoost: 20,
-      completed: false,
-      href: "/crew/profile/edit#professional",
-    });
+  // Contract type match (15 points)
+  if (candidate.preferred_contract_types && job.contract_type) {
+    if (candidate.preferred_contract_types.includes(job.contract_type)) {
+      score += 15;
+    }
   }
 
-  // CV uploaded (20%)
-  const hasCv = candidate.documents.some((d) => d.type === "cv");
-  if (hasCv) {
-    score += 20;
-  } else {
-    actions.push({
-      id: "cv",
-      label: "Upload your CV",
-      percentageBoost: 20,
-      completed: false,
-      href: "/crew/documents#cv",
-    });
+  // Salary expectations match (10 points)
+  if (candidate.desired_salary_min && job.salary_max) {
+    if (job.salary_max >= candidate.desired_salary_min) {
+      score += 10;
+    }
   }
 
-  // Photo (10%)
-  if (candidate.photo_url) {
-    score += 10;
-  } else {
-    actions.push({
-      id: "photo",
-      label: "Add profile photo",
-      percentageBoost: 10,
-      completed: false,
-      href: "/crew/profile/edit#photo",
-    });
-  }
-
-  // Certifications (20%): STCW or ENG1 (yacht crew only)
-  const hasCerts =
-    candidate.candidate_type === "yacht_crew" || candidate.candidate_type === "both"
-      ? candidate.has_stcw || candidate.has_eng1
-      : true;
-  if (hasCerts) {
-    score += 20;
-  } else {
-    actions.push({
-      id: "certs",
-      label: "Add certifications",
-      percentageBoost: 20,
-      completed: false,
-      href: "/crew/documents#certificates",
-    });
-  }
-
-  // Preferences (10%) - check if industry preference is set (new preferences system)
-  const hasPrefs = !!candidate.industry_preference;
-  if (hasPrefs) {
-    score += 10;
-  } else {
-    actions.push({
-      id: "preferences",
-      label: "Set job preferences",
-      percentageBoost: 10,
-      completed: false,
-      href: "/crew/preferences",
-    });
-  }
-
-  // Identity verified (5%)
-  const isVerified =
-    candidate.verification_tier === "identity" ||
-    candidate.verification_tier === "verified" ||
-    candidate.verification_tier === "premium";
-  if (isVerified) {
-    score += 5;
-  }
-  // Note: verification is not self-service, so no action item
-
-  return { score, actions };
+  // Cap at 100
+  return { score: Math.min(score, 100), matchType };
 }
+
 
 /**
  * Fetch dashboard data for the authenticated candidate
@@ -251,12 +300,18 @@ export async function getDashboardData(): Promise<DashboardData | null> {
     current_location,
     candidate_type,
     primary_position,
+    secondary_positions,
+    positions_held,
+    position_category,
     years_experience,
-    photo_url,
+    avatar_url,
     availability_status,
     available_from,
     preferred_yacht_types,
     preferred_regions,
+    preferred_contract_types,
+    desired_salary_min,
+    desired_salary_max,
     has_stcw,
     stcw_expiry,
     has_eng1,
@@ -264,7 +319,9 @@ export async function getDashboardData(): Promise<DashboardData | null> {
     verification_tier,
     industry_preference,
     yacht_primary_position,
+    yacht_secondary_positions,
     household_primary_position,
+    household_secondary_positions,
     household_locations,
     preferences_completed_at,
     user_id
@@ -330,9 +387,26 @@ export async function getDashboardData(): Promise<DashboardData | null> {
   };
 
   // Calculate profile completeness
-  const { score, actions } = calculateProfileCompleteness(candidateWithDocs as any);
+  const { score, actions } = calculateProfileCompletion({
+    firstName: candidate.first_name,
+    lastName: candidate.last_name,
+    email: candidate.email,
+    phone: candidate.phone,
+    dateOfBirth: candidate.date_of_birth,
+    nationality: candidate.nationality,
+    currentLocation: candidate.current_location,
+    candidateType: candidate.candidate_type,
+    primaryPosition: candidate.primary_position,
+    avatarUrl: candidate.avatar_url,
+    hasStcw: candidate.has_stcw,
+    hasEng1: candidate.has_eng1,
+    industryPreference: candidate.industry_preference,
+    verificationTier: candidate.verification_tier,
+    documents: candidateWithDocs.documents,
+  });
 
-  // Get matched jobs (open jobs sorted by created_at)
+  // Get more jobs to find the most relevant matches
+  // Fetch 30 recent jobs, then sort by relevance and return top 4
   const { data: jobs } = await supabase
     .from("jobs")
     .select(
@@ -353,11 +427,10 @@ export async function getDashboardData(): Promise<DashboardData | null> {
     .eq("status", "open")
     .eq("is_public", true)
     .order("created_at", { ascending: false })
-    .limit(4);
+    .limit(30);
 
-  // Map jobs with match percentage (placeholder - would use AI matching)
-  // Store created_at as string to avoid hydration issues with date calculations
-  const matchedJobs: MatchedJob[] = (jobs || []).map((job) => {
+  // Calculate match scores for all jobs and sort by relevance
+  const jobsWithScores = (jobs || []).map((job) => {
     // Calculate days difference server-side to ensure consistent SSR/client rendering
     const createdAt = new Date(job.created_at);
     const now = new Date();
@@ -365,17 +438,68 @@ export async function getDashboardData(): Promise<DashboardData | null> {
       (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24)
     );
 
-    // Simple match percentage based on position match
-    // In production, this would use vector similarity
-    let matchPercentage = 70;
-    if (
-      candidate.primary_position &&
-      job.title.toLowerCase().includes(candidate.primary_position.toLowerCase())
-    ) {
-      matchPercentage = 95;
-    }
+    // Calculate match score using proper matching logic
+    const { score, matchType } = calculateMatchScore(
+      {
+        title: job.title,
+        primary_region: job.primary_region,
+        contract_type: job.contract_type,
+        salary_min: job.salary_min,
+        salary_max: job.salary_max,
+      },
+      {
+        primary_position: candidate.primary_position,
+        secondary_positions: candidate.secondary_positions || null,
+        positions_held: candidate.positions_held || null,
+        position_category: candidate.position_category || null,
+        preferred_regions: candidate.preferred_regions || null,
+        preferred_contract_types: candidate.preferred_contract_types || null,
+        desired_salary_min: candidate.desired_salary_min || null,
+        desired_salary_max: candidate.desired_salary_max || null,
+        // Preference positions (what they WANT to do)
+        yacht_primary_position: candidate.yacht_primary_position || null,
+        yacht_secondary_positions: candidate.yacht_secondary_positions || null,
+        household_primary_position: candidate.household_primary_position || null,
+        household_secondary_positions: candidate.household_secondary_positions || null,
+        industry_preference: candidate.industry_preference || null,
+        candidate_type: candidate.candidate_type || null,
+      }
+    );
 
     return {
+      job,
+      score,
+      matchType,
+      diffDays,
+    };
+  });
+
+  // Sort by match score (highest first), then by recency for ties
+  // Jobs with "none" match type get score 0 for sorting purposes
+  jobsWithScores.sort((a, b) => {
+    // First, prioritize jobs with any match over "none" matches
+    const aHasMatch = a.matchType !== "none";
+    const bHasMatch = b.matchType !== "none";
+    if (aHasMatch && !bHasMatch) return -1;
+    if (!aHasMatch && bHasMatch) return 1;
+
+    // Then sort by score (higher is better)
+    if (b.score !== a.score) return b.score - a.score;
+
+    // For same score, prefer more recent jobs
+    return a.diffDays - b.diffDays;
+  });
+
+  // Filter out jobs with no position match - only show relevant jobs
+  const relevantJobs = jobsWithScores.filter(j => j.matchType !== "none");
+
+  // Take the top 4 most relevant jobs (may be fewer if not enough matches)
+  const topJobs = relevantJobs.slice(0, 4);
+
+  // Map to MatchedJob format
+  const matchedJobs: MatchedJob[] = topJobs.map(({ job, score, matchType, diffDays }) => {
+    // Only include matchPercentage if position is relevant (not "none")
+    const jobData: MatchedJob = {
       id: job.id,
       position: job.title,
       vesselName: job.vessel_name,
@@ -384,11 +508,17 @@ export async function getDashboardData(): Promise<DashboardData | null> {
       salaryMin: job.salary_min,
       salaryMax: job.salary_max,
       currency: job.salary_currency || "EUR",
-      matchPercentage,
       postedDays: diffDays,
       urgent: job.is_urgent || false,
       contractType: job.contract_type,
     };
+
+    // Only set matchPercentage if position is relevant
+    if (matchType !== "none") {
+      jobData.matchPercentage = score;
+    }
+
+    return jobData;
   });
 
   // Get candidate's applications (simplified status per PRD)
@@ -531,10 +661,10 @@ export async function getDashboardData(): Promise<DashboardData | null> {
     lastName: candidate.last_name,
     email: candidate.email || "",
     primaryPosition: candidate.primary_position,
-    profilePhotoUrl: candidate.photo_url,
+    profilePhotoUrl: candidate.avatar_url,
     availabilityStatus: candidate.availability_status || "looking",
     availableFrom: candidate.available_from,
-    hasPhoto: !!candidate.photo_url,
+    hasPhoto: !!candidate.avatar_url,
     hasCv: (candidateWithDocs.documents as any[]).some((d) => d.type === "cv"),
     hasStcw: candidate.has_stcw || false,
     hasEng1: candidate.has_eng1 || false,
@@ -562,6 +692,7 @@ export async function getDashboardData(): Promise<DashboardData | null> {
     applications: mappedApplications,
     alerts,
     preferences,
+    isIdentityVerified: candidate.verification_tier === "verified",
   };
 }
 

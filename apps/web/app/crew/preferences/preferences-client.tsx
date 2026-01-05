@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { updateJobPreferences, markPreferencesComplete, type JobPreferencesData } from "./actions";
+import { updateJobPreferences, markPreferencesComplete, loadJobMatches, type JobPreferencesData } from "./actions";
 import {
   IndustrySelector,
   YachtPreferencesForm,
@@ -157,53 +157,60 @@ export default function PreferencesClient({ candidateId, initialData }: Preferen
     };
   }, [formData, savePreferences]);
 
-  // Load AI-powered matched jobs
+  // Load AI-powered matched jobs using server action (no API route needed)
   const loadMatchedJobs = React.useCallback(async () => {
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/db21c2cf-b379-416a-8679-3c252c39767b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'preferences-client.tsx:161',message:'loadMatchedJobs entry',data:{candidateId,industryPreference:formData.industryPreference},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     setLoadingMatches(true);
     try {
       // Determine industry for filtering
       const industry = formData.industryPreference || "both";
 
-      // Fetch AI-powered matches from the new API
-      const response = await fetch(`/api/crew/job-matches?industry=${industry}&limit=10`, {
-        credentials: "include",
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/db21c2cf-b379-416a-8679-3c252c39767b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'preferences-client.tsx:168',message:'calling loadJobMatches',data:{candidateId,industry,limit:10,minScore:30},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
+
+      // Use server action directly - bypasses cookie issues with API routes
+      const result = await loadJobMatches(candidateId, {
+        industry,
+        limit: 10,
+        minScore: 30,
+        includeAISummary: true,
       });
 
-      const data = await response.json();
+      // #region agent log
+      fetch('http://127.0.0.1:7242/ingest/db21c2cf-b379-416a-8679-3c252c39767b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'preferences-client.tsx:175',message:'loadJobMatches result',data:{success:result.success,error:result.error,hasMatches:!!result.matches,matchesCount:result.matches?.length,hasProfile:!!result.profile},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+      // #endregion
 
-      if (!response.ok) {
-        console.error("Failed to load job matches:", response.status, data);
-        // Handle 403 - no candidate profile found
-        if (response.status === 403 && data.hasProfile === false) {
-          console.log("No candidate profile found - user needs to complete onboarding");
-          console.log("Debug info:", data.debug);
-
-          // Show a helpful message to the user
-          setMatchedJobs([]);
-          setProfileStatus({
-            completeness: 0,
-            canQuickApply: false,
-            missingFields: ["candidate_profile"],
-          });
-        }
+      if (!result.success) {
+        console.error("Failed to load job matches:", result.error);
+        // #region agent log
+        fetch('http://127.0.0.1:7242/ingest/db21c2cf-b379-416a-8679-3c252c39767b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'preferences-client.tsx:176',message:'loadJobMatches failed',data:{error:result.error},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
+        // #endregion
+        setMatchedJobs([]);
+        setProfileStatus({
+          completeness: 0,
+          canQuickApply: false,
+          missingFields: ["candidate_profile"],
+        });
         setLoadingMatches(false);
         return;
       }
 
-      if (data.matches) {
-        setMatchedJobs(data.matches);
+      if (result.matches) {
+        setMatchedJobs(result.matches);
       }
 
-      // Use 'profile' field from response (not 'profileStatus')
-      if (data.profile) {
-        setProfileStatus(data.profile);
+      if (result.profile) {
+        setProfileStatus(result.profile);
       }
     } catch (error) {
       console.error("Error loading matched jobs:", error);
     } finally {
       setLoadingMatches(false);
     }
-  }, [formData.industryPreference]);
+  }, [formData.industryPreference, candidateId]);
 
   // Quick apply handler
   const handleQuickApply = React.useCallback(async (jobId: string) => {
