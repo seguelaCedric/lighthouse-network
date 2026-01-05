@@ -54,7 +54,7 @@ async function getVerificationData(candidateId: string) {
       verification_tier
     `)
     .eq("id", candidateId)
-    .single();
+    .maybeSingle();
 
   if (!candidate) return null;
 
@@ -146,23 +146,40 @@ export default async function CrewVerificationPage() {
     redirect("/auth/login?redirect=/crew/verification");
   }
 
-  // Get user record
+  // Get user record (auth_id -> user_id mapping)
   const { data: userData } = await supabase
     .from("users")
     .select("id")
     .eq("auth_id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (!userData) {
-    redirect("/auth/login?redirect=/crew/verification");
+  let candidateBasic = null;
+
+  // Try to find candidate by user_id if user record exists
+  if (userData) {
+    const { data: candidateByUserId } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("user_id", userData.id)
+      .maybeSingle();
+
+    if (candidateByUserId) {
+      candidateBasic = candidateByUserId;
+    }
   }
 
-  // Get candidate profile
-  const { data: candidateBasic } = await supabase
-    .from("candidates")
-    .select("id")
-    .eq("user_id", userData.id)
-    .single();
+  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
+  if (!candidateBasic && user.email) {
+    const { data: candidateByEmail } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("email", user.email)
+      .maybeSingle();
+
+    if (candidateByEmail) {
+      candidateBasic = candidateByEmail;
+    }
+  }
 
   if (!candidateBasic) {
     redirect("/crew/register");

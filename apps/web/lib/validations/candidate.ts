@@ -118,7 +118,9 @@ export const createCandidateSchema = z.object({
 
   // Visas
   has_schengen: z.boolean().optional().nullable(),
+  schengen_expiry: z.string().datetime().optional().nullable(),
   has_b1b2: z.boolean().optional().nullable(),
+  b1b2_expiry: z.string().datetime().optional().nullable(),
   has_c1d: z.boolean().optional().nullable(),
   other_visas: z.array(z.string()).optional().nullable(),
   passport_expiry: z.string().datetime().optional().nullable(),

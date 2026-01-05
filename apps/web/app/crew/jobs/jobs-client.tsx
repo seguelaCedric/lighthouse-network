@@ -27,6 +27,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { type JobsPageData, type JobListing, applyToJob, getJobsData, type JobFilters, saveJob, unsaveJob } from "./actions";
+import { REGION_GROUPS, isLandBasedJob } from "@/lib/utils/job-helpers";
 
 // Helper functions
 function formatDate(dateStr: string | null): string {
@@ -77,32 +78,19 @@ function MatchScoreBadge({
   showTooltip = false,
 }: {
   score: number | null;
-  matchType: "exact" | "related" | "none";
+  matchType: "match" | "none";
   showTooltip?: boolean;
 }) {
   const [tooltipOpen, setTooltipOpen] = React.useState(false);
 
-  if (!score) return null;
+  // Don't show badge if score is null or matchType is "none"
+  if (!score || matchType === "none") return null;
 
-  // Different styling based on match type
-  let colorClass = "bg-gray-100 text-gray-700";
-  let label = `${score}% Match`;
+  // Styling for matches
+  const colorClass = "bg-success-100 text-success-700";
+  const label = `${score}% Match`;
 
-  if (matchType === "exact") {
-    colorClass = "bg-success-100 text-success-700";
-    label = `${score}% Match`;
-  } else if (matchType === "related") {
-    colorClass = "bg-blue-100 text-blue-700";
-    label = `${score}% Related`;
-  } else if (score >= 70) {
-    colorClass = "bg-warning-100 text-warning-700";
-  }
-
-  const tooltipContent = matchType === "exact"
-    ? "This job matches your primary position. Score is based on your experience, certifications, and preferences."
-    : matchType === "related"
-    ? "This job is related to positions in your profile. You may be qualified based on transferable skills."
-    : "Match score is calculated from your profile, experience, and job requirements.";
+  const tooltipContent = "This job matches your desired position. Score is based on your experience, certifications, and preferences.";
 
   return (
     <div className="relative">
@@ -131,9 +119,7 @@ function MatchScoreBadge({
       {tooltipOpen && (
         <div className="absolute left-1/2 top-full z-50 mt-2 w-64 -translate-x-1/2 rounded-lg bg-navy-900 px-3 py-2 text-xs text-white shadow-lg">
           <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 border-[6px] border-transparent border-b-navy-900" />
-          <p className="font-medium mb-1">
-            {matchType === "exact" ? "Exact Match" : matchType === "related" ? "Related Position" : "Match Score"}
-          </p>
+          <p className="font-medium mb-1">Position Match</p>
           <p className="text-gray-300 leading-relaxed">
             {tooltipContent}
           </p>
@@ -193,17 +179,21 @@ function JobCard({
         </div>
       )}
 
-      {/* Stats & Match Score */}
+      {/* Match Score */}
       <div className="absolute right-4 top-4 flex items-center gap-2">
         <MatchScoreBadge score={job.matchScore} matchType={job.matchType} showTooltip />
-        <span className="flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs text-gray-600">
-          {job.applicationsCount} applied
-        </span>
       </div>
 
       {/* Main Content */}
       <div className="pr-48">
-        <h3 className="text-lg font-semibold text-navy-900">{job.title}</h3>
+        <h3 className="text-lg font-semibold text-navy-900">
+          <button
+            onClick={onView}
+            className="text-left hover:text-gold-600 hover:underline transition-colors"
+          >
+            {job.title}
+          </button>
+        </h3>
         <p className="mt-1 text-gray-600">
           {job.vesselName || (
             <span className="flex items-center gap-1 italic text-gray-500">
@@ -538,7 +528,6 @@ export function JobsClient({ data: initialData }: { data: JobsPageData }) {
   const [jobs, setJobs] = React.useState(initialData.jobs);
   const [appliedJobIds, setAppliedJobIds] = React.useState<string[]>(initialData.appliedJobIds);
   const [savedJobIds, setSavedJobIds] = React.useState<string[]>(initialData.savedJobIds);
-  const [totalCount, setTotalCount] = React.useState(initialData.totalCount);
 
   const [searchQuery, setSearchQuery] = React.useState("");
   const [filtersExpanded, setFiltersExpanded] = React.useState(false);
@@ -553,6 +542,9 @@ export function JobsClient({ data: initialData }: { data: JobsPageData }) {
   const [positionFilter, setPositionFilter] = React.useState("");
   const [regionFilter, setRegionFilter] = React.useState("");
   const [contractFilter, setContractFilter] = React.useState("");
+  const [minSalaryFilter, setMinSalaryFilter] = React.useState("");
+  const [maxSalaryFilter, setMaxSalaryFilter] = React.useState("");
+  const [jobTypeFilter, setJobTypeFilter] = React.useState<"all" | "yacht" | "land-based">("all");
 
   // Debounced search
   const searchTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -573,7 +565,6 @@ export function JobsClient({ data: initialData }: { data: JobsPageData }) {
           setJobs(updatedJobs);
           return mergedIds;
         });
-        setTotalCount(result.totalCount);
       }
     } catch (error) {
       console.error("Error fetching jobs:", error);
@@ -594,6 +585,9 @@ export function JobsClient({ data: initialData }: { data: JobsPageData }) {
       if (positionFilter) filters.position = positionFilter;
       if (regionFilter) filters.region = regionFilter;
       if (contractFilter) filters.contractType = contractFilter;
+      if (minSalaryFilter) filters.minSalary = parseInt(minSalaryFilter, 10);
+      if (maxSalaryFilter) filters.maxSalary = parseInt(maxSalaryFilter, 10);
+      // jobType filtering is done client-side after fetch
 
       fetchJobs(filters);
     }, 300);
@@ -603,7 +597,19 @@ export function JobsClient({ data: initialData }: { data: JobsPageData }) {
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [searchQuery, positionFilter, regionFilter, contractFilter, fetchJobs]);
+  }, [searchQuery, positionFilter, regionFilter, contractFilter, minSalaryFilter, maxSalaryFilter, fetchJobs]);
+
+  // Client-side filter for job type (yacht vs land-based)
+  const filteredJobs = React.useMemo(() => {
+    if (jobTypeFilter === "all") return jobs;
+
+    return jobs.filter(job => {
+      const isLandBased = isLandBasedJob(job.title);
+      if (jobTypeFilter === "land-based") return isLandBased;
+      if (jobTypeFilter === "yacht") return !isLandBased;
+      return true;
+    });
+  }, [jobs, jobTypeFilter]);
 
   const handleApply = async (jobId: string) => {
     setApplyingJobId(jobId);
@@ -679,12 +685,14 @@ export function JobsClient({ data: initialData }: { data: JobsPageData }) {
     setRegionFilter("");
     setContractFilter("");
     setSearchQuery("");
+    setMinSalaryFilter("");
+    setMaxSalaryFilter("");
+    setJobTypeFilter("all");
   };
 
-  const hasActiveFilters = positionFilter || regionFilter || contractFilter || searchQuery;
+  const hasActiveFilters = positionFilter || regionFilter || contractFilter || searchQuery || minSalaryFilter || maxSalaryFilter || jobTypeFilter !== "all";
 
   // Get unique values for filter dropdowns from current jobs
-  const regions = [...new Set(jobs.map(j => j.location).filter(Boolean))] as string[];
   const contractTypes = [...new Set(jobs.map(j => j.contractType).filter(Boolean))] as string[];
 
   return (
@@ -793,11 +801,27 @@ export function JobsClient({ data: initialData }: { data: JobsPageData }) {
                     className="h-9 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:border-gold-500 focus:outline-none focus:ring-1 focus:ring-gold-500"
                   >
                     <option value="">All Regions</option>
-                    {regions.map((region) => (
-                      <option key={region} value={region}>
-                        {region}
+                    {Object.entries(REGION_GROUPS).map(([key, { label }]) => (
+                      <option key={key} value={key}>
+                        {label}
                       </option>
                     ))}
+                  </select>
+                </div>
+
+                {/* Job Type */}
+                <div>
+                  <label className="mb-1 block text-xs text-gray-500">
+                    Job Type
+                  </label>
+                  <select
+                    value={jobTypeFilter}
+                    onChange={(e) => setJobTypeFilter(e.target.value as "all" | "yacht" | "land-based")}
+                    className="h-9 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:border-gold-500 focus:outline-none focus:ring-1 focus:ring-gold-500"
+                  >
+                    <option value="all">All Jobs</option>
+                    <option value="yacht">Yacht-based</option>
+                    <option value="land-based">Land-based</option>
                   </select>
                 </div>
 
@@ -819,6 +843,35 @@ export function JobsClient({ data: initialData }: { data: JobsPageData }) {
                     ))}
                   </select>
                 </div>
+
+                {/* Salary Range */}
+                <div className="flex items-end gap-2">
+                  <div>
+                    <label className="mb-1 block text-xs text-gray-500">
+                      Min Salary
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 3000"
+                      value={minSalaryFilter}
+                      onChange={(e) => setMinSalaryFilter(e.target.value)}
+                      className="h-9 w-28 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:border-gold-500 focus:outline-none focus:ring-1 focus:ring-gold-500"
+                    />
+                  </div>
+                  <span className="mb-2 text-gray-400">–</span>
+                  <div>
+                    <label className="mb-1 block text-xs text-gray-500">
+                      Max Salary
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 8000"
+                      value={maxSalaryFilter}
+                      onChange={(e) => setMaxSalaryFilter(e.target.value)}
+                      className="h-9 w-28 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:border-gold-500 focus:outline-none focus:ring-1 focus:ring-gold-500"
+                    />
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -834,8 +887,11 @@ export function JobsClient({ data: initialData }: { data: JobsPageData }) {
               "Loading..."
             ) : (
               <>
-                <span className="font-semibold text-navy-900">{totalCount}</span>{" "}
+                <span className="font-semibold text-navy-900">{filteredJobs.length}</span>{" "}
                 jobs found
+                {jobTypeFilter !== "all" && (
+                  <span className="text-gray-400"> ({jobTypeFilter})</span>
+                )}
               </>
             )}
           </p>
@@ -849,7 +905,7 @@ export function JobsClient({ data: initialData }: { data: JobsPageData }) {
         )}
 
         {/* Empty State */}
-        {!isLoading && jobs.length === 0 && (
+        {!isLoading && filteredJobs.length === 0 && (
           <div className="flex flex-col items-center justify-center rounded-xl border border-gray-200 bg-white py-16">
             <Search className="size-12 text-gray-300" />
             <h3 className="mt-4 font-semibold text-gray-600">No jobs found</h3>
@@ -865,9 +921,9 @@ export function JobsClient({ data: initialData }: { data: JobsPageData }) {
         )}
 
         {/* Job List */}
-        {!isLoading && jobs.length > 0 && (
+        {!isLoading && filteredJobs.length > 0 && (
           <div className="space-y-4">
-            {jobs.map((job) => (
+            {filteredJobs.map((job) => (
               <JobCard
                 key={job.id}
                 job={job}

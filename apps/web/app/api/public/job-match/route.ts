@@ -52,11 +52,13 @@ interface PublicJob {
 
 /**
  * Calculate match score between a candidate and a job (0-100)
+ * Returns both score and isRelevant flag (true if position matches)
  */
-function calculateMatchScore(candidate: CandidateProfile, job: PublicJob): number {
+function calculateMatchScore(candidate: CandidateProfile, job: PublicJob): { score: number; isRelevant: boolean } {
   let score = 50; // Base score
   let totalFactors = 0;
   let positiveFactors = 0;
+  let isRelevant = false; // Track if position is relevant
 
   // Position match (most important - +20 points)
   // Use yacht_primary_position or household_primary_position if primary_position is null
@@ -70,6 +72,7 @@ function calculateMatchScore(candidate: CandidateProfile, job: PublicJob): numbe
     if (candidatePos === jobPos) {
       score += 20;
       positiveFactors++;
+      isRelevant = true; // Exact match = relevant
     } else if (
       candidate.secondary_positions?.some(
         (pos) => normalizePosition(pos) === jobPos
@@ -77,10 +80,13 @@ function calculateMatchScore(candidate: CandidateProfile, job: PublicJob): numbe
     ) {
       score += 12;
       positiveFactors += 0.6;
+      isRelevant = true; // Secondary position match = relevant
     } else if (isSameDepartment(candidatePos, jobPos)) {
       score += 8;
       positiveFactors += 0.4;
+      isRelevant = true; // Same department = relevant
     }
+    // If none of the above, isRelevant remains false (different department = not relevant)
   }
 
   // Vessel type preference (+10 points)
@@ -175,7 +181,7 @@ function calculateMatchScore(candidate: CandidateProfile, job: PublicJob): numbe
   // Cap score at 100 and floor at 0
   score = Math.min(100, Math.max(0, Math.round(score)));
 
-  return score;
+  return { score, isRelevant };
 }
 
 /**
@@ -354,7 +360,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Calculate match scores for each job
-    const scores: Record<string, number> = {};
+    const scores: Record<string, { score: number; isRelevant: boolean }> = {};
 
     for (const job of jobs) {
       scores[job.id] = calculateMatchScore(candidate as CandidateProfile, job as PublicJob);

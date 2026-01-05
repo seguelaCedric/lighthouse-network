@@ -41,29 +41,56 @@ export async function getNotificationsData(): Promise<NotificationsData | null> 
 
   if (!user) return null;
 
-  // Get user record
+  // Get user record (auth_id -> user_id mapping)
   const { data: userData } = await supabase
     .from("users")
     .select("id")
     .eq("auth_id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (!userData) return null;
+  let candidate = null;
 
-  // Get candidate
-  const { data: candidate } = await supabase
-    .from("candidates")
-    .select(
+  // Try to find candidate by user_id if user record exists
+  if (userData) {
+    const { data: candidateByUserId } = await supabase
+      .from("candidates")
+      .select(
+        `
+        id,
+        has_stcw,
+        stcw_expiry,
+        has_eng1,
+        eng1_expiry
       `
-      id,
-      has_stcw,
-      stcw_expiry,
-      has_eng1,
-      eng1_expiry
-    `
-    )
-    .eq("user_id", userData.id)
-    .single();
+      )
+      .eq("user_id", userData.id)
+      .maybeSingle();
+
+    if (candidateByUserId) {
+      candidate = candidateByUserId;
+    }
+  }
+
+  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
+  if (!candidate && user.email) {
+    const { data: candidateByEmail } = await supabase
+      .from("candidates")
+      .select(
+        `
+        id,
+        has_stcw,
+        stcw_expiry,
+        has_eng1,
+        eng1_expiry
+      `
+      )
+      .eq("email", user.email)
+      .maybeSingle();
+
+    if (candidateByEmail) {
+      candidate = candidateByEmail;
+    }
+  }
 
   if (!candidate) return null;
 

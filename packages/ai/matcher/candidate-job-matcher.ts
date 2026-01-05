@@ -816,7 +816,7 @@ export async function matchJobsForCandidate(
       has_schengen, has_b1b2, has_c1d,
       nationality, second_nationality,
       is_smoker, has_visible_tattoos, is_couple, partner_position,
-      verification_tier, embedding, bio
+      verification_tier, embedding
     `)
     .eq('id', candidateId)
     .single();
@@ -825,12 +825,10 @@ export async function matchJobsForCandidate(
     throw new Error(`Candidate not found: ${candidateId}`);
   }
 
-  // 2. Fetch public jobs
+  // 2. Fetch public jobs (public_jobs table already contains only published public jobs)
   let jobsQuery = supabase
     .from('public_jobs')
     .select('*')
-    .eq('status', 'active')
-    .eq('is_public', true)
     .limit(CONFIG.vectorSearchLimit);
 
   const { data: jobs, error: jobsError } = await jobsQuery;

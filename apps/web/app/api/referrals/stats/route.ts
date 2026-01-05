@@ -20,14 +20,42 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get candidate record for this user
-    const { data: candidate, error: candidateError } = await supabase
-      .from('candidates')
+    // Get user record (auth_id -> user_id mapping)
+    const { data: userData } = await supabase
+      .from('users')
       .select('id')
-      .eq('user_id', user.id)
-      .single()
+      .eq('auth_id', user.id)
+      .maybeSingle()
 
-    if (candidateError || !candidate) {
+    let candidate = null
+
+    // Try to find candidate by user_id if user record exists
+    if (userData) {
+      const { data: candidateByUserId } = await supabase
+        .from('candidates')
+        .select('id')
+        .eq('user_id', userData.id)
+        .maybeSingle()
+
+      if (candidateByUserId) {
+        candidate = candidateByUserId
+      }
+    }
+
+    // Fallback: Try to find candidate by email (for Vincere-imported candidates)
+    if (!candidate && user.email) {
+      const { data: candidateByEmail } = await supabase
+        .from('candidates')
+        .select('id')
+        .eq('email', user.email)
+        .maybeSingle()
+
+      if (candidateByEmail) {
+        candidate = candidateByEmail
+      }
+    }
+
+    if (!candidate) {
       return NextResponse.json(
         { error: 'Candidate profile not found' },
         { status: 404 }

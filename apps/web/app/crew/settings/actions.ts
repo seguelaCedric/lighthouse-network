@@ -26,29 +26,56 @@ export async function getSettingsData(): Promise<CandidateSettings | null> {
 
   if (!user) return null;
 
-  // Get user record
+  // Get user record (auth_id -> user_id mapping)
   const { data: userData } = await supabase
     .from("users")
     .select("id, email")
     .eq("auth_id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (!userData) return null;
+  let candidate = null;
 
-  // Get candidate settings
-  const { data: candidate } = await supabase
-    .from("candidates")
-    .select(
+  // Try to find candidate by user_id if user record exists
+  if (userData) {
+    const { data: candidateByUserId } = await supabase
+      .from("candidates")
+      .select(
+        `
+        email,
+        email_notifications,
+        job_alerts,
+        marketing_emails,
+        profile_visibility
       `
-      email,
-      email_notifications,
-      job_alerts,
-      marketing_emails,
-      profile_visibility
-    `
-    )
-    .eq("user_id", userData.id)
-    .single();
+      )
+      .eq("user_id", userData.id)
+      .maybeSingle();
+
+    if (candidateByUserId) {
+      candidate = candidateByUserId;
+    }
+  }
+
+  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
+  if (!candidate && user.email) {
+    const { data: candidateByEmail } = await supabase
+      .from("candidates")
+      .select(
+        `
+        email,
+        email_notifications,
+        job_alerts,
+        marketing_emails,
+        profile_visibility
+      `
+      )
+      .eq("email", user.email)
+      .maybeSingle();
+
+    if (candidateByEmail) {
+      candidate = candidateByEmail;
+    }
+  }
 
   if (!candidate) return null;
 
@@ -79,13 +106,29 @@ export async function updateNotificationSettings(data: {
     return { success: false, error: "Not authenticated" };
   }
 
+  // Get user record (auth_id -> user_id mapping)
   const { data: userData } = await supabase
     .from("users")
     .select("id")
     .eq("auth_id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (!userData) {
+  let candidateUserId = userData?.id;
+
+  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
+  if (!userData && user.email) {
+    const { data: candidateByEmail } = await supabase
+      .from("candidates")
+      .select("id, user_id")
+      .eq("email", user.email)
+      .maybeSingle();
+
+    if (candidateByEmail) {
+      candidateUserId = candidateByEmail.user_id;
+    }
+  }
+
+  if (!candidateUserId) {
     return { success: false, error: "User not found" };
   }
 
@@ -129,14 +172,43 @@ export async function updatePrivacySettings(data: {
     return { success: false, error: "Not authenticated" };
   }
 
+  // Get user record (auth_id -> user_id mapping)
   const { data: userData } = await supabase
     .from("users")
     .select("id")
     .eq("auth_id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (!userData) {
-    return { success: false, error: "User not found" };
+  let candidateId: string | null = null;
+
+  // Try to find candidate by user_id if user record exists
+  if (userData) {
+    const { data: candidateByUserId } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("user_id", userData.id)
+      .maybeSingle();
+
+    if (candidateByUserId) {
+      candidateId = candidateByUserId.id;
+    }
+  }
+
+  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
+  if (!candidateId && user.email) {
+    const { data: candidateByEmail } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("email", user.email)
+      .maybeSingle();
+
+    if (candidateByEmail) {
+      candidateId = candidateByEmail.id;
+    }
+  }
+
+  if (!candidateId) {
+    return { success: false, error: "Candidate not found" };
   }
 
   const { error } = await supabase
@@ -145,7 +217,7 @@ export async function updatePrivacySettings(data: {
       profile_visibility: data.profileVisibility,
       updated_at: new Date().toISOString(),
     })
-    .eq("user_id", userData.id);
+    .eq("id", candidateId);
 
   if (error) {
     console.error("Error updating privacy settings:", error);
@@ -223,23 +295,40 @@ export async function requestAccountDeletion(data: {
     return { success: false, error: "Password is incorrect" };
   }
 
-  // Get user record
+  // Get user record (auth_id -> user_id mapping)
   const { data: userData } = await supabase
     .from("users")
     .select("id")
     .eq("auth_id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (!userData) {
-    return { success: false, error: "User not found" };
+  let candidate: { id: string } | null = null;
+
+  // Try to find candidate by user_id if user record exists
+  if (userData) {
+    const { data: candidateByUserId } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("user_id", userData.id)
+      .maybeSingle();
+
+    if (candidateByUserId) {
+      candidate = candidateByUserId;
+    }
   }
 
-  // Get candidate
-  const { data: candidate } = await supabase
-    .from("candidates")
-    .select("id")
-    .eq("user_id", userData.id)
-    .single();
+  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
+  if (!candidate && user.email) {
+    const { data: candidateByEmail } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("email", user.email)
+      .maybeSingle();
+
+    if (candidateByEmail) {
+      candidate = candidateByEmail;
+    }
+  }
 
   if (!candidate) {
     return { success: false, error: "Candidate profile not found" };

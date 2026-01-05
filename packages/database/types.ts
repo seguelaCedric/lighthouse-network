@@ -264,7 +264,9 @@ export interface Candidate extends BaseEntity {
 
   // Visas
   has_schengen: boolean | null;
+  schengen_expiry: string | null;
   has_b1b2: boolean | null;
+  b1b2_expiry: string | null;
   has_c1d: boolean | null;
   other_visas: string[] | null;
   passport_expiry: string | null;

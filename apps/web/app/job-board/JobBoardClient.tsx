@@ -44,7 +44,7 @@ export function JobBoardClient({ initialJobs, filterOptions, totalCount }: JobBo
   const [appliedSearch, setAppliedSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(true);
-  const [matchScores, setMatchScores] = useState<Record<string, number>>({});
+  const [matchScores, setMatchScores] = useState<Record<string, { score: number; isRelevant: boolean }>>({});
   const [isLoadingMatches, setIsLoadingMatches] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -115,18 +115,22 @@ export function JobBoardClient({ initialJobs, filterOptions, totalCount }: JobBo
     }
 
     // Add match scores and sort by match score if authenticated
-    const jobsWithScores: JobWithScore[] = result.map((job) => ({
-      ...job,
-      matchScore: matchScores[job.id],
-    }));
+    // Only include matchScore if the job is relevant (isRelevant === true)
+    const jobsWithScores: JobWithScore[] = result.map((job) => {
+      const matchData = matchScores[job.id];
+      return {
+        ...job,
+        matchScore: matchData?.isRelevant ? matchData.score : undefined,
+      };
+    });
 
-    // Sort: urgent first, then by match score (if available), then by date
+    // Sort: urgent first, then by match score (if available and relevant), then by date
     jobsWithScores.sort((a, b) => {
       // Urgent jobs first
       if (a.is_urgent && !b.is_urgent) return -1;
       if (!a.is_urgent && b.is_urgent) return 1;
 
-      // Then by match score if available
+      // Then by match score if available (only relevant jobs have scores)
       if (a.matchScore !== undefined && b.matchScore !== undefined) {
         return b.matchScore - a.matchScore;
       }

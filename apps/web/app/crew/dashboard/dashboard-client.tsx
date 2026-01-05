@@ -194,7 +194,10 @@ function AlertIcon({ type }: { type: Alert["type"] }) {
 }
 
 // Match Badge Component
-function MatchBadge({ percentage }: { percentage: number }) {
+function MatchBadge({ percentage }: { percentage?: number }) {
+  // Don't show badge if percentage is not provided
+  if (percentage === undefined || percentage === null) return null;
+
   const color =
     percentage >= 90
       ? "bg-success-100 text-success-700"
@@ -212,7 +215,7 @@ function MatchBadge({ percentage }: { percentage: number }) {
 
 // Main Component
 export function DashboardClient({ data }: { data: DashboardData }) {
-  const { candidate, profileCompleteness, profileActions, matchedJobs, applications, alerts } = data;
+  const { candidate, profileCompleteness, profileActions, matchedJobs, applications, alerts, preferences, isIdentityVerified } = data;
 
   const [isAvailable, setIsAvailable] = React.useState(
     candidate.availabilityStatus === "available" || candidate.availabilityStatus === "looking"
@@ -248,48 +251,54 @@ export function DashboardClient({ data }: { data: DashboardData }) {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="border-b border-gray-200 bg-white">
-        <div className="mx-auto max-w-6xl px-6 py-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
+        <div className="mx-auto max-w-6xl px-4 py-4 sm:px-6 sm:py-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3 sm:gap-6">
               {/* Profile Photo */}
-              <div className="relative">
+              <div className="relative flex-shrink-0">
                 {candidate.profilePhotoUrl ? (
                   <Image
                     src={candidate.profilePhotoUrl}
                     alt={`${candidate.firstName} ${candidate.lastName}`}
                     width={64}
                     height={64}
-                    className="size-16 rounded-full object-cover"
+                    className="size-12 sm:size-16 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="flex size-16 items-center justify-center rounded-full bg-gradient-to-br from-navy-100 to-navy-200 text-xl font-bold text-navy-600">
+                  <div className="flex size-12 sm:size-16 items-center justify-center rounded-full bg-gradient-to-br from-navy-100 to-navy-200 text-lg sm:text-xl font-bold text-navy-600">
                     {candidate.firstName[0]}
                   </div>
                 )}
                 <Link
                   href="/crew/profile/edit#photo"
-                  className="absolute -bottom-1 -right-1 flex size-6 items-center justify-center rounded-full bg-gold-500 text-white shadow-sm hover:bg-gold-600"
+                  className="absolute -bottom-1 -right-1 flex size-5 sm:size-6 items-center justify-center rounded-full bg-gold-500 text-white shadow-sm hover:bg-gold-600"
                 >
-                  <Camera className="size-3" />
+                  <Camera className="size-2.5 sm:size-3" />
                 </Link>
               </div>
 
-              <div>
-                <h1 className="text-4xl font-serif font-semibold text-navy-800">
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl sm:text-2xl md:text-4xl font-serif font-semibold text-navy-800">
                   Welcome back, {candidate.firstName}!
                 </h1>
-                <p className="mt-1 text-gray-600">
-                  {candidate.primaryPosition ? (
-                    <>Your profile is set to <span className="font-medium">{getPositionDisplayName(candidate.primaryPosition)}</span></>
-                  ) : (
-                    "Here's what's happening with your job search"
-                  )}
+                <p className="mt-0.5 sm:mt-1 text-sm sm:text-base text-gray-600">
+                  {(() => {
+                    // Prioritize preference positions (what they WANT) over profile position (what they DO)
+                    const seekingPosition = preferences?.yachtPrimaryPosition || preferences?.householdPrimaryPosition;
+                    if (seekingPosition) {
+                      return <>Looking for <span className="font-medium">{getPositionDisplayName(seekingPosition)}</span> roles</>;
+                    }
+                    if (candidate.primaryPosition) {
+                      return <>Your profile is set to <span className="font-medium">{getPositionDisplayName(candidate.primaryPosition)}</span></>;
+                    }
+                    return "Here's what's happening with your job search";
+                  })()}
                 </p>
               </div>
             </div>
 
-            {/* Profile Completeness */}
-            <div className="flex items-center gap-4">
+            {/* Profile Completeness - Hidden on mobile, shown in sidebar */}
+            <div className="hidden sm:flex items-center gap-4">
               <CircularProgress value={profileCompleteness} />
               <div>
                 <p className="text-sm font-medium text-navy-900">Profile Strength</p>
@@ -300,16 +309,16 @@ export function DashboardClient({ data }: { data: DashboardData }) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-6 py-6">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <main className="mx-auto max-w-6xl px-4 py-4 sm:px-6 sm:py-6">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
           {/* Left Column */}
-          <div className="space-y-6 lg:col-span-2">
+          <div className="space-y-4 sm:space-y-6 lg:col-span-2">
             {/* Availability Toggle */}
-            <div id="availability" className="scroll-mt-24 rounded-xl border border-gray-200 bg-white p-6">
-              <div className="flex items-center justify-between">
+            <div id="availability" className="scroll-mt-24 rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h2 className="text-2xl font-serif font-medium text-navy-800">Your Availability</h2>
-                  <p className="mt-1 text-sm text-gray-500">
+                  <h2 className="text-lg sm:text-2xl font-serif font-medium text-navy-800">Your Availability</h2>
+                  <p className="mt-0.5 sm:mt-1 text-xs sm:text-sm text-gray-500">
                     Let employers know when you're available
                   </p>
                 </div>
@@ -319,7 +328,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
                   onClick={handleAvailabilityToggle}
                   disabled={isUpdating}
                   className={cn(
-                    "relative h-10 w-48 rounded-full transition-colors",
+                    "relative h-9 sm:h-10 w-full sm:w-48 rounded-full transition-colors flex-shrink-0",
                     isAvailable ? "bg-success-500" : "bg-gray-300",
                     isUpdating && "opacity-70"
                   )}
@@ -474,21 +483,19 @@ export function DashboardClient({ data }: { data: DashboardData }) {
                   </div>
                 ) : (
                   applications.slice(0, 5).map((app) => (
-                    <div key={app.id} className="flex items-center justify-between px-6 py-4">
-                      <div className="flex items-center gap-4">
-                        <div className="flex size-10 items-center justify-center rounded-full bg-navy-100">
-                          <Ship className="size-5 text-navy-600" />
+                    <div key={app.id} className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4">
+                      <div className="flex items-center gap-3 sm:gap-4">
+                        <div className="flex size-8 sm:size-10 items-center justify-center rounded-full bg-navy-100 flex-shrink-0">
+                          <Ship className="size-4 sm:size-5 text-navy-600" />
                         </div>
-                        <div>
-                          <h4 className="font-medium text-navy-900">{app.position}</h4>
-                          <p className="text-sm text-gray-500">{app.vesselName || "Employer TBA"}</p>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-medium text-navy-900 text-sm sm:text-base truncate">{app.position}</h4>
+                          <p className="text-xs sm:text-sm text-gray-500 truncate">{app.vesselName || "Employer TBA"}</p>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-6">
-                        <div className="text-right">
-                          <p className="text-xs text-gray-400">Applied {formatDate(app.appliedDate)}</p>
-                        </div>
+                      <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-6 pl-11 sm:pl-0">
+                        <p className="text-xs text-gray-400">Applied {formatDate(app.appliedDate)}</p>
                         <ApplicationStatus status={app.status} />
                       </div>
                     </div>
@@ -511,16 +518,16 @@ export function DashboardClient({ data }: { data: DashboardData }) {
           </div>
 
           {/* Right Column */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Job Preferences Card */}
-            <PreferencesSummaryCard preferences={data.preferences} />
+            <PreferencesSummaryCard preferences={preferences} />
 
             {/* Profile Strength Card */}
-            <div className="rounded-xl border border-gray-200 bg-white p-6">
-              <div className="mb-4 flex items-center gap-3">
-                <Award className="size-6 text-gold-500" />
+            <div className="rounded-xl border border-gray-200 bg-white p-4 sm:p-6">
+              <div className="mb-3 sm:mb-4 flex items-center gap-2 sm:gap-3">
+                <Award className="size-5 sm:size-6 text-gold-500" />
                 <div>
-                  <h2 className="text-2xl font-serif font-medium text-navy-800">Profile Strength</h2>
+                  <h2 className="text-lg sm:text-2xl font-serif font-medium text-navy-800">Profile Strength</h2>
                   <p className="text-xs text-gray-500">Complete to get better matches</p>
                 </div>
               </div>
@@ -562,7 +569,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
                 </div>
               )}
 
-              {profileCompleteness === 100 && (
+              {profileCompleteness >= 95 && (
                 <div className="flex items-center gap-2 rounded-lg bg-success-50 p-3">
                   <CheckCircle2 className="size-5 text-success-600" />
                   <span className="text-sm font-medium text-success-700">Your profile is complete!</span>

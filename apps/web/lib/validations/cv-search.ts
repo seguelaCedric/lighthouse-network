@@ -80,7 +80,6 @@ export interface CVSearchResult {
   // Scores
   match_score: number;
   whole_doc_score: number;
-  chunk_score: number;
   fulltext_score: number;
   rerank_score?: number;
 

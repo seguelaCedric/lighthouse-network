@@ -54,21 +54,40 @@ export async function getDocumentsData(): Promise<DocumentsPageData | null> {
 
   if (!user) return null;
 
-  // Get user record
+  // Get user record (auth_id -> user_id mapping)
   const { data: userData } = await supabase
     .from("users")
     .select("id")
     .eq("auth_id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (!userData) return null;
+  let candidate = null;
 
-  // Get candidate
-  const { data: candidate } = await supabase
-    .from("candidates")
-    .select("id, cv_url, cv_status, cv_document_id")
-    .eq("user_id", userData.id)
-    .single();
+  // Try to find candidate by user_id if user record exists
+  if (userData) {
+    const { data: candidateByUserId } = await supabase
+      .from("candidates")
+      .select("id, cv_url, cv_status, cv_document_id")
+      .eq("user_id", userData.id)
+      .maybeSingle();
+
+    if (candidateByUserId) {
+      candidate = candidateByUserId;
+    }
+  }
+
+  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
+  if (!candidate && user.email) {
+    const { data: candidateByEmail } = await supabase
+      .from("candidates")
+      .select("id, cv_url, cv_status, cv_document_id")
+      .eq("email", user.email)
+      .maybeSingle();
+
+    if (candidateByEmail) {
+      candidate = candidateByEmail;
+    }
+  }
 
   if (!candidate) return null;
 
@@ -218,22 +237,40 @@ export async function deleteDocument(
     return { success: false, error: "Not authenticated" };
   }
 
+  // Get user record (auth_id -> user_id mapping)
   const { data: userData } = await supabase
     .from("users")
     .select("id")
     .eq("auth_id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (!userData) {
-    return { success: false, error: "User not found" };
+  let candidate = null;
+
+  // Try to find candidate by user_id if user record exists
+  if (userData) {
+    const { data: candidateByUserId } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("user_id", userData.id)
+      .maybeSingle();
+
+    if (candidateByUserId) {
+      candidate = candidateByUserId;
+    }
   }
 
-  // Get candidate
-  const { data: candidate } = await supabase
-    .from("candidates")
-    .select("id")
-    .eq("user_id", userData.id)
-    .single();
+  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
+  if (!candidate && user.email) {
+    const { data: candidateByEmail } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("email", user.email)
+      .maybeSingle();
+
+    if (candidateByEmail) {
+      candidate = candidateByEmail;
+    }
+  }
 
   if (!candidate) {
     return { success: false, error: "Candidate not found" };
@@ -300,22 +337,40 @@ export async function uploadCertificationDocument(
     return { success: false, error: "Not authenticated" };
   }
 
+  // Get user record (auth_id -> user_id mapping)
   const { data: userData } = await supabase
     .from("users")
     .select("id")
     .eq("auth_id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (!userData) {
-    return { success: false, error: "User not found" };
+  let candidate = null;
+
+  // Try to find candidate by user_id if user record exists
+  if (userData) {
+    const { data: candidateByUserId } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("user_id", userData.id)
+      .maybeSingle();
+
+    if (candidateByUserId) {
+      candidate = candidateByUserId;
+    }
   }
 
-  // Get candidate
-  const { data: candidate } = await supabase
-    .from("candidates")
-    .select("id")
-    .eq("user_id", userData.id)
-    .single();
+  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
+  if (!candidate && user.email) {
+    const { data: candidateByEmail } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("email", user.email)
+      .maybeSingle();
+
+    if (candidateByEmail) {
+      candidate = candidateByEmail;
+    }
+  }
 
   if (!candidate) {
     return { success: false, error: "Candidate not found" };

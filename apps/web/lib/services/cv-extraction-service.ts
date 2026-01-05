@@ -86,8 +86,12 @@ export class CVExtractionService {
       // 3. Build search keywords
       const searchKeywords = buildSearchKeywords(extraction);
 
-      // 4. Update candidate record with extracted data
-      const updatePayload = {
+      // 4. Determine if candidate should be auto-verified based on CV quality
+      const AUTO_VERIFY_CONFIDENCE_THRESHOLD = 0.7;
+      const shouldAutoVerify = extraction.extraction_confidence >= AUTO_VERIFY_CONFIDENCE_THRESHOLD;
+
+      // 5. Update candidate record with extracted data
+      const updatePayload: Record<string, unknown> = {
         // Core fields
         years_experience: extraction.years_experience,
         primary_position: extraction.primary_position,
@@ -119,6 +123,13 @@ export class CVExtractionService {
         // Update search keywords if not already set
         search_keywords: searchKeywords,
       };
+
+      // Auto-verify candidate if CV quality is high enough
+      if (shouldAutoVerify) {
+        updatePayload.verification_tier = 'basic';
+        updatePayload.verified_at = new Date().toISOString();
+        updatePayload.verified_by = 'ai_cv_extraction';
+      }
 
       const { error: updateError } = await this.supabase
         .from('candidates')

@@ -173,6 +173,24 @@ export function StepNavigator({
     }
   };
 
+  // Get step helper text
+  const getStepHelper = (step: Step): string => {
+    switch (step) {
+      case "industry":
+        return "Choose your career path";
+      case "yacht":
+        return "Position, size & contract preferences";
+      case "household":
+        return "Role, location & living arrangement";
+      case "couple":
+        return "Partner placement information";
+      case "complete":
+        return "Review & submit";
+      default:
+        return "";
+    }
+  };
+
   // Memoize summaries
   const stepSummaries = React.useMemo(() => {
     return steps.reduce(
@@ -289,7 +307,7 @@ export function StepNavigator({
     >
       <h3 className="mb-4 text-sm font-semibold text-gray-900">Your Progress</h3>
       <ol className="space-y-2">
-        {steps.map((step, index) => {
+        {steps.map((step) => {
           const isCurrent = step === currentStep;
           const isComplete = stepCompletion[step];
           const summary = stepSummaries[step];
@@ -353,24 +371,15 @@ export function StepNavigator({
                     >
                       {getStepTitle(step)}
                     </div>
-                    {summary ? (
-                      <div className="mt-1 space-y-0.5">
-                        <div
-                          className={cn(
-                            "text-xs",
-                            isCurrent && "text-navy-700",
-                            !isCurrent && "text-gray-600"
-                          )}
-                        >
-                          {summary.primary}
-                        </div>
-                        {summary.secondary && (
-                          <div className="text-xs text-gray-500">{summary.secondary}</div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="mt-1 text-xs text-gray-400">Not started</div>
-                    )}
+                    <div
+                      className={cn(
+                        "text-xs mt-0.5",
+                        isCurrent && "text-navy-600",
+                        !isCurrent && "text-gray-400"
+                      )}
+                    >
+                      {getStepHelper(step)}
+                    </div>
                   </div>
                 </div>
               </button>

@@ -4,6 +4,7 @@ import { createDocumentVersion } from "@/lib/services/document-service";
 import { documentUploadSchema, validateFile, sanitizeFilename } from "@/lib/validations/documents";
 import { logVerificationEvent, calculateVerificationTier } from "@/lib/verification";
 import { syncDocumentUpload } from "@/lib/vincere/sync-service";
+import { extractText, isExtractable } from "@/lib/services/text-extraction";
 
 const BUCKET_NAME = "documents";
 
@@ -216,13 +217,47 @@ export async function POST(request: NextRequest) {
       documentId = documentRecord.id;
     }
 
-    // If this is a CV for a candidate, update candidate status and log event
+    // If this is a CV for a candidate, extract text and update candidate status
     if (documentType === "cv" && entityType === "candidate") {
       // Update candidate CV status
       await supabase
         .from("candidates")
         .update({ cv_status: "pending" })
         .eq("id", entityId);
+
+      // Extract text from CV if it's an extractable format (PDF, DOCX)
+      // This populates extracted_text which triggers embedding generation via database triggers
+      if (isExtractable(file.type, file.name)) {
+        try {
+          const fileBuffer = await file.arrayBuffer();
+          const extractionResult = await extractText(fileBuffer, file.type, file.name);
+
+          if (extractionResult.text) {
+            // Update document with extracted text - this triggers:
+            // 1. trg_queue_embedding_on_document -> queues candidate for embedding generation
+            // 2. trigger_document_cv_extraction -> queues CV for AI structured extraction
+            const { error: updateError } = await supabase
+              .from("documents")
+              .update({
+                extracted_text: extractionResult.text,
+                page_count: extractionResult.pageCount || null,
+              })
+              .eq("id", documentId);
+
+            if (updateError) {
+              console.error("Failed to update document with extracted text:", updateError);
+              // Non-fatal - document was still uploaded successfully
+            } else {
+              console.log(`CV text extracted for document ${documentId}: ${extractionResult.text.length} chars`);
+            }
+          } else if (extractionResult.error) {
+            console.warn(`Text extraction failed for document ${documentId}:`, extractionResult.error);
+          }
+        } catch (extractionError) {
+          console.error("Text extraction error:", extractionError);
+          // Non-fatal - document was still uploaded successfully
+        }
+      }
 
       // Log verification event
       await logVerificationEvent(entityId, "cv_uploaded", {

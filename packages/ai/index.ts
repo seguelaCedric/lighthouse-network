@@ -449,14 +449,9 @@ export {
   type MatchingMetadata,
 } from './matcher/types';
 
-export {
-  chunkCVText,
-  estimateChunkCount,
-  getSectionWeights,
-  type CVChunk,
-  type CVSectionType,
-  type ChunkingOptions,
-} from './embedding/cv-chunker';
+// NOTE: CV chunking was deprecated in migration 035_deprecate_cv_chunks.sql
+// The architecture uses unified embeddings: 1 candidate = 1 embedding
+// See /docs/ai-matching-system.md for details
 
 // ----------------------------------------------------------------------------
 // V4 AGENTIC SEARCH (Query Parser + Agentic Judge)

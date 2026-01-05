@@ -229,6 +229,26 @@ export function StepNavigator({
     }
   };
 
+  // Get step helper text
+  const getStepHelper = (step: ProfileStep): string => {
+    switch (step) {
+      case "personal":
+        return "Name, contact & location";
+      case "professional":
+        return "Role, positions & experience";
+      case "certifications":
+        return formData.candidateType === "yacht_crew" || formData.candidateType === "both"
+          ? "STCW, ENG1 & travel documents"
+          : "Travel documents & visas";
+      case "details":
+        return "Lifestyle & placement preferences";
+      case "complete":
+        return "Review & submit";
+      default:
+        return "";
+    }
+  };
+
   // Memoize summaries
   const stepSummaries = React.useMemo(() => {
     return steps.reduce(
@@ -345,7 +365,7 @@ export function StepNavigator({
     >
       <h3 className="mb-4 text-sm font-semibold text-gray-900">Your Progress</h3>
       <ol className="space-y-2">
-        {steps.map((step, index) => {
+        {steps.map((step) => {
           const isCurrent = step === currentStep;
           const isComplete = stepCompletion[step];
           const summary = stepSummaries[step];
@@ -407,24 +427,15 @@ export function StepNavigator({
                     >
                       {getStepTitle(step)}
                     </div>
-                    {summary ? (
-                      <div className="mt-1 space-y-0.5">
-                        <div
-                          className={cn(
-                            "text-xs",
-                            isCurrent && "text-navy-700",
-                            !isCurrent && "text-gray-600"
-                          )}
-                        >
-                          {summary.primary}
-                        </div>
-                        {summary.secondary && (
-                          <div className="text-xs text-gray-500">{summary.secondary}</div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="mt-1 text-xs text-gray-400">Not started</div>
-                    )}
+                    <div
+                      className={cn(
+                        "text-xs mt-0.5",
+                        isCurrent && "text-navy-600",
+                        !isCurrent && "text-gray-400"
+                      )}
+                    >
+                      {getStepHelper(step)}
+                    </div>
                   </div>
                 </div>
               </button>

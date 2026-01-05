@@ -479,7 +479,6 @@ export async function POST(request: NextRequest) {
             candidate_id: string;
             combined_score: number;
             whole_doc_score: number;
-            chunk_score: number;
             fulltext_score: number;
             best_snippet: string | null;
           }) => {
@@ -497,7 +496,6 @@ export async function POST(request: NextRequest) {
               availability_status: candidate.availability_status as string,
               match_score: r.combined_score,
               whole_doc_score: r.whole_doc_score,
-              chunk_score: r.chunk_score,
               fulltext_score: r.fulltext_score,
               snippet: include_snippets ? (r.best_snippet ?? undefined) : undefined,
               has_stcw: candidate.has_stcw as boolean,
@@ -573,7 +571,6 @@ export async function POST(request: NextRequest) {
               availability_status: candidate.availability_status as string,
               match_score: r.rank,
               whole_doc_score: 0,
-              chunk_score: 0,
               fulltext_score: r.rank,
               snippet: include_snippets ? r.headline : undefined,
               has_stcw: candidate.has_stcw as boolean,
@@ -661,7 +658,6 @@ export async function POST(request: NextRequest) {
               availability_status: candidate.availability_status as string,
               match_score: similarity,
               whole_doc_score: similarity,
-              chunk_score: 0,
               fulltext_score: 0,
               snippet: include_snippets && candidate.embedding_text
                 ? (candidate.embedding_text as string).slice(0, 300)

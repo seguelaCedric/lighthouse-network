@@ -35,17 +35,20 @@ interface UploadQueueProps {
   isUploading: boolean;
   documentType: string;
   onDocumentTypeChange: (type: string) => void;
+  /** Hide document type selector (for CV uploads where type is fixed) */
+  hideTypeSelector?: boolean;
 }
 
+// Document types for "All Documents" section (excludes CV - use dedicated CV upload)
 const DOCUMENT_TYPES = [
-  { value: "cv", label: "CV / Resume" },
+  { value: "other", label: "Other Document" },
   { value: "passport", label: "Passport" },
   { value: "visa", label: "Visa" },
   { value: "medical", label: "Medical Certificate" },
   { value: "certification", label: "Certification" },
   { value: "reference", label: "Reference Letter" },
+  { value: "contract", label: "Contract" },
   { value: "photo", label: "Photo" },
-  { value: "other", label: "Other Document" },
 ];
 
 function formatFileSize(bytes: number): string {
@@ -172,6 +175,7 @@ export function UploadQueue({
   isUploading,
   documentType,
   onDocumentTypeChange,
+  hideTypeSelector = false,
 }: UploadQueueProps) {
   const pendingCount = files.filter((f) => f.status === "pending").length;
   const successCount = files.filter((f) => f.status === "success").length;
@@ -186,24 +190,26 @@ export function UploadQueue({
 
   return (
     <div className="space-y-4">
-      {/* Document Type Selector */}
-      <div>
-        <label className="block text-sm font-medium text-navy-800 mb-2">
-          Document Type (applies to all files)
-        </label>
-        <select
-          value={documentType}
-          onChange={(e) => onDocumentTypeChange(e.target.value)}
-          disabled={isUploading}
-          className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white text-navy-800 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {DOCUMENT_TYPES.map((type) => (
-            <option key={type.value} value={type.value}>
-              {type.label}
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* Document Type Selector - hidden for CV uploads */}
+      {!hideTypeSelector && (
+        <div>
+          <label className="block text-sm font-medium text-navy-800 mb-2">
+            Document Type (applies to all files)
+          </label>
+          <select
+            value={documentType}
+            onChange={(e) => onDocumentTypeChange(e.target.value)}
+            disabled={isUploading}
+            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white text-navy-800 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {DOCUMENT_TYPES.map((type) => (
+              <option key={type.value} value={type.value}>
+                {type.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* File List */}
       <div className="space-y-2 max-h-64 overflow-y-auto">

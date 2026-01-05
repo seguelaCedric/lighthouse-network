@@ -309,8 +309,10 @@ function CVSection({
 // Certifications Section Component
 function CertificationsSection({
   certifications,
+  onUpload,
 }: {
   certifications: CertificationDocument[];
+  onUpload: () => void;
 }) {
   const expiring = certifications.filter((c) => c.status === "expiring_soon");
   const expired = certifications.filter((c) => c.status === "expired");
@@ -331,13 +333,13 @@ function CertificationsSection({
             </p>
           </div>
         </div>
-        <Link
-          href="/crew/profile/edit"
+        <Button
+          onClick={onUpload}
           className="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-gradient-to-r from-gold-500 to-gold-600 rounded-lg hover:from-gold-600 hover:to-gold-700 transition-all shadow-sm"
         >
           <Plus className="w-4 h-4" />
           Add Certification
-        </Link>
+        </Button>
       </div>
 
       {(expiring.length > 0 || expired.length > 0) && (
@@ -402,13 +404,13 @@ function CertificationsSection({
                     <Eye className="w-4 h-4" />
                   </a>
                 ) : (
-                  <Link
-                    href="/crew/profile/edit"
+                  <button
+                    onClick={onUpload}
                     className="p-2 text-navy-600 hover:bg-gold-50 rounded-lg transition-colors"
                     title="Upload document"
                   >
                     <Upload className="w-4 h-4" />
-                  </Link>
+                  </button>
                 )}
               </div>
             </div>
@@ -423,13 +425,13 @@ function CertificationsSection({
           <p className="text-gray-500 mb-6 max-w-sm mx-auto">
             Add your STCW, ENG1, and other maritime certifications to complete your profile.
           </p>
-          <Link
-            href="/crew/profile/edit"
+          <Button
+            onClick={onUpload}
             className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-gold-500 to-gold-600 rounded-lg hover:from-gold-600 hover:to-gold-700 transition-all shadow-sm"
           >
             <Plus className="w-4 h-4" />
             Add Certifications
-          </Link>
+          </Button>
         </div>
       )}
     </div>
@@ -634,6 +636,7 @@ function UploadModal({
       "application/msword",
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       "image/jpeg",
+      "image/jpg", // Some browsers report JPG as image/jpg instead of image/jpeg
       "image/png",
       "image/webp",
     ];
@@ -908,7 +911,7 @@ function UploadModal({
               accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp"
               onChange={handleFileChange}
               multiple={uploadType !== "cv"}
-              className="hidden"
+              className="sr-only"
             />
             <div
               className={cn(
@@ -953,6 +956,7 @@ function UploadModal({
               isUploading={isUploading}
               documentType={documentType}
               onDocumentTypeChange={setDocumentType}
+              hideTypeSelector={uploadType === "cv"}
             />
           )}
 
@@ -1109,7 +1113,10 @@ export function DocumentsClient({ data }: { data: DocumentsPageData }) {
         />
 
         {/* Certifications Section */}
-        <CertificationsSection certifications={data.certifications} />
+        <CertificationsSection
+          certifications={data.certifications}
+          onUpload={openDocumentUpload}
+        />
 
         {/* Other Documents Section */}
         <OtherDocumentsSection

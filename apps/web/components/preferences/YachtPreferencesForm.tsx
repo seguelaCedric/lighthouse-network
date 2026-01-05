@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import { Ship, DollarSign, Calendar, MapPin, Anchor } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -35,20 +34,6 @@ const contractTypes = [
   { value: "rotational", label: "Rotational" },
   { value: "seasonal", label: "Seasonal" },
   { value: "temporary", label: "Temporary" },
-];
-
-const regions = [
-  { value: "mediterranean", label: "Mediterranean" },
-  { value: "caribbean", label: "Caribbean" },
-  { value: "bahamas", label: "Bahamas" },
-  { value: "florida", label: "Florida" },
-  { value: "new_england", label: "New England" },
-  { value: "alaska", label: "Alaska" },
-  { value: "south_pacific", label: "South Pacific" },
-  { value: "australia", label: "Australia / NZ" },
-  { value: "middle_east", label: "Middle East" },
-  { value: "asia", label: "Asia" },
-  { value: "worldwide", label: "Worldwide" },
 ];
 
 const currencies = [
@@ -104,18 +89,6 @@ export function YachtPreferencesForm({ data, onChange }: YachtPreferencesFormPro
       );
     } else {
       onChange("contractTypes", [...current, value]);
-    }
-  };
-
-  const toggleRegion = (value: string) => {
-    const current = data.regions || [];
-    if (current.includes(value)) {
-      onChange(
-        "regions",
-        current.filter((p) => p !== value)
-      );
-    } else {
-      onChange("regions", [...current, value]);
     }
   };
 
@@ -239,32 +212,26 @@ export function YachtPreferencesForm({ data, onChange }: YachtPreferencesFormPro
         </div>
       </div>
 
-      {/* Regions */}
+      {/* Preferred Regions */}
       <div className="space-y-2">
         <label className="block text-sm font-medium text-gray-700">
           <MapPin className="mr-1 inline size-4" />
-          Preferred Cruising Grounds
+          Preferred Regions
         </label>
-        <div className="flex flex-wrap gap-2">
-          {regions.map((region) => {
-            const isSelected = data.regions?.includes(region.value);
-            return (
-              <button
-                key={region.value}
-                type="button"
-                onClick={() => toggleRegion(region.value)}
-                className={cn(
-                  "rounded-full px-3 py-1.5 text-sm transition-colors",
-                  isSelected
-                    ? "bg-navy-100 text-navy-700 ring-1 ring-navy-300"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                )}
-              >
-                {region.label}
-              </button>
-            );
-          })}
-        </div>
+        <input
+          type="text"
+          placeholder='e.g., "Mediterranean, Caribbean, Worldwide"'
+          value={(data.regions || []).join(", ")}
+          onChange={(e) => {
+            const value = e.target.value;
+            const regions = value
+              ? value.split(",").map((r) => r.trim()).filter(Boolean)
+              : [];
+            onChange("regions", regions);
+          }}
+          className="h-10 w-full rounded-lg border border-gray-300 px-3 text-sm focus:border-navy-500 focus:outline-none focus:ring-2 focus:ring-navy-500/20"
+        />
+        <p className="text-xs text-gray-500">Enter your preferred cruising grounds (comma-separated)</p>
       </div>
 
       {/* Leave Package */}

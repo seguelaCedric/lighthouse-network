@@ -333,41 +333,26 @@ export default function PreferencesClient({ candidateId, initialData }: Preferen
   const isFirstStep = currentStepIndex === 0;
   const isLastStep = currentStepIndex === steps.length - 1;
 
-  // Progress calculation
+  // Progress calculation based on required step completion (optional fields excluded)
   const calculateProgress = (): number => {
-    let completed = 0;
-    let total = 0;
+    if (steps.length === 0) return 0;
 
-    // Industry selection
-    total++;
-    if (formData.industryPreference) completed++;
+    const completedSteps = steps.reduce((count, step) => {
+      switch (step) {
+        case "industry":
+          return count + (formData.industryPreference ? 1 : 0);
+        case "yacht":
+          return count + (formData.yachtPrimaryPosition ? 1 : 0);
+        case "household":
+          return count + (formData.householdPrimaryPosition ? 1 : 0);
+        case "couple":
+          return count + (formData.isCouple !== null ? 1 : 0);
+        default:
+          return count;
+      }
+    }, 0);
 
-    // If yacht
-    if (formData.industryPreference === "yacht" || formData.industryPreference === "both") {
-      total += 2; // Position, size (yacht-specific)
-      if (formData.yachtPrimaryPosition) completed++;
-      if (formData.yachtSizeMin || formData.yachtSizeMax) completed++;
-    }
-
-    // If household
-    if (formData.industryPreference === "household" || formData.industryPreference === "both") {
-      total += 2; // Position, arrangement (household-specific)
-      if (formData.householdPrimaryPosition) completed++;
-      if (formData.livingArrangement) completed++;
-    }
-
-    // Salary and availability (shared - only count once)
-    if (formData.industryPreference) {
-      total += 2; // Salary, availability
-      if (formData.salaryMin || formData.salaryMax) completed++;
-      if (formData.availabilityStatus) completed++;
-    }
-
-    // Couple info (optional but tracked)
-    total++;
-    if (formData.isCouple !== null) completed++;
-
-    return Math.round((completed / total) * 100);
+    return Math.round((completedSteps / steps.length) * 100);
   };
 
   if (currentStep === "complete") {
@@ -534,7 +519,7 @@ export default function PreferencesClient({ candidateId, initialData }: Preferen
         <div className="h-2 overflow-hidden rounded-full bg-gray-200">
           <div
             className="h-full bg-gold-500 transition-all duration-300"
-            style={{ width: `${((currentStepIndex + 1) / steps.length) * 100}%` }}
+            style={{ width: `${calculateProgress()}%` }}
           />
         </div>
       </div>

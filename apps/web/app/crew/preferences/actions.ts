@@ -208,23 +208,23 @@ export async function loadJobMatches(
   candidateId: string,
   options: JobMatchesOptions = {}
 ): Promise<JobMatchesResult> {
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/db21c2cf-b379-416a-8679-3c252c39767b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'actions.ts:207',message:'loadJobMatches entry',data:{candidateId,options},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
+  console.log("[loadJobMatches] Entry:", { candidateId, options });
   const supabase = await createClient();
 
   const {
     data: { user },
+    error: authError,
   } = await supabase.auth.getUser();
 
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/db21c2cf-b379-416a-8679-3c252c39767b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'actions.ts:215',message:'auth.getUser result',data:{hasUser:!!user,userId:user?.id,userEmail:user?.email},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
+  console.log("[loadJobMatches] Auth result:", {
+    hasUser: !!user,
+    userId: user?.id,
+    userEmail: user?.email,
+    authError: authError?.message
+  });
 
   if (!user) {
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/db21c2cf-b379-416a-8679-3c252c39767b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'actions.ts:218',message:'not authenticated',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
+    console.log("[loadJobMatches] Not authenticated");
     return { success: false, error: "Not authenticated" };
   }
 
@@ -249,7 +249,7 @@ export async function loadJobMatches(
     has_schengen, has_b1b2, has_c1d,
     nationality, second_nationality,
     is_smoker, has_visible_tattoos, is_couple, partner_position,
-    verification_tier, embedding, bio
+    verification_tier, embedding
   `;
 
   // Get user record (auth_id -> user_id mapping)
@@ -259,9 +259,12 @@ export async function loadJobMatches(
     .eq("auth_id", user.id)
     .maybeSingle();
 
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/db21c2cf-b379-416a-8679-3c252c39767b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'actions.ts:250',message:'users table query result',data:{hasUserData:!!userData,userDataId:userData?.id,hasError:!!userDataError,error:userDataError?.message},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-  // #endregion
+  console.log("[loadJobMatches] Users table lookup:", {
+    hasUserData: !!userData,
+    userDataId: userData?.id,
+    hasError: !!userDataError,
+    error: userDataError?.message,
+  });
 
   let candidate = null;
 
@@ -273,9 +276,12 @@ export async function loadJobMatches(
       .eq("user_id", userData.id)
       .maybeSingle();
 
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/db21c2cf-b379-416a-8679-3c252c39767b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'actions.ts:260',message:'candidate lookup by user_id',data:{hasCandidate:!!candidateByUserId,candidateId:candidateByUserId?.id,hasError:!!candidateByUserIdError,error:candidateByUserIdError?.message,userDataId:userData.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
+    console.log("[loadJobMatches] Candidate lookup by user_id:", {
+      hasCandidate: !!candidateByUserId,
+      candidateId: candidateByUserId?.id,
+      hasError: !!candidateByUserIdError,
+      error: candidateByUserIdError?.message,
+    });
 
     if (candidateByUserId) {
       candidate = candidateByUserId;
@@ -290,9 +296,13 @@ export async function loadJobMatches(
       .eq("email", user.email)
       .maybeSingle();
 
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/db21c2cf-b379-416a-8679-3c252c39767b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'actions.ts:273',message:'candidate lookup by email',data:{hasCandidate:!!candidateByEmail,candidateId:candidateByEmail?.id,hasError:!!candidateByEmailError,error:candidateByEmailError?.message,userEmail:user.email},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
-    // #endregion
+    console.log("[loadJobMatches] Candidate lookup by email:", {
+      hasCandidate: !!candidateByEmail,
+      candidateId: candidateByEmail?.id,
+      hasError: !!candidateByEmailError,
+      error: candidateByEmailError?.message,
+      userEmail: user.email,
+    });
 
     if (candidateByEmail) {
       candidate = candidateByEmail;
@@ -307,24 +317,26 @@ export async function loadJobMatches(
       .eq("id", candidateId)
       .maybeSingle();
 
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/db21c2cf-b379-416a-8679-3c252c39767b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'actions.ts:286',message:'candidate lookup by candidateId',data:{hasCandidate:!!candidateById,candidateId:candidateById?.id,hasError:!!candidateByIdError,error:candidateByIdError?.message,providedCandidateId:candidateId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
-    // #endregion
+    console.log("[loadJobMatches] Candidate lookup by candidateId:", {
+      hasCandidate: !!candidateById,
+      candidateId: candidateById?.id,
+      hasError: !!candidateByIdError,
+      error: candidateByIdError?.message,
+      providedCandidateId: candidateId,
+    });
 
     if (candidateById) {
       candidate = candidateById;
     }
   }
 
-  // #region agent log
-  fetch('http://127.0.0.1:7242/ingest/db21c2cf-b379-416a-8679-3c252c39767b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'actions.ts:293',message:'final candidate check',data:{hasCandidate:!!candidate,candidateId:candidate?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
-  // #endregion
+  console.log("[loadJobMatches] Final candidate check:", {
+    hasCandidate: !!candidate,
+    candidateId: candidate?.id,
+  });
 
   if (!candidate) {
     console.error("[loadJobMatches] Candidate fetch error: No candidate found for user", user.id);
-    // #region agent log
-    fetch('http://127.0.0.1:7242/ingest/db21c2cf-b379-416a-8679-3c252c39767b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'actions.ts:295',message:'candidate not found - returning error',data:{userId:user.id,userEmail:user.email,providedCandidateId:candidateId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'F'})}).catch(()=>{});
-    // #endregion
     return { success: false, error: "Could not load candidate profile" };
   }
 

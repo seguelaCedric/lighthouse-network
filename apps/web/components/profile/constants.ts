@@ -216,134 +216,427 @@ export const licenseOptions = [
 ] as const;
 
 // Certification checklist options organized by category
+// Each certification has a 'sectors' field to indicate which candidate types it applies to
 export const certificationChecklistOptions = [
-  // STCW Category
+  // ==================
+  // YACHT CERTIFICATIONS
+  // ==================
+
+  // STCW Category (yacht only)
   {
     type: "stcw_firefighting",
     label: "STCW Advanced Firefighting",
     category: "STCW",
+    sectors: ["yacht_crew", "both"] as const,
   },
   {
     type: "stcw_medical_first_aid",
     label: "STCW Medical First Aid",
     category: "STCW",
+    sectors: ["yacht_crew", "both"] as const,
   },
   {
     type: "stcw_medical_care",
     label: "STCW Medical Care",
     category: "STCW",
+    sectors: ["yacht_crew", "both"] as const,
+  },
+  {
+    type: "stcw_proficiency_survival",
+    label: "STCW Proficiency in Survival Craft",
+    category: "STCW",
+    sectors: ["yacht_crew", "both"] as const,
+  },
+  {
+    type: "stcw_security_awareness",
+    label: "STCW Security Awareness",
+    category: "STCW",
+    sectors: ["yacht_crew", "both"] as const,
   },
 
-  // Food & Service
-  {
-    type: "food_hygiene_l2",
-    label: "Food Hygiene Level 2",
-    category: "Food & Service",
-  },
-  {
-    type: "food_hygiene_l3",
-    label: "Food Hygiene Level 3",
-    category: "Food & Service",
-  },
-  {
-    type: "silver_service",
-    label: "Silver Service",
-    category: "Food & Service",
-  },
-
-  // Wine & Spirits
-  {
-    type: "wset_l1",
-    label: "WSET Level 1",
-    category: "Wine & Spirits",
-  },
-  {
-    type: "wset_l2",
-    label: "WSET Level 2",
-    category: "Wine & Spirits",
-  },
-  {
-    type: "wset_l3",
-    label: "WSET Level 3",
-    category: "Wine & Spirits",
-  },
-
-  // Medical
-  {
-    type: "first_aid",
-    label: "First Aid Certificate",
-    category: "Medical",
-  },
-
-  // Water Sports & Diving
+  // Water Sports & Diving (yacht only)
   {
     type: "powerboat_l2",
     label: "Powerboat Level 2",
     category: "Water Sports",
+    sectors: ["yacht_crew", "both"] as const,
   },
   {
     type: "pwc_license",
     label: "Personal Watercraft License",
     category: "Water Sports",
-  },
-  {
-    type: "padi_open_water",
-    label: "PADI Open Water",
-    category: "Diving",
-  },
-  {
-    type: "padi_advanced",
-    label: "PADI Advanced Open Water",
-    category: "Diving",
-  },
-  {
-    type: "padi_divemaster",
-    label: "PADI Divemaster",
-    category: "Diving",
-  },
-  {
-    type: "dive_instructor",
-    label: "Dive Instructor (PADI/SSI)",
-    category: "Diving",
+    sectors: ["yacht_crew", "both"] as const,
   },
   {
     type: "water_sports_instructor",
     label: "Water Sports Instructor",
     category: "Water Sports",
+    sectors: ["yacht_crew", "both"] as const,
   },
-
-  // RYA
   {
-    type: "rya_certifications",
-    label: "RYA Certifications",
-    category: "RYA",
+    type: "padi_open_water",
+    label: "PADI Open Water",
+    category: "Diving",
+    sectors: ["yacht_crew", "both"] as const,
+  },
+  {
+    type: "padi_advanced",
+    label: "PADI Advanced Open Water",
+    category: "Diving",
+    sectors: ["yacht_crew", "both"] as const,
+  },
+  {
+    type: "padi_rescue",
+    label: "PADI Rescue Diver",
+    category: "Diving",
+    sectors: ["yacht_crew", "both"] as const,
+  },
+  {
+    type: "padi_divemaster",
+    label: "PADI Divemaster",
+    category: "Diving",
+    sectors: ["yacht_crew", "both"] as const,
+  },
+  {
+    type: "dive_instructor",
+    label: "Dive Instructor (PADI/SSI)",
+    category: "Diving",
+    sectors: ["yacht_crew", "both"] as const,
   },
 
-  // Fitness & Wellness
+  // RYA (yacht only)
+  {
+    type: "rya_vhf",
+    label: "RYA VHF Radio License",
+    category: "RYA",
+    sectors: ["yacht_crew", "both"] as const,
+  },
+  {
+    type: "rya_day_skipper",
+    label: "RYA Day Skipper",
+    category: "RYA",
+    sectors: ["yacht_crew", "both"] as const,
+  },
+  {
+    type: "rya_yachtmaster_coastal",
+    label: "RYA Yachtmaster Coastal",
+    category: "RYA",
+    sectors: ["yacht_crew", "both"] as const,
+  },
+  {
+    type: "rya_yachtmaster_offshore",
+    label: "RYA Yachtmaster Offshore",
+    category: "RYA",
+    sectors: ["yacht_crew", "both"] as const,
+  },
+  {
+    type: "rya_yachtmaster_ocean",
+    label: "RYA Yachtmaster Ocean",
+    category: "RYA",
+    sectors: ["yacht_crew", "both"] as const,
+  },
+
+  // ==================
+  // SHARED CERTIFICATIONS (yacht & household)
+  // ==================
+
+  // Food & Service (shared)
+  {
+    type: "food_hygiene_l2",
+    label: "Food Hygiene Level 2",
+    category: "Food & Service",
+    sectors: ["yacht_crew", "household_staff", "both"] as const,
+  },
+  {
+    type: "food_hygiene_l3",
+    label: "Food Hygiene Level 3",
+    category: "Food & Service",
+    sectors: ["yacht_crew", "household_staff", "both"] as const,
+  },
+  {
+    type: "silver_service",
+    label: "Silver Service",
+    category: "Food & Service",
+    sectors: ["yacht_crew", "household_staff", "both"] as const,
+  },
+  {
+    type: "hospitality_diploma",
+    label: "Hospitality Diploma",
+    category: "Food & Service",
+    sectors: ["yacht_crew", "household_staff", "both"] as const,
+  },
+  {
+    type: "culinary_diploma",
+    label: "Culinary Arts Diploma",
+    category: "Food & Service",
+    sectors: ["yacht_crew", "household_staff", "both"] as const,
+  },
+
+  // Wine & Spirits (shared)
+  {
+    type: "wset_l1",
+    label: "WSET Level 1",
+    category: "Wine & Spirits",
+    sectors: ["yacht_crew", "household_staff", "both"] as const,
+  },
+  {
+    type: "wset_l2",
+    label: "WSET Level 2",
+    category: "Wine & Spirits",
+    sectors: ["yacht_crew", "household_staff", "both"] as const,
+  },
+  {
+    type: "wset_l3",
+    label: "WSET Level 3",
+    category: "Wine & Spirits",
+    sectors: ["yacht_crew", "household_staff", "both"] as const,
+  },
+  {
+    type: "sommelier",
+    label: "Sommelier Certification",
+    category: "Wine & Spirits",
+    sectors: ["yacht_crew", "household_staff", "both"] as const,
+  },
+
+  // Medical & First Aid (shared)
+  {
+    type: "first_aid",
+    label: "First Aid Certificate",
+    category: "Medical",
+    sectors: ["yacht_crew", "household_staff", "both"] as const,
+  },
+  {
+    type: "cpr_aed",
+    label: "CPR/AED Certification",
+    category: "Medical",
+    sectors: ["yacht_crew", "household_staff", "both"] as const,
+  },
+  {
+    type: "pediatric_first_aid",
+    label: "Pediatric First Aid",
+    category: "Medical",
+    sectors: ["yacht_crew", "household_staff", "both"] as const,
+  },
+
+  // Fitness & Wellness (shared)
   {
     type: "personal_trainer",
     label: "Personal Trainer Certification",
-    category: "Fitness",
+    category: "Fitness & Wellness",
+    sectors: ["yacht_crew", "household_staff", "both"] as const,
   },
   {
     type: "yoga_instructor",
     label: "Yoga Instructor",
-    category: "Wellness",
+    category: "Fitness & Wellness",
+    sectors: ["yacht_crew", "household_staff", "both"] as const,
+  },
+  {
+    type: "pilates_instructor",
+    label: "Pilates Instructor",
+    category: "Fitness & Wellness",
+    sectors: ["yacht_crew", "household_staff", "both"] as const,
   },
   {
     type: "massage_therapist",
     label: "Massage Therapist License",
-    category: "Wellness",
+    category: "Fitness & Wellness",
+    sectors: ["yacht_crew", "household_staff", "both"] as const,
+  },
+  {
+    type: "spa_therapist",
+    label: "Spa Therapist Certification",
+    category: "Fitness & Wellness",
+    sectors: ["yacht_crew", "household_staff", "both"] as const,
   },
 
-  // Other
+  // ==================
+  // HOUSEHOLD CERTIFICATIONS
+  // ==================
+
+  // Childcare (household focused)
+  {
+    type: "nanny_certification",
+    label: "Professional Nanny Certification",
+    category: "Childcare",
+    sectors: ["household_staff", "both"] as const,
+  },
+  {
+    type: "newborn_care",
+    label: "Newborn Care Specialist",
+    category: "Childcare",
+    sectors: ["household_staff", "both"] as const,
+  },
+  {
+    type: "maternity_nurse",
+    label: "Maternity Nurse Qualification",
+    category: "Childcare",
+    sectors: ["household_staff", "both"] as const,
+  },
+  {
+    type: "child_development",
+    label: "Child Development Certificate",
+    category: "Childcare",
+    sectors: ["household_staff", "both"] as const,
+  },
+  {
+    type: "montessori",
+    label: "Montessori Certification",
+    category: "Childcare",
+    sectors: ["household_staff", "both"] as const,
+  },
+  {
+    type: "teaching_qualification",
+    label: "Teaching Qualification",
+    category: "Childcare",
+    sectors: ["household_staff", "both"] as const,
+  },
+  {
+    type: "governess_training",
+    label: "Governess Training",
+    category: "Childcare",
+    sectors: ["household_staff", "both"] as const,
+  },
+
+  // Housekeeping & Estate (household focused)
+  {
+    type: "butler_certification",
+    label: "Butler Certification",
+    category: "Housekeeping",
+    sectors: ["household_staff", "both"] as const,
+  },
+  {
+    type: "housekeeping_training",
+    label: "Professional Housekeeping Training",
+    category: "Housekeeping",
+    sectors: ["household_staff", "both"] as const,
+  },
+  {
+    type: "estate_management",
+    label: "Estate Management Certificate",
+    category: "Housekeeping",
+    sectors: ["household_staff", "both"] as const,
+  },
+  {
+    type: "laundry_specialist",
+    label: "Laundry & Garment Care Specialist",
+    category: "Housekeeping",
+    sectors: ["household_staff", "both"] as const,
+  },
+  {
+    type: "floral_design",
+    label: "Floral Design Certification",
+    category: "Housekeeping",
+    sectors: ["household_staff", "both"] as const,
+  },
+
+  // Security (household focused)
+  {
+    type: "close_protection",
+    label: "Close Protection Officer (CPO)",
+    category: "Security",
+    sectors: ["household_staff", "both"] as const,
+  },
+  {
+    type: "sia_license",
+    label: "SIA Security License",
+    category: "Security",
+    sectors: ["household_staff", "both"] as const,
+  },
+  {
+    type: "security_training",
+    label: "Security Awareness Training",
+    category: "Security",
+    sectors: ["household_staff", "both"] as const,
+  },
+
+  // Driving (household focused)
+  {
+    type: "chauffeur_license",
+    label: "Professional Chauffeur License",
+    category: "Driving",
+    sectors: ["household_staff", "both"] as const,
+  },
+  {
+    type: "advanced_driving",
+    label: "Advanced Driving Certificate",
+    category: "Driving",
+    sectors: ["household_staff", "both"] as const,
+  },
+  {
+    type: "defensive_driving",
+    label: "Defensive Driving Course",
+    category: "Driving",
+    sectors: ["household_staff", "both"] as const,
+  },
+
+  // Pet Care (household focused)
+  {
+    type: "dog_grooming",
+    label: "Dog Grooming Certification",
+    category: "Pet Care",
+    sectors: ["household_staff", "both"] as const,
+  },
+  {
+    type: "animal_first_aid",
+    label: "Animal First Aid",
+    category: "Pet Care",
+    sectors: ["household_staff", "both"] as const,
+  },
+  {
+    type: "equestrian",
+    label: "Equestrian Certification",
+    category: "Pet Care",
+    sectors: ["household_staff", "both"] as const,
+  },
+
+  // Admin & PA (household focused)
+  {
+    type: "pa_certification",
+    label: "PA/Executive Assistant Certification",
+    category: "Administration",
+    sectors: ["household_staff", "both"] as const,
+  },
+  {
+    type: "bookkeeping",
+    label: "Bookkeeping Certification",
+    category: "Administration",
+    sectors: ["household_staff", "both"] as const,
+  },
+  {
+    type: "event_planning",
+    label: "Event Planning Certification",
+    category: "Administration",
+    sectors: ["household_staff", "both"] as const,
+  },
+
+  // Other (all sectors)
   {
     type: "other",
     label: "Other (specify)",
     category: "Other",
+    sectors: ["yacht_crew", "household_staff", "both"] as const,
     allowCustom: true,
   },
 ] as const;
+
+// Helper function to get certifications for a specific candidate type
+export function getCertificationsForCandidateType(candidateType: CandidateType) {
+  // "other" candidate type doesn't have specific certifications
+  if (candidateType === "other") {
+    return [];
+  }
+  return certificationChecklistOptions.filter(cert =>
+    (cert.sectors as readonly string[]).includes(candidateType)
+  );
+}
+
+// Get unique categories for a candidate type
+export function getCertificationCategoriesForCandidateType(candidateType: CandidateType) {
+  const certs = getCertificationsForCandidateType(candidateType);
+  const categories = [...new Set(certs.map(c => c.category))];
+  return categories;
+}
 
 // Gender options (restricted to Male/Female as per requirements)
 export const genderOptions = [

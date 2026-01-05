@@ -46,20 +46,33 @@ const querySchema = z.object({
  * - includeAISummary: include AI-generated summaries (default: true)
  */
 export async function GET(request: NextRequest) {
+  console.log("\n========== JOB MATCHES API CALLED ==========");
+  console.log("[Job Matches] Request URL:", request.url);
+  console.log("[Job Matches] Cookies present:", request.cookies.getAll().map(c => c.name).join(", ") || "NONE");
+
   try {
     const supabase = await createClient();
 
     // Check authentication
+    console.log("[Job Matches] Calling supabase.auth.getUser()...");
     const {
       data: { user },
       error: authError,
     } = await supabase.auth.getUser();
 
+    console.log("[Job Matches] Auth result - user:", user?.id || "NULL", "error:", authError?.message || "none");
+
     if (authError || !user) {
+      console.log("[Job Matches] AUTH FAILED - returning 401");
+      console.log("[Job Matches] authError:", JSON.stringify(authError));
       return NextResponse.json(
         {
           authenticated: false,
           error: "You must be logged in to view job matches",
+          debug: {
+            authError: authError?.message,
+            cookies: request.cookies.getAll().map(c => c.name),
+          }
         },
         { status: 401 }
       );
