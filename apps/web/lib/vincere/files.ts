@@ -237,3 +237,112 @@ export function isImage(file: VincereFile): boolean {
   const ext = getFileExtension(file);
   return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext);
 }
+
+// ============================================================================
+// FILE UPLOAD FUNCTIONS
+// ============================================================================
+
+/**
+ * Upload options for candidate documents
+ */
+export interface UploadDocumentOptions {
+  /** If true, marks as the candidate's original CV */
+  isOriginalCV?: boolean;
+  /** Document type ID from Vincere reference data */
+  documentTypeId?: number;
+}
+
+/**
+ * Upload response from Vincere
+ */
+export interface VincereUploadResponse {
+  id: number;
+  file_name?: string;
+  url?: string;
+}
+
+/**
+ * Upload a document to a candidate in Vincere
+ *
+ * @param vincereId - Candidate's Vincere ID
+ * @param file - File data as ArrayBuffer or Buffer
+ * @param fileName - Original filename
+ * @param mimeType - MIME type of the file
+ * @param options - Upload options (isOriginalCV, documentTypeId)
+ * @param client - Optional VincereClient instance
+ */
+export async function uploadCandidateDocument(
+  vincereId: number,
+  file: ArrayBuffer | Buffer,
+  fileName: string,
+  mimeType: string,
+  options?: UploadDocumentOptions,
+  client?: VincereClient
+): Promise<VincereUploadResponse> {
+  const vincere = client ?? getVincereClient();
+
+  // Build additional form fields based on options
+  const additionalFields: Record<string, string> = {};
+
+  if (options?.isOriginalCV) {
+    additionalFields['original_cv'] = 'true';
+  }
+
+  if (options?.documentTypeId) {
+    additionalFields['document_type_id'] = options.documentTypeId.toString();
+  }
+
+  // Use the multipart upload endpoint
+  const result = await vincere.postMultipart<VincereUploadResponse>(
+    `/candidate/${vincereId}/files`,
+    file,
+    fileName,
+    mimeType,
+    Object.keys(additionalFields).length > 0 ? additionalFields : undefined
+  );
+
+  return result;
+}
+
+/**
+ * Upload a CV to a candidate in Vincere
+ * Convenience wrapper that sets isOriginalCV: true
+ */
+export async function uploadCandidateCV(
+  vincereId: number,
+  file: ArrayBuffer | Buffer,
+  fileName: string,
+  mimeType: string,
+  client?: VincereClient
+): Promise<VincereUploadResponse> {
+  return uploadCandidateDocument(vincereId, file, fileName, mimeType, { isOriginalCV: true }, client);
+}
+
+/**
+ * Upload a certificate/compliance document to a candidate in Vincere
+ */
+export async function uploadCandidateCertificate(
+  vincereId: number,
+  file: ArrayBuffer | Buffer,
+  fileName: string,
+  mimeType: string,
+  documentTypeId: number,
+  client?: VincereClient
+): Promise<VincereUploadResponse> {
+  return uploadCandidateDocument(vincereId, file, fileName, mimeType, { documentTypeId }, client);
+}
+
+/**
+ * Upload a photo to a candidate in Vincere
+ * Photos are typically images that appear on the candidate profile
+ */
+export async function uploadCandidatePhoto(
+  vincereId: number,
+  file: ArrayBuffer | Buffer,
+  fileName: string,
+  mimeType: string,
+  client?: VincereClient
+): Promise<VincereUploadResponse> {
+  // Photos are uploaded as regular files - Vincere auto-detects based on content type
+  return uploadCandidateDocument(vincereId, file, fileName, mimeType, undefined, client);
+}

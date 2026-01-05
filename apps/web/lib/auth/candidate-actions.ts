@@ -3,6 +3,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import {
+  syncCandidateCreation,
+  syncDocumentUpload,
+  syncJobApplication,
+} from "@/lib/vincere/sync-service";
 
 export type CandidateAuthResult = {
   success: boolean;
@@ -18,6 +23,7 @@ interface CandidateRegistrationData {
   lastName: string;
   phone: string;
   nationality?: string;
+  candidateType?: string;
   primaryPosition: string;
   yearsExperience?: string;
   jobId?: string;
@@ -73,6 +79,9 @@ export async function registerCandidate(
   }
 
   // Create or update user record with user_type = 'candidate'
+  // All candidates belong to Lighthouse Careers organization by default
+  const DEFAULT_LIGHTHOUSE_ORG_ID = "00000000-0000-0000-0000-000000000001";
+
   const { error: userError } = await supabase.from("users").upsert(
     {
       auth_id: authData.user.id,
@@ -81,6 +90,7 @@ export async function registerCandidate(
       last_name: data.lastName,
       phone: data.phone,
       user_type: "candidate",
+      organization_id: DEFAULT_LIGHTHOUSE_ORG_ID,
       is_active: true,
     },
     {
@@ -114,6 +124,7 @@ export async function registerCandidate(
         phone: data.phone,
         whatsapp: data.phone,
         nationality: data.nationality || null,
+        candidate_type: data.candidateType || null,
         primary_position: data.primaryPosition,
         years_experience: data.yearsExperience ? parseInt(data.yearsExperience) : null,
         availability_status: "looking",
@@ -138,6 +149,7 @@ export async function registerCandidate(
         phone: data.phone,
         whatsapp: data.phone,
         nationality: data.nationality || null,
+        candidate_type: data.candidateType || null,
         primary_position: data.primaryPosition,
         years_experience: data.yearsExperience ? parseInt(data.yearsExperience) : null,
         source: "self_registration",
@@ -169,6 +181,18 @@ export async function registerCandidate(
       mime_type: cvFile.type,
       document_type: "cv",
     });
+  }
+
+  // Sync candidate to Vincere (fire-and-forget)
+  syncCandidateCreation(candidateId).catch((err) =>
+    console.error("Vincere sync failed for candidate creation:", err)
+  );
+
+  // Sync CV to Vincere if provided (fire-and-forget)
+  if (cvFile?.url) {
+    syncDocumentUpload(candidateId, cvFile.url, cvFile.name, cvFile.type, "cv").catch((err) =>
+      console.error("Vincere sync failed for CV upload:", err)
+    );
   }
 
   // If applying for a job, create the application
@@ -207,6 +231,11 @@ export async function registerCandidate(
 
         if (application) {
           applicationId = application.id;
+
+          // Sync job application to Vincere (fire-and-forget)
+          syncJobApplication(candidateId, data.jobId).catch((err) =>
+            console.error("Vincere sync failed for job application:", err)
+          );
 
           // Create activity log
           await supabase.from("activity_logs").insert({
@@ -277,20 +306,65 @@ export async function signInCandidate(
     };
   }
 
-  // Verify this is a candidate account
+  // Check if user record exists
   const { data: user } = await supabase
     .from("users")
     .select("id, user_type")
     .eq("auth_id", data.user.id)
     .single();
 
-  if (user?.user_type !== "candidate") {
-    // Sign them out - wrong portal
+  // If user record exists and is not a candidate, reject
+  if (user && user.user_type !== "candidate") {
     await supabase.auth.signOut();
     return {
       success: false,
       error: "This account is not a crew member account. Please use the recruiter login.",
     };
+  }
+
+  // If no user record exists, check if there's a candidate with matching email
+  // and create the user record if needed (for Vincere-imported candidates)
+  if (!user) {
+    const { data: candidate } = await supabase
+      .from("candidates")
+      .select("id, first_name, last_name, phone")
+      .eq("email", email.toLowerCase())
+      .single();
+
+    if (candidate) {
+      // Create user record for this candidate
+      const DEFAULT_LIGHTHOUSE_ORG_ID = "00000000-0000-0000-0000-000000000001";
+
+      const { data: newUser, error: userError } = await supabase
+        .from("users")
+        .insert({
+          auth_id: data.user.id,
+          email: email.toLowerCase(),
+          first_name: candidate.first_name,
+          last_name: candidate.last_name,
+          phone: candidate.phone,
+          user_type: "candidate",
+          organization_id: DEFAULT_LIGHTHOUSE_ORG_ID,
+          is_active: true,
+        })
+        .select("id")
+        .single();
+
+      if (!userError && newUser) {
+        // Link the candidate to the new user record
+        await supabase
+          .from("candidates")
+          .update({ user_id: newUser.id })
+          .eq("id", candidate.id);
+      }
+    } else {
+      // No candidate record found - this user shouldn't be logging into crew portal
+      await supabase.auth.signOut();
+      return {
+        success: false,
+        error: "No crew member profile found for this account. Please register first.",
+      };
+    }
   }
 
   revalidatePath("/", "layout");
@@ -311,7 +385,7 @@ export async function getCurrentCandidate() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return null;
+  if (!user || !user.email) return null;
 
   // Get the candidate linked to this user
   const { data: dbUser } = await supabase
@@ -320,12 +394,25 @@ export async function getCurrentCandidate() {
     .eq("auth_id", user.id)
     .single();
 
-  if (!dbUser || dbUser.user_type !== "candidate") return null;
+  // If user record exists and is not a candidate type, return null
+  if (dbUser && dbUser.user_type !== "candidate") return null;
 
+  // Try to get candidate by user_id first
+  if (dbUser) {
+    const { data: candidate } = await supabase
+      .from("candidates")
+      .select("*")
+      .eq("user_id", dbUser.id)
+      .single();
+
+    if (candidate) return candidate;
+  }
+
+  // Fallback to email-based lookup (for Vincere-imported candidates)
   const { data: candidate } = await supabase
     .from("candidates")
     .select("*")
-    .eq("user_id", dbUser.id)
+    .eq("email", user.email)
     .single();
 
   return candidate;

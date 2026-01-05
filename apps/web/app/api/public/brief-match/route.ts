@@ -9,22 +9,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
-import { generateEmbedding, anonymizeBio, type ReferenceDetail } from '@lighthouse/ai';
+import { generateEmbedding, anonymizeBio, anonymizeCareerAchievements, anonymizeText, rerankDocuments, validateAnonymizedBioSafe, type ReferenceDetail, type AnonymizeOptions, type RerankDocument } from '@lighthouse/ai';
 import { generateObject } from 'ai';
-import { openai } from '@ai-sdk/openai';
+import { anthropic } from '@ai-sdk/anthropic';
 
-// Fast model for generating candidate presentations (GPT-4o-mini - fast and high quality)
-const presentationModel = openai('gpt-4o-mini');
+// Use Claude Sonnet 4.5 for generating "Why We Recommend" presentations
+// These are shown to clients, so quality and reasoning depth matter
+const presentationModel = anthropic('claude-sonnet-4-20250514');
+
+// Use Claude Sonnet 4.5 for AI judgment (deciding if candidate matches)
+// Critical reasoning task that determines which candidates get shown
+const judgmentModel = anthropic('claude-sonnet-4-20250514');
 
 // ----------------------------------------------------------------------------
 // REQUEST VALIDATION
 // ----------------------------------------------------------------------------
 
 const briefMatchRequestSchema = z.object({
-  role: z.string().min(1, 'Role is required'),
-  location: z.string().optional(),
-  timeline: z.enum(['asap', '1-month', '3-months', 'flexible', '']).optional(),
-  requirements: z.string().optional(),
+  query: z.string().min(1, 'Query is required'),
 });
 
 // ----------------------------------------------------------------------------
@@ -72,14 +74,7 @@ interface AnonymizedCandidate {
   rich_bio: string; // Detailed 3-5 sentence mini-resume (anonymized)
   career_highlights: string[]; // 3-4 bullet points of impressive achievements
   experience_summary: string; // Brief summary of work history scope
-  // Structured work history (yacht + household positions)
-  work_history: Array<{
-    employer: string;      // Yacht name or property name
-    position: string;
-    duration: string;      // e.g., "18 months"
-    dates: string;         // e.g., "Jan 2023 - Jun 2024"
-    details?: string;      // e.g., "102m motor yacht" or "Private estate, Monaco"
-  }>;
+  // NOTE: work_history removed for lead gen - full history available for authenticated clients only
   languages: string[];
   nationality: string;
   availability: string;
@@ -165,6 +160,7 @@ interface ParsedRequirements {
   min_experience_months: number | null;
   max_experience_months: number | null;  // If they say "6 months" for entry role, max is probably ~24
   yacht_size_meters: number | null;
+  min_yacht_size_experience_meters: number | null;  // Minimum yacht size candidate must have worked on
   required_certs: string[];              // Normalized cert requirements
   preferred_certs: string[];             // Nice to have
   is_junior_role: boolean;
@@ -312,6 +308,1147 @@ const CERT_ALIASES: Record<string, string[]> = {
   'yoga': ['yoga', 'pilates'],
 };
 
+// ----------------------------------------------------------------------------
+// STRUCTURED CANDIDATE SCORE - Phase 5: Excellence Bonus System
+// ----------------------------------------------------------------------------
+// Replace simple suitability multiplier with weighted, transparent scoring.
+// This enables "excellence bonus" for candidates who exceed requirements.
+// ----------------------------------------------------------------------------
+
+interface StructuredCandidateScore {
+  // Must-pass checks (binary)
+  passesHardFilters: boolean;
+
+  // Weighted components (0-100 each, normalized to total 100)
+  components: {
+    positionFit: number;          // 35% - How well position matches (incl. step-up)
+    experienceQuality: number;    // 30% - Years + yacht size + breadth
+    skillMatch: number;           // 20% - Skills/certs matching requirements
+    availability: number;         // 0%  - NOT USED - we can offer anyone the job
+    verification: number;         // 10% - Profile completeness, references, verified
+    excellence: number;           // 5%  - Exceeds requirements (bonus only)
+  };
+
+  // Weights for each component (must sum to 1.0)
+  weights: {
+    positionFit: number;
+    experienceQuality: number;
+    skillMatch: number;
+    availability: number;
+    verification: number;
+    excellence: number;
+  };
+
+  // Final weighted score (0-100)
+  totalScore: number;
+
+  // Human-readable recommendation
+  recommendation: 'excellent' | 'strong' | 'suitable' | 'consider' | 'unlikely';
+
+  // Bonus indicators
+  bonuses: {
+    exceedsYachtSize: boolean;    // Experience on larger yachts than required
+    exceedsExperience: boolean;   // More experience than required
+    hasPremiumCerts: boolean;     // Has extra valuable certifications
+    longTenure: boolean;          // History of staying in positions
+    verifiedReferences: boolean;  // Has verified references
+  };
+
+  // Explanation for transparency
+  reasoning: string[];
+}
+
+/**
+ * Calculate a structured score for a candidate.
+ * This provides transparency and enables excellence bonuses.
+ */
+function calculateStructuredScore(
+  candidate: {
+    primary_position: string | null;
+    positions_held: string[] | null;
+    years_experience: number | null;
+    yacht_experience_extracted: YachtExperience[] | null;
+    villa_experience_extracted: VillaExperience[] | null;
+    certifications_extracted: CertificationExtracted[] | null;
+    cv_skills: string[] | null;
+    availability_status: string | null;
+    references_extracted: ReferenceDetail[] | null;
+    profile_summary: string | null;
+  },
+  searchRole: string,
+  parsedReqs: ParsedRequirements,
+  timeline: string | undefined,
+  aiParsedQuery: AIQueryParsed | null,
+  stepUpReadiness: { isStepUp: boolean; isReady: boolean }
+): StructuredCandidateScore {
+  const reasoning: string[] = [];
+  // NOTE: Availability is NOT a criteria - we can reach out to any candidate
+  // and offer them the job. Weight set to 0 intentionally.
+  //
+  // WEIGHTS ADJUSTED: Position fit is now dominant (50%) because an exact role
+  // match is the primary qualification. Other factors are refinements.
+  const weights = {
+    positionFit: 0.50,        // UP from 0.35 - exact role match is the primary qualifier
+    experienceQuality: 0.25,  // DOWN from 0.30 - still important but secondary
+    skillMatch: 0.15,         // DOWN from 0.20 - nice-to-have refinements
+    availability: 0.00,       // REMOVED - availability is not a filter, we can offer anyone the job
+    verification: 0.07,       // DOWN from 0.10 - profile quality matters less
+    excellence: 0.03,         // DOWN from 0.05 - bonus for exceptional candidates
+  };
+
+  // Initialize bonuses
+  const bonuses = {
+    exceedsYachtSize: false,
+    exceedsExperience: false,
+    hasPremiumCerts: false,
+    longTenure: false,
+    verifiedReferences: false,
+  };
+
+  // =========================================================================
+  // 1. POSITION FIT (30%)
+  // =========================================================================
+  let positionFit = 0;
+  const positionLower = (candidate.primary_position || '').toLowerCase();
+  const searchRoleLower = searchRole.toLowerCase();
+
+  // Exact match
+  if (positionLower.includes(searchRoleLower) || searchRoleLower.includes(positionLower)) {
+    positionFit = 100;
+    reasoning.push('Exact position match');
+  }
+  // Step-up ready
+  else if (stepUpReadiness.isStepUp && stepUpReadiness.isReady) {
+    positionFit = 85;
+    reasoning.push('Ready to step up to this role');
+  }
+  // Step-up developing
+  else if (stepUpReadiness.isStepUp) {
+    positionFit = 70;
+    reasoning.push('Developing toward this role');
+  }
+  // Related position
+  else {
+    const positionsHeld = (candidate.positions_held || []).map(p => p.toLowerCase());
+    const hasRelatedPosition = positionsHeld.some(p =>
+      p.includes(searchRoleLower) || searchRoleLower.includes(p)
+    );
+    if (hasRelatedPosition) {
+      positionFit = 60;
+      reasoning.push('Has held related position');
+    } else {
+      positionFit = 30;
+      reasoning.push('Position not directly related');
+    }
+  }
+
+  // =========================================================================
+  // 2. EXPERIENCE QUALITY (25%)
+  // =========================================================================
+  let experienceQuality = 0;
+  const yearsExp = candidate.years_experience || 0;
+
+  // Base score from years
+  if (yearsExp >= 10) {
+    experienceQuality = 100;
+    bonuses.exceedsExperience = true;
+  } else if (yearsExp >= 7) {
+    experienceQuality = 90;
+    bonuses.exceedsExperience = parsedReqs.min_experience_months ? yearsExp * 12 > parsedReqs.min_experience_months * 1.5 : false;
+  } else if (yearsExp >= 5) {
+    experienceQuality = 80;
+  } else if (yearsExp >= 3) {
+    experienceQuality = 65;
+  } else if (yearsExp >= 1) {
+    experienceQuality = 50;
+  } else {
+    experienceQuality = 30;
+  }
+
+  // Yacht size bonus
+  const yachtExp = candidate.yacht_experience_extracted || [];
+  if (yachtExp.length > 0) {
+    const maxYacht = Math.max(...yachtExp.map(y => y.yacht_size_meters || 0));
+    if (parsedReqs.min_yacht_size_experience_meters && maxYacht >= parsedReqs.min_yacht_size_experience_meters * 1.2) {
+      experienceQuality = Math.min(100, experienceQuality + 10);
+      bonuses.exceedsYachtSize = true;
+      reasoning.push(`Exceeds yacht size requirement (${maxYacht}m)`);
+    } else if (maxYacht >= 80) {
+      experienceQuality = Math.min(100, experienceQuality + 5);
+    }
+  }
+
+  // =========================================================================
+  // 3. SKILL MATCH (20%)
+  // =========================================================================
+  let skillMatch = 50; // Base score
+  const skills = (candidate.cv_skills || []).map(s => s.toLowerCase());
+  const certs = (candidate.certifications_extracted || []).map(c => c.name.toLowerCase());
+
+  // Check required certs
+  const requiredCertsCount = parsedReqs.required_certs.length;
+  let matchedRequiredCerts = 0;
+  for (const certKey of parsedReqs.required_certs) {
+    if (candidateHasCert(certKey, { certifications_extracted: candidate.certifications_extracted, licenses_extracted: null, has_stcw: null, has_eng1: null })) {
+      matchedRequiredCerts++;
+    }
+  }
+  if (requiredCertsCount > 0) {
+    skillMatch = (matchedRequiredCerts / requiredCertsCount) * 80;
+    if (matchedRequiredCerts === requiredCertsCount) {
+      skillMatch = 90;
+      reasoning.push('Has all required certifications');
+    }
+  }
+
+  // Check preferred certs (bonus)
+  let matchedPreferredCerts = 0;
+  for (const certKey of parsedReqs.preferred_certs) {
+    if (candidateHasCert(certKey, { certifications_extracted: candidate.certifications_extracted, licenses_extracted: null, has_stcw: null, has_eng1: null })) {
+      matchedPreferredCerts++;
+    }
+  }
+  if (matchedPreferredCerts > 0) {
+    skillMatch = Math.min(100, skillMatch + matchedPreferredCerts * 5);
+    bonuses.hasPremiumCerts = matchedPreferredCerts >= 2;
+  }
+
+  // AI-parsed soft requirements matching
+  if (aiParsedQuery) {
+    const softReqs = aiParsedQuery.softRequirements;
+    let softMatches = 0;
+    let softTotal = 0;
+
+    // Cuisine types
+    if (softReqs.cuisineTypes.length > 0) {
+      softTotal += softReqs.cuisineTypes.length;
+      for (const cuisine of softReqs.cuisineTypes) {
+        if (skills.some(s => s.includes(cuisine.toLowerCase())) ||
+            (candidate.profile_summary || '').toLowerCase().includes(cuisine.toLowerCase())) {
+          softMatches++;
+        }
+      }
+    }
+
+    // Special skills - check both cv_skills AND profile_summary for matches
+    // CRITICAL: These are from the job brief and should have significant weight
+    if (softReqs.specialSkills.length > 0) {
+      softTotal += softReqs.specialSkills.length;
+      const profileText = (candidate.profile_summary || '').toLowerCase();
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[Scoring] Checking ${softReqs.specialSkills.length} special skills:`, softReqs.specialSkills);
+        console.log(`[Scoring] Candidate cv_skills:`, skills.slice(0, 10));
+      }
+
+      for (const skill of softReqs.specialSkills) {
+        const skillLower = skill.toLowerCase();
+        const hasSkill = skills.some(s => s.includes(skillLower)) ||
+                        profileText.includes(skillLower);
+
+        if (hasSkill) {
+          softMatches++;
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`[Scoring] ✓ Matched special skill: "${skill}"`);
+          }
+        } else if (process.env.NODE_ENV === 'development') {
+          console.log(`[Scoring] ✗ Missing special skill: "${skill}"`);
+        }
+      }
+    }
+
+    // INCREASED WEIGHT: Special skills from job brief now worth up to 30 points
+    // (was 20 points). These are explicit client requirements and should matter more.
+    if (softTotal > 0 && softMatches > 0) {
+      const softMatchRatio = softMatches / softTotal;
+      skillMatch = Math.min(100, skillMatch + softMatchRatio * 30); // UP from 20
+      if (softMatchRatio >= 0.5) {
+        reasoning.push(`Matches ${softMatches}/${softTotal} job brief requirements`);
+      }
+    } else if (softTotal > 0 && softMatches === 0) {
+      // PENALTY: If special skills were requested but candidate has NONE, apply penalty
+      skillMatch = Math.max(30, skillMatch - 15);
+      reasoning.push(`Missing job brief requirements`);
+    }
+  }
+
+  // =========================================================================
+  // 4. AVAILABILITY (10%)
+  // =========================================================================
+  let availability = 50; // Default neutral
+  const status = (candidate.availability_status || '').toLowerCase();
+
+  if (status.includes('available') || status.includes('immediate')) {
+    availability = 100;
+  } else if (status.includes('notice') || status.includes('soon')) {
+    availability = 80;
+  } else if (status.includes('considering') || status.includes('open')) {
+    availability = 60;
+  } else if (status.includes('not available') || status.includes('employed')) {
+    availability = 20;
+  }
+
+  // Timeline alignment
+  if (timeline === 'asap' && availability >= 80) {
+    availability = Math.min(100, availability + 10);
+    reasoning.push('Available for immediate start');
+  } else if (timeline === '3-months' && availability >= 60) {
+    availability = Math.min(100, availability + 5);
+  }
+
+  // =========================================================================
+  // 5. VERIFICATION (10%)
+  // =========================================================================
+  let verification = 40; // Base score
+
+  // Profile completeness
+  if (candidate.profile_summary && candidate.profile_summary.length > 200) {
+    verification += 20;
+  }
+
+  // Has yacht experience details
+  if (yachtExp.length >= 2) {
+    verification += 15;
+  }
+
+  // Has references
+  const refs = candidate.references_extracted || [];
+  if (refs.length > 0) {
+    verification += 15;
+    bonuses.verifiedReferences = refs.some(r => r.relationship !== undefined);
+  }
+
+  // Has certifications listed
+  if (certs.length >= 3) {
+    verification += 10;
+  }
+
+  verification = Math.min(100, verification);
+
+  // =========================================================================
+  // 6. EXCELLENCE BONUS (5%)
+  // =========================================================================
+  let excellence = 0;
+  let excellenceBonusCount = 0;
+
+  if (bonuses.exceedsYachtSize) excellenceBonusCount++;
+  if (bonuses.exceedsExperience) excellenceBonusCount++;
+  if (bonuses.hasPremiumCerts) excellenceBonusCount++;
+  if (bonuses.longTenure) excellenceBonusCount++;
+  if (bonuses.verifiedReferences) excellenceBonusCount++;
+
+  excellence = Math.min(100, excellenceBonusCount * 25);
+
+  if (excellence > 50) {
+    reasoning.push('Exceeds expectations in multiple areas');
+  }
+
+  // =========================================================================
+  // CALCULATE TOTAL SCORE
+  // =========================================================================
+  const totalScore = Math.round(
+    positionFit * weights.positionFit +
+    experienceQuality * weights.experienceQuality +
+    skillMatch * weights.skillMatch +
+    availability * weights.availability +
+    verification * weights.verification +
+    excellence * weights.excellence
+  );
+
+  // Determine recommendation
+  let recommendation: 'excellent' | 'strong' | 'suitable' | 'consider' | 'unlikely';
+  if (totalScore >= 85) {
+    recommendation = 'excellent';
+  } else if (totalScore >= 70) {
+    recommendation = 'strong';
+  } else if (totalScore >= 55) {
+    recommendation = 'suitable';
+  } else if (totalScore >= 40) {
+    recommendation = 'consider';
+  } else {
+    recommendation = 'unlikely';
+  }
+
+  return {
+    passesHardFilters: true,
+    components: {
+      positionFit,
+      experienceQuality,
+      skillMatch,
+      availability,
+      verification,
+      excellence,
+    },
+    weights,
+    totalScore,
+    recommendation,
+    bonuses,
+    reasoning,
+  };
+}
+
+// ----------------------------------------------------------------------------
+// CAREER LADDERS - Industry-Agnostic Progression Paths
+// ----------------------------------------------------------------------------
+// Each array represents a career progression from junior to senior.
+// Used to identify "ready to step up" candidates (one level below target).
+// ----------------------------------------------------------------------------
+
+const CAREER_LADDERS: string[][] = [
+  // Maritime Deck
+  ['deckhand', 'lead deckhand', 'bosun', 'second officer', 'first officer', 'chief officer', 'captain'],
+  // Maritime Interior
+  ['stewardess', 'second stewardess', 'chief stewardess', 'purser', 'interior manager'],
+  // Maritime Engineering
+  ['junior engineer', 'third engineer', 'second engineer', 'chief engineer'],
+  // Culinary (works for yacht and household)
+  ['cook', 'sous chef', 'chef', 'head chef', 'executive chef'],
+  // Household Service
+  ['footman', 'under butler', 'butler', 'head butler', 'house manager'],
+  ['housemaid', 'housekeeper', 'head housekeeper', 'house manager'],
+  // Childcare
+  ['nanny', 'head nanny', 'governess'],
+  // Security
+  ['security officer', 'close protection officer', 'head of security'],
+];
+
+// ----------------------------------------------------------------------------
+// DEPARTMENT BOUNDARIES - Hard Filter to Prevent Cross-Department Matches
+// ----------------------------------------------------------------------------
+// A Captain search should NEVER return an Engineer.
+// A Chef search should NEVER return a Stewardess.
+// ----------------------------------------------------------------------------
+
+const DEPARTMENTS: Record<string, string[]> = {
+  deck: ['deckhand', 'deck hand', 'bosun', 'officer', 'captain', 'master', 'mate', 'skipper'],
+  interior: ['stewardess', 'stew', 'purser', 'butler', 'housekeeper', 'housemaid', 'laundress', 'valet', 'footman'],
+  engineering: ['engineer', 'eto', 'electrical', 'electro-technical'],
+  galley: ['chef', 'cook', 'culinary', 'galley'],
+  childcare: ['nanny', 'governess', 'tutor', 'childcare', 'nursery'],
+  security: ['security', 'protection', 'bodyguard', 'cpo', 'close protection'],
+  management: ['estate manager', 'house manager', 'property manager', 'household manager', 'personal assistant', 'pa'],
+};
+
+/**
+ * Get the department for a given role/position.
+ * Returns null if the role doesn't clearly belong to a department.
+ */
+function getDepartment(role: string): string | null {
+  const normalized = role.toLowerCase().trim();
+
+  for (const [dept, keywords] of Object.entries(DEPARTMENTS)) {
+    if (keywords.some(kw => normalized.includes(kw))) {
+      return dept;
+    }
+  }
+  return null;
+}
+
+/**
+ * Check if two roles are in compatible departments.
+ * Returns true if they're in the same department or if either role's department is unclear.
+ */
+function areDepartmentsCompatible(searchRole: string, candidateRole: string): boolean {
+  const searchDept = getDepartment(searchRole);
+  const candidateDept = getDepartment(candidateRole);
+
+  // If we can't determine department, allow the match (don't filter out)
+  if (!searchDept || !candidateDept) return true;
+
+  // Same department is compatible
+  if (searchDept === candidateDept) return true;
+
+  // Interior and management can overlap (e.g., butler can be house manager)
+  if ((searchDept === 'interior' && candidateDept === 'management') ||
+      (searchDept === 'management' && candidateDept === 'interior')) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Given a target role, find all roles that could "step up" to it.
+ * For example, searching for "captain" will also include "chief officer".
+ */
+function getEligibleRolesForStepUp(targetRole: string): string[] {
+  const normalized = targetRole.toLowerCase().trim();
+  const eligible = new Set<string>([normalized]);
+
+  for (const ladder of CAREER_LADDERS) {
+    // Find the BEST match in this ladder (prefer exact or most specific match)
+    // This fixes a bug where "chief stewardess" would match "stewardess" (index 0)
+    // instead of "chief stewardess" (index 2) because of substring matching order
+    let bestMatchIndex = -1;
+    let bestMatchScore = 0;
+
+    for (let i = 0; i < ladder.length; i++) {
+      const ladderRole = ladder[i];
+      let score = 0;
+
+      // Exact match gets highest score
+      if (ladderRole === normalized) {
+        score = 100;
+      }
+      // Target contains ladder role (e.g., "chief stewardess" contains "stewardess")
+      else if (normalized.includes(ladderRole)) {
+        // Longer ladder role = better match (more specific)
+        score = ladderRole.length;
+      }
+      // Ladder role contains target (e.g., "chief stewardess" contains "chief stew")
+      else if (ladderRole.includes(normalized)) {
+        score = normalized.length;
+      }
+
+      if (score > bestMatchScore) {
+        bestMatchScore = score;
+        bestMatchIndex = i;
+      }
+    }
+
+    if (bestMatchIndex > 0) {
+      // Include the role directly below (ready to step up)
+      eligible.add(ladder[bestMatchIndex - 1]);
+    }
+
+    // Also include the exact position if it matches
+    if (bestMatchIndex >= 0) {
+      eligible.add(ladder[bestMatchIndex]);
+    }
+  }
+
+  return Array.from(eligible);
+}
+
+/**
+ * Check if a candidate's position is eligible for the target role.
+ * This includes exact matches AND "ready to step up" positions.
+ */
+function isPositionEligible(
+  candidatePosition: string | null,
+  candidatePositionsHeld: string[] | null,
+  targetRole: string
+): boolean {
+  if (!candidatePosition && (!candidatePositionsHeld || candidatePositionsHeld.length === 0)) {
+    return false;
+  }
+
+  const eligibleRoles = getEligibleRolesForStepUp(targetRole);
+
+  // IMPORTANT: Only check the CURRENT position (primary_position)
+  // We don't want someone who was once a Chief Officer but is now a Third Officer
+  // to qualify for a Captain search. Their CURRENT role matters for step-up eligibility.
+  const currentPosition = candidatePosition?.toLowerCase() || '';
+
+  if (!currentPosition) {
+    // If no current position, check if any held position matches
+    // (fallback for candidates without a primary_position set)
+    const heldPositions = (candidatePositionsHeld || []).map(p => p.toLowerCase());
+    return heldPositions.some(pos =>
+      eligibleRoles.some(eligible =>
+        pos.includes(eligible) || eligible.includes(pos)
+      )
+    );
+  }
+
+  // Check if current position matches eligible roles
+  return eligibleRoles.some(eligible =>
+    currentPosition.includes(eligible) || eligible.includes(currentPosition)
+  );
+}
+
+/**
+ * Assess if a candidate is "ready to step up" to the target role.
+ * Returns qualification factors and any gaps.
+ */
+interface StepUpReadiness {
+  isStepUp: boolean;
+  isReady: boolean;
+  currentLevel: string;
+  targetLevel: string;
+  qualifyingFactors: string[];
+  gaps: string[];
+}
+
+/**
+ * Build a text representation of a candidate for Cohere reranking.
+ * This creates a comprehensive text that Cohere's cross-encoder can use
+ * to assess semantic relevance to the search query.
+ */
+function buildCandidateTextForRerank(candidate: {
+  first_name: string;
+  last_name: string;
+  primary_position: string | null;
+  positions_held: string[] | null;
+  years_experience: number | null;
+  nationality: string | null;
+  current_location: string | null;
+  profile_summary: string | null;
+  cv_skills: string[] | null;
+  languages_extracted: string[] | null;
+  yacht_experience_extracted: unknown[] | null;
+  villa_experience_extracted: unknown[] | null;
+  certifications_extracted: unknown[] | null;
+  licenses_extracted: unknown[] | null;
+  highest_license: string | null;
+  has_stcw: boolean | null;
+  has_eng1: boolean | null;
+  bio_full: string | null;
+}): string {
+  const parts: string[] = [];
+
+  // Position and experience
+  if (candidate.primary_position) {
+    parts.push(`Position: ${candidate.primary_position}`);
+  }
+  if (candidate.positions_held?.length) {
+    parts.push(`Also qualified as: ${candidate.positions_held.join(', ')}`);
+  }
+  if (candidate.years_experience) {
+    parts.push(`Experience: ${candidate.years_experience} years`);
+  }
+
+  // Location and nationality
+  if (candidate.current_location) {
+    parts.push(`Current location: ${candidate.current_location}`);
+  }
+  if (candidate.nationality) {
+    parts.push(`Nationality: ${candidate.nationality}`);
+  }
+
+  // Certifications and licenses
+  const certs: string[] = [];
+  if (candidate.has_stcw) certs.push('STCW');
+  if (candidate.has_eng1) certs.push('ENG1');
+  if (candidate.highest_license) certs.push(candidate.highest_license);
+  if (candidate.certifications_extracted?.length) {
+    const certNames = (candidate.certifications_extracted as Array<{ name?: string }>)
+      .map(c => c.name)
+      .filter(Boolean)
+      .slice(0, 5);
+    certs.push(...certNames as string[]);
+  }
+  if (certs.length) {
+    parts.push(`Certifications: ${[...new Set(certs)].join(', ')}`);
+  }
+
+  // Skills
+  if (candidate.cv_skills?.length) {
+    parts.push(`Skills: ${candidate.cv_skills.slice(0, 10).join(', ')}`);
+  }
+
+  // Languages
+  if (candidate.languages_extracted?.length) {
+    parts.push(`Languages: ${candidate.languages_extracted.join(', ')}`);
+  }
+
+  // Yacht experience
+  if (candidate.yacht_experience_extracted?.length) {
+    const yachtExp = (candidate.yacht_experience_extracted as Array<{ vessel_name?: string; vessel_size?: number; position?: string }>)
+      .slice(0, 3)
+      .map(y => `${y.position || 'crew'} on ${y.vessel_size || '?'}m yacht`)
+      .join('; ');
+    parts.push(`Yacht experience: ${yachtExp}`);
+  }
+
+  // Villa experience (for hospitality roles)
+  if (candidate.villa_experience_extracted?.length) {
+    parts.push(`Villa/estate experience: ${candidate.villa_experience_extracted.length} positions`);
+  }
+
+  // Bio/summary - this is the most comprehensive text
+  if (candidate.bio_full) {
+    parts.push(`\nProfile: ${candidate.bio_full.slice(0, 500)}`);
+  } else if (candidate.profile_summary) {
+    parts.push(`\nSummary: ${candidate.profile_summary.slice(0, 300)}`);
+  }
+
+  return parts.join('\n');
+}
+
+function assessStepUpReadiness(
+  candidate: {
+    primary_position: string | null;
+    years_experience: number | null;
+    certifications_extracted: CertificationExtracted[] | null;
+    licenses_extracted: LicenseExtracted[] | null;
+    has_stcw: boolean | null;
+    has_eng1: boolean | null;
+    yacht_experience_extracted: YachtExperience[] | null;
+  },
+  targetRole: string,
+  parsedReqs: ParsedRequirements
+): StepUpReadiness {
+  const candidatePos = (candidate.primary_position || '').toLowerCase();
+  const targetPos = targetRole.toLowerCase();
+  const qualifyingFactors: string[] = [];
+  const gaps: string[] = [];
+
+  // Check if this is a step-up scenario
+  let isStepUp = false;
+  for (const ladder of CAREER_LADDERS) {
+    const candidateIndex = ladder.findIndex(r => candidatePos.includes(r) || r.includes(candidatePos));
+    const targetIndex = ladder.findIndex(r => targetPos.includes(r) || r.includes(targetPos));
+
+    if (candidateIndex >= 0 && targetIndex >= 0 && targetIndex === candidateIndex + 1) {
+      isStepUp = true;
+      break;
+    }
+  }
+
+  if (!isStepUp) {
+    return {
+      isStepUp: false,
+      isReady: false,
+      currentLevel: candidatePos,
+      targetLevel: targetPos,
+      qualifyingFactors: [],
+      gaps: [],
+    };
+  }
+
+  // Assess readiness for step-up
+
+  // 1. Experience check (2+ years in current role is good)
+  const yearsExp = candidate.years_experience || 0;
+  if (yearsExp >= 3) {
+    qualifyingFactors.push(`${yearsExp} years of experience`);
+  } else if (yearsExp < 2) {
+    gaps.push('Less than 2 years in current role');
+  }
+
+  // 2. Certification check for specific step-ups
+  // Captain role requires Master certificate
+  if (targetPos.includes('captain') || targetPos.includes('master')) {
+    const hasMasterCert =
+      candidateHasCert('master_200gt', candidate) ||
+      candidateHasCert('master_500gt', candidate) ||
+      candidateHasCert('master_3000gt', candidate) ||
+      candidateHasCert('master_unlimited', candidate) ||
+      candidateHasCert('yachtmaster', candidate);
+
+    if (hasMasterCert) {
+      qualifyingFactors.push('Holds Master/Yachtmaster certification');
+    } else {
+      gaps.push('No Master certification found');
+    }
+  }
+
+  // Chief Stewardess role - check for management experience
+  if (targetPos.includes('chief stew') || targetPos.includes('chief stewardess')) {
+    if (yearsExp >= 3) {
+      qualifyingFactors.push('Sufficient seniority for chief role');
+    }
+  }
+
+  // 3. Yacht size experience check
+  const largestYacht = getLargestYachtWorked(candidate.yacht_experience_extracted);
+  const requiredSize = parsedReqs.min_yacht_size_experience_meters;
+
+  if (largestYacht && requiredSize) {
+    if (largestYacht >= requiredSize * 0.7) { // Allow 70% of required size for step-up
+      qualifyingFactors.push(`Experience on ${largestYacht}m vessels`);
+    } else {
+      gaps.push(`Largest vessel experience: ${largestYacht}m (${requiredSize}m+ preferred)`);
+    }
+  }
+
+  const isReady = qualifyingFactors.length >= 2 || (qualifyingFactors.length >= 1 && gaps.length === 0);
+
+  return {
+    isStepUp: true,
+    isReady,
+    currentLevel: candidatePos,
+    targetLevel: targetPos,
+    qualifyingFactors,
+    gaps,
+  };
+}
+
+// ----------------------------------------------------------------------------
+// AI-POWERED JUDGMENT FOR NUANCED MATCHING
+// ----------------------------------------------------------------------------
+// Uses Claude Haiku to make recruiter-level judgments for nuanced cases.
+// This handles scenarios that rule-based logic can't capture:
+// - "Chef who can cook for toddlers" → needs family cooking experience
+// - "Butler for royalty" → needs formal service, protocol knowledge
+// - Transferable skills from adjacent industries
+// ----------------------------------------------------------------------------
+
+const aiJudgmentSchema = z.object({
+  isMatch: z.boolean().describe('Whether this candidate is a good match for the search'),
+  confidence: z.number().min(0).max(1).describe('Confidence in the assessment (0-1)'),
+  matchScore: z.number().min(0).max(100).describe('Overall match score (0-100)'),
+  reasoning: z.string().describe('Brief explanation of why they are or are not a match'),
+  specialStrengths: z.array(z.string()).describe('Special strengths relevant to this specific search'),
+  concerns: z.array(z.string()).describe('Any concerns or gaps for this role'),
+  stepUpPotential: z.boolean().describe('Whether they could step up to this role with support'),
+});
+
+type AIJudgment = z.infer<typeof aiJudgmentSchema>;
+
+interface CandidateForJudgment {
+  primary_position: string | null;
+  positions_held: string[] | null;
+  years_experience: number | null;
+  profile_summary: string | null;
+  cv_skills: string[] | null;
+  certifications_extracted: CertificationExtracted[] | null;
+  yacht_experience_extracted: YachtExperience[] | null;
+  villa_experience_extracted: VillaExperience[] | null;
+  languages_extracted: unknown;
+  gender: string | null;
+}
+
+interface AISearchContext {
+  role: string;
+  location?: string;
+  requirements?: string;
+}
+
+/**
+ * Use AI to make nuanced judgment calls about candidate fit.
+ * This is called for candidates that pass the hard filters but need
+ * more sophisticated evaluation.
+ */
+async function assessCandidateWithAI(
+  candidate: CandidateForJudgment,
+  searchContext: AISearchContext
+): Promise<AIJudgment | null> {
+  try {
+    // Build candidate summary for AI
+    const candidateSummary = {
+      currentPosition: candidate.primary_position || 'Unknown',
+      allPositions: candidate.positions_held?.join(', ') || 'None listed',
+      yearsExperience: candidate.years_experience || 0,
+      gender: candidate.gender || 'Not specified',
+      skills: candidate.cv_skills?.slice(0, 15).join(', ') || 'None listed',
+      certifications: candidate.certifications_extracted?.map(c => c.name).slice(0, 10).join(', ') || 'None',
+      profileSummary: (candidate.profile_summary || '').slice(0, 500),
+      yachtExperience: candidate.yacht_experience_extracted?.map(y =>
+        `${y.position || 'Unknown role'} on ${y.yacht_size_meters || '?'}m ${y.yacht_type || 'yacht'}`
+      ).slice(0, 5).join('; ') || 'None',
+      villaExperience: candidate.villa_experience_extracted?.map(v =>
+        `${v.position || 'Unknown role'} at ${v.property_type || 'property'} in ${v.location || 'unknown location'}`
+      ).slice(0, 3).join('; ') || 'None',
+    };
+
+    const { object } = await generateObject({
+      model: judgmentModel,
+      schema: aiJudgmentSchema,
+      system: `You are an expert recruiter for luxury service industries (superyachts, private households, estates, UHNW families).
+
+Your job is to assess if a candidate is suitable for a specific role. Be practical and realistic.
+
+DEPARTMENT BOUNDARIES (Critical):
+- Deck/Navigation (captain, officer, deckhand) and Engineering (engineer, ETO) are DIFFERENT departments - never mix
+- Interior/Service (stewardess, butler, housekeeper) and Culinary (chef, cook) are DIFFERENT departments
+- Only match within the same department or clearly related roles
+
+CAREER PROGRESSION:
+- Someone one level below CAN be a match if they're ready to step up
+- Chief Officer with Master certification IS a valid Captain candidate
+- Experienced 2nd Stewardess IS a valid Chief Stewardess candidate
+
+NUANCED REQUIREMENTS:
+- "Chef for toddlers" → needs family cooking or dietary restriction experience
+- "Butler for royalty" → needs formal service, discretion, protocol experience
+- "Russian cuisine" → look for Eastern European, Slavic, or specific cuisine mentions
+- Consider transferable skills (Michelin restaurant → private yacht chef)
+
+GENDER REQUIREMENTS (CRITICAL):
+- If requirements specify "Female", "Male", "Female due to cabins", etc. → STRICT FILTER
+- Score 0 and isMatch: false if gender doesn't match explicit requirement
+- Cabin layouts and privacy needs make this non-negotiable
+
+SCORING GUIDE:
+- 80-100: Excellent match, would definitely present to client
+- 60-79: Good match, would present with minor caveats
+- 40-59: Possible match, has relevant experience but notable gaps
+- 20-39: Weak match, significant gaps but could work
+- 0-19: Not a match, wrong department or completely unsuitable
+- 0: Hard requirement not met (wrong gender, wrong department, missing critical cert)
+
+Be honest and practical. Only say "isMatch: true" if a real recruiter would present this candidate.`,
+      prompt: `SEARCH REQUEST:
+Role: ${searchContext.role}
+Location: ${searchContext.location || 'Not specified'}
+Requirements: ${searchContext.requirements || 'Not specified'}
+
+CANDIDATE PROFILE:
+- Current Position: ${candidateSummary.currentPosition}
+- All Positions: ${candidateSummary.allPositions}
+- Years Experience: ${candidateSummary.yearsExperience}
+- Gender: ${candidateSummary.gender}
+- Key Skills: ${candidateSummary.skills}
+- Certifications: ${candidateSummary.certifications}
+- Yacht Experience: ${candidateSummary.yachtExperience}
+- Villa/Household Experience: ${candidateSummary.villaExperience}
+- Profile Summary: ${candidateSummary.profileSummary}
+
+Assess this candidate for the role. Is this a good match?
+IMPORTANT: If requirements mention gender (Female, Male, etc.), strictly filter by that.`,
+    });
+
+    return object;
+  } catch (error) {
+    console.error('[Brief Match] AI judgment error:', error);
+    return null;
+  }
+}
+
+/**
+ * Batch assess multiple candidates with AI for efficiency.
+ * Runs assessments in parallel with concurrency limit.
+ */
+async function batchAssessCandidatesWithAI(
+  candidates: Array<CandidateForJudgment & { id: string }>,
+  searchContext: AISearchContext,
+  concurrency: number = 5
+): Promise<Map<string, AIJudgment>> {
+  const results = new Map<string, AIJudgment>();
+
+  // Process in batches
+  for (let i = 0; i < candidates.length; i += concurrency) {
+    const batch = candidates.slice(i, i + concurrency);
+    const batchResults = await Promise.all(
+      batch.map(async (candidate) => {
+        const judgment = await assessCandidateWithAI(candidate, searchContext);
+        return { id: candidate.id, judgment };
+      })
+    );
+
+    for (const { id, judgment } of batchResults) {
+      if (judgment) {
+        results.set(id, judgment);
+      }
+    }
+  }
+
+  return results;
+}
+
+// ----------------------------------------------------------------------------
+// PHASE 4: AI-ENHANCED QUERY PARSING
+// ----------------------------------------------------------------------------
+// Uses AI to extract structured requirements from natural language queries.
+// Handles nuanced requests like "chef for Russian cuisine for toddlers",
+// "butler with royalty experience", "captain for 100m+ yacht".
+// ----------------------------------------------------------------------------
+
+const aiQueryParseSchema = z.object({
+  position: z.string().describe('The primary position/role being searched for'),
+  department: z.enum(['deck', 'interior', 'engineering', 'galley', 'childcare', 'security', 'management', 'other'])
+    .describe('The department this role belongs to'),
+  seniorityLevel: z.enum(['entry', 'junior', 'mid', 'senior', 'executive'])
+    .describe('The seniority level expected'),
+  hardRequirements: z.object({
+    minYearsExperience: z.number().nullable().describe('Minimum years of experience required'),
+    minYachtSizeMeters: z.number().nullable().describe('Minimum yacht size experience in meters'),
+    requiredCertifications: z.array(z.string()).describe('Must-have certifications'),
+    languages: z.array(z.string()).describe('Required languages'),
+  }),
+  softRequirements: z.object({
+    cuisineTypes: z.array(z.string()).describe('Preferred cuisine specialties (for chefs)'),
+    serviceStyle: z.array(z.string()).describe('Service style preferences (formal, casual, royalty, family)'),
+    specialSkills: z.array(z.string()).describe('Special skills mentioned'),
+    dietaryExpertise: z.array(z.string()).describe('Dietary expertise (allergies, toddler food, health-conscious)'),
+    preferredCertifications: z.array(z.string()).describe('Nice-to-have certifications'),
+  }),
+  context: z.object({
+    yachtSize: z.number().nullable().describe('Size of the yacht for this job in meters'),
+    propertyType: z.string().nullable().describe('Type of property (estate, villa, townhouse)'),
+    clientType: z.string().nullable().describe('Type of client (family, single, royalty, corporate)'),
+    travelRequired: z.boolean().describe('Whether travel is mentioned'),
+  }),
+  searchKeywords: z.array(z.string()).describe('Key terms to look for in candidate profiles'),
+});
+
+type AIQueryParsed = z.infer<typeof aiQueryParseSchema>;
+
+// Use Haiku for fast, cheap role extraction
+const roleExtractionModel = anthropic('claude-3-5-haiku-20241022');
+
+// Schema for AI role extraction
+const roleExtractionSchema = z.object({
+  role: z.string().describe('The primary job role/position being searched for (e.g., "Chief Stewardess", "Butler", "Captain"). Use proper title case. If unclear or no specific role mentioned, return "this role".'),
+});
+
+/**
+ * Fallback role extraction using regex patterns when AI is unavailable.
+ * Covers the most common yacht crew and household staff roles.
+ */
+function extractRoleWithRegex(query: string): string | null {
+  const queryLower = query.toLowerCase();
+
+  // Common role patterns in order of specificity (more specific first)
+  const rolePatterns: Array<{ pattern: RegExp; role: string }> = [
+    // Interior - specific first
+    { pattern: /chief\s+stew(?:ardess)?/i, role: 'Chief Stewardess' },
+    { pattern: /head\s+stew(?:ardess)?/i, role: 'Chief Stewardess' },
+    { pattern: /second\s+stew(?:ardess)?/i, role: 'Second Stewardess' },
+    { pattern: /third\s+stew(?:ardess)?/i, role: 'Third Stewardess' },
+    { pattern: /stew(?:ardess)?/i, role: 'Stewardess' },
+    { pattern: /interior\s+manager/i, role: 'Interior Manager' },
+    { pattern: /purser/i, role: 'Purser' },
+    { pattern: /head\s+butler/i, role: 'Head Butler' },
+    { pattern: /butler/i, role: 'Butler' },
+    { pattern: /head\s+housekeeper/i, role: 'Head Housekeeper' },
+    { pattern: /housekeeper/i, role: 'Housekeeper' },
+
+    // Deck - specific first
+    { pattern: /captain/i, role: 'Captain' },
+    { pattern: /master/i, role: 'Captain' },
+    { pattern: /chief\s+officer/i, role: 'Chief Officer' },
+    { pattern: /first\s+officer/i, role: 'First Officer' },
+    { pattern: /second\s+officer/i, role: 'Second Officer' },
+    { pattern: /third\s+officer/i, role: 'Third Officer' },
+    { pattern: /officer/i, role: 'Officer' },
+    { pattern: /bosun/i, role: 'Bosun' },
+    { pattern: /lead\s+deck(?:hand)?/i, role: 'Lead Deckhand' },
+    { pattern: /deck(?:hand)?/i, role: 'Deckhand' },
+
+    // Engineering
+    { pattern: /chief\s+engineer/i, role: 'Chief Engineer' },
+    { pattern: /second\s+engineer/i, role: 'Second Engineer' },
+    { pattern: /third\s+engineer/i, role: 'Third Engineer' },
+    { pattern: /engineer/i, role: 'Engineer' },
+    { pattern: /eto/i, role: 'ETO' },
+    { pattern: /electrician/i, role: 'Electrician' },
+
+    // Galley
+    { pattern: /executive\s+chef/i, role: 'Executive Chef' },
+    { pattern: /head\s+chef/i, role: 'Head Chef' },
+    { pattern: /sous\s+chef/i, role: 'Sous Chef' },
+    { pattern: /chef/i, role: 'Chef' },
+    { pattern: /cook/i, role: 'Cook' },
+
+    // Childcare
+    { pattern: /head\s+nanny/i, role: 'Head Nanny' },
+    { pattern: /nanny/i, role: 'Nanny' },
+    { pattern: /governess/i, role: 'Governess' },
+    { pattern: /tutor/i, role: 'Tutor' },
+
+    // Security
+    { pattern: /head\s+of\s+security/i, role: 'Head of Security' },
+    { pattern: /cpo/i, role: 'Close Protection Officer' },
+    { pattern: /close\s+protection/i, role: 'Close Protection Officer' },
+    { pattern: /security/i, role: 'Security Officer' },
+    { pattern: /bodyguard/i, role: 'Bodyguard' },
+
+    // Management
+    { pattern: /estate\s+manager/i, role: 'Estate Manager' },
+    { pattern: /house\s+manager/i, role: 'House Manager' },
+    { pattern: /personal\s+assistant/i, role: 'Personal Assistant' },
+    { pattern: /pa\b/i, role: 'Personal Assistant' },
+  ];
+
+  for (const { pattern, role } of rolePatterns) {
+    if (pattern.test(queryLower)) {
+      return role;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Extract the primary role/position from a natural language query using AI.
+ * Handles typos, variations, and any role - not limited to a static list.
+ * Falls back to regex-based extraction if AI fails.
+ */
+async function extractRoleFromQuery(query: string): Promise<string> {
+  if (!query || query.trim().length < 3) {
+    return 'this role';
+  }
+
+  try {
+    const { object } = await generateObject({
+      model: roleExtractionModel,
+      schema: roleExtractionSchema,
+      prompt: `Extract the primary job role/position from this search query. The context is yacht crew and private household staff recruitment.
+
+Query: "${query}"
+
+Examples:
+- "looking for a chief stewardess for a 50m yacht" → "Chief Stewardess"
+- "need a butlr with wine experience" → "Butler" (note: handle typos)
+- "captain for mediterranean charter" → "Captain"
+- "someone to manage the estate" → "Estate Manager"
+- "i need crew for my boat" → "this role" (no specific role mentioned)
+
+Return just the role name in proper title case. If no clear role is mentioned, return "this role".`,
+    });
+
+    return object.role || 'this role';
+  } catch (error) {
+    console.error('[extractRoleFromQuery] AI extraction failed:', error);
+    // Fallback to regex-based extraction when AI is unavailable
+    const regexExtracted = extractRoleWithRegex(query);
+    if (regexExtracted) {
+      console.log(`[extractRoleFromQuery] Using regex fallback: "${regexExtracted}"`);
+      return regexExtracted;
+    }
+    return 'this role';
+  }
+}
+
+/**
+ * Use AI to parse a natural language search query into structured requirements.
+ * This enables nuanced matching for complex queries.
+ */
+async function parseQueryWithAI(
+  role: string,
+  location: string | undefined,
+  requirements: string | undefined
+): Promise<AIQueryParsed | null> {
+  // Only use AI parsing for non-trivial queries
+  const fullQuery = `${role} ${location || ''} ${requirements || ''}`.trim();
+  if (fullQuery.length < 15) {
+    return null;
+  }
+
+  try {
+    const { object } = await generateObject({
+      model: judgmentModel,
+      schema: aiQueryParseSchema,
+      system: `You are an expert recruiter for luxury service industries (superyachts, private households, estates).
+
+Your job is to parse a job search query and extract structured requirements.
+
+DEPARTMENTS:
+- deck: captain, officer, deckhand, bosun
+- interior: stewardess, butler, housekeeper, purser
+- engineering: engineer, ETO, electrical
+- galley: chef, cook
+- childcare: nanny, governess, tutor
+- security: CPO, bodyguard, security
+- management: estate manager, house manager, PA
+
+SENIORITY LEVELS:
+- entry: 0-6 months experience, trainee roles
+- junior: 6 months - 2 years
+- mid: 2-5 years
+- senior: 5+ years, leadership roles
+- executive: captain, chief roles, department heads
+
+Parse the query carefully. Extract any specific requirements mentioned.`,
+      prompt: `Parse this job search query:
+
+Role: ${role}
+Location: ${location || 'Not specified'}
+Additional Requirements: ${requirements || 'None specified'}
+
+Extract the structured requirements from this query.`,
+    });
+
+    return object;
+  } catch (error) {
+    console.error('[Brief Match] AI query parsing error:', error);
+    return null;
+  }
+}
+
 function parseRequirementsText(requirements: string, role: string): ParsedRequirements {
   const text = (requirements || '').toLowerCase();
 
@@ -367,13 +1504,35 @@ function parseRequirementsText(requirements: string, role: string): ParsedRequir
     maxExperienceMonths = 60; // 5 years max for 2-year requirement
   }
 
-  // Parse yacht size
+  // Parse minimum yacht size EXPERIENCE requirement first
+  // These patterns capture "experience over 100m", "100m+ experience", etc.
+  // This is DIFFERENT from job yacht size - it's the candidate's required experience level
+  let minYachtExperience: number | null = null;
+  const experiencePatterns = [
+    /experience\s+(?:on\s+)?(?:over|above|at least|min(?:imum)?)\s+(\d+)\s*m/i,
+    /(\d+)\s*m\+?\s+experience/i,
+    /worked\s+(?:on\s+)?(?:vessels?\s+)?(?:over|above)\s+(\d+)\s*m/i,
+    /experience\s+(\d+)\s*m\s*\+/i,
+    /minimum\s+(\d+)\s*m\s+(?:experience|vessel)/i,
+    /(\d+)\s*m\s+minimum/i,
+    /(?:over|above)\s+(\d+)\s*m/i,  // "over 100m" in requirements context
+  ];
+
+  for (const pattern of experiencePatterns) {
+    const match = text.match(pattern);
+    if (match) {
+      minYachtExperience = parseInt(match[1]);
+      break;
+    }
+  }
+
+  // Parse yacht size (for job vessel size, not experience requirement)
   let yachtSize: number | null = null;
   const sizePatterns = [
-    /(\d+)\s*m\s*(?:\+|yacht|boat|vessel)?/i,
+    /(\d+)\s*m\s*(?:yacht|boat|vessel)/i,
     /(\d+)\s*meter/i,
     /up to (\d+)\s*m/i,
-    /(\d+)m\s*(?:motor|sail|vessel)/i,
+    /(\d+)m\s*(?:motor|sail)/i,
   ];
 
   for (const pattern of sizePatterns) {
@@ -417,6 +1576,7 @@ function parseRequirementsText(requirements: string, role: string): ParsedRequir
     min_experience_months: minExperienceMonths,
     max_experience_months: maxExperienceMonths,
     yacht_size_meters: yachtSize,
+    min_yacht_size_experience_meters: minYachtExperience,
     required_certs: requiredCerts,
     preferred_certs: preferredCerts,
     is_junior_role: isJuniorRole,
@@ -587,6 +1747,41 @@ function assessRecruiterSuitability(
   }
 
   // ==========================================================================
+  // 2b. UNDERQUALIFICATION CHECK (Yacht Size Experience)
+  // ==========================================================================
+  // If the search requires experience on large yachts (e.g., "100m+ experience"),
+  // candidates who have never worked on yachts that size should be penalized
+
+  if (parsedReqs.min_yacht_size_experience_meters) {
+    const requiredSize = parsedReqs.min_yacht_size_experience_meters;
+
+    if (!largestYacht) {
+      // No yacht experience data - can't verify, moderate penalty
+      flags.underqualified = true;
+      suitabilityScore *= 0.5;
+      reasons.push(`Cannot verify ${requiredSize}m+ yacht experience`);
+    } else if (largestYacht < requiredSize) {
+      // Candidate's largest yacht is smaller than required
+      flags.underqualified = true;
+      const shortfall = requiredSize - largestYacht;
+
+      if (shortfall >= 40) {
+        // Major gap (e.g., 60m experience for 100m requirement)
+        suitabilityScore *= 0.2;
+        reasons.push(`Underqualified: largest yacht ${largestYacht}m, needs ${requiredSize}m+ experience`);
+      } else if (shortfall >= 20) {
+        // Moderate gap
+        suitabilityScore *= 0.4;
+        reasons.push(`Limited large yacht experience: ${largestYacht}m vs ${requiredSize}m+ required`);
+      } else {
+        // Close enough (within 20m)
+        suitabilityScore *= 0.7;
+        reasons.push(`Slightly under yacht size requirement: ${largestYacht}m vs ${requiredSize}m+`);
+      }
+    }
+  }
+
+  // ==========================================================================
   // 3. QUALIFICATION/CERTIFICATION CHECK
   // ==========================================================================
   // This is critical - missing required certs is often a dealbreaker
@@ -681,12 +1876,17 @@ function assessRecruiterSuitability(
   const candidateIsGalley = candidatePositions.some(p => ['chef', 'cook', 'galley'].some(d => p?.includes(d)));
 
   // Check for department mismatch
-  if ((isDeck && !candidateIsDeck && (candidateIsInterior || candidateIsGalley)) ||
-      (isInterior && !candidateIsInterior && (candidateIsDeck || candidateIsEngineering)) ||
+  // IMPORTANT: Each department should only match candidates from that department
+  // - Deck roles (captain, officer, bosun, deckhand) should not match engineering, interior, or galley
+  // - Engineering roles should not match deck, interior, or galley
+  // - Interior roles should not match deck, engineering, or galley
+  // - Galley roles should not match deck, engineering, or interior
+  if ((isDeck && !candidateIsDeck) ||
+      (isInterior && !candidateIsInterior) ||
       (isEngineering && !candidateIsEngineering) ||
-      (isGalley && !candidateIsGalley && (candidateIsDeck || candidateIsInterior))) {
+      (isGalley && !candidateIsGalley)) {
     flags.career_mismatch = true;
-    suitabilityScore *= 0.4;
+    suitabilityScore *= 0.2; // Stronger penalty for wrong department
     reasons.push(`Department mismatch: ${candidate.primary_position} for ${searchRole}`);
   }
 
@@ -756,18 +1956,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { role, location, timeline, requirements } = parseResult.data;
+    const { query } = parseResult.data;
 
-    // Build search query for embedding
-    const searchTerms = ROLE_SEARCH_TERMS[role] || [role.replace(/-/g, ' ')];
-    const queryParts = [
-      `Looking for: ${searchTerms[0]}`,
-      location ? `Location: ${location}` : '',
-      timeline ? `Timeline: ${timeline}` : '',
-      requirements ? `Requirements: ${requirements}` : '',
-    ].filter(Boolean);
-
-    const searchQuery = queryParts.join('\n');
+    // Use the query exactly as provided - no transformation, no reconstruction
+    const searchQuery = query;
 
     // Create Supabase client with service role for anonymous access
     const supabase = createClient(
@@ -818,7 +2010,9 @@ export async function POST(request: NextRequest) {
         highest_license,
         has_stcw,
         has_eng1,
-        bio_full
+        bio_full,
+        bio_anonymized,
+        gender
       `)
       .is('deleted_at', null)
       .not('embedding', 'is', null)
@@ -833,12 +2027,191 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ candidates: [] });
     }
 
-    // Parse requirements for recruiter assessment
-    const parsedRequirements = parseRequirementsText(requirements || '', searchTerms[0]);
-    console.log('[Brief Match] Parsed requirements:', parsedRequirements);
+    // Parse requirements from the full query using simple text parsing
+    // Note: We pass the full query as "requirements" since everything is in there
+    const parsedRequirements = parseRequirementsText(searchQuery, '');
+    console.log('[Brief Match] Parsed requirements from query:', parsedRequirements);
+
+    // =========================================================================
+    // PHASE 4: AI-ENHANCED QUERY PARSING
+    // =========================================================================
+    // Use AI to extract structured requirements from natural language query.
+    // This helps with complex queries like "Chef for Russian cuisine who can cook for toddlers"
+    // or "Captain for 100m yacht with experience hosting royalty"
+    // =========================================================================
+
+    let aiParsedQuery: AIQueryParsed | null = null;
+
+    // Only use AI parsing for non-trivial queries (>15 chars)
+    if (searchQuery.length > 15) {
+      console.log('[Brief Match] Running AI query parsing...');
+      const aiParseStartTime = Date.now();
+
+      try {
+        // Pass the full query as all three parameters since we don't split anymore
+        aiParsedQuery = await parseQueryWithAI(searchQuery, '', '');
+        if (aiParsedQuery) {
+          console.log(`[Brief Match] AI query parsing completed in ${Date.now() - aiParseStartTime}ms`);
+          console.log('[Brief Match] AI parsed query:', JSON.stringify(aiParsedQuery, null, 2));
+        }
+      } catch (error) {
+        console.error('[Brief Match] AI query parsing failed:', error);
+        // Continue without AI-parsed query
+      }
+    }
+
+    // =========================================================================
+    // PHASE 2: HARD DEPARTMENT FILTERING + STEP-UP CANDIDATE INCLUSION
+    // =========================================================================
+    // Filter candidates by department BEFORE vector scoring.
+    // This ensures a Captain search NEVER returns an Engineer.
+    // Also include "ready to step up" candidates (e.g., Chief Officer for Captain search).
+    // =========================================================================
+
+    // Extract primary role from query (use AI parsed position if available, otherwise use AI to extract from raw query)
+    const primarySearchRole = aiParsedQuery?.position || await extractRoleFromQuery(searchQuery);
+    const eligibleRoles = getEligibleRolesForStepUp(primarySearchRole);
+
+    // Create search terms from the primary role for position matching
+    const searchTerms = [primarySearchRole];
+
+    // Define variables for backward compatibility with existing code
+    const originalRole = primarySearchRole;
+    const location = '';  // No longer extracted separately
+    const timeline = '';  // No longer extracted separately
+    const requirements = searchQuery;  // Use full query as requirements
+
+    console.log(`[Brief Match] Search role: "${primarySearchRole}", Eligible roles (including step-up):`, eligibleRoles);
+
+    // Check for gender requirement in query
+    const queryLower = searchQuery.toLowerCase();
+    const requiresFemale = queryLower.includes('female') ||
+                          queryLower.includes('woman') ||
+                          queryLower.includes('she/her');
+    const requiresMale = queryLower.includes('male only') ||
+                        queryLower.includes('man only') ||
+                        queryLower.includes('he/him');
+
+    if (requiresFemale || requiresMale) {
+      console.log(`[Brief Match] Gender requirement detected: ${requiresFemale ? 'FEMALE' : 'MALE'} only`);
+    }
+
+    // Pre-filter candidates by department compatibility, position eligibility, and gender
+    const departmentFilteredCandidates = candidates.filter((c) => {
+      const candidatePosition = c.primary_position || '';
+      const candidatePositionsHeld = c.positions_held || [];
+
+      // HARD FILTER 0: Gender requirement (CRITICAL - cabin layouts, privacy)
+      if (requiresFemale && c.gender?.toLowerCase() === 'male') {
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[Brief Match] ✗ FILTERED (gender): ${c.first_name} ${c.last_name} - Male candidate, Female required`);
+        }
+        return false;
+      }
+      if (requiresMale && c.gender?.toLowerCase() === 'female') {
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[Brief Match] ✗ FILTERED (gender): ${c.first_name} ${c.last_name} - Female candidate, Male required`);
+        }
+        return false;
+      }
+
+      // HARD FILTER 1: Department compatibility
+      // A deck role search should never return engineering candidates
+      const isDepartmentCompatible = areDepartmentsCompatible(primarySearchRole, candidatePosition);
+
+      if (!isDepartmentCompatible) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[Brief Match] FILTERED OUT (department mismatch): ${c.first_name} ${c.last_name} - "${candidatePosition}" not compatible with search for "${primarySearchRole}"`);
+        }
+        return false;
+      }
+
+      // POSITION ELIGIBILITY CHECK
+      // Include exact matches AND step-up candidates (e.g., Chief Officer for Captain)
+      // This is a HARD filter - we don't return deckhands for captain searches
+      const isEligible = isPositionEligible(candidatePosition, candidatePositionsHeld, primarySearchRole);
+
+      if (!isEligible) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`[Brief Match] FILTERED OUT (position): ${c.first_name} ${c.last_name} - "${candidatePosition}" not eligible for "${primarySearchRole}"`);
+        }
+        return false; // Filter out - position doesn't match search role
+      }
+
+      return true; // Passed both department and position eligibility filters
+    });
+
+    console.log(`[Brief Match] After department + position filter: ${departmentFilteredCandidates.length}/${candidates.length} candidates`);
+
+    // =========================================================================
+    // PHASE 4b: HARD REQUIREMENTS FILTERING (using AI-parsed query)
+    // =========================================================================
+    // If AI query parsing extracted hard requirements, apply them as filters.
+    // This is a "soft" hard filter - we don't completely exclude but heavily penalize.
+    // =========================================================================
+
+    let hardRequirementsFilteredCandidates = departmentFilteredCandidates;
+
+    if (aiParsedQuery) {
+      const { hardRequirements } = aiParsedQuery;
+
+      hardRequirementsFilteredCandidates = departmentFilteredCandidates.filter((c) => {
+        // 1. Minimum years experience check
+        if (hardRequirements.minYearsExperience !== null) {
+          const candidateYears = c.years_experience || 0;
+          // Allow some flexibility - 80% of requirement is okay
+          if (candidateYears < hardRequirements.minYearsExperience * 0.8) {
+            if (process.env.NODE_ENV === 'development') {
+              console.log(`[Brief Match] FILTERED (experience): ${c.first_name} ${c.last_name} - ${candidateYears} years < ${hardRequirements.minYearsExperience} required`);
+            }
+            return false;
+          }
+        }
+
+        // 2. Minimum yacht size experience check
+        if (hardRequirements.minYachtSizeMeters !== null) {
+          const yachtExp = c.yacht_experience_extracted as YachtExperience[] | null;
+          if (yachtExp && yachtExp.length > 0) {
+            const maxYachtSize = Math.max(
+              ...yachtExp
+                .map((y) => y.yacht_size_meters || 0)
+                .filter((size) => size > 0)
+            );
+            // Allow 70% of requirement (e.g., 70m experience for 100m requirement is close enough)
+            if (maxYachtSize > 0 && maxYachtSize < hardRequirements.minYachtSizeMeters * 0.7) {
+              if (process.env.NODE_ENV === 'development') {
+                console.log(`[Brief Match] FILTERED (yacht size): ${c.first_name} ${c.last_name} - max ${maxYachtSize}m < ${hardRequirements.minYachtSizeMeters}m required`);
+              }
+              return false;
+            }
+          }
+        }
+
+        // 3. Required languages check (soft filter - at least one match)
+        if (hardRequirements.languages.length > 0) {
+          const candidateLangs = (c.languages_extracted || []).map((l: string) => l.toLowerCase());
+          const hasRequiredLanguage = hardRequirements.languages.some((reqLang) =>
+            candidateLangs.some((candLang: string) =>
+              candLang.includes(reqLang.toLowerCase()) || reqLang.toLowerCase().includes(candLang)
+            )
+          );
+          // Only filter if looking for specific languages and candidate has language data
+          if (candidateLangs.length > 0 && !hasRequiredLanguage) {
+            // Don't hard filter - just log and let AI judgment decide
+            if (process.env.NODE_ENV === 'development') {
+              console.log(`[Brief Match] Note (language): ${c.first_name} ${c.last_name} - missing required languages: ${hardRequirements.languages.join(', ')}`);
+            }
+          }
+        }
+
+        return true;
+      });
+
+      console.log(`[Brief Match] After hard requirements filter: ${hardRequirementsFilteredCandidates.length}/${departmentFilteredCandidates.length} candidates`);
+    }
 
     // Calculate vector similarity and recruiter suitability
-    const candidatesWithScores = candidates
+    const candidatesWithScores = hardRequirementsFilteredCandidates
       .map((c) => {
         // Parse embedding
         let embedding: number[] | null = null;
@@ -858,17 +2231,29 @@ export async function POST(request: NextRequest) {
         const similarity = cosineSimilarity(queryEmbedding, embedding);
         if (similarity < VECTOR_MATCH_THRESHOLD) return null;
 
-        // Check if position matches any of the search terms
+        // Check if position matches any of the search terms OR eligible step-up roles
         const positionLower = c.primary_position?.toLowerCase() || '';
         const positionsHeldLower = (c.positions_held || []).map((p: string) => p.toLowerCase());
         const allPositions = [positionLower, ...positionsHeldLower];
 
-        const positionMatch = searchTerms.some((term) =>
+        // Check for exact position match (uses outer searchTerms variable)
+        const exactPositionMatch = searchTerms.some((term) =>
           allPositions.some((p) => p.includes(term.toLowerCase()))
         );
 
-        // Boost score if position matches
-        const vectorScore = positionMatch ? similarity * 1.2 : similarity;
+        // Check for step-up eligibility (e.g., Chief Officer for Captain search)
+        const stepUpMatch = eligibleRoles.some((eligible) =>
+          allPositions.some((p) => p.includes(eligible) || eligible.includes(p))
+        );
+
+        // Boost score based on match type
+        // Exact match gets highest boost, step-up gets moderate boost
+        let vectorScore = similarity;
+        if (exactPositionMatch) {
+          vectorScore = similarity * 1.3; // Higher boost for exact match
+        } else if (stepUpMatch) {
+          vectorScore = similarity * 1.15; // Moderate boost for step-up candidates
+        }
 
         // =====================================================================
         // RECRUITER SUITABILITY ASSESSMENT
@@ -887,42 +2272,337 @@ export async function POST(request: NextRequest) {
             has_eng1: c.has_eng1,
           },
           parsedRequirements,
-          searchTerms[0]
+          originalRole
         );
 
-        // Combine vector similarity with recruiter suitability
-        // The suitability score acts as a multiplier (0.1-1.0)
-        const combinedScore = Math.min(vectorScore, 1) * recruiterAssessment.suitability_score;
+        // =====================================================================
+        // STEP-UP READINESS ASSESSMENT
+        // =====================================================================
+        // For candidates who are one level below the target role,
+        // assess if they're ready to step up (e.g., Chief Officer → Captain)
+        const stepUpReadiness = assessStepUpReadiness(
+          {
+            primary_position: c.primary_position,
+            years_experience: c.years_experience,
+            certifications_extracted: c.certifications_extracted as CertificationExtracted[] | null,
+            licenses_extracted: c.licenses_extracted as LicenseExtracted[] | null,
+            has_stcw: c.has_stcw,
+            has_eng1: c.has_eng1,
+            yacht_experience_extracted: c.yacht_experience_extracted as YachtExperience[] | null,
+          },
+          primarySearchRole,
+          parsedRequirements
+        );
+
+        // Adjust score for step-up candidates who are ready
+        let stepUpBonus = 0;
+        if (stepUpReadiness.isStepUp && stepUpReadiness.isReady) {
+          // Ready step-up candidates get a significant boost
+          stepUpBonus = 0.15;
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`[Brief Match] STEP-UP CANDIDATE: ${c.first_name} ${c.last_name} - ${stepUpReadiness.currentLevel} → ${stepUpReadiness.targetLevel}, Qualifying: ${stepUpReadiness.qualifyingFactors.join(', ')}, Gaps: ${stepUpReadiness.gaps.join(', ') || 'none'}`);
+          }
+        } else if (stepUpReadiness.isStepUp && !stepUpReadiness.isReady) {
+          // Step-up candidates who aren't quite ready still get a small boost
+          stepUpBonus = 0.05;
+        }
+
+        // =====================================================================
+        // PHASE 5: STRUCTURED SCORING WITH EXCELLENCE BONUS
+        // =====================================================================
+        // Calculate a transparent, weighted score with excellence bonuses
+        const structuredScore = calculateStructuredScore(
+          {
+            primary_position: c.primary_position,
+            positions_held: c.positions_held,
+            years_experience: c.years_experience,
+            yacht_experience_extracted: c.yacht_experience_extracted as YachtExperience[] | null,
+            villa_experience_extracted: c.villa_experience_extracted as VillaExperience[] | null,
+            certifications_extracted: c.certifications_extracted as CertificationExtracted[] | null,
+            cv_skills: c.cv_skills,
+            availability_status: c.availability_status,
+            references_extracted: c.references_extracted as ReferenceDetail[] | null,
+            profile_summary: c.profile_summary,
+          },
+          primarySearchRole,
+          parsedRequirements,
+          timeline,
+          aiParsedQuery,
+          stepUpReadiness
+        );
+
+        // USE STRUCTURED SCORE DIRECTLY
+        // The structured score already incorporates all relevant factors with proper weighting:
+        // - Position fit (50%), Experience (25%), Skills/Job Brief (15%), Verification (7%), Excellence (3%)
+        // No need to blend with legacy vector/suitability logic which dilutes scores
+        const structuredScoreNormalized = structuredScore.totalScore / 100;
+        const combinedScore = Math.min(structuredScoreNormalized + stepUpBonus, 1.0);
 
         // Log assessments for debugging (in development)
         if (process.env.NODE_ENV === 'development') {
-          console.log(`[Brief Match] ${c.first_name} ${c.last_name}: vector=${vectorScore.toFixed(2)}, suitability=${recruiterAssessment.suitability_score.toFixed(2)}, combined=${combinedScore.toFixed(2)}, recommendation=${recruiterAssessment.recommendation}, reasoning="${recruiterAssessment.reasoning}"`);
+          const stepUpInfo = stepUpReadiness.isStepUp ? ` [STEP-UP: ${stepUpReadiness.isReady ? 'READY' : 'developing'}]` : '';
+          const excellenceInfo = structuredScore.bonuses.exceedsExperience || structuredScore.bonuses.exceedsYachtSize
+            ? ' [EXCELLENCE]'
+            : '';
+          console.log(`[Brief Match] ${c.first_name} ${c.last_name}: vector=${vectorScore.toFixed(2)}, suitability=${recruiterAssessment.suitability_score.toFixed(2)}, structured=${structuredScore.totalScore}, combined=${combinedScore.toFixed(2)}, rec=${structuredScore.recommendation}${stepUpInfo}${excellenceInfo}`);
         }
 
         return {
           ...c,
-          similarity: combinedScore, // Now includes recruiter assessment
+          gender: c.gender, // Explicitly preserve gender for AI judgment
+          similarity: combinedScore, // Now includes recruiter assessment + step-up bonus + structured score
           vectorScore: Math.min(vectorScore, 1),
           recruiterAssessment,
+          stepUpReadiness,
+          structuredScore,
+          isStepUpCandidate: stepUpReadiness.isStepUp,
+          isReadyToStepUp: stepUpReadiness.isStepUp && stepUpReadiness.isReady,
+          hasExcellenceBonus: structuredScore.bonuses.exceedsExperience ||
+                              structuredScore.bonuses.exceedsYachtSize ||
+                              structuredScore.bonuses.hasPremiumCerts,
         };
       })
       .filter((c): c is NonNullable<typeof c> => c !== null)
-      // Sort by combined score (vector × suitability)
+      // Sort by combined score (vector × suitability × structured)
       .sort((a, b) => b.similarity - a.similarity)
       // Take more candidates initially, then filter to top results
       .slice(0, MAX_RESULTS * 2)
-      // Prefer candidates with 'strong' or 'suitable' recommendations
+      // Prefer candidates with 'excellent' or 'strong' recommendations from structured scoring
+      // Also give priority to candidates with excellence bonuses
       .sort((a, b) => {
-        const recOrder = { strong: 0, suitable: 1, consider: 2, unlikely: 3 };
-        const recDiff = recOrder[a.recruiterAssessment.recommendation] - recOrder[b.recruiterAssessment.recommendation];
-        if (recDiff !== 0) return recDiff;
+        // First priority: structured score recommendation
+        const structuredRecOrder = { excellent: 0, strong: 1, suitable: 2, consider: 3, unlikely: 4 };
+        const structuredDiff = structuredRecOrder[a.structuredScore.recommendation] - structuredRecOrder[b.structuredScore.recommendation];
+        if (structuredDiff !== 0) return structuredDiff;
+
+        // Second priority: excellence bonus
+        if (a.hasExcellenceBonus !== b.hasExcellenceBonus) {
+          return a.hasExcellenceBonus ? -1 : 1;
+        }
+
+        // Third priority: combined score
         return b.similarity - a.similarity;
       })
       .slice(0, MAX_RESULTS);
 
+    // =========================================================================
+    // PHASE 2.5: COHERE RERANKING
+    // =========================================================================
+    // Use Cohere's cross-encoder to rerank candidates based on semantic
+    // relevance to the search query. This provides more accurate ranking than
+    // pure vector similarity because it uses cross-attention (query sees doc).
+    // =========================================================================
+
+    let rerankedCandidates = candidatesWithScores;
+
+    if (candidatesWithScores.length > 3 && process.env.COHERE_API_KEY) {
+      console.log(`[Brief Match] Stage 2.5: Reranking ${candidatesWithScores.length} candidates with Cohere...`);
+      const rerankStartTime = Date.now();
+
+      try {
+        // Build the rerank query from search context
+        const rerankQuery = [
+          `Looking for: ${originalRole}`,
+          location ? `Location: ${location}` : '',
+          timeline ? `Timeline: ${timeline}` : '',
+          requirements ? `Requirements: ${requirements}` : '',
+        ].filter(Boolean).join('\n');
+
+        // Build documents for reranking
+        const documentsToRerank: RerankDocument[] = candidatesWithScores.map(c => ({
+          id: c.id,
+          text: buildCandidateTextForRerank(c),
+          metadata: { candidate: c },
+        }));
+
+        // Call Cohere rerank
+        const reranked = await rerankDocuments(rerankQuery, documentsToRerank, {
+          topN: candidatesWithScores.length, // Keep all, just reorder
+        });
+
+        // Map back to candidates with Cohere scores
+        rerankedCandidates = reranked.map(result => {
+          const candidate = (result.metadata?.candidate as typeof candidatesWithScores[0]);
+          return {
+            ...candidate,
+            cohereScore: result.relevanceScore,
+            // ADJUSTED: Keep structured score dominant (90%), use Cohere for minor refinement (10%)
+            // Cohere is good for reranking but shouldn't override our transparent scoring
+            similarity: (candidate.similarity * 0.9) + (result.relevanceScore * 0.1),
+          };
+        });
+
+        // Re-sort by blended score
+        rerankedCandidates.sort((a, b) => b.similarity - a.similarity);
+
+        console.log(`[Brief Match] Cohere reranking completed in ${Date.now() - rerankStartTime}ms`);
+
+        // Log top 5 reranked candidates in development
+        if (process.env.NODE_ENV === 'development') {
+          console.log('[Brief Match] Top 5 after Cohere rerank:');
+          rerankedCandidates.slice(0, 5).forEach((c, i) => {
+            console.log(`  ${i + 1}. ${c.first_name} ${c.last_name} - cohere: ${(c as any).cohereScore?.toFixed(3) || 'N/A'}, blended: ${c.similarity.toFixed(3)}`);
+          });
+        }
+      } catch (error) {
+        console.error('[Brief Match] Cohere reranking failed:', error);
+        // Continue with original order
+      }
+    } else if (!process.env.COHERE_API_KEY) {
+      console.log('[Brief Match] Skipping Cohere rerank - COHERE_API_KEY not set');
+    }
+
+    // Use reranked candidates for subsequent processing
+    const candidatesForAIJudgment = rerankedCandidates;
+
+    // =========================================================================
+    // PHASE 3: AI-POWERED JUDGMENT FOR NUANCED MATCHING
+    // =========================================================================
+    // For searches with specific requirements (cuisine types, service styles,
+    // special skills), use AI to make nuanced judgment calls.
+    // This only runs when there are non-trivial requirements.
+    // =========================================================================
+
+    // Determine if we should run AI judgment
+    // Use AI judgment if: long requirements text OR AI parsed query found soft requirements
+    const hasNuancedRequirements = (requirements && requirements.length > 20) ||
+      (aiParsedQuery && (
+        aiParsedQuery.softRequirements.cuisineTypes.length > 0 ||
+        aiParsedQuery.softRequirements.serviceStyle.length > 0 ||
+        aiParsedQuery.softRequirements.specialSkills.length > 0 ||
+        aiParsedQuery.softRequirements.dietaryExpertise.length > 0 ||
+        aiParsedQuery.context.clientType !== null
+      ));
+
+    let aiJudgments: Map<string, AIJudgment> | null = null;
+
+    console.log(`[Brief Match] AI Judgment check: hasNuancedRequirements=${hasNuancedRequirements}, candidates=${candidatesForAIJudgment.length}, requirements.length=${requirements?.length || 0}`);
+
+    if (hasNuancedRequirements && candidatesForAIJudgment.length > 0) {
+      console.log('[Brief Match] ✓ RUNNING AI JUDGMENT for nuanced requirements...');
+      const aiStartTime = Date.now();
+
+      // Build enhanced requirements string with AI-parsed info
+      let enhancedRequirements = requirements || '';
+      if (aiParsedQuery) {
+        const parsedReqParts: string[] = [];
+        if (aiParsedQuery.softRequirements.cuisineTypes.length > 0) {
+          parsedReqParts.push(`Cuisine expertise: ${aiParsedQuery.softRequirements.cuisineTypes.join(', ')}`);
+        }
+        if (aiParsedQuery.softRequirements.serviceStyle.length > 0) {
+          parsedReqParts.push(`Service style: ${aiParsedQuery.softRequirements.serviceStyle.join(', ')}`);
+        }
+        if (aiParsedQuery.softRequirements.specialSkills.length > 0) {
+          parsedReqParts.push(`Special skills: ${aiParsedQuery.softRequirements.specialSkills.join(', ')}`);
+        }
+        if (aiParsedQuery.softRequirements.dietaryExpertise.length > 0) {
+          parsedReqParts.push(`Dietary expertise: ${aiParsedQuery.softRequirements.dietaryExpertise.join(', ')}`);
+        }
+        if (aiParsedQuery.context.clientType) {
+          parsedReqParts.push(`Client type: ${aiParsedQuery.context.clientType}`);
+        }
+        if (aiParsedQuery.hardRequirements.languages.length > 0) {
+          parsedReqParts.push(`Languages required: ${aiParsedQuery.hardRequirements.languages.join(', ')}`);
+        }
+        if (parsedReqParts.length > 0) {
+          enhancedRequirements = `${requirements || ''}\n\nParsed requirements:\n${parsedReqParts.join('\n')}`;
+        }
+      }
+
+      try {
+        aiJudgments = await batchAssessCandidatesWithAI(
+          candidatesForAIJudgment.map(c => ({
+            id: c.id,
+            primary_position: c.primary_position,
+            positions_held: c.positions_held,
+            years_experience: c.years_experience,
+            profile_summary: c.profile_summary,
+            cv_skills: c.cv_skills,
+            certifications_extracted: c.certifications_extracted as CertificationExtracted[] | null,
+            yacht_experience_extracted: c.yacht_experience_extracted as YachtExperience[] | null,
+            villa_experience_extracted: c.villa_experience_extracted as VillaExperience[] | null,
+            languages_extracted: c.languages_extracted,
+            gender: c.gender,
+          })),
+          {
+            role: primarySearchRole,
+            location: location || undefined,
+            requirements: enhancedRequirements || undefined,
+          },
+          3 // Concurrency limit
+        );
+
+        console.log(`[Brief Match] AI judgment completed in ${Date.now() - aiStartTime}ms for ${aiJudgments.size} candidates`);
+
+        // Log AI judgments in development
+        if (process.env.NODE_ENV === 'development') {
+          for (const [id, judgment] of aiJudgments) {
+            const candidate = candidatesForAIJudgment.find(c => c.id === id);
+            console.log(`[Brief Match] AI Judgment for ${candidate?.first_name} ${candidate?.last_name}: score=${judgment.matchScore}, match=${judgment.isMatch}, reasoning="${judgment.reasoning}"`);
+          }
+        }
+      } catch (error) {
+        console.error('[Brief Match] AI judgment batch failed:', error);
+        // Continue without AI judgments
+      }
+    }
+
+    // Re-score candidates with AI judgment if available
+    const finalCandidates = aiJudgments
+      ? candidatesForAIJudgment
+          .map(c => {
+            const aiJudgment = aiJudgments!.get(c.id);
+            if (aiJudgment) {
+              // AI JUDGMENT IS PRIMARY: When we have nuanced job briefs (2 pages, complex requirements),
+              // AI can deeply understand context that structured scoring can't handle.
+              // Use 80% AI, 20% structured as a sanity check.
+              const aiScoreNormalized = aiJudgment.matchScore / 100;
+              const blendedScore = (aiScoreNormalized * 0.8) + (c.similarity * 0.2);
+
+              return {
+                ...c,
+                similarity: blendedScore,
+                aiJudgment,
+                aiMatchScore: aiJudgment.matchScore,
+                aiIsMatch: aiJudgment.isMatch,
+                aiReasoning: aiJudgment.reasoning,
+                aiSpecialStrengths: aiJudgment.specialStrengths,
+                aiConcerns: aiJudgment.concerns,
+              };
+            }
+            return c;
+          })
+          // Filter out candidates that AI says are not a match
+          .filter(c => {
+            if ('aiJudgment' in c && c.aiJudgment) {
+              const judgment = c.aiJudgment as AIJudgment;
+
+              // STRICT: Always filter if isMatch = false (handles gender, department, critical requirements)
+              if (!judgment.isMatch) {
+                if (process.env.NODE_ENV === 'development') {
+                  console.log(`[Brief Match] ✗ FILTERED: ${c.first_name} ${c.last_name} - ${judgment.reasoning}`);
+                }
+                return false;
+              }
+
+              // Also filter very low scores even if isMatch = true (AI might be generous)
+              if (judgment.matchScore < 20) {
+                if (process.env.NODE_ENV === 'development') {
+                  console.log(`[Brief Match] ✗ FILTERED (low score): ${c.first_name} ${c.last_name} - score ${judgment.matchScore}`);
+                }
+                return false;
+              }
+            }
+            return true;
+          })
+          // Re-sort by blended score
+          .sort((a, b) => b.similarity - a.similarity)
+          .slice(0, MAX_RESULTS)
+      : candidatesForAIJudgment;
+
     // Build search context for personalized matching explanations
     const searchContext = {
-      role: searchTerms[0], // Use the normalized role from search terms
+      role: originalRole, // Use the original role from user input
       location: location || '',
       timeline: timeline || '',
       requirements: requirements || '',
@@ -932,19 +2612,19 @@ export async function POST(request: NextRequest) {
     // AI-POWERED CANDIDATE PRESENTATIONS
     // Generate compelling, personalized descriptions using Claude
     // =========================================================================
-    console.log('[Brief Match] Generating AI presentations for', candidatesWithScores.length, 'candidates...');
-    const aiStartTime = Date.now();
+    console.log('[Brief Match] Generating AI presentations for', finalCandidates.length, 'candidates...');
+    const presentationStartTime = Date.now();
 
     // Generate AI presentations for all candidates in parallel
     const aiPresentations = await generateAIPresentationsForCandidates(
-      candidatesWithScores,
+      finalCandidates,
       searchContext
     );
 
-    console.log('[Brief Match] AI generation completed in', Date.now() - aiStartTime, 'ms');
+    console.log('[Brief Match] AI generation completed in', Date.now() - presentationStartTime, 'ms');
 
     // Anonymize results with AI-generated content
-    const anonymizedResults: AnonymizedCandidate[] = candidatesWithScores.map((c, index) => {
+    const anonymizedResults: AnonymizedCandidate[] = finalCandidates.map((c, index) => {
       try {
         // Generate obfuscated ID (hash-like, not the real ID)
         const obfuscatedId = `match_${Date.now()}_${index}`;
@@ -973,23 +2653,45 @@ export async function POST(request: NextRequest) {
         // Generate partially hidden display name
         const displayName = obfuscateName(c.first_name, c.last_name);
 
-        // Generate structured work history
-        const workHistory = generateWorkHistory(
-          c.yacht_experience_extracted as YachtExperience[] | null,
-          c.villa_experience_extracted as VillaExperience[] | null
-        );
+        // Use AI-anonymized bio (preferred), fall back to regex-based anonymization during migration
+        const storedBioAnonymized = c.bio_anonymized ||
+          (c.bio_full
+            ? anonymizeBio(
+                c.bio_full,
+                c.first_name,
+                c.last_name,
+                c.nationality,
+                c.primary_position,
+                c.references_extracted as ReferenceDetail[] | null,
+                c.yacht_experience_extracted as YachtExperience[] | null,
+                c.villa_experience_extracted as VillaExperience[] | null
+              )
+            : null);
 
-        // Use stored bio (anonymized) when available, otherwise fall back to AI generation
-        const storedBioAnonymized = c.bio_full
-          ? anonymizeBio(
-              c.bio_full,
-              c.first_name,
-              c.last_name,
-              c.nationality,
-              c.primary_position,
-              c.references_extracted as ReferenceDetail[] | null
-            )
-          : null;
+        // Pattern validation as safety net (logs warnings if PII detected)
+        if (storedBioAnonymized) {
+          const yachtNames = (c.yacht_experience_extracted as YachtExperience[] | null)
+            ?.map(y => y.yacht_name).filter((name): name is string => Boolean(name)) || [];
+          const propertyNames = (c.villa_experience_extracted as VillaExperience[] | null)
+            ?.map(v => v.property_name).filter((name): name is string => Boolean(name)) || [];
+
+          validateAnonymizedBioSafe(
+            storedBioAnonymized,
+            c.first_name,
+            c.last_name,
+            yachtNames,
+            propertyNames
+          );
+        }
+
+        // Build anonymization options with candidate name info
+        const anonymizeOpts: AnonymizeOptions = {
+          yachtExperience: c.yacht_experience_extracted as YachtExperience[] | null,
+          villaExperience: c.villa_experience_extracted as VillaExperience[] | null,
+          firstName: c.first_name,
+          lastName: c.last_name,
+          position: c.primary_position,
+        };
 
         return {
           id: obfuscatedId,
@@ -998,11 +2700,20 @@ export async function POST(request: NextRequest) {
           position: c.primary_position || 'Private Staff Professional',
           experience_years: c.years_experience || 0,
           // Use pre-generated bio (anonymized) or fall back to AI/static generation
-          rich_bio: storedBioAnonymized || aiPresentation?.professional_summary || generateRichBio(c),
-          career_highlights: aiPresentation?.career_highlights || generateCareerHighlights(c),
+          rich_bio: storedBioAnonymized || anonymizeText(
+            aiPresentation?.professional_summary || generateRichBio(c),
+            null,
+            null,
+            anonymizeOpts
+          ),
+          career_highlights: anonymizeCareerAchievements(
+            aiPresentation?.career_highlights || generateCareerHighlights(c),
+            null,
+            null,
+            anonymizeOpts
+          ),
           experience_summary: experienceSummary,
-          // Structured work history (yacht + household)
-          work_history: workHistory,
+          // NOTE: work_history removed for lead gen - full history available for authenticated clients only
           languages: langs,
           nationality: c.nationality || 'International',
           availability: avail,
@@ -1010,10 +2721,25 @@ export async function POST(request: NextRequest) {
           key_strengths: strengths,
           qualifications: qualifications,
           notable_employers: notableEmployers,
-          // AI-generated personalized content
-          why_good_fit: aiPresentation?.why_good_fit || generateWhyGoodFit(c, searchContext),
-          employee_qualities: aiPresentation?.standout_qualities || extractEmployeeQualities(c),
-          longevity_assessment: aiPresentation?.longevity_assessment || generateLongevityFallback(c),
+          // AI-generated personalized content (anonymized for public display)
+          why_good_fit: anonymizeText(
+            aiPresentation?.why_good_fit || generateWhyGoodFit(c, searchContext),
+            null,
+            null,
+            anonymizeOpts
+          ),
+          employee_qualities: anonymizeCareerAchievements(
+            aiPresentation?.standout_qualities || extractEmployeeQualities(c),
+            null,
+            null,
+            anonymizeOpts
+          ),
+          longevity_assessment: anonymizeText(
+            aiPresentation?.longevity_assessment || generateLongevityFallback(c),
+            null,
+            null,
+            anonymizeOpts
+          ),
         };
       } catch (mapError) {
         console.error('[Brief Match] Map error for candidate:', c.id, mapError);
@@ -1021,13 +2747,98 @@ export async function POST(request: NextRequest) {
       }
     });
 
+    // =========================================================================
+    // PHASE 6: GRACEFUL DEGRADATION - Search Quality Assessment
+    // =========================================================================
+    // When perfect matches are unavailable, provide helpful information:
+    // - search_quality: How well the results match the query
+    // - search_notes: Explanations of what's missing
+    // - alternative_suggestions: Related roles that might have more candidates
+    // =========================================================================
+
+    // Assess search quality based on candidate scores and count
+    let searchQuality: 'excellent' | 'good' | 'limited' | 'no_exact_matches' = 'good';
+    const searchNotes: string[] = [];
+    const alternativeSuggestions: string[] = [];
+
+    const topCandidate = finalCandidates[0];
+    const avgStructuredScore = finalCandidates.length > 0
+      ? finalCandidates.reduce((sum, c) => sum + (c.structuredScore?.totalScore || 0), 0) / finalCandidates.length
+      : 0;
+
+    // Determine search quality
+    if (finalCandidates.length === 0) {
+      searchQuality = 'no_exact_matches';
+      searchNotes.push(`No candidates found matching "${originalRole}" with your specified requirements.`);
+
+      // Suggest alternatives based on search role
+      const searchDept = getDepartment(originalRole);
+      if (searchDept === 'deck') {
+        alternativeSuggestions.push('Consider widening yacht size requirements', 'Try searching for Chief Officers if looking for Captains');
+      } else if (searchDept === 'galley') {
+        alternativeSuggestions.push('Consider Sous Chefs if looking for Head Chefs', 'Try broadening cuisine requirements');
+      } else if (searchDept === 'interior') {
+        alternativeSuggestions.push('Consider Second Stewardesses if looking for Chief Stews', 'Try expanding location preferences');
+      }
+    } else if (finalCandidates.length < 3 || avgStructuredScore < 50) {
+      searchQuality = 'limited';
+      searchNotes.push('Limited exact matches found. Results include candidates who may need some development for this role.');
+
+      // Check for step-up candidates
+      const stepUpCount = finalCandidates.filter(c => c.isStepUpCandidate).length;
+      if (stepUpCount > 0) {
+        searchNotes.push(`${stepUpCount} candidate(s) are in progression toward this role and may be ready to step up.`);
+      }
+
+      // Note what's driving the limited results
+      if (parsedRequirements.min_yacht_size_experience_meters && parsedRequirements.min_yacht_size_experience_meters >= 80) {
+        searchNotes.push('Large yacht experience (80m+) is a specialized requirement that limits the candidate pool.');
+      }
+      if (aiParsedQuery?.softRequirements.cuisineTypes.length) {
+        searchNotes.push(`Specialized cuisine requirements (${aiParsedQuery.softRequirements.cuisineTypes.join(', ')}) may limit matches.`);
+      }
+    } else if (topCandidate && topCandidate.structuredScore?.recommendation === 'excellent') {
+      searchQuality = 'excellent';
+      if (topCandidate.hasExcellenceBonus) {
+        searchNotes.push('Top candidates exceed your requirements in key areas.');
+      }
+    }
+
+    // Add notes about step-up candidates in the results
+    const readyStepUpCount = finalCandidates.filter(c => c.isReadyToStepUp).length;
+    if (readyStepUpCount > 0 && searchQuality !== 'no_exact_matches') {
+      searchNotes.push(`${readyStepUpCount} candidate(s) are experienced professionals ready to step up to this role.`);
+    }
+
+    // Add notes about excellence bonus candidates
+    const excellenceCount = finalCandidates.filter(c => c.hasExcellenceBonus).length;
+    if (excellenceCount > 0 && searchQuality !== 'no_exact_matches') {
+      searchNotes.push(`${excellenceCount} candidate(s) have demonstrated excellence in their career.`);
+    }
+
     return NextResponse.json({
       candidates: anonymizedResults,
       total_found: candidatesWithScores.length,
       search_criteria: {
-        role: searchTerms[0],
+        query: searchQuery,  // Preserve the full original query
+        role: originalRole,
         location: location || 'Any',
         timeline: timeline || 'Flexible',
+      },
+      // Phase 6: Graceful degradation fields
+      search_quality: searchQuality,
+      search_notes: searchNotes.length > 0 ? searchNotes : undefined,
+      alternative_suggestions: alternativeSuggestions.length > 0 ? alternativeSuggestions : undefined,
+      // Summary stats for debugging/transparency
+      result_stats: {
+        total_candidates_considered: candidates.length,
+        after_department_filter: departmentFilteredCandidates.length,
+        after_hard_requirements: hardRequirementsFilteredCandidates.length,
+        after_vector_scoring: candidatesWithScores.length,
+        final_returned: anonymizedResults.length,
+        step_up_candidates: finalCandidates.filter(c => c.isStepUpCandidate).length,
+        excellence_bonus_candidates: excellenceCount,
+        average_structured_score: Math.round(avgStructuredScore),
       },
     });
   } catch (error) {
@@ -1062,131 +2873,8 @@ function cosineSimilarity(a: number[], b: number[]): number {
   return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
-// Unified work history entry for display
-interface WorkHistoryEntry {
-  employer: string;        // Yacht name or property name
-  position: string;
-  duration: string;        // e.g., "18 months" or "2 years"
-  dates: string;           // e.g., "Jan 2023 - Jun 2024" or "2023"
-  details?: string;        // e.g., "102m motor yacht" or "Private estate, Monaco"
-}
-
-// ----------------------------------------------------------------------------
-// WORK HISTORY GENERATION
-// Creates structured work history from yacht and villa experience
-// ----------------------------------------------------------------------------
-
-function formatDuration(months: number | null | undefined): string {
-  if (!months || months <= 0) return '';
-  if (months < 12) return `${months} month${months !== 1 ? 's' : ''}`;
-  const years = Math.floor(months / 12);
-  const remainingMonths = months % 12;
-  if (remainingMonths === 0) return `${years} year${years !== 1 ? 's' : ''}`;
-  return `${years} year${years !== 1 ? 's' : ''} ${remainingMonths} month${remainingMonths !== 1 ? 's' : ''}`;
-}
-
-function formatDateRange(startDate: string | null | undefined, endDate: string | null | undefined): string {
-  const formatDate = (dateStr: string | null | undefined): string => {
-    if (!dateStr) return '';
-    try {
-      const date = new Date(dateStr);
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      return `${months[date.getMonth()]} ${date.getFullYear()}`;
-    } catch {
-      return '';
-    }
-  };
-
-  const start = formatDate(startDate);
-  const end = formatDate(endDate);
-
-  if (!start && !end) return '';
-  if (!end || endDate === null) return start ? `${start} - Present` : '';
-  if (!start) return end;
-  return `${start} - ${end}`;
-}
-
-function generateWorkHistory(
-  yachtExperience: YachtExperience[] | null | undefined,
-  villaExperience: VillaExperience[] | null | undefined
-): WorkHistoryEntry[] {
-  const history: WorkHistoryEntry[] = [];
-
-  // Process yacht experience
-  const yachts = (yachtExperience || []) as YachtExperience[];
-  for (const yacht of yachts) {
-    const entry: WorkHistoryEntry = {
-      employer: yacht.yacht_name || 'Yacht (name confidential)',
-      position: yacht.position || 'Crew',
-      duration: formatDuration(yacht.duration_months),
-      dates: formatDateRange(yacht.start_date, yacht.end_date),
-    };
-
-    // Build details string
-    const details: string[] = [];
-    if (yacht.yacht_size_meters && yacht.yacht_size_meters > 0) {
-      details.push(`${Math.round(yacht.yacht_size_meters)}m`);
-    }
-    if (yacht.yacht_type) {
-      const typeMap: Record<string, string> = {
-        'motor': 'motor yacht',
-        'sail': 'sailing yacht',
-        'catamaran': 'catamaran',
-        'other': 'vessel'
-      };
-      details.push(typeMap[yacht.yacht_type] || yacht.yacht_type);
-    }
-    if (details.length > 0) {
-      entry.details = details.join(' ');
-    }
-
-    history.push(entry);
-  }
-
-  // Process villa/household experience
-  const villas = (villaExperience || []) as VillaExperience[];
-  for (const villa of villas) {
-    const entry: WorkHistoryEntry = {
-      employer: villa.property_name || 'Private residence',
-      position: villa.position || 'Household Staff',
-      duration: formatDuration(villa.duration_months),
-      dates: formatDateRange(villa.start_date, villa.end_date),
-    };
-
-    // Build details string
-    const details: string[] = [];
-    if (villa.property_type) {
-      const typeMap: Record<string, string> = {
-        'villa': 'Private villa',
-        'estate': 'Estate',
-        'private_residence': 'Private residence',
-        'palace': 'Palace',
-        'castle': 'Castle',
-      };
-      details.push(typeMap[villa.property_type] || villa.property_type);
-    }
-    if (villa.location && villa.location !== 'Not specified') {
-      details.push(villa.location);
-    }
-    if (details.length > 0) {
-      entry.details = details.join(', ');
-    }
-
-    history.push(entry);
-  }
-
-  // Sort by start date (most recent first)
-  history.sort((a, b) => {
-    // Extract year from dates string for sorting
-    const getYear = (dates: string): number => {
-      const match = dates.match(/(\d{4})/);
-      return match ? parseInt(match[1]) : 0;
-    };
-    return getYear(b.dates) - getYear(a.dates);
-  });
-
-  return history;
-}
+// NOTE: WorkHistoryEntry and generateWorkHistory removed for lead gen
+// Full work history is available for authenticated clients only
 
 // ----------------------------------------------------------------------------
 // AI-POWERED CANDIDATE PRESENTATION GENERATION
@@ -1194,11 +2882,11 @@ function generateWorkHistory(
 // ----------------------------------------------------------------------------
 
 const aiPresentationSchema = z.object({
-  professional_summary: z.string().describe('A factual 3-4 sentence professional summary in THIRD PERSON. State their experience level, yacht sizes worked, and key qualifications. Be specific with numbers and facts. NO superlatives like "exceptional", "outstanding", "impressive", "remarkable". Let the facts speak. Example: "A British deckhand with 5 years of experience across motor yachts up to 54m. Holds RYA Yachtmaster Offshore and STCW certifications. Previously served on charter yachts in the Mediterranean with responsibility for tender operations and guest water sports."'),
-  why_good_fit: z.string().describe('A specific 2-3 sentence explanation of why THIS candidate matches the search criteria. Reference the exact role searched and how their experience aligns. Be concrete, not generic. Avoid phrases like "perfectly aligns" or "ideal candidate" - instead explain the specific match.'),
-  career_highlights: z.array(z.string()).default([]).describe('3-4 bullet points of QUANTIFIABLE achievements. Each must include a number, size, duration, or specific outcome. Bad: "Worked on prestigious yachts" Good: "Managed tender operations for 45m yacht with 3 RIBs". Bad: "Excellent track record" Good: "4-year tenure on single vessel through 2 Med seasons".'),
-  standout_qualities: z.array(z.string()).default([]).describe('2-3 SPECIFIC qualities backed by evidence from their CV. NOT generic phrases like "team player" or "strong work ethic". Each quality must reference something concrete. Example: "Trained 2 junior deckhands during last position" or "Speaks French and Italian fluently - valuable for Med charters" or "PADI Divemaster - can lead guest diving excursions".'),
-  longevity_assessment: z.string().describe('1-2 factual sentences about tenure patterns. State the average and longest tenure with numbers. Be honest: short tenures are common in seasonal yachting. Example: "Average tenure of 14 months across 4 positions, with longest stint of 2 years on a 60m charter yacht." If tenure is short, note if positions were seasonal or daywork.'),
+  professional_summary: z.string().describe('Quick background on who they are: 3-4 sentences in third person covering experience level, yacht sizes, key certs. Use specifics - "5 years on yachts up to 54m" not "extensive experience". Example: "British deckhand with 5 years across motor yachts up to 54m. Holds RYA Yachtmaster Offshore and STCW. Spent last 2 years on charter yachts in the Med handling tender ops and guest water sports."'),
+  why_good_fit: z.string().describe('Your honest recommendation: 2-3 sentences on why this candidate could work for this brief. Be specific about the match. If they tick boxes the client asked for, say so. If there are gaps versus stated requirements, acknowledge them. Sounds like a recruiter talking to a client, not a sales pitch.'),
+  career_highlights: z.array(z.string()).default([]).describe('3-4 concrete things worth mentioning - each with a number, size, or specific outcome. Not "worked on prestigious yachts" but "4 seasons on M/Y Oceana (62m)" or "managed 3 RIBs and all tender ops on 45m charter boat".'),
+  standout_qualities: z.array(z.string()).default([]).describe('2-3 things that make them worth interviewing. Be specific - not "team player" but "trained 2 junior deckhands last season" or "speaks Italian and French - handy for Med work" or "PADI Divemaster - can run guest dives".'),
+  longevity_assessment: z.string().describe('Straight talk on tenure: 1-2 sentences with actual numbers. "Average 14 months across 4 positions, longest was 2 years on a 60m charter yacht." If tenure is short, note it honestly - "averaging 8 months which is below typical - may be seasonal work or worth asking about."'),
 });
 
 
@@ -1225,6 +2913,7 @@ async function generateAICandidatePresentation(
     availability_status?: string | null;
     has_stcw?: boolean;
     has_eng1?: boolean;
+    bio_full?: string | null; // Rich narrative bio with personality traits and reference feedback
   },
   searchContext: {
     role: string;
@@ -1296,58 +2985,91 @@ async function generateAICandidatePresentation(
       average_tenure_years: Math.round((averageTenureMonths / 12) * 10) / 10,
       longest_tenure_years: Math.round((longestTenureMonths / 12) * 10) / 10,
     },
+    // Rich narrative bio with personality traits, hobbies, and reference feedback
+    bio_narrative: candidate.bio_full || null,
   };
+
+  // Separate the bio from structured data for the prompt
+  const { bio_narrative, ...structuredData } = candidateProfile;
 
   const { object } = await generateObject({
     model: presentationModel, // Using GPT-4o-mini for speed and quality
     schema: aiPresentationSchema,
-    system: `You are a factual recruitment consultant presenting candidate profiles. Write in a professional, understated tone - let credentials and experience speak for themselves.
+    system: `You are an experienced yacht crew recruiter with 15+ years placing crew on superyachts and private estates. You're having a candid conversation with a client about a candidate you're recommending.
 
-CRITICAL RULES:
-1. ALWAYS use THIRD PERSON ("This deckhand has..." NOT "I am pleased to introduce...")
-2. NEVER use superlatives: exceptional, outstanding, impressive, remarkable, excellent, stellar, exemplary, standout, premier
-3. NEVER use filler phrases: "perfectly aligns", "ideal candidate", "strong work ethic", "team player", "passionate", "dedicated"
-4. ALWAYS include specific numbers: yacht sizes (54m), tenure lengths (18 months), years (5 years)
-5. INCLUDE yacht names - they are industry credentials (e.g., "M/Y Quattroelle (86m)", "M/Y Symphony (102m)"). Name-dropping recognized yachts adds credibility.
-6. NEVER assume or state the candidate's location - yacht crew are typically willing to relocate worldwide. Do NOT mention the search location as if the candidate is there.
+YOUR PERSONA:
+- You've seen hundreds of crew come and go - you know what makes someone succeed
+- You're honest with your clients because your reputation depends on good placements
+- You speak plainly about both strengths and concerns - clients trust you for your candor
+- You recommend candidates you genuinely believe could work, but you're upfront about any gaps
 
-CONTENT GUIDELINES:
-- Professional Summary: Factual overview. Position + years + yacht sizes + key certifications. No sales language.
-- Why Good Fit: Explain the specific match to search criteria. "Searched for deckhand → this candidate has 5 years deckhand experience on similar size vessels"
-- Career Highlights: Quantifiable achievements only. Numbers, sizes, durations, outcomes.
-- Standout Qualities: Evidence-based traits only. "Speaks 3 languages" not "great communicator". "Trained 2 juniors" not "natural leader".
+TONE & STYLE:
+- Write like you're briefing a captain or principal over coffee - professional but natural
+- Use THIRD PERSON throughout ("This deckhand has..." not "I recommend...")
+- Be conversational yet professional - avoid corporate recruitment jargon
+- Let the candidate's credentials speak for themselves - no salesy hyperbole
+- Always include specific numbers: yacht sizes (54m), tenure (18 months), years (5 years)
+- Mention yacht names - they're industry credentials (e.g., "M/Y Quattroelle (86m)")
+- NEVER assume the candidate's current location - yacht crew relocate globally
 
-LONGEVITY ASSESSMENT - BE HONEST, NOT PROMOTIONAL:
-State tenure facts first, then assess honestly. Employers need accurate data.
+WHAT TO AVOID:
+- Superlatives: exceptional, outstanding, impressive, remarkable, excellent, stellar
+- Empty phrases: "perfectly aligns", "ideal candidate", "strong work ethic", "team player", "passionate"
+- Overselling - if something is average, say so. Clients respect honesty.
 
-TENURE THRESHOLDS (apply strictly):
-- Average 24+ months = "Demonstrates strong retention with X month average tenure"
-- Average 18-24 months = "Shows solid stability with X month average tenure"
-- Average 12-18 months = "Tenure averaging X months is typical for yachting"
-- Average 6-12 months = "Below-average tenure of X months - may indicate seasonal focus or frequent transitions"
-- Average under 6 months = "Short tenure pattern (X month average) warrants discussion - frequent position changes"
+THE "WHY WE RECOMMEND" SECTION - THIS IS YOUR HONEST ASSESSMENT:
+Think of this as your professional opinion to a client asking "so why should I interview this person?"
 
-HONESTY RULES:
-- DO NOT use euphemisms like "gaining diverse experience" or "strategic moves" for short tenures
-- DO NOT excuse short tenures for crew with 3+ years total experience
-- ALWAYS state the actual average tenure number from tenure_metrics
-- If longest tenure is significantly better than average, mention both facts
-- For crew with mostly sub-3-month positions, state this directly`,
-    prompt: `Generate a factual candidate profile for a "${searchContext.role}" search.
-${searchContext.location ? `Location preference: ${searchContext.location}` : ''}
+1. Lead with the match: How does their experience align with what the client needs?
+2. Address EXPLICIT requirements honestly:
+   - If search mentions a language (e.g., "must speak Italian") → Check if candidate speaks it. If not, say so clearly.
+   - If search mentions a skill (e.g., "cocktail making") → Check if candidate has it
+   - If search mentions certifications → Verify candidate has them
+   - DON'T invent requirements that weren't stated
+3. Acknowledge gaps directly: "She doesn't have the Italian they're asking for, but her Mediterranean charter experience might compensate"
+4. Include personality insights from the bio/references when relevant
+5. If there are concerns (short tenure, gaps, missing quals), mention them - it builds trust
+
+Examples of honest recommendations:
+- "She's been Chief Stew on yachts up to 80m and knows the Mediterranean charter circuit well. The client asked for Italian and she doesn't speak it, but her service standards are solid."
+- "Strong technical background with experience on vessels this size. Tenure's been short - averaging 10 months - which may be worth asking about, but his references from M/Y Oceana speak well of his work."
+- "Exactly what they're looking for: female, speaks French, experienced with formal service. Previous Principal kept her for 3 years which is notable in this industry."
+
+LONGEVITY ASSESSMENT - BE STRAIGHT:
+State the facts, then give your honest read. Clients need to know.
+
+- 24+ months average: "Shows commitment - X month average tenure is above industry norm"
+- 18-24 months average: "Solid retention at X months average"
+- 12-18 months average: "X month average tenure is standard for yachting"
+- 6-12 months average: "Tenure runs shorter than average at X months - may be seasonal work or worth discussing"
+- Under 6 months average: "Pattern of short stints (X month average) - I'd ask about this in interview"
+
+DON'T sugarcoat short tenure with phrases like "gaining diverse experience" - just state the facts and flag it if relevant.`,
+    prompt: `You're briefing a client about a candidate for a ${searchContext.role} position.
+
+THE CLIENT'S BRIEF:
+${searchContext.requirements ? `"${searchContext.requirements}"` : 'Looking for a ' + searchContext.role}
+${searchContext.location ? `Preferred location: ${searchContext.location}` : ''}
 ${searchContext.timeline ? `Timeline: ${searchContext.timeline}` : ''}
-${searchContext.requirements ? `Requirements: ${searchContext.requirements}` : ''}
+
+CANDIDATE'S BACKGROUND (their story, personality, what references say):
+${bio_narrative || 'No detailed bio available - working from CV data only.'}
 
 CANDIDATE DATA:
-${JSON.stringify(candidateProfile, null, 2)}
+${JSON.stringify(structuredData, null, 2)}
 
-INSTRUCTIONS:
-- Write in third person only
-- Use specific numbers from the data (years, yacht sizes, tenure months)
-- No superlatives or sales language
-- For "why_good_fit": reference the "${searchContext.role}" search and explain the match factually
-- For "standout_qualities": only include traits backed by specific evidence in their profile
-- Include yacht names with sizes - they're industry credentials that add credibility`,
+YOUR TASK - Write an honest recruiter assessment:
+- Use third person ("This stewardess has..." not "I think...")
+- Include specifics: yacht sizes, years, tenure lengths, yacht names
+- For "why_good_fit": Give your honest take on why this candidate could work for this brief
+  * Lead with how their experience matches what the client needs
+  * Check the client's brief above - address any EXPLICIT requirements (languages, skills, gender, certs)
+  * If they meet a requirement: highlight it upfront
+  * If they DON'T meet a stated requirement: be upfront about it
+  * Include personality/reference insights from the bio if relevant
+  * Don't invent requirements the client didn't mention
+- For "standout_qualities": What makes this person worth interviewing? Draw from bio and data.
+- Be honest about concerns (short tenure, gaps) - clients respect candor`,
   });
 
   return object;
@@ -1375,6 +3097,7 @@ async function generateAIPresentationsForCandidates(
     availability_status?: string | null;
     has_stcw?: boolean;
     has_eng1?: boolean;
+    bio_full?: string | null; // Rich narrative bio with personality traits and reference feedback
   }>,
   searchContext: {
     role: string;
@@ -1444,7 +3167,7 @@ function generateFallbackPresentation(
     has_stcw?: boolean;
     has_eng1?: boolean;
   },
-  searchContext: { role: string }
+  searchContext: { role: string; requirements?: string }
 ): AICandidatePresentation {
   const yearsExp = candidate.years_experience || 0;
   const position = candidate.primary_position || 'Private Staff Professional';
@@ -1546,10 +3269,52 @@ function generateFallbackPresentation(
   }
   fitParts[0] += '.';
 
-  if (uniqueCerts.length > 0) {
-    fitParts.push(`Their ${uniqueCerts[0]} qualification adds value to any deck team.`);
-  } else if (uniqueSkills.length > 0) {
-    fitParts.push(`Their ${uniqueSkills[0]} skills would benefit guest experiences.`);
+  // Determine department context based on position
+  const isDeck = position.toLowerCase().includes('deck') || position.toLowerCase().includes('captain') || position.toLowerCase().includes('officer') || position.toLowerCase().includes('bosun');
+  const isInterior = position.toLowerCase().includes('steward') || position.toLowerCase().includes('butler') || position.toLowerCase().includes('housekeeper');
+  const isEngine = position.toLowerCase().includes('engineer') || position.toLowerCase().includes('eto');
+
+  let departmentContext = 'the team';
+  if (isDeck) departmentContext = 'the deck team';
+  else if (isInterior) departmentContext = 'the interior team';
+  else if (isEngine) departmentContext = 'the engine team';
+
+  // Check if requirements were specified and address them
+  if (searchContext.requirements) {
+    const reqsLower = searchContext.requirements.toLowerCase();
+    const missingReqs: string[] = [];
+
+    // Check for specific skill requirements (cocktails, bartending, mixology, etc.)
+    const skillKeywords = ['cocktail', 'bartend', 'mixolog', 'wine', 'sommelier'];
+    const hasSkillReq = skillKeywords.some(kw => reqsLower.includes(kw));
+    if (hasSkillReq) {
+      const candidateSkillsLower = skills.map(s => s.toLowerCase()).join(' ');
+      const hasCocktails = candidateSkillsLower.includes('cocktail') || candidateSkillsLower.includes('bartend') || candidateSkillsLower.includes('mixolog');
+      const hasWine = candidateSkillsLower.includes('wine') || candidateSkillsLower.includes('sommelier') || uniqueCerts.some(c => c.toLowerCase().includes('wset'));
+
+      if (reqsLower.includes('cocktail') && hasCocktails) {
+        fitParts.push('Cocktail making skills match the specified requirements.');
+      } else if ((reqsLower.includes('wine') || reqsLower.includes('sommelier')) && hasWine) {
+        fitParts.push('Wine expertise aligns with the search requirements.');
+      } else if (hasSkillReq && !hasCocktails && !hasWine) {
+        const reqSkill = skillKeywords.find(kw => reqsLower.includes(kw));
+        missingReqs.push(`${reqSkill} skills were requested but not evident in profile`);
+      }
+    }
+
+    // If there are missing requirements, be honest about them
+    if (missingReqs.length > 0) {
+      fitParts.push(`Note: ${missingReqs.join(', ')}.`);
+    }
+  }
+
+  // Add certification/skill context if no requirements were addressed
+  if (fitParts.length === 1) {
+    if (uniqueCerts.length > 0) {
+      fitParts.push(`Their ${uniqueCerts[0]} qualification adds value to ${departmentContext}.`);
+    } else if (uniqueSkills.length > 0) {
+      fitParts.push(`Their ${uniqueSkills[0]} skills would benefit guest experiences.`);
+    }
   }
 
   // Extract notable yacht names (largest yachts first)

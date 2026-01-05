@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createDocumentVersion } from "@/lib/services/document-service";
 import { documentUploadSchema, validateFile, sanitizeFilename } from "@/lib/validations/documents";
 import { logVerificationEvent, calculateVerificationTier } from "@/lib/verification";
+import { syncDocumentUpload } from "@/lib/vincere/sync-service";
 
 const BUCKET_NAME = "documents";
 
@@ -88,7 +89,14 @@ export async function POST(request: NextRequest) {
     // Candidates can only upload to their own profile
     // Recruiters can upload to any entity
     if (userData.user_type === "candidate") {
-      if (entityType !== "candidate" || entityId !== userData.id) {
+      // Get the candidate ID for this user
+      const { data: candidateData } = await supabase
+        .from("candidates")
+        .select("id")
+        .eq("user_id", userData.id)
+        .single();
+
+      if (!candidateData || entityType !== "candidate" || entityId !== candidateData.id) {
         return NextResponse.json(
           { error: "You can only upload documents to your own profile" },
           { status: 403 }
@@ -159,12 +167,20 @@ export async function POST(request: NextRequest) {
       version = docData?.version || 1;
     } else {
       // Create new document
+      // All users must have an organization_id set during registration
+      if (!userData.organization_id) {
+        return NextResponse.json(
+          { error: "User account is missing organization assignment. Please contact support." },
+          { status: 500 }
+        );
+      }
+
       const { data: documentRecord, error: dbError } = await supabase
         .from("documents")
         .insert({
           entity_type: entityType,
           entity_id: entityId,
-          document_type: documentType,
+          type: documentType,
           name: file.name,
           description: description || null,
           file_url: publicUrl,
@@ -183,6 +199,12 @@ export async function POST(request: NextRequest) {
 
       if (dbError) {
         console.error("Database error:", dbError);
+        console.error("Database error details:", {
+          message: dbError.message,
+          code: dbError.code,
+          details: dbError.details,
+          hint: dbError.hint,
+        });
         // Cleanup uploaded file
         await supabase.storage.from(BUCKET_NAME).remove([filePath]);
         return NextResponse.json(
@@ -214,6 +236,14 @@ export async function POST(request: NextRequest) {
 
       // Recalculate verification tier
       await calculateVerificationTier(entityId);
+    }
+
+    // Sync document to Vincere for candidate uploads (fire-and-forget)
+    if (entityType === "candidate") {
+      const syncDocType = documentType as "cv" | "certificate" | "photo" | "other";
+      syncDocumentUpload(entityId, publicUrl, file.name, file.type, syncDocType).catch((err) =>
+        console.error("Vincere sync failed for document upload:", err)
+      );
     }
 
     return NextResponse.json({

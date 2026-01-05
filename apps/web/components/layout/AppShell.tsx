@@ -11,14 +11,15 @@ import {
   Building2,
   Settings,
   HelpCircle,
-  Anchor,
   Bell,
   Search,
   ChevronLeft,
   ChevronRight,
   LogOut,
   User,
+  Shield,
 } from "lucide-react";
+import { Logo } from "@/components/ui/Logo";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/lib/auth/actions";
 
@@ -42,6 +43,7 @@ const mainNavItems: NavItem[] = [
 ];
 
 const bottomNavItems: NavItem[] = [
+  { id: "admin", label: "Admin", icon: <Shield className="size-5" />, href: "/admin/users" },
   { id: "settings", label: "Settings", icon: <Settings className="size-5" />, href: "/settings" },
   { id: "help", label: "Help & Support", icon: <HelpCircle className="size-5" />, href: "/help" },
 ];
@@ -62,6 +64,9 @@ export function AppShell({ children }: AppShellProps) {
     if (href === "/dashboard") {
       return pathname === "/dashboard";
     }
+    if (href.startsWith("/admin")) {
+      return pathname.startsWith("/admin");
+    }
     return pathname.startsWith(href);
   };
 
@@ -77,16 +82,9 @@ export function AppShell({ children }: AppShellProps) {
         {/* Logo */}
         <div className="flex h-16 items-center justify-between border-b border-navy-700 px-4">
           {sidebarCollapsed ? (
-            <div className="mx-auto flex size-8 items-center justify-center rounded-lg bg-gold-500">
-              <Anchor className="size-5 text-navy-900" />
-            </div>
+            <Logo size="xs" className="mx-auto" variant="light" />
           ) : (
-            <div className="flex items-center gap-2">
-              <div className="flex size-8 items-center justify-center rounded-lg bg-gold-500">
-                <Anchor className="size-5 text-navy-900" />
-              </div>
-              <span className="font-semibold text-white">Lighthouse</span>
-            </div>
+            <Logo size="sm" variant="light" />
           )}
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}

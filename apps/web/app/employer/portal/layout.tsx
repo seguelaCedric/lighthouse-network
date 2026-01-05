@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import {
-  Anchor,
   LayoutDashboard,
   FileText,
   Users,
@@ -12,6 +11,7 @@ import {
   Shield,
   Bell,
 } from "lucide-react";
+import { Logo } from "@/components/ui/Logo";
 import { getEmployerSession, signOutEmployer } from "@/lib/auth/employer-actions";
 import { cn } from "@/lib/utils";
 
@@ -77,14 +77,9 @@ export default async function EmployerPortalLayout({
       {/* Sidebar - Desktop */}
       <aside className="hidden w-64 flex-col border-r border-gray-200 bg-white lg:flex">
         {/* Logo */}
-        <div className="flex h-16 items-center gap-2 border-b border-gray-200 px-6">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-navy-800">
-              <Anchor className="size-4 text-gold-400" />
-            </div>
-            <span className="font-serif text-lg font-semibold text-navy-800">
-              Lighthouse
-            </span>
+        <div className="flex h-16 items-center border-b border-gray-200 px-6">
+          <Link href="/">
+            <Logo size="sm" />
           </Link>
         </div>
 
@@ -154,13 +149,8 @@ export default async function EmployerPortalLayout({
       <div className="flex flex-1 flex-col">
         {/* Top Header - Mobile */}
         <header className="flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 lg:hidden">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-navy-800">
-              <Anchor className="size-4 text-gold-400" />
-            </div>
-            <span className="font-serif text-lg font-semibold text-navy-800">
-              Lighthouse
-            </span>
+          <Link href="/">
+            <Logo size="sm" />
           </Link>
 
           {/* Mobile menu button - would need client component for toggle */}

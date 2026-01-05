@@ -12,6 +12,7 @@ const updateProfileSchema = z.object({
   nationality: z.string().max(50).optional(),
   date_of_birth: z.string().optional(),
   current_location: z.string().max(200).optional(),
+  candidate_type: z.enum(["yacht_crew", "household_staff", "both", "other"]).optional(),
   primary_position: z.string().max(100).optional(),
   secondary_position: z.string().max(100).optional(),
   years_experience: z.number().int().min(0).max(50).optional(),

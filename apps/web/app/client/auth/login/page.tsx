@@ -5,7 +5,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Anchor,
   Mail,
   Loader2,
   CheckCircle2,
@@ -13,6 +12,7 @@ import {
   Ship,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/ui/Logo";
 import { sendMagicLink } from "@/lib/auth/client-actions";
 import { cn } from "@/lib/utils";
 
@@ -49,14 +49,9 @@ export default function ClientLoginPage() {
         <div className="w-full max-w-md">
           {/* Logo */}
           <div className="mb-8 flex justify-center">
-            <div className="flex items-center gap-2">
-              <div className="flex size-12 items-center justify-center rounded-xl bg-gradient-to-br from-gold-400 to-gold-600">
-                <Anchor className="size-6 text-white" />
-              </div>
-              <span className="font-serif text-2xl font-semibold text-white">
-                Lighthouse
-              </span>
-            </div>
+            <Link href="/">
+              <Logo size="xl" />
+            </Link>
           </div>
 
           {/* Success Card */}
@@ -126,14 +121,9 @@ export default function ClientLoginPage() {
       {/* Left Side - Branding */}
       <div className="hidden w-1/2 bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 lg:flex lg:flex-col lg:justify-between lg:p-12">
         {/* Logo */}
-        <div className="flex items-center gap-2">
-          <div className="flex size-10 items-center justify-center rounded-xl bg-gradient-to-br from-gold-400 to-gold-600">
-            <Anchor className="size-5 text-white" />
-          </div>
-          <span className="font-serif text-xl font-semibold text-white">
-            Lighthouse
-          </span>
-        </div>
+        <Link href="/">
+          <Logo size="lg" />
+        </Link>
 
         {/* Hero Content */}
         <div className="space-y-6">
@@ -187,14 +177,9 @@ export default function ClientLoginPage() {
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
           <div className="mb-8 flex justify-center lg:hidden">
-            <div className="flex items-center gap-2">
-              <div className="flex size-12 items-center justify-center rounded-xl bg-gradient-to-br from-gold-400 to-gold-600">
-                <Anchor className="size-6 text-white" />
-              </div>
-              <span className="font-serif text-2xl font-semibold text-navy-900">
-                Lighthouse
-              </span>
-            </div>
+            <Link href="/">
+              <Logo size="xl" />
+            </Link>
           </div>
 
           {/* Login Card */}

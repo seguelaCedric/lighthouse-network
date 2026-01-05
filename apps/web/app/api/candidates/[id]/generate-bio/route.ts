@@ -138,11 +138,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     // Generate the bio
     const bioResult = await generateCandidateBio({ candidate: bioCandidate });
 
-    // Update candidate record
+    // Update candidate record with BOTH bio versions
     const { error: updateError } = await supabase
       .from('candidates')
       .update({
         bio_full: bioResult.bio_full,
+        bio_anonymized: bioResult.bio_anonymized,
         bio_generated_at: new Date().toISOString(),
         bio_generation_version: BIO_GENERATION_VERSION,
         updated_at: new Date().toISOString(),

@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Anchor, AlertCircle, ArrowLeft } from "lucide-react";
+import { AlertCircle, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/ui/Logo";
 
 export default function AuthErrorPage() {
   return (
@@ -13,13 +14,10 @@ export default function AuthErrorPage() {
       </div>
 
       <div className="relative w-full max-w-md text-center">
-        <div className="mb-8">
-          <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-navy-900 shadow-lg">
-            <Anchor className="size-7 text-gold-400" />
-          </div>
-          <h1 className="font-serif text-4xl font-semibold text-navy-800">
-            Lighthouse Network
-          </h1>
+        <div className="mb-8 flex justify-center">
+          <Link href="/">
+            <Logo size="xl" />
+          </Link>
         </div>
 
         <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-xl">

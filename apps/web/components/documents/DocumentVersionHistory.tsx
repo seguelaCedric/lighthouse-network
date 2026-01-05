@@ -105,8 +105,19 @@ export default function DocumentVersionHistory({
     }
   };
 
-  const handleDownload = (fileUrl: string) => {
-    window.open(fileUrl, "_blank");
+  const handleDownload = async (versionId: string, fileName: string) => {
+    try {
+      const response = await fetch(`/api/documents/${versionId}/download?preview=true`);
+      const data = await response.json();
+      if (data.url) {
+        window.open(data.url, "_blank");
+      } else {
+        alert("Failed to open document");
+      }
+    } catch (error) {
+      console.error("Error opening document:", error);
+      alert("Failed to open document");
+    }
   };
 
   const toggleExpand = (versionId: string) => {
@@ -317,7 +328,7 @@ export default function DocumentVersionHistory({
                                 {/* Actions */}
                                 <div className="flex gap-2 pt-2">
                                   <button
-                                    onClick={() => handleDownload(version.fileUrl)}
+                                    onClick={() => handleDownload(version.id, version.name)}
                                     className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center justify-center gap-2"
                                   >
                                     <Download className="w-4 h-4" />

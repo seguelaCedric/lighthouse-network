@@ -4,7 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Anchor, Mail, ArrowLeft, CheckCircle2, ArrowRight, Send } from "lucide-react";
+import { Mail, ArrowLeft, CheckCircle2, ArrowRight, Send } from "lucide-react";
+import { Logo } from "@/components/ui/Logo";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -40,13 +41,9 @@ export default function ForgotPasswordPage() {
       <div className="relative w-full max-w-md">
         {/* Logo */}
         <div className="mb-8 text-center">
-          <Link href="/" className="inline-block">
-            <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-navy-900 shadow-lg">
-              <Anchor className="size-7 text-gold-400" />
-            </div>
+          <Link href="/" className="inline-flex justify-center">
+            <Logo size="xl" />
           </Link>
-          <h1 className="text-4xl font-serif font-semibold text-navy-800">Lighthouse Network</h1>
-          <p className="text-sm text-gray-500">Premium Yacht Crew Recruitment</p>
         </div>
 
         {/* Card */}

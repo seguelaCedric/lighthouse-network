@@ -31,6 +31,10 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Lighthouse Crew Network",
   description: "The infrastructure layer for yacht and villa crew recruitment globally",
+  icons: {
+    icon: "/icon.svg",
+    apple: "/apple-icon.svg",
+  },
 };
 
 export default function RootLayout({
@@ -39,7 +43,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" data-scroll-behavior="smooth">
       <body
         className={`${inter.variable} ${cormorantGaramond.variable} ${jetbrainsMono.variable} antialiased`}
         suppressHydrationWarning

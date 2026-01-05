@@ -216,7 +216,20 @@ export default function DocumentApprovalCard({
         {/* Actions */}
         <div className="flex gap-3">
           <button
-            onClick={() => window.open(document.fileUrl, "_blank")}
+            onClick={async () => {
+              try {
+                const response = await fetch(`/api/documents/${document.id}/download?preview=true`);
+                const data = await response.json();
+                if (data.url) {
+                  window.open(data.url, "_blank");
+                } else {
+                  alert("Failed to open document");
+                }
+              } catch (error) {
+                console.error("Error opening document:", error);
+                alert("Failed to open document");
+              }
+            }}
             className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
           >
             <Eye className="w-4 h-4" />

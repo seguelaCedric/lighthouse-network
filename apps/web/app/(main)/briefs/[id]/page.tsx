@@ -204,10 +204,10 @@ function ParsedDataSection({ data }: { data: BriefParsedData }) {
         {data.compensation.salaryMin || data.compensation.salaryMax ? (
           <p className="text-lg font-semibold text-navy-900">
             {data.compensation.currency === "EUR" ? "€" : data.compensation.currency === "GBP" ? "£" : "$"}
-            {data.compensation.salaryMin?.toLocaleString()}
+            {data.compensation.salaryMin?.toLocaleString("en-US")}
             {data.compensation.salaryMax && data.compensation.salaryMax !== data.compensation.salaryMin && (
               <> - {data.compensation.currency === "EUR" ? "€" : data.compensation.currency === "GBP" ? "£" : "$"}
-              {data.compensation.salaryMax.toLocaleString()}</>
+              {data.compensation.salaryMax.toLocaleString("en-US")}</>
             )}
             <span className="text-sm font-normal text-gray-500"> /month</span>
           </p>

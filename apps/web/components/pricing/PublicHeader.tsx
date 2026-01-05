@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Anchor, Menu, X, Phone, MessageCircle, Building2, Briefcase, Users } from "lucide-react";
+import { Menu, X, Phone, MessageCircle, Building2, Briefcase, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SignInDropdown } from "@/components/auth/SignInDropdown";
+import { Logo } from "@/components/ui/Logo";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 
@@ -47,13 +48,8 @@ export function PublicHeader() {
 
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2">
-          <div className="flex size-9 items-center justify-center rounded-lg bg-navy-800">
-            <Anchor className="size-5 text-gold-400" />
-          </div>
-          <span className="font-serif text-xl font-semibold text-navy-800">
-            Lighthouse
-          </span>
+        <Link href="/">
+          <Logo size="md" />
         </Link>
 
         {/* Desktop Navigation */}

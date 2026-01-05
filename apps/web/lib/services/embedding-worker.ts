@@ -20,8 +20,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import {
   generateEmbedding,
-  generateEmbeddings,
-  chunkCVText,
   buildUnifiedCandidateEmbeddingText as buildCandidateEmbeddingText,
   buildUnifiedJobEmbeddingText as buildJobEmbeddingText,
 } from '@lighthouse/ai';
@@ -106,7 +104,7 @@ interface JobProfile {
 
 interface QueueItem {
   id: string;
-  entity_type: 'candidate' | 'job' | 'cv_document';
+  entity_type: 'candidate' | 'job';
   entity_id: string;
   priority: number;
   attempts: number;
@@ -282,8 +280,6 @@ export class EmbeddingWorker {
       return this.processCandidate(item.entity_id);
     } else if (item.entity_type === 'job') {
       return this.processJob(item.entity_id);
-    } else if (item.entity_type === 'cv_document') {
-      return this.processCVDocument(item.entity_id);
     }
 
     return { success: false, error: `Unknown entity type: ${item.entity_type}` };
@@ -456,85 +452,6 @@ export class EmbeddingWorker {
       success: true,
       embeddingLength: embedding.length,
       textLength: embeddingText.length,
-    };
-  }
-
-  /**
-   * Process a CV document into chunks with embeddings
-   */
-  private async processCVDocument(documentId: string): Promise<ProcessingResult> {
-    // Fetch document
-    const { data: document, error: docError } = await this.supabase
-      .from('documents')
-      .select('id, entity_id, entity_type, type, extracted_text')
-      .eq('id', documentId)
-      .single();
-
-    if (docError || !document) {
-      return { success: false, error: `Document not found: ${docError?.message}` };
-    }
-
-    // Validate document type
-    if (document.type !== 'cv' || !document.extracted_text) {
-      return { success: false, error: 'Document is not a CV or has no extracted text' };
-    }
-
-    const text = document.extracted_text;
-    if (text.length < 100) {
-      return { success: false, error: 'CV text too short for chunking' };
-    }
-
-    // Generate chunks
-    const chunks = chunkCVText(text, {
-      maxChunkSize: 3200,
-      minChunkSize: 400,
-      overlapSize: 250,
-      maxChunks: 5,
-    });
-
-    if (chunks.length === 0) {
-      return { success: false, error: 'No chunks generated from CV' };
-    }
-
-    // Generate embeddings for all chunks
-    const chunkTexts = chunks.map(c => c.text);
-    let embeddings: number[][] = [];
-
-    try {
-      embeddings = await generateEmbeddings(chunkTexts);
-    } catch (embeddingError) {
-      return {
-        success: false,
-        error: `Embedding generation failed: ${embeddingError instanceof Error ? embeddingError.message : 'Unknown error'}`,
-      };
-    }
-
-    // Delete existing chunks for this document
-    await this.supabase.from('cv_chunks').delete().eq('document_id', documentId);
-
-    // Insert new chunks
-    const chunkRecords = chunks.map((chunk, idx) => ({
-      document_id: documentId,
-      candidate_id: document.entity_id,
-      chunk_index: chunk.chunkIndex,
-      chunk_text: chunk.text,
-      chunk_start_offset: chunk.startOffset,
-      chunk_end_offset: chunk.endOffset,
-      section_type: chunk.sectionType,
-      section_weight: chunk.sectionWeight,
-      embedding: embeddings[idx] ? JSON.stringify(embeddings[idx]) : null,
-    }));
-
-    const { error: insertError } = await this.supabase.from('cv_chunks').insert(chunkRecords);
-
-    if (insertError) {
-      return { success: false, error: `Failed to insert chunks: ${insertError.message}` };
-    }
-
-    return {
-      success: true,
-      embeddingLength: embeddings[0]?.length || 0,
-      textLength: text.length,
     };
   }
 

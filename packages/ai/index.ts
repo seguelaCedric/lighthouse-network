@@ -526,8 +526,17 @@ export {
   // Main generation function
   generateCandidateBio,
   generateCandidateBioSafe,
-  // Anonymization utilities
+  // AI-powered anonymization (NEW)
+  aiAnonymizeBio,
+  aiAnonymizeBiosBatch,
+  // Pattern validation (NEW - defense in depth)
+  validateAnonymizedBio,
+  validateAnonymizedBioSafe,
+  bioNeedsAnonymization,
+  // Legacy anonymization utilities (regex-based, kept for fallback)
   anonymizeBio,
+  anonymizeCareerAchievements,
+  anonymizeText,
   obfuscateName,
   bioContainsName,
   // Prompts (for customization)
@@ -537,6 +546,29 @@ export {
   type BioGenerationRequest,
   type BioGenerationResult,
   type BioGenerationCandidate,
+  type AnonymizeOptions,
   // Version constant
   BIO_GENERATION_VERSION,
 } from './bio-generation';
+
+// ----------------------------------------------------------------------------
+// CANDIDATE-JOB MATCHING (AI-powered job matching for candidates)
+// ----------------------------------------------------------------------------
+export {
+  // Main matching function
+  matchJobsForCandidate,
+  // Score calculation
+  calculateJobMatchScore,
+  // Industry detection
+  detectJobIndustry,
+  // Profile completeness check
+  checkProfileCompleteness,
+  // Types
+  type CandidateProfile as CandidateJobMatchProfile,
+  type PublicJob,
+  type JobMatchResult,
+  type MatchScoreBreakdown,
+  type CandidateJobMatchOptions,
+  type ProfileCompletenessResult,
+  type JobIndustry,
+} from './matcher/candidate-job-matcher';

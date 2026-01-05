@@ -44,15 +44,15 @@ export function ShareReferralCard({
 
   const handleWhatsAppShare = () => {
     const message = encodeURIComponent(
-      `Hey! I've been using Lighthouse Crew Network for yacht crew jobs and thought you might be interested. Sign up with my link and we both benefit: ${link}`
+      `Hey! I've been using Lighthouse to find great positions in yachting and private service. Sign up with my link and we both benefit: ${link}`
     );
     window.open(`https://wa.me/?text=${message}`, "_blank");
   };
 
   const handleEmailShare = () => {
-    const subject = encodeURIComponent("Join Lighthouse Crew Network");
+    const subject = encodeURIComponent("Join Lighthouse - Yachting & Private Service Jobs");
     const body = encodeURIComponent(
-      `Hey!\n\nI've been using Lighthouse Crew Network to find yacht crew positions and thought you might be interested.\n\nSign up with my referral link:\n${link}\n\nYou'll get €25 when you land your first placement, and I'll earn rewards too!\n\nLet me know if you have any questions.`
+      `Hey!\n\nI've been using Lighthouse to find great positions in yachting and private service, and thought you might be interested.\n\nSign up with my referral link:\n${link}\n\nYou'll get €25 when you land your first placement, and I'll earn rewards too!\n\nLet me know if you have any questions.`
     );
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };

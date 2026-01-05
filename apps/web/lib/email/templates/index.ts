@@ -17,7 +17,9 @@ export type EmailTemplate =
   | "client_magic_link"
   | "employer_welcome"
   | "employer_magic_link"
-  | "employer_brief_received";
+  | "employer_brief_received"
+  | "employer_enquiry_submitted"
+  | "employer_enquiry_admin_notification";
 
 // Template data types
 export interface BriefReceivedData {
@@ -134,6 +136,24 @@ export interface EmployerBriefReceivedData {
   vesselName?: string;
   propertyLocation?: string;
   timeline?: string;
+}
+
+// Employer Enquiry (Referral) email data types
+export interface EmployerEnquirySubmittedData {
+  referrerName: string;
+  companyName: string;
+  contactName: string;
+}
+
+export interface EmployerEnquiryAdminNotificationData {
+  referrerName: string;
+  referrerEmail: string;
+  companyName: string;
+  contactName: string;
+  contactEmail?: string;
+  contactPhone?: string;
+  notes?: string;
+  submittedAt: string;
 }
 
 // Template generators
@@ -704,6 +724,100 @@ export function employerBriefReceivedEmail(data: EmployerBriefReceivedData) {
 
   return {
     subject: `Brief Received: ${data.briefTitle}`,
+    html: baseTemplate(content),
+    text: generatePlainText(content),
+  };
+}
+
+// ============================================
+// Employer Enquiry (Referral) Email Templates
+// ============================================
+
+export function employerEnquirySubmittedEmail(data: EmployerEnquirySubmittedData) {
+  const content = `
+    <h1>Thank You for Your Referral!</h1>
+    <p>Hi ${data.referrerName},</p>
+    <p>We've received your employer lead for <strong>${data.companyName}</strong> (Contact: ${data.contactName}). Thank you for thinking of us!</p>
+
+    <div class="info-box">
+      <p style="margin:0 0 15px; font-weight:600; color:#1a2b4a;">What happens next?</p>
+      <ul style="margin:0;">
+        <li>Our team will review the lead within <strong>24-48 hours</strong></li>
+        <li>We'll reach out to the contact you provided</li>
+        <li>If they become a client and we make a placement, you'll earn <strong class="highlight">€200</strong></li>
+        <li>Plus, they get <strong>15% off</strong> their first placement as a new client!</li>
+      </ul>
+    </div>
+
+    <p>We'll keep you updated on the status of this lead. In the meantime, keep the referrals coming — there's no limit!</p>
+
+    <p>Thank you for being part of the Lighthouse network,<br>The Lighthouse Crew Team</p>
+  `;
+
+  return {
+    subject: `Lead Received: ${data.companyName}`,
+    html: baseTemplate(content),
+    text: generatePlainText(content),
+  };
+}
+
+export function employerEnquiryAdminNotificationEmail(data: EmployerEnquiryAdminNotificationData) {
+  const contactInfo = [
+    data.contactEmail ? `Email: ${data.contactEmail}` : null,
+    data.contactPhone ? `Phone: ${data.contactPhone}` : null,
+  ].filter(Boolean).join(" | ");
+
+  const content = `
+    <h1>New Employer Lead Submitted</h1>
+    <p>A crew member has submitted a new employer referral that needs review.</p>
+
+    <div class="info-box">
+      <div class="info-row">
+        <span class="info-label">Referred By</span>
+        <span class="info-value">${data.referrerName}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Referrer Email</span>
+        <span class="info-value">${data.referrerEmail}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Company/Yacht</span>
+        <span class="info-value">${data.companyName}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Contact Person</span>
+        <span class="info-value">${data.contactName}</span>
+      </div>
+      ${contactInfo ? `
+      <div class="info-row">
+        <span class="info-label">Contact Info</span>
+        <span class="info-value">${contactInfo}</span>
+      </div>
+      ` : ""}
+      <div class="info-row">
+        <span class="info-label">Submitted</span>
+        <span class="info-value">${data.submittedAt}</span>
+      </div>
+    </div>
+
+    ${data.notes ? `
+    <h2>Additional Notes</h2>
+    <p style="background:#f8f9fa; padding:15px; border-radius:8px; font-style:italic;">${data.notes}</p>
+    ` : ""}
+
+    <p><strong>Next Steps:</strong></p>
+    <ul>
+      <li>Review the lead in the admin panel</li>
+      <li>Reach out to the contact to assess their hiring needs</li>
+      <li>Update the lead status once contact is made</li>
+      <li>Remember: if this becomes a client placement, the referrer earns €200!</li>
+    </ul>
+
+    <p style="font-size:13px; color:#6b7280;">This is an automated notification from the Lighthouse Crew referral system.</p>
+  `;
+
+  return {
+    subject: `New Employer Lead: ${data.companyName} (Referred by ${data.referrerName})`,
     html: baseTemplate(content),
     text: generatePlainText(content),
   };

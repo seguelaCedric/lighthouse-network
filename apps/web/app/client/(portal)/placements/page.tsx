@@ -100,7 +100,7 @@ function PlacementCard({ placement }: { placement: Placement }) {
             <div>
               <p className="text-xs text-gray-500">Salary</p>
               <p className="text-sm font-medium text-navy-900">
-                {placement.salaryCurrency} {placement.salary.toLocaleString()}{" "}
+                {placement.salaryCurrency} {placement.salary.toLocaleString("en-US")}{" "}
                 <span className="text-xs text-gray-500">/{placement.salaryPeriod}</span>
               </p>
             </div>

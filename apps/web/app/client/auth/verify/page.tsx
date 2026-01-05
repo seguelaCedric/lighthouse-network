@@ -5,13 +5,13 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
-  Anchor,
   Loader2,
   CheckCircle2,
   XCircle,
   ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/ui/Logo";
 import { verifyMagicLink } from "@/lib/auth/client-actions";
 
 type VerifyState = "loading" | "success" | "error";
@@ -60,14 +60,9 @@ function ClientVerifyContent() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="mb-8 flex justify-center">
-          <div className="flex items-center gap-2">
-            <div className="flex size-12 items-center justify-center rounded-xl bg-gradient-to-br from-gold-400 to-gold-600">
-              <Anchor className="size-6 text-white" />
-            </div>
-            <span className="font-serif text-2xl font-semibold text-white">
-              Lighthouse
-            </span>
-          </div>
+          <Link href="/">
+            <Logo size="xl" />
+          </Link>
         </div>
 
         {/* Status Card */}

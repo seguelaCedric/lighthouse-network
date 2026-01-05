@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { X, Clock, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 
 interface UrgencyBannerProps {
   message?: string;
@@ -19,6 +20,7 @@ export function UrgencyBanner({
 }: UrgencyBannerProps) {
   const [isVisible, setIsVisible] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const [jobCount, setJobCount] = useState<number | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -27,6 +29,21 @@ export function UrgencyBanner({
     if (dismissed) {
       setIsVisible(false);
     }
+
+    // Fetch actual job count
+    const fetchJobCount = async () => {
+      const supabase = createClient();
+      const { count } = await supabase
+        .from("jobs")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "open");
+
+      if (count !== null) {
+        setJobCount(count);
+      }
+    };
+
+    fetchJobCount();
   }, []);
 
   const handleDismiss = () => {
@@ -42,10 +59,12 @@ export function UrgencyBanner({
         <Clock className="hidden h-4 w-4 animate-pulse sm:block" />
         <span className="flex items-center gap-2">
           <span>{message}</span>
-          {showJobCount && (
+          {showJobCount && jobCount !== null && (
             <>
               <span className="hidden sm:inline">|</span>
-              <span className="font-bold">47 positions closing soon</span>
+              <span className="font-bold">
+                {jobCount} {jobCount === 1 ? "position" : "positions"} available
+              </span>
             </>
           )}
         </span>

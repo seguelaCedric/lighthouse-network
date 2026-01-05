@@ -98,10 +98,10 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Redirect unauthenticated users from crew routes to crew login
+  // Redirect unauthenticated users from crew routes to login
   if (!user && isCrewProtectedRoute(pathname)) {
     const url = request.nextUrl.clone();
-    url.pathname = '/crew/auth/login';
+    url.pathname = '/auth/login';
     url.searchParams.set('redirect', pathname);
     return NextResponse.redirect(url);
   }

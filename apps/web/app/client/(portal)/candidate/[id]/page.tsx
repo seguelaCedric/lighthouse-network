@@ -626,7 +626,7 @@ export default function CandidateProfilePage() {
                   <InfoRow
                     icon={Briefcase}
                     label="Salary Expectations"
-                    value={`${profile.salaryExpectations.currency} ${profile.salaryExpectations.min.toLocaleString()} - ${profile.salaryExpectations.max.toLocaleString()} / ${profile.salaryExpectations.period}`}
+                    value={`${profile.salaryExpectations.currency} ${profile.salaryExpectations.min.toLocaleString("en-US")} - ${profile.salaryExpectations.max.toLocaleString("en-US")} / ${profile.salaryExpectations.period}`}
                   />
                 )}
               </div>

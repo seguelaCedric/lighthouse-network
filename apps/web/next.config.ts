@@ -6,6 +6,13 @@ const nextConfig: NextConfig = {
   // Match WordPress URL behavior (trailing slashes)
   trailingSlash: true,
 
+  // Increase Server Actions body size limit for file uploads (default is 1MB)
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "5mb",
+    },
+  },
+
   // Image optimization for external domains
   images: {
     remotePatterns: [

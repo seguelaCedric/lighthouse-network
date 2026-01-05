@@ -339,7 +339,7 @@ async function getPositionSuggestions(
  * Two-stage AI search architecture:
  *
  * STAGE 1 - Embedding Retrieval (Cast Wide Net):
- * - Uses three signals: whole-doc (70%), chunks (20%), fulltext (10%)
+ * - Uses whole-candidate embeddings (one embedding per candidate)
  * - Low threshold (0.35) to capture potentially relevant candidates
  * - NO hard filters - let AI handle relevance
  *
@@ -589,14 +589,13 @@ export async function POST(request: NextRequest) {
         totalCount = results.length;
       }
     } else if (mode === 'semantic' && queryEmbedding) {
-      // STAGE 1: Vector-only search using chunks (wide net)
+      // STAGE 1: Vector-only search using whole-candidate embeddings
       const { data: vectorResults, error: vectorError } = await supabase.rpc(
-        'search_cv_chunks',
+        'search_candidates_by_embedding',
         {
           query_embedding: JSON.stringify(queryEmbedding),
           match_threshold: 0.35, // LOW threshold - let Cohere filter
           match_count: limit + offset + 100,
-          // REMOVED: p_department, p_min_experience - trust AI
         }
       );
 
@@ -605,7 +604,7 @@ export async function POST(request: NextRequest) {
         throw new Error(`Search failed: ${vectorError.message}`);
       }
 
-      const candidateIds = (vectorResults || []).map((r: { candidate_id: string }) => r.candidate_id);
+      const candidateIds = (vectorResults || []).map((r: { id: string }) => r.id);
 
       if (candidateIds.length > 0) {
         const { data: candidates } = await supabase
@@ -615,15 +614,25 @@ export async function POST(request: NextRequest) {
             first_name,
             last_name,
             primary_position,
+            secondary_positions,
             years_experience,
             nationality,
+            current_location,
+            current_country,
             verification_tier,
             availability_status,
+            available_from,
             avatar_url,
             has_stcw,
             has_eng1,
             has_schengen,
-            has_b1b2
+            has_b1b2,
+            has_c1d,
+            highest_license,
+            ai_summary,
+            profile_summary,
+            search_keywords,
+            embedding_text
           `)
           .in('id', candidateIds)
           .is('deleted_at', null);
@@ -632,18 +641,17 @@ export async function POST(request: NextRequest) {
           (candidates || []).map((c: Record<string, unknown>) => [c.id, c])
         );
 
-        results = (vectorResults || [])
-          .map((r: {
-            candidate_id: string;
-            similarity: number;
-            chunk_text: string;
-            section_type: string;
-          }) => {
-            const candidate = candidateMap.get(r.candidate_id) as Record<string, unknown> | undefined;
-            if (!candidate) return null;
+        // Build similarity score map from RPC results
+        const similarityMap = new Map(
+          (vectorResults || []).map((r: { id: string; similarity: number }) => [r.id, r.similarity])
+        );
+
+        results = (candidates || [])
+          .map((candidate: Record<string, unknown>) => {
+            const similarity = similarityMap.get(candidate.id as string) || 0;
 
             return {
-              candidate_id: r.candidate_id,
+              candidate_id: candidate.id as string,
               first_name: candidate.first_name as string,
               last_name: candidate.last_name as string,
               primary_position: candidate.primary_position as string | null,
@@ -651,20 +659,24 @@ export async function POST(request: NextRequest) {
               nationality: candidate.nationality as string | null,
               verification_tier: candidate.verification_tier as string,
               availability_status: candidate.availability_status as string,
-              match_score: r.similarity,
-              whole_doc_score: 0,
-              chunk_score: r.similarity,
+              match_score: similarity,
+              whole_doc_score: similarity,
+              chunk_score: 0,
               fulltext_score: 0,
-              snippet: include_snippets ? r.chunk_text?.slice(0, 300) : undefined,
-              matched_sections: [r.section_type],
+              snippet: include_snippets && candidate.embedding_text
+                ? (candidate.embedding_text as string).slice(0, 300)
+                : undefined,
               has_stcw: candidate.has_stcw as boolean,
               has_eng1: candidate.has_eng1 as boolean,
               has_schengen: candidate.has_schengen as boolean,
               has_b1b2: candidate.has_b1b2 as boolean,
               avatar_url: candidate.avatar_url as string | null,
+              // Store FULL candidate data for rich reranking
+              _candidateData: candidate,
             };
           })
-          .filter(Boolean) as CVSearchResult[];
+          .sort((a, b) => (b.match_score as number) - (a.match_score as number))
+          .filter(Boolean) as (CVSearchResult & { _candidateData?: Record<string, unknown> })[];
 
         results = applyFilters(results, filters);
         totalCount = results.length;

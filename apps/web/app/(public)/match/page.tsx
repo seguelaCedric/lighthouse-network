@@ -8,11 +8,9 @@ import { PublicFooter } from "@/components/pricing/PublicFooter";
 import {
   Search,
   Loader2,
-  MapPin,
   Briefcase,
   CheckCircle,
   Globe,
-  Star,
   ArrowRight,
   Mail,
   Phone,
@@ -31,47 +29,10 @@ import {
   Filter,
   ChevronDown,
   X,
+  Star,
+  Info,
 } from "lucide-react";
-
-// Staff role options for private households + yacht crew (for testing)
-// Yacht crew roles
-const YACHT_CREW_ROLES = new Set([
-  "deckhand", "chief-stewardess", "stewardess", "engineer",
-  "captain", "first-officer", "bosun"
-]);
-
-const STAFF_ROLES = [
-  // Yacht Crew (for testing with current data)
-  { value: "deckhand", label: "Deckhand" },
-  { value: "chief-stewardess", label: "Chief Stewardess" },
-  { value: "stewardess", label: "Stewardess" },
-  { value: "engineer", label: "Engineer" },
-  { value: "captain", label: "Captain" },
-  { value: "first-officer", label: "First Officer" },
-  { value: "bosun", label: "Bosun" },
-  // Private Household Staff
-  { value: "butler", label: "Butler" },
-  { value: "estate-manager", label: "Estate Manager" },
-  { value: "house-manager", label: "House Manager" },
-  { value: "personal-assistant", label: "Personal Assistant" },
-  { value: "housekeeper", label: "Housekeeper" },
-  { value: "nanny", label: "Nanny" },
-  { value: "governess", label: "Governess" },
-  { value: "chef", label: "Private Chef" },
-  { value: "chauffeur", label: "Chauffeur" },
-  { value: "security", label: "Security / Close Protection" },
-  { value: "laundress", label: "Laundress" },
-  { value: "valet", label: "Valet" },
-  { value: "caretaker", label: "Property Caretaker" },
-  { value: "couple", label: "Household Couple" },
-];
-
-const TIMELINE_OPTIONS = [
-  { value: "asap", label: "As soon as possible" },
-  { value: "1-month", label: "Within 1 month" },
-  { value: "3-months", label: "Within 3 months" },
-  { value: "flexible", label: "Flexible / Just exploring" },
-];
+import { MatchQualityBadge, getMatchTier, SearchQualityBanner } from "@/components/match";
 
 // Sort options for results
 const SORT_OPTIONS = [
@@ -134,10 +95,7 @@ interface AnonymizedCandidate {
 }
 
 interface SearchFormData {
-  role: string;
-  location: string;
-  timeline: string;
-  requirements: string;
+  query: string;
 }
 
 function MatchPageContent() {
@@ -146,10 +104,7 @@ function MatchPageContent() {
 
   // Initialize form from URL params
   const [formData, setFormData] = useState<SearchFormData>({
-    role: searchParams.get("role") || "",
-    location: searchParams.get("location") || "",
-    timeline: searchParams.get("timeline") || "",
-    requirements: searchParams.get("requirements") || "",
+    query: searchParams.get("query") || "",
   });
 
   const [candidates, setCandidates] = useState<AnonymizedCandidate[]>([]);
@@ -234,6 +189,17 @@ function MatchPageContent() {
     return result;
   }, [candidates, sortBy, experienceFilter, availabilityFilter, languageFilter]);
 
+  // Search quality metrics for visual feedback
+  const searchQualityMetrics = useMemo(() => {
+    if (candidates.length === 0) return null;
+    const scores = candidates.map(c => c.match_score * 100);
+    return {
+      bestMatch: Math.max(...scores),
+      hasStrongMatches: scores.some(s => s >= 70),
+      showQualityBanner: !scores.some(s => s >= 70) && candidates.length > 0,
+    };
+  }, [candidates]);
+
   // Check if any filters are active
   const hasActiveFilters = experienceFilter !== "all" || availabilityFilter !== "all" || languageFilter !== "all";
 
@@ -253,15 +219,15 @@ function MatchPageContent() {
 
   // Auto-search if URL has params
   useEffect(() => {
-    if (searchParams.get("role")) {
+    if (searchParams.get("query")) {
       handleSearch();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSearch = async () => {
-    if (!formData.role) {
-      setError("Please select a role");
+    if (!formData.query.trim()) {
+      setError("Please enter a search query");
       return;
     }
 
@@ -270,12 +236,9 @@ function MatchPageContent() {
     setHasSearched(true);
     setShowFilters(false);
 
-    // Update URL with search params
+    // Update URL with search param
     const params = new URLSearchParams();
-    if (formData.role) params.set("role", formData.role);
-    if (formData.location) params.set("location", formData.location);
-    if (formData.timeline) params.set("timeline", formData.timeline);
-    if (formData.requirements) params.set("requirements", formData.requirements);
+    params.set("query", formData.query);
     router.replace(`/match?${params.toString()}`, { scroll: false });
 
     try {
@@ -332,14 +295,6 @@ function MatchPageContent() {
       setIsSubmitting(false);
     }
   };
-
-  const getRoleLabel = (value: string) => {
-    return STAFF_ROLES.find((r) => r.value === value)?.label || value;
-  };
-
-  // Determine if current search is for yacht crew
-  const isYachtCrewSearch = YACHT_CREW_ROLES.has(formData.role);
-  const contextLabel = isYachtCrewSearch ? "Yacht" : "Household";
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50">
@@ -445,73 +400,21 @@ function MatchPageContent() {
                   </div>
 
                   <div className="p-6 space-y-5">
-                    {/* Role Selection */}
+                    {/* Single Query Field */}
                     <div>
                       <label className="block text-sm font-semibold text-navy-900 mb-2">
-                        Role <span className="text-gold-600">*</span>
-                      </label>
-                      <select
-                        value={formData.role}
-                        onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                        className="w-full rounded-xl border border-gray-200 px-4 py-3.5 text-gray-900 bg-gray-50/50 focus:bg-white focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 transition-all text-sm font-medium"
-                      >
-                        <option value="">Select a role...</option>
-                        {STAFF_ROLES.map((role) => (
-                          <option key={role.value} value={role.value}>
-                            {role.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Location */}
-                    <div>
-                      <label className="block text-sm font-semibold text-navy-900 mb-2">
-                        Location
-                      </label>
-                      <div className="relative">
-                        <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gold-500" />
-                        <input
-                          type="text"
-                          value={formData.location}
-                          onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                          placeholder="e.g., London, Monaco..."
-                          className="w-full rounded-xl border border-gray-200 pl-11 pr-4 py-3.5 text-gray-900 bg-gray-50/50 focus:bg-white focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 transition-all text-sm placeholder:text-gray-400"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Timeline */}
-                    <div>
-                      <label className="block text-sm font-semibold text-navy-900 mb-2">
-                        Timeline
-                      </label>
-                      <select
-                        value={formData.timeline}
-                        onChange={(e) => setFormData({ ...formData, timeline: e.target.value })}
-                        className="w-full rounded-xl border border-gray-200 px-4 py-3.5 text-gray-900 bg-gray-50/50 focus:bg-white focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 transition-all text-sm font-medium"
-                      >
-                        <option value="">Any timeline</option>
-                        {TIMELINE_OPTIONS.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Requirements */}
-                    <div>
-                      <label className="block text-sm font-semibold text-navy-900 mb-2">
-                        Special Requirements
+                        Describe what you&apos;re looking for <span className="text-gold-600">*</span>
                       </label>
                       <textarea
-                        value={formData.requirements}
-                        onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
-                        placeholder="e.g., Must speak French, Buckingham Palace trained..."
-                        rows={3}
+                        value={formData.query}
+                        onChange={(e) => setFormData({ query: e.target.value })}
+                        placeholder="e.g., Chief Stewardess, female, can make cocktails, Monaco"
+                        rows={8}
                         className="w-full rounded-xl border border-gray-200 px-4 py-3.5 text-gray-900 bg-gray-50/50 focus:bg-white focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 transition-all resize-none text-sm placeholder:text-gray-400"
                       />
+                      <p className="mt-2 text-xs text-gray-500">
+                        Include role, location, requirements, skills, or any other details
+                      </p>
                     </div>
 
                     {error && !hasSearched && (
@@ -647,17 +550,24 @@ function MatchPageContent() {
                       Select a role and enter your requirements to instantly see matching candidates
                       from our database of 44,000+ vetted professionals.
                     </p>
-                    {/* Quick role pills */}
+                    {/* Example queries */}
                     <div className="flex flex-wrap justify-center gap-3">
-                      {STAFF_ROLES.slice(0, 6).map((role) => (
+                      {[
+                        "Chief Stewardess, Monaco",
+                        "Private Chef, London",
+                        "Estate Manager, 10+ years",
+                        "Nanny, French-speaking",
+                        "Butler, experienced",
+                        "Chauffeur, security trained"
+                      ].map((example) => (
                         <button
-                          key={role.value}
+                          key={example}
                           onClick={() => {
-                            setFormData({ ...formData, role: role.value });
+                            setFormData({ query: example });
                           }}
                           className="rounded-full bg-white border border-gray-200 px-5 py-2.5 text-sm font-medium text-gray-700 hover:border-gold-300 hover:bg-gold-50 hover:text-gold-700 transition-all shadow-sm hover:shadow-md"
                         >
-                          {role.label}
+                          {example}
                         </button>
                       ))}
                     </div>
@@ -680,7 +590,7 @@ function MatchPageContent() {
                               ) : (
                                 <>{filteredAndSortedCandidates.length} of {candidates.length}{" "}</>
                               )}
-                              <span className="text-gradient-gold">{getRoleLabel(formData.role)}</span>{" "}
+                              <span className="text-gradient-gold">Matching</span>{" "}
                               Candidates
                             </>
                           ) : (
@@ -836,6 +746,17 @@ function MatchPageContent() {
                     )}
                   </div>
 
+                  {/* Search Quality Banner - shown when no strong matches */}
+                  {searchQualityMetrics?.showQualityBanner && (
+                    <SearchQualityBanner
+                      query={formData.query}
+                      bestScore={searchQualityMetrics.bestMatch}
+                      onContactClick={() => setShowEmailCapture(true)}
+                      onRefineSearch={() => setShowFilters(true)}
+                      className="mb-8"
+                    />
+                  )}
+
                   {filteredAndSortedCandidates.length > 0 ? (
                     <>
                       {/* Candidate Cards - Using Design System */}
@@ -861,9 +782,9 @@ function MatchPageContent() {
                                         <img
                                           src={candidate.avatar_url}
                                           alt=""
-                                          className="h-full w-full object-cover blur-[6px] scale-110"
+                                          className="h-full w-full object-cover blur-[2px] scale-105"
                                         />
-                                        <div className="absolute inset-0 bg-gradient-to-br from-navy-800/30 to-navy-900/50" />
+                                        <div className="absolute inset-0 bg-gradient-to-br from-navy-800/20 to-navy-900/30" />
                                       </div>
                                     ) : (
                                       <div className="flex h-20 w-20 items-center justify-center rounded-xl gradient-gold text-white text-3xl font-bold ring-2 ring-gold-500/30 shadow-lg shadow-gold">
@@ -884,17 +805,12 @@ function MatchPageContent() {
                                     </p>
                                   </div>
                                 </div>
-                                {/* Match Score - Design System */}
+                                {/* Match Score - Tiered Quality Badge */}
                                 <div className="text-right">
-                                  <div className="inline-flex flex-col items-end bg-white/5 backdrop-blur-sm rounded-xl px-5 py-3 border border-white/10">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <Star className="h-5 w-5 text-gold-400 fill-gold-400" />
-                                      <span className="font-inter text-3xl font-bold tracking-tight text-white">
-                                        {Math.round(candidate.match_score * 100)}%
-                                      </span>
-                                    </div>
-                                    <p className="font-inter text-[10px] font-medium uppercase tracking-widest text-gold-400/80">Match Score</p>
-                                  </div>
+                                  <MatchQualityBadge
+                                    score={Math.round(candidate.match_score * 100)}
+                                    size="md"
+                                  />
                                 </div>
                               </div>
                             </div>
@@ -918,36 +834,51 @@ function MatchPageContent() {
                                   </div>
                                 )}
                                 <div className="flex items-center gap-2">
-                                  <Calendar className="h-5 w-5 text-gold-600" />
-                                  <span className="badge-available">{candidate.availability}</span>
+                                  <Calendar className="h-5 w-5 text-navy-400" />
+                                  <span className="inline-flex items-center px-2.5 py-1 bg-navy-100 text-navy-500 font-inter text-xs font-medium rounded">
+                                    To Be Confirmed
+                                  </span>
                                 </div>
                               </div>
                             </div>
 
                             {/* Main Content */}
                             <div className="p-4 sm:p-8">
-                              {/* WHY THEY'RE THE RIGHT FIT - Primary Hook */}
+                              {/* WHY THEY'RE THE RIGHT FIT - Tiered based on match quality */}
                               {candidate.why_good_fit && (
-                                <div className="mb-6 bg-gradient-to-r from-success-50 via-success-100 to-success-50 rounded-xl p-6 border border-success-200">
-                                  <div className="label-md text-success-700 mb-3 flex items-center gap-2">
-                                    <Target className="h-5 w-5" />
-                                    Why They&apos;re The Right Fit For Your {contextLabel}
+                                getMatchTier(Math.round(candidate.match_score * 100)) === 'excellent' ||
+                                getMatchTier(Math.round(candidate.match_score * 100)) === 'strong' ? (
+                                  <div className="mb-6 bg-gradient-to-r from-success-50 via-success-100 to-success-50 rounded-xl p-5 border border-success-200">
+                                    <div className="label-md text-success-700 mb-2 flex items-center gap-2">
+                                      <Target className="h-4 w-4" />
+                                      Why this candidate could be a good match
+                                    </div>
+                                    <p className="body-md text-success-800">
+                                      {candidate.why_good_fit}
+                                    </p>
                                   </div>
-                                  <p className="body-lg text-success-800">
-                                    {candidate.why_good_fit}
-                                  </p>
-                                </div>
+                                ) : (
+                                  <div className="mb-6 bg-gradient-to-r from-navy-50 via-navy-100 to-navy-50 rounded-xl p-5 border border-navy-200">
+                                    <div className="label-md text-navy-600 mb-2 flex items-center gap-2">
+                                      <Search className="h-4 w-4" />
+                                      Why This Candidate Appears
+                                    </div>
+                                    <p className="body-md text-navy-700">
+                                      {candidate.why_good_fit}
+                                    </p>
+                                  </div>
+                                )
                               )}
 
                               {/* Professional Summary */}
                               <div className="mb-6">
-                                <h4 className="label-md mb-3 flex items-center gap-2">
-                                  <FileCheck className="h-5 w-5 text-gold-600" />
+                                <h4 className="label-md mb-2 flex items-center gap-2">
+                                  <FileCheck className="h-4 w-4 text-gold-600" />
                                   Professional Summary
                                 </h4>
-                                <div className="space-y-4">
+                                <div className="space-y-3">
                                   {candidate.rich_bio.split(/(?<=[.!?])\s+(?=[A-Z])/).map((paragraph, i) => (
-                                    <p key={i} className="body-lg">
+                                    <p key={i} className="body-md">
                                       {paragraph.trim()}
                                     </p>
                                   ))}
@@ -1003,9 +934,9 @@ function MatchPageContent() {
                                         {candidate.qualifications.slice(0, 6).map((qual, i) => (
                                           <span
                                             key={i}
-                                            className="badge-premium"
+                                            className="inline-flex items-center rounded-lg bg-white px-3 py-2 text-sm font-medium text-gold-800 border border-gold-200 shadow-xs"
                                           >
-                                            <Award className="h-4 w-4 mr-2" />
+                                            <Award className="h-4 w-4 mr-2 text-gold-600" />
                                             {qual}
                                           </span>
                                         ))}
@@ -1034,8 +965,13 @@ function MatchPageContent() {
                                   )}
                                 </div>
 
-                                {/* Career Highlights & Previous Employment - Two Columns */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Career Highlights & Previous Employment - Two Columns when both exist */}
+                                {(candidate.career_highlights?.length > 0 || (candidate.work_history?.length ?? 0) > 0 || candidate.notable_employers?.length > 0) && (
+                                <div className={`grid grid-cols-1 gap-6 ${
+                                  candidate.career_highlights?.length > 0 && ((candidate.work_history?.length ?? 0) > 0 || candidate.notable_employers?.length > 0)
+                                    ? 'md:grid-cols-2'
+                                    : ''
+                                }`}>
                                   {/* Career Highlights */}
                                   {candidate.career_highlights?.length > 0 && (
                                     <div className="bg-surface-cream rounded-xl border border-gray-200 p-5">
@@ -1108,6 +1044,7 @@ function MatchPageContent() {
                                     </div>
                                   )}
                                 </div>
+                                )}
                               </div>
 
                               {/* Bottom Stats Bar - Design System */}
@@ -1137,7 +1074,7 @@ function MatchPageContent() {
 
                               {/* CTA Footer - Design System */}
                               <div className="flex items-center justify-between pt-5 border-t border-gray-200">
-                                <p className="quote text-gray-500 text-base">
+                                <p className="body-sm text-gray-500 italic">
                                   Full CV, references, and contact details available upon request
                                 </p>
                                 <button

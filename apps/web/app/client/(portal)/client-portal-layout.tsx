@@ -5,7 +5,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Anchor,
   Ship,
   LayoutDashboard,
   FileText,
@@ -21,6 +20,7 @@ import {
   Trophy,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/ui/Logo";
 import { clientSignOut, type ClientSession } from "@/lib/auth/client-actions";
 import { cn } from "@/lib/utils";
 
@@ -96,13 +96,8 @@ export function ClientPortalLayout({ children, session }: ClientPortalLayoutProp
               </button>
 
               {/* Logo */}
-              <Link href="/client/dashboard" className="flex items-center gap-2">
-                <div className="flex size-9 items-center justify-center rounded-lg bg-gradient-to-br from-gold-400 to-gold-600">
-                  <Anchor className="size-5 text-white" />
-                </div>
-                <span className="hidden font-serif text-xl font-semibold text-navy-900 sm:block">
-                  Lighthouse
-                </span>
+              <Link href="/client/dashboard">
+                <Logo size="md" />
               </Link>
 
               {/* Client Name Badge */}
@@ -218,12 +213,7 @@ export function ClientPortalLayout({ children, session }: ClientPortalLayoutProp
           />
           <div className="fixed inset-y-0 left-0 w-[85vw] max-w-72 bg-white shadow-xl">
             <div className="flex h-16 items-center gap-2 border-b border-gray-100 px-4">
-              <div className="flex size-9 items-center justify-center rounded-lg bg-gradient-to-br from-gold-400 to-gold-600">
-                <Anchor className="size-5 text-white" />
-              </div>
-              <span className="font-serif text-xl font-semibold text-navy-900">
-                Lighthouse
-              </span>
+              <Logo size="md" />
             </div>
 
             {/* Client Info */}

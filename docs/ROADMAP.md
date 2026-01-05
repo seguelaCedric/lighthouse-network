@@ -6,24 +6,24 @@ Based on what actually drives revenue:
 ```
 1. RECRUITER DASHBOARD (Weeks 1-8)
    └── You need this to work faster
-   
+
 2. PUBLIC JOB BOARD (Weeks 9-12)
    └── Attracts candidates (they come for jobs)
-   
+
 3. CANDIDATE APPLY FLOW (Weeks 9-12)
    └── Captures candidates when they see a job they want
-   
+
 4. CLIENT PORTAL - OUTPUT (Weeks 13-16)
    └── Clients view shortlists, give feedback
-   
+
 5. CLIENT PORTAL - INPUT (Week 17+)
    └── Brief submission form (low priority, most use WhatsApp/phone)
-   
+
 6. CANDIDATE DASHBOARD (Weeks 17-20)
    └── Nice to have, keeps them engaged
-   
-7. NETWORK FEATURES (Weeks 21-26)
-   └── Agency collaboration, growth
+
+7. SCALE & EXPANSION (Weeks 21-26)
+   └── Mobile app, international expansion
 ```
 
 ---
@@ -277,7 +277,7 @@ Week 16:
 
 ---
 
-## Phase 4: Polish & Network (Weeks 17-26)
+## Phase 4: Polish & Scale (Weeks 17-26)
 
 ### Sprint 17-18: Candidate Dashboard
 
@@ -418,38 +418,29 @@ Week 16:
 ├── [~] Vapi voice verification integration (deferred - not needed at this stage)
 └── [x] Candidate card verification badge (already exists)
 
-### Sprint 21-22: Billing & Subscriptions
+### Sprint 21-22: Billing & Invoicing
 
-**Goal**: Enable revenue through subscription plans and placement fee tracking
+**Goal**: Enable placement fee tracking and invoicing
 
 **Tasks**:
 ├── [x] Billing database infrastructure
 │   ├── [x] Migration: 010_billing.sql
-│   ├── [x] subscription_plans table (Free, Pro, Enterprise)
-│   ├── [x] agency_subscriptions table (links agencies to plans)
 │   ├── [x] invoices table with invoice_items
 │   ├── [x] payments table (payment history)
-│   ├── [x] placement_fees table (track platform cut)
-│   ├── [x] RLS policies for agency access
+│   ├── [x] placement_fees table (track fees)
 │   ├── [x] Admin policies for full access
 │   └── [x] generate_invoice_number() function
 ├── [x] TypeScript types (packages/database/types.ts)
-│   ├── [x] BillingCycle, SubscriptionStatus, InvoiceStatus, PaymentStatus
-│   ├── [x] SubscriptionPlan, AgencySubscription interfaces
+│   ├── [x] InvoiceStatus, PaymentStatus
 │   ├── [x] Invoice, InvoiceItem, Payment interfaces
 │   ├── [x] PlacementFee, BillingAddress interfaces
-│   └── [x] SubscriptionUsage, BillingOverview helpers
+│   └── [x] BillingOverview helpers
 ├── [x] Organizations table billing fields
 │   └── [x] Added: billing_email, billing_name, billing_address, vat_number
 ├── [x] Stripe integration (apps/web/lib/stripe/)
 │   ├── [x] Stripe client setup (client.ts)
 │   ├── [x] Customer management (customers.ts)
-│   ├── [x] Subscription lifecycle (subscriptions.ts)
-│   │   ├── [x] createSubscription, cancelSubscription, resumeSubscription
-│   │   ├── [x] updateSubscription, getSubscription
-│   │   └── [x] syncSubscriptionFromStripe
 │   ├── [x] Checkout session (checkout.ts)
-│   │   ├── [x] createCheckoutSession (for subscriptions)
 │   │   ├── [x] createInvoiceCheckoutSession (for one-time payments)
 │   │   └── [x] handleCheckoutComplete
 │   ├── [x] Invoice management (invoices.ts)
@@ -463,68 +454,38 @@ Week 16:
 │   └── [x] Index re-exports (index.ts)
 ├── [x] Webhook handler (apps/web/app/api/webhooks/stripe/route.ts)
 │   ├── [x] Signature verification
-│   ├── [x] customer.subscription.created/updated/deleted
 │   ├── [x] invoice.created/updated/finalized/paid/payment_failed
 │   ├── [x] payment_intent.succeeded/payment_failed
 │   └── [x] checkout.session.completed
 ├── [x] Billing API routes (apps/web/app/api/billing/)
-│   ├── [x] GET /api/billing/plans - list public plans
-│   ├── [x] GET /api/billing/subscription - get current subscription + usage
-│   ├── [x] POST /api/billing/subscribe - create checkout session
-│   ├── [x] POST /api/billing/change-plan - change plan with proration
-│   ├── [x] POST /api/billing/cancel - cancel subscription
-│   ├── [x] POST /api/billing/reactivate - reactivate pending cancellation
-│   ├── [x] POST /api/billing/portal - create Stripe customer portal
 │   ├── [x] GET /api/billing/invoices - list invoices
 │   ├── [x] GET /api/billing/invoices/[id] - invoice detail
 │   └── [x] GET/POST /api/billing/payment-method - manage payment methods
 ├── [x] Admin billing API routes (apps/web/app/api/admin/billing/)
 │   ├── [x] GET /api/admin/billing/placement-fees - list all fees
 │   ├── [x] POST /api/admin/billing/placement-fees - create invoice for fees
-│   └── [x] GET /api/admin/billing/stats - MRR, ARR, revenue stats
+│   └── [x] GET /api/admin/billing/stats - revenue stats
 ├── [x] Zod validation schemas (lib/validations/billing.ts)
-│   ├── [x] subscribeSchema, changePlanSchema, cancelSubscriptionSchema
-│   ├── [x] invoicesQuerySchema, portalSessionSchema
+│   ├── [x] invoicesQuerySchema
 │   └── [x] createPlacementFeeInvoiceSchema, billingStatsQuerySchema
 ├── [x] Billing UI (apps/web/app/settings/billing/)
-│   ├── [x] page.tsx - main billing dashboard with real data
-│   │   ├── [x] CurrentPlanCard component (shows subscription + features)
-│   │   ├── [x] UsageCard component (candidates, jobs, placements, pending fees)
-│   │   ├── [x] PaymentMethodCard component (card/SEPA display, update via Stripe)
-│   │   ├── [x] InvoiceTable component (recent invoices with download)
-│   │   └── [x] CancelSubscriptionModal component (reason collection, confirmation)
-│   ├── [x] plans/page.tsx - plan selection / upgrade page
-│   │   ├── [x] Monthly/yearly billing toggle
-│   │   ├── [x] PlanCard component (features, pricing, CTA)
-│   │   ├── [x] ChangePlanModal component (proration preview)
-│   │   └── [x] FAQ section
+│   ├── [x] page.tsx - main billing dashboard
+│   │   ├── [x] UsageCard component (placements, pending fees)
+│   │   ├── [x] PaymentMethodCard component (card/SEPA display)
+│   │   └── [x] InvoiceTable component (recent invoices with download)
 │   ├── [x] invoices/page.tsx - full invoice history
 │   │   ├── [x] Status filtering (all, paid, pending, draft, void)
 │   │   ├── [x] Pagination
 │   │   ├── [x] Download PDF and view online buttons
 │   │   └── [x] Summary stats
 │   ├── [x] Billing components (apps/web/components/billing/)
-│   │   ├── [x] CurrentPlanCard.tsx
 │   │   ├── [x] UsageCard.tsx
 │   │   ├── [x] PaymentMethodCard.tsx
 │   │   ├── [x] InvoiceTable.tsx
-│   │   ├── [x] PlanCard.tsx
-│   │   ├── [x] ChangePlanModal.tsx
-│   │   ├── [x] CancelSubscriptionModal.tsx
 │   │   └── [x] index.ts (re-exports)
 │   ├── [x] Connected to API endpoints
-│   ├── [x] Plan upgrade/downgrade flow
 │   ├── [x] Invoice download
 │   └── [x] Payment method management (via Stripe portal)
-├── [x] Agency Partner Program waitlist page (apps/web/app/(public)/pricing/)
-│   ├── [x] page.tsx - Waitlist page with email capture (replaces premature pricing)
-│   ├── [x] layout.tsx - SEO metadata for waitlist
-│   ├── [x] PublicHeader component (nav: Jobs, For Agencies)
-│   ├── [x] PublicFooter component (shared footer)
-│   ├── [x] Updated /join page nav (Jobs link instead of Pricing)
-│   └── [~] Pricing components kept for Phase 4 launch:
-│       ├── [x] PricingToggle, PricingCard, FeatureComparisonTable, PricingFAQ
-│       └── [ ] Full pricing page deferred until agency network launch
 └── [x] Placement fee tracking
     ├── [x] createPlacementFee() function (lib/stripe/placement-fees.ts)
     ├── [x] getPendingFees(), getPlacementFees(), getFeeSummary()
@@ -550,14 +511,14 @@ Week 16:
 ├── [ ] Chat with recruiter
 └── [ ] Invoice viewing for clients
 
-### Sprint 23-26: Network & Scale
+### Sprint 23-26: Scale & Expansion
 
 **Tasks**:
-├── [ ] Multi-agency support
-├── [ ] Collaboration system
-├── [ ] Fee splitting
-├── [ ] Agency onboarding
-└── [ ] Public launch
+├── [ ] Mobile app for candidates
+├── [ ] Advanced AI matching improvements
+├── [ ] International expansion (US, Asia)
+├── [ ] AI-powered candidate outreach
+└── [ ] Luxury household staff vertical
 
 ---
 
@@ -582,6 +543,6 @@ Week 16:
 
 ### Week 26 (Full Platform)
 - [ ] 200+ active jobs
-- [ ] 2,000+ candidates
-- [ ] 20+ partner agencies
-- [ ] €50K+ monthly platform revenue
+- [ ] 2,000+ verified candidates
+- [ ] 50+ active clients
+- [ ] 250+ placements annually

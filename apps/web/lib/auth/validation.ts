@@ -24,6 +24,8 @@ export const registerSchema = z
     lastName: z.string().min(1, "Last name is required"),
     phone: z.string().optional(),
     nationality: z.string().optional(),
+    candidateType: z.string().optional(),
+    otherRoleDetails: z.string().optional(),
     primaryPosition: z.string().optional(),
     yearsExperience: z.string().optional(),
     currentStatus: z.string().optional(),

@@ -5,7 +5,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  Anchor,
   ArrowLeft,
   ArrowRight,
   Loader2,
@@ -21,6 +20,7 @@ import {
   MapPin,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/ui/Logo";
 import { cn } from "@/lib/utils";
 
 // Step indicator component
@@ -194,13 +194,8 @@ export default function EmployerRegisterPage() {
         <div className="w-full max-w-md">
           {/* Logo */}
           <div className="mb-8 flex justify-center">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="flex size-12 items-center justify-center rounded-xl bg-gradient-to-br from-gold-400 to-gold-600">
-                <Anchor className="size-6 text-white" />
-              </div>
-              <span className="font-serif text-2xl font-semibold text-white">
-                Lighthouse
-              </span>
+            <Link href="/">
+              <Logo size="xl" />
             </Link>
           </div>
 
@@ -261,13 +256,8 @@ export default function EmployerRegisterPage() {
       {/* Header */}
       <header className="border-b border-gray-200 bg-white">
         <div className="mx-auto flex h-16 max-w-3xl items-center justify-between px-4">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-navy-800">
-              <Anchor className="size-5 text-gold-400" />
-            </div>
-            <span className="font-serif text-xl font-semibold text-navy-800">
-              Lighthouse
-            </span>
+          <Link href="/">
+            <Logo size="md" />
           </Link>
 
           <Link

@@ -5,15 +5,11 @@ import {
   Briefcase,
   MapPin,
   Ship,
-  Calendar,
   ChevronRight,
   Clock,
   CheckCircle,
   XCircle,
-  MessageSquare,
   FileText,
-  ExternalLink,
-  HourglassIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -22,59 +18,55 @@ export const metadata = {
   description: "Track your job applications and interview progress",
 };
 
-const STAGE_CONFIG: Record<
-  string,
-  { label: string; color: string; bgColor: string; icon: React.ReactNode }
-> = {
-  applied: {
-    label: "Applied",
-    color: "text-blue-700",
-    bgColor: "bg-blue-100",
-    icon: <FileText className="size-3.5" />,
-  },
-  screening: {
-    label: "Screening",
-    color: "text-purple-700",
-    bgColor: "bg-purple-100",
-    icon: <HourglassIcon className="size-3.5" />,
-  },
-  shortlisted: {
-    label: "Shortlisted",
-    color: "text-cyan-700",
-    bgColor: "bg-cyan-100",
-    icon: <CheckCircle className="size-3.5" />,
-  },
-  submitted: {
-    label: "Sent to Client",
+/**
+ * Simplified stage display for candidates
+ * Candidates only see: Applied, In Progress, or final outcomes (Placed/Not Selected)
+ * We don't expose detailed pipeline status to candidates
+ */
+function getSimplifiedStage(stage: string): {
+  label: string;
+  color: string;
+  bgColor: string;
+  icon: React.ReactNode;
+} {
+  // Terminal states that candidates should see
+  if (stage === "placed") {
+    return {
+      label: "Placed",
+      color: "text-success-700",
+      bgColor: "bg-success-100",
+      icon: <CheckCircle className="size-3.5" />,
+    };
+  }
+
+  if (stage === "rejected" || stage === "withdrawn") {
+    return {
+      label: stage === "withdrawn" ? "Withdrawn" : "Not Selected",
+      color: "text-gray-600",
+      bgColor: "bg-gray-100",
+      icon: <XCircle className="size-3.5" />,
+    };
+  }
+
+  // Initial applied state
+  if (stage === "applied") {
+    return {
+      label: "Applied",
+      color: "text-blue-700",
+      bgColor: "bg-blue-100",
+      icon: <FileText className="size-3.5" />,
+    };
+  }
+
+  // All other active stages show as "In Progress"
+  // This includes: screening, shortlisted, submitted, interview, offer
+  return {
+    label: "In Progress",
     color: "text-gold-700",
     bgColor: "bg-gold-100",
-    icon: <ExternalLink className="size-3.5" />,
-  },
-  interview: {
-    label: "Interview",
-    color: "text-gold-700",
-    bgColor: "bg-gold-100",
-    icon: <MessageSquare className="size-3.5" />,
-  },
-  offer: {
-    label: "Offer!",
-    color: "text-success-700",
-    bgColor: "bg-success-100",
-    icon: <CheckCircle className="size-3.5" />,
-  },
-  placed: {
-    label: "Placed",
-    color: "text-success-700",
-    bgColor: "bg-success-100",
-    icon: <CheckCircle className="size-3.5" />,
-  },
-  rejected: {
-    label: "Not Selected",
-    color: "text-gray-600",
-    bgColor: "bg-gray-100",
-    icon: <XCircle className="size-3.5" />,
-  },
-};
+    icon: <Clock className="size-3.5" />,
+  };
+}
 
 async function getApplicationsData(candidateId: string) {
   const supabase = await createClient();
@@ -142,16 +134,6 @@ export default async function CrewApplicationsPage() {
 
   const applications = await getApplicationsData(candidate.id);
 
-  // Calculate stats
-  const stats = {
-    total: applications.length,
-    active: applications.filter((a) =>
-      ["applied", "screening", "shortlisted", "submitted", "interview", "offer"].includes(a.stage)
-    ).length,
-    interviews: applications.filter((a) => a.stage === "interview").length,
-    offers: applications.filter((a) => a.stage === "offer").length,
-  };
-
   return (
     <div className="space-y-6">
       <div>
@@ -161,14 +143,6 @@ export default async function CrewApplicationsPage() {
         <p className="mt-1 text-gray-600">
           Track the progress of your job applications
         </p>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCard label="Total Applied" value={stats.total} />
-        <StatCard label="Active" value={stats.active} highlight />
-        <StatCard label="Interviews" value={stats.interviews} />
-        <StatCard label="Offers" value={stats.offers} />
       </div>
 
       {/* Applications List */}
@@ -200,30 +174,6 @@ export default async function CrewApplicationsPage() {
   );
 }
 
-function StatCard({
-  label,
-  value,
-  highlight = false,
-}: {
-  label: string;
-  value: number;
-  highlight?: boolean;
-}) {
-  return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-      <p
-        className={cn(
-          "text-2xl font-bold",
-          highlight ? "text-gold-600" : "text-navy-800"
-        )}
-      >
-        {value}
-      </p>
-      <p className="text-sm text-gray-500">{label}</p>
-    </div>
-  );
-}
-
 function ApplicationRow({
   application,
 }: {
@@ -239,7 +189,7 @@ function ApplicationRow({
   const agency = jobData.created_by_agency;
   const agencyName = Array.isArray(agency) ? agency[0]?.name : agency?.name;
 
-  const config = STAGE_CONFIG[application.stage] || STAGE_CONFIG.applied;
+  const config = getSimplifiedStage(application.stage);
 
   const formatSalary = () => {
     if (!jobData.salary_min && !jobData.salary_max) return null;

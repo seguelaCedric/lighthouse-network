@@ -190,30 +190,94 @@ async function main() {
   // Fetch Jobs
   if (fetchJobs) {
     console.log("=".repeat(60));
-    console.log(`JOBS (limit: ${limit})${shouldSync ? " [SYNCING]" : ""}`);
+    console.log(`JOBS (limit: ${limit})${shouldSync ? " [SYNCING TO PUBLIC JOB BOARD]" : ""}`);
     console.log("=".repeat(60));
 
     try {
-      // Search for jobs in yacht/villa industries (status filter uses different field)
+      // Search for jobs in yacht/villa industries
+      // Note: Vincere doesn't support job_status in search query, so we filter after fetching
       const query = `(industry_id:${INDUSTRY_IDS.yacht}# OR industry_id:${INDUSTRY_IDS.villa}#)`;
       const encodedQuery = encodeURIComponent(query);
 
-      const searchResult = await client.get<VincereSearchResult>(
-        `/position/search/fl=id,job_title,company_name,created_date,last_update?q=${encodedQuery}&start=0&limit=${limit}`
-      );
+      // Vincere API paginates results - fetch all pages up to our limit
+      const PAGE_SIZE = 25; // Vincere's default/max page size
+      let allItems: Array<{
+        id: number;
+        name?: string;
+        job_title?: string;
+        company_name?: string;
+        primary_email?: string;
+        last_update?: string;
+        job_status?: string;
+        created_date?: string;
+      }> = [];
+      let start = 0;
+      let total = 0;
 
-      const items = searchResult?.result?.items ?? [];
-      console.log(`\nFound ${searchResult?.result?.total ?? 0} total jobs (showing ${items.length})\n`);
+      console.log(`\nFetching jobs from Vincere (limit: ${limit})...`);
+
+      // Paginate through results until we hit our limit or run out of results
+      while (allItems.length < limit) {
+        const searchResult = await client.get<VincereSearchResult>(
+          `/position/search/fl=id,job_title,company_name,created_date,last_update?q=${encodedQuery}&start=${start}&limit=${PAGE_SIZE}`
+        );
+
+        const pageItems = searchResult?.result?.items ?? [];
+        total = searchResult?.result?.total ?? 0;
+
+        if (pageItems.length === 0) break; // No more results
+
+        allItems = allItems.concat(pageItems);
+        console.log(`  Fetched page ${Math.floor(start / PAGE_SIZE) + 1}: ${pageItems.length} jobs (total so far: ${allItems.length})`);
+
+        start += PAGE_SIZE;
+
+        // Stop if we've fetched all available or hit our limit
+        if (allItems.length >= total || allItems.length >= limit) break;
+      }
+
+      // Trim to exactly our limit if we fetched more
+      const items = allItems.slice(0, limit);
+      console.log(`\nFound ${total} total jobs in Vincere, fetched ${items.length}`);
+      console.log(`Syncing ALL jobs (open = public, closed = private)...\n`);
 
       let syncedCount = 0;
+      let skippedCount = 0;
       for (const item of items) {
         // Fetch full job details
         const job = await client.get<VincereJob>(`/position/${item.id}`);
+        const jobAny = job as unknown as Record<string, unknown>;
+
+        // Log available status fields for debugging (first job only)
+        if (items.indexOf(item) === 0) {
+          console.log("DEBUG: Job status fields:", {
+            open_date: jobAny.open_date,
+            close_date: jobAny.close_date,
+            closed_job: jobAny.closed_job,
+            status_id: jobAny.status_id
+          });
+        }
+
+        // Vincere determines open status by:
+        // 1. closed_job field being false/null
+        // 2. open_date exists
+        // 3. close_date is either null OR in the future
+        const closedJob = jobAny.closed_job;
+        const hasOpenDate = !!jobAny.open_date;
+        const closeDate = jobAny.close_date ? new Date(jobAny.close_date as string) : null;
+        const isPastCloseDate = closeDate && closeDate < new Date();
+        const isOpen = hasOpenDate && !closedJob && !isPastCloseDate;
+
+        // Determine the job status for display
+        const jobStatusLabel = isOpen ? 'OPEN → PUBLIC' :
+                              closedJob ? 'CLOSED' :
+                              !hasOpenDate ? 'NEVER OPENED' :
+                              isPastCloseDate ? 'EXPIRED' : 'CLOSED';
 
         console.log(`Job ID: ${job.id}`);
         console.log(`  Title: ${job.job_title}`);
         console.log(`  Company: ${job.company_name || "N/A"}`);
-        console.log(`  Status: ${job.job_status || job.status || "N/A"}`);
+        console.log(`  Status: ${jobStatusLabel}`);
         console.log(`  Salary: ${job.salary_from || "N/A"} - ${job.salary_to || "N/A"}`);
         console.log(`  Location: ${job.location || "N/A"}`);
         console.log(`  Start Date: ${job.start_date || "N/A"}`);
@@ -236,42 +300,83 @@ async function main() {
             // Use mapVincereToJob for full custom field mapping
             const jobData = mapVincereToJob(job, customFields);
 
-            // Log some of the mapped custom fields for visibility
-            if (jobData.yacht_name) {
-              console.log(`  → Yacht Name: ${jobData.yacht_name}`);
+            // Log all mapped custom fields for visibility
+            console.log(`  → Public: ${jobData.is_public ? "YES" : "NO"} | Status: ${jobData.status}`);
+            if (jobData.vessel_name || jobData.vessel_type || jobData.vessel_size_meters) {
+              const vesselParts = [
+                jobData.vessel_name,
+                jobData.vessel_size_meters ? `${jobData.vessel_size_meters}m` : null,
+                jobData.vessel_type,
+              ].filter(Boolean);
+              console.log(`  → Vessel: ${vesselParts.join(" | ")}`);
+            }
+            if (jobData.salary_min || jobData.salary_max) {
+              console.log(`  → Salary: ${jobData.salary_currency} ${jobData.salary_min || "?"}-${jobData.salary_max || "?"}/month`);
+            }
+            if (jobData.rotation_schedule) {
+              console.log(`  → Rotation: ${jobData.rotation_schedule}`);
+            }
+            if (jobData.holiday_package && !jobData.rotation_schedule) {
+              console.log(`  → Holiday Package: ${jobData.holiday_package}${jobData.holiday_days ? ` (${jobData.holiday_days} days)` : ""}`);
             }
             if (jobData.itinerary) {
               console.log(`  → Itinerary: ${jobData.itinerary}`);
             }
+            if (jobData.primary_region) {
+              console.log(`  → Region: ${jobData.primary_region}`);
+            }
             if (jobData.contract_type) {
-              console.log(`  → Contract Type: ${jobData.contract_type}`);
+              console.log(`  → Contract: ${jobData.contract_type}`);
             }
             if (jobData.program) {
               console.log(`  → Program: ${jobData.program}`);
             }
-            if (jobData.holiday_package) {
-              console.log(`  → Holiday Package: ${jobData.holiday_package}`);
-            }
-            if (jobData.salary_min || jobData.salary_max) {
-              console.log(`  → Salary: ${jobData.salary_currency} ${jobData.salary_min || "?"}-${jobData.salary_max || "?"}`);
+            if (jobData.public_description) {
+              console.log(`  → Has public description: YES (${jobData.public_description.length} chars)`);
             }
 
-            // Add extra fields for database insert
-            const insertData = {
+            // Prepare data for upsert
+            const upsertData = {
               ...jobData,
               submissions_count: 0,
               views_count: 0,
               applications_count: 0,
             };
 
-            // Simple insert for testing (no unique constraint on external_id)
-            const { error } = await db.from("jobs").insert(insertData);
+            // First, check if job exists by external_id
+            const { data: existing } = await db
+              .from("jobs")
+              .select("id")
+              .eq("external_id", jobData.external_id)
+              .eq("external_source", "vincere")
+              .single();
 
-            if (error) {
-              console.log(`  ❌ Sync failed: ${error.message}`);
+            if (existing) {
+              // Update existing job
+              const { error } = await db
+                .from("jobs")
+                .update({
+                  ...jobData,
+                  // Don't reset counts on update
+                })
+                .eq("id", existing.id);
+
+              if (error) {
+                console.log(`  ❌ Update failed: ${error.message}`);
+              } else {
+                console.log(`  ✅ Updated existing job in database`);
+                syncedCount++;
+              }
             } else {
-              console.log(`  ✅ Synced to database`);
-              syncedCount++;
+              // Insert new job
+              const { error } = await db.from("jobs").insert(upsertData);
+
+              if (error) {
+                console.log(`  ❌ Insert failed: ${error.message}`);
+              } else {
+                console.log(`  ✅ Inserted new job to database (PUBLIC)`);
+                syncedCount++;
+              }
             }
           } catch (syncError) {
             console.log(`  ❌ Sync error: ${syncError}`);
@@ -281,7 +386,10 @@ async function main() {
       }
 
       if (shouldSync) {
-        console.log(`\n📊 Synced ${syncedCount}/${items.length} jobs to database`);
+        console.log(`\n📊 Job Sync Summary:`);
+        console.log(`   Synced: ${syncedCount}/${items.length} jobs`);
+        console.log(`   Open jobs → PUBLIC on job board`);
+        console.log(`   Closed/Draft jobs → PRIVATE (not visible on job board)`);
       }
     } catch (error) {
       console.error("Error fetching jobs:", error);

@@ -5,34 +5,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Search,
-  MapPin,
   Sparkles,
 } from "lucide-react";
-
-// Staff role options for private households
-const STAFF_ROLES = [
-  { value: "butler", label: "Butler" },
-  { value: "estate-manager", label: "Estate Manager" },
-  { value: "house-manager", label: "House Manager" },
-  { value: "personal-assistant", label: "Personal Assistant" },
-  { value: "housekeeper", label: "Housekeeper" },
-  { value: "nanny", label: "Nanny" },
-  { value: "governess", label: "Governess" },
-  { value: "chef", label: "Private Chef" },
-  { value: "chauffeur", label: "Chauffeur" },
-  { value: "security", label: "Security / Close Protection" },
-  { value: "laundress", label: "Laundress" },
-  { value: "valet", label: "Valet" },
-  { value: "caretaker", label: "Property Caretaker" },
-  { value: "couple", label: "Household Couple" },
-];
-
-const TIMELINE_OPTIONS = [
-  { value: "asap", label: "As soon as possible" },
-  { value: "1-month", label: "Within 1 month" },
-  { value: "3-months", label: "Within 3 months" },
-  { value: "flexible", label: "Flexible / Just exploring" },
-];
 
 interface BriefMatcherProps {
   variant?: "inline" | "modal";
@@ -42,27 +16,21 @@ interface BriefMatcherProps {
 export function BriefMatcher({ variant = "inline", onClose }: BriefMatcherProps) {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    role: "",
-    location: "",
-    timeline: "",
-    requirements: "",
+    query: "",
   });
   const [error, setError] = useState<string | null>(null);
 
   const handleSearch = () => {
-    if (!formData.role) {
-      setError("Please select a role");
+    if (!formData.query.trim()) {
+      setError("Please describe what you're looking for");
       return;
     }
 
     setError(null);
 
-    // Build URL params
+    // Build URL params with single query
     const params = new URLSearchParams();
-    if (formData.role) params.set("role", formData.role);
-    if (formData.location) params.set("location", formData.location);
-    if (formData.timeline) params.set("timeline", formData.timeline);
-    if (formData.requirements) params.set("requirements", formData.requirements);
+    params.set("query", formData.query);
 
     // Close modal if open
     if (onClose) {
@@ -115,80 +83,25 @@ export function BriefMatcher({ variant = "inline", onClose }: BriefMatcherProps)
 
         {/* Form */}
         <div className="p-6 space-y-5">
-          {/* Role Selection */}
+          {/* Single Query Field */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              What role are you hiring for? *
-            </label>
-            <select
-              value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 transition-colors"
-            >
-              <option value="">Select a role...</option>
-              {STAFF_ROLES.map((role) => (
-                <option key={role.value} value={role.value}>
-                  {role.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Location */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Where is the position based?
-            </label>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <input
-                type="text"
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                placeholder="e.g., London, Monaco, New York..."
-                className="w-full rounded-lg border border-gray-300 pl-10 pr-4 py-3 text-gray-900 focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 transition-colors"
-              />
-            </div>
-          </div>
-
-          {/* Timeline */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              When do you need someone?
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              {TIMELINE_OPTIONS.map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => setFormData({ ...formData, timeline: option.value })}
-                  className={`rounded-lg border px-4 py-2.5 text-sm font-medium transition-all ${
-                    formData.timeline === option.value
-                      ? "border-gold-500 bg-gold-50 text-gold-700"
-                      : "border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Requirements */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Any specific requirements? (optional)
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Describe what you&apos;re looking for <span className="text-gold-600">*</span>
             </label>
             <textarea
-              value={formData.requirements}
-              onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
-              placeholder="e.g., Must speak French, experience with UHNW families, trained at Buckingham Palace..."
-              rows={3}
-              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 transition-colors resize-none"
+              value={formData.query}
+              onChange={(e) => setFormData({ query: e.target.value })}
+              placeholder="e.g., Butler, London, ASAP, must speak French and have experience with UHNW families"
+              rows={8}
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 bg-gray-50/50 focus:bg-white focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 transition-all resize-none text-sm placeholder:text-gray-400"
             />
+            <p className="mt-2 text-xs text-gray-500">
+              Include role, location, timeline, requirements, skills, or any other details
+            </p>
           </div>
 
           {error && (
-            <p className="text-sm text-red-600">{error}</p>
+            <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
           )}
 
           <Button

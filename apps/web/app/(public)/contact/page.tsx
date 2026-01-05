@@ -9,11 +9,11 @@ import {
   Clock,
   Send,
   MessageCircle,
-  Anchor,
   Facebook,
   Linkedin,
   Twitter,
 } from "lucide-react";
+import { Logo } from "@/components/ui/Logo";
 
 export const metadata: Metadata = {
   title: "Contact Us | Lighthouse Careers",
@@ -248,10 +248,9 @@ export default function ContactPage() {
             <div className="space-y-8">
               {/* Office Info */}
               <div className="rounded-2xl bg-navy-900 p-8 text-white">
-                <Anchor className="mb-4 h-10 w-10 text-gold-400" />
-                <h3 className="mb-4 font-serif text-xl font-semibold">
-                  Lighthouse Careers
-                </h3>
+                <div className="mb-4">
+                  <Logo size="lg" />
+                </div>
                 <p className="mb-6 text-gray-400">
                   Over 20 years of experience connecting exceptional talent with
                   discerning employers in the yacht and private household sectors.

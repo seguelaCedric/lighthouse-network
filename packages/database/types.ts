@@ -275,6 +275,7 @@ export interface Candidate extends BaseEntity {
   has_eng1: boolean;
   eng1_expiry: string | null;
   highest_license: string | null;
+  second_license: string | null;
 
   // Personal
   is_smoker: boolean | null;

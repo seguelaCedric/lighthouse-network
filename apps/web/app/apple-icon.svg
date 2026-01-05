@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" fill="none">
+  <!-- Background with navy gradient -->
+  <rect width="180" height="180" rx="40" fill="url(#navyGradient)"/>
+
+  <!-- Lighthouse tower -->
+  <path d="M78 135V67L90 45L102 67V135H78Z" fill="#FFFFFF"/>
+
+  <!-- Lighthouse stripes -->
+  <rect x="78" y="78" width="24" height="12" fill="#1E3A5F"/>
+  <rect x="78" y="102" width="24" height="12" fill="#1E3A5F"/>
+
+  <!-- Light beam rays -->
+  <path d="M90 50L60 35L90 42L120 35L90 50Z" fill="url(#goldGlow)" opacity="0.6"/>
+
+  <!-- Light housing -->
+  <rect x="81" y="50" width="18" height="17" rx="2" fill="#D4AF37"/>
+
+  <!-- Lighthouse top/cap -->
+  <path d="M84 50L90 38L96 50H84Z" fill="#D4AF37"/>
+
+  <!-- Base platform -->
+  <rect x="66" y="135" width="48" height="12" rx="2" fill="#FFFFFF"/>
+
+  <!-- Gradient definitions -->
+  <defs>
+    <linearGradient id="navyGradient" x1="0" y1="0" x2="180" y2="180" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1E3A5F"/>
+      <stop offset="100%" stop-color="#0F1E30"/>
+    </linearGradient>
+    <radialGradient id="goldGlow" cx="50%" cy="50%" r="50%" fx="50%" fy="50%">
+      <stop offset="0%" stop-color="#FFD700"/>
+      <stop offset="100%" stop-color="#D4AF37" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+</svg>

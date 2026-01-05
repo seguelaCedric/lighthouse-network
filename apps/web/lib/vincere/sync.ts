@@ -22,6 +22,7 @@ import {
   VINCERE_MARITAL_STATUS_MAP,
   VINCERE_CONTRACT_TYPE_MAP,
   VINCERE_YACHT_TYPE_MAP,
+  NATIONALITY_TO_VINCERE_ID,
   POSITION_MAPPING,
 } from './constants';
 
@@ -323,6 +324,7 @@ export function mapVincereToCandidate(
     has_stcw: getBoolField('stcw') ?? false,
     has_eng1: getBoolField('eng1') ?? false,
     highest_license: getField('highestLicence') as string | null,
+    second_license: getField('secondLicence') as string | null,
 
     // Personal
     is_smoker,
@@ -475,6 +477,13 @@ export function mapCandidateToVincere(
     });
   }
 
+  if (candidate.second_license) {
+    customFields.push({
+      fieldKey: VINCERE_FIELD_KEYS.secondLicence,
+      fieldValue: candidate.second_license,
+    });
+  }
+
   // Date fields
   if (candidate.available_from) {
     customFields.push({
@@ -514,6 +523,84 @@ export function mapCandidateToVincere(
       fieldKey: VINCERE_FIELD_KEYS.desiredLocation,
       fieldValue: candidate.preferred_regions.join(', '),
     });
+  }
+
+  // Couple position (1=Yes, 2=No, 3=Flexible)
+  if (candidate.is_couple !== null && candidate.is_couple !== undefined) {
+    let coupleValue: number;
+    if (candidate.is_couple) {
+      coupleValue = 1; // Yes
+    } else if (candidate.couple_position === 'flexible') {
+      coupleValue = 3; // Flexible
+    } else {
+      coupleValue = 2; // No
+    }
+    customFields.push({
+      fieldKey: VINCERE_FIELD_KEYS.couplePosition,
+      fieldValues: [coupleValue],
+    });
+  }
+
+  // Marital status
+  if (candidate.marital_status) {
+    const maritalStatusValue = candidate.marital_status === 'single' ? 1 :
+                               candidate.marital_status === 'married' ? 2 :
+                               candidate.marital_status === 'in_relationship' ? 3 : null;
+    if (maritalStatusValue) {
+      customFields.push({
+        fieldKey: VINCERE_FIELD_KEYS.maritalStatus,
+        fieldValues: [maritalStatusValue],
+      });
+    }
+  }
+
+  // Contract type preferences (multi-select)
+  if (candidate.preferred_contract_types && candidate.preferred_contract_types.length > 0) {
+    const contractValues: number[] = [];
+    for (const type of candidate.preferred_contract_types) {
+      switch (type) {
+        case 'permanent': contractValues.push(1); break;
+        case 'rotational': contractValues.push(2); break;
+        case 'seasonal': contractValues.push(3); break;
+        case 'freelance': contractValues.push(4); break;
+      }
+    }
+
+    if (contractValues.length > 0) {
+      customFields.push({
+        fieldKey: VINCERE_FIELD_KEYS.contractType,
+        fieldValues: contractValues,
+      });
+    }
+  }
+
+  // Yacht type preferences (multi-select)
+  if (candidate.preferred_yacht_types && candidate.preferred_yacht_types.length > 0) {
+    const yachtTypeValues: number[] = [];
+    for (const type of candidate.preferred_yacht_types) {
+      switch (type.toLowerCase()) {
+        case 'motor': yachtTypeValues.push(1); break;
+        case 'sailing': yachtTypeValues.push(2); break;
+      }
+    }
+
+    if (yachtTypeValues.length > 0) {
+      customFields.push({
+        fieldKey: VINCERE_FIELD_KEYS.yachtType,
+        fieldValues: yachtTypeValues,
+      });
+    }
+  }
+
+  // Second nationality - need to reverse lookup the ID
+  if (candidate.second_nationality) {
+    const nationalityId = NATIONALITY_TO_VINCERE_ID[candidate.second_nationality.toLowerCase()];
+    if (nationalityId) {
+      customFields.push({
+        fieldKey: VINCERE_FIELD_KEYS.secondNationality,
+        fieldValues: [nationalityId],
+      });
+    }
   }
 
   return { basicData, customFields };

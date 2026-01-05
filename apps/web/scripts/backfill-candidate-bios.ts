@@ -235,6 +235,7 @@ async function processCandidate(candidate: CandidateToProcess): Promise<ProcessR
       .from('candidates')
       .update({
         bio_full: bioResult.bio_full,
+        bio_anonymized: bioResult.bio_anonymized,
         bio_generated_at: new Date().toISOString(),
         bio_generation_version: BIO_GENERATION_VERSION,
       })

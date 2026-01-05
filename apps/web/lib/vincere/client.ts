@@ -179,6 +179,79 @@ export class VincereClient {
   }
 
   /**
+   * POST request with multipart/form-data (for file uploads)
+   *
+   * @param endpoint - API endpoint
+   * @param file - File data as ArrayBuffer or Buffer
+   * @param fileName - Name of the file
+   * @param mimeType - MIME type of the file
+   * @param additionalFields - Optional additional form fields
+   */
+  async postMultipart<T = unknown>(
+    endpoint: string,
+    file: ArrayBuffer | Buffer,
+    fileName: string,
+    mimeType: string,
+    additionalFields?: Record<string, string>,
+    options: { retryOnAuthError?: boolean } = { retryOnAuthError: true }
+  ): Promise<T> {
+    const token = await this.getToken();
+
+    const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
+
+    // Create FormData with file
+    const formData = new FormData();
+    // Convert Buffer to ArrayBuffer if needed (Buffer.buffer gives underlying ArrayBuffer)
+    const fileData = file instanceof ArrayBuffer ? file : new Uint8Array(file).buffer;
+    const blob = new Blob([fileData], { type: mimeType });
+    formData.append('file', blob, fileName);
+
+    // Add any additional fields
+    if (additionalFields) {
+      for (const [key, value] of Object.entries(additionalFields)) {
+        formData.append(key, value);
+      }
+    }
+
+    const headers: Record<string, string> = {
+      'accept': 'application/json',
+      'id-token': token,
+      'x-api-key': this.config.apiKey,
+      // Note: Don't set Content-Type - fetch will set it automatically with boundary
+    };
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+
+    // Handle token expiration - retry once with fresh token
+    if (response.status === 401 && options.retryOnAuthError) {
+      this.idToken = null;
+      this.tokenExpiresAt = 0;
+      return this.postMultipart(endpoint, file, fileName, mimeType, additionalFields, { retryOnAuthError: false });
+    }
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new VincereApiError(
+        `Vincere API error: ${response.status} ${response.statusText}`,
+        response.status,
+        errorText
+      );
+    }
+
+    // Handle empty responses
+    const text = await response.text();
+    if (!text) {
+      return {} as T;
+    }
+
+    return JSON.parse(text) as T;
+  }
+
+  /**
    * GET request that returns raw binary data (for file downloads)
    */
   async getRaw(endpoint: string): Promise<ArrayBuffer> {

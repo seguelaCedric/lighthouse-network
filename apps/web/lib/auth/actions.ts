@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 export type AuthResult = {
   success: boolean;
   error?: string;
+  redirectTo?: string;
 };
 
 export async function signIn(
@@ -15,7 +16,7 @@ export async function signIn(
 ): Promise<AuthResult> {
   const supabase = await createClient();
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data: authData, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   });
@@ -27,8 +28,24 @@ export async function signIn(
     };
   }
 
+  // Determine redirect based on user type
+  let redirectTo = "/dashboard"; // Default for recruiters
+
+  if (authData.user) {
+    // Check if user is a candidate
+    const { data: userData } = await supabase
+      .from("users")
+      .select("user_type")
+      .eq("auth_id", authData.user.id)
+      .single();
+
+    if (userData?.user_type === "candidate") {
+      redirectTo = "/crew/dashboard";
+    }
+  }
+
   revalidatePath("/", "layout");
-  return { success: true };
+  return { success: true, redirectTo };
 }
 
 export async function signUp(
@@ -40,6 +57,8 @@ export async function signUp(
     last_name?: string;
     phone?: string;
     nationality?: string;
+    candidate_type?: string;
+    other_role_details?: string;
     primary_position?: string;
     years_experience?: string;
     current_status?: string;

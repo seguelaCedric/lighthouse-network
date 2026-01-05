@@ -119,7 +119,7 @@ export function PlanCard({
           <Check className="size-4 text-success-600" />
           <span className="text-gray-700">
             {plan.max_candidates
-              ? `${plan.max_candidates.toLocaleString()} candidates`
+              ? `${plan.max_candidates.toLocaleString("en-US")} candidates`
               : "Unlimited candidates"}
           </span>
         </div>

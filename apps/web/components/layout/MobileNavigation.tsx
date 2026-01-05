@@ -16,11 +16,11 @@ import {
   Settings,
   HelpCircle,
   LogOut,
-  Anchor,
   ChevronRight,
   Calendar,
   Building2,
 } from "lucide-react";
+import { Logo } from "@/components/ui/Logo";
 
 // Bottom tab items
 const bottomTabs = [
@@ -135,12 +135,7 @@ export function MobileHeader({
           {title ? (
             <h1 className="text-2xl font-serif font-semibold text-navy-800">{title}</h1>
           ) : (
-            <div className="flex items-center gap-2">
-              <div className="flex size-8 items-center justify-center rounded-lg bg-navy-900">
-                <Anchor className="size-4 text-gold-400" />
-              </div>
-              <span className="font-bold text-navy-900">Lighthouse</span>
-            </div>
+            <Logo size="sm" />
           )}
         </div>
 
@@ -166,13 +161,7 @@ export function MobileHeader({
             {/* Menu Header */}
             <div className="flex items-center justify-between border-b border-gray-100 p-4">
               <div className="flex items-center gap-3">
-                <div className="flex size-10 items-center justify-center rounded-xl bg-navy-900">
-                  <Anchor className="size-5 text-gold-400" />
-                </div>
-                <div>
-                  <p className="font-bold text-navy-900">Lighthouse Network</p>
-                  <p className="text-xs text-gray-500">Premium Recruitment</p>
-                </div>
+                <Logo size="lg" />
               </div>
               <button
                 onClick={() => setIsMenuOpen(false)}

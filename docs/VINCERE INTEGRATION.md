@@ -44,7 +44,7 @@ Vincere is the current ATS (Applicant Tracking System) for Lighthouse Careers. T
 │   • External reporting          • Submissions (timestamp authority)         │
 │                                 • Placements (revenue tracking)             │
 │           │                     • Briefs (multi-channel intake)             │
-│           │                     • Organizations (multi-agency)              │
+│           │                     • Clients (company management)              │
 │           ▼                                │                                │
 │   ┌───────────────┐                       │                                │
 │   │    n8n        │◄──────────────────────┘                                │

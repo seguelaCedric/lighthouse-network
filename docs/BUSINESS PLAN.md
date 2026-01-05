@@ -2,104 +2,99 @@
 
 ## Executive Summary
 
-Lighthouse Crew Network is a **neutral infrastructure platform** for yacht and luxury villa crew recruitment. It solves the existential threat facing recruitment agencies: free WhatsApp groups and cheap job boards are commoditizing placements, while the "first CV wins" rule forces a race to the bottom on quality.
+Lighthouse Crew Network is a **premium AI-powered recruitment platform** for yacht and luxury villa crew placement. We solve the critical inefficiency facing luxury crew recruitment: manually processing briefs, searching through databases, and matching candidates takes hours when it should take minutes.
 
-**The Opportunity**: Transform from a single agency (€1M/year revenue) into the industry's trusted infrastructure layer (€1.3M+ Year 1, €3M+ Year 3).
+**The Opportunity**: Transform from a manual recruitment agency into an AI-powered placement machine that can process more briefs, make better matches, and deliver higher quality candidates faster than any competitor.
 
-**The Strategy**: Don't compete with agencies—become the rails they all run on.
+**The Strategy**: Use AI to become the fastest, most accurate crew placement agency in the yacht and luxury household market.
 
 ---
 
 ## The Problem
 
-### Current Market Reality
+### Current Recruitment Reality
 
 ```
-TRADITIONAL MODEL (dying)              DISRUPTION (killing it)
-─────────────────────────              ─────────────────────────
-Agency charges ~€4,000/placement   →   WhatsApp groups: FREE
-Agency maintains database          →   Job boards: €35-55/month
-Agency verifies candidates         →   Direct hiring: no verification
-Agency handles paperwork           →   Captains hire friends
+MANUAL PROCESS (slow)                  AI-POWERED (fast)
+─────────────────────                  ─────────────────────
+Brief arrives via WhatsApp         →   Auto-parsed in seconds
+Recruiter reads, interprets        →   AI extracts requirements
+Manual database search             →   Vector search + AI matching
+Review 50+ profiles                →   See top 10 ranked matches
+Write candidate summaries          →   AI generates summaries
+Hours to shortlist                 →   Minutes to shortlist
 ```
 
-### The "First CV Wins" Problem
+### The Efficiency Problem
 
-Industry operates on an unwritten rule: **whoever submits a candidate first gets the placement fee**. This creates:
+Recruiters spend most of their time on low-value tasks:
+1. **Parsing briefs** - Reading emails/WhatsApp, extracting requirements
+2. **Searching databases** - Manual keyword searches miss qualified candidates
+3. **Reviewing profiles** - Scanning through dozens of unqualified CVs
+4. **Writing summaries** - Manually describing why each candidate fits
+5. **Coordination** - Email chains, scheduling, status updates
 
-1. **Speed over quality** - Agencies blast CVs without proper vetting
-2. **Duplicate submissions** - Same candidate sent by 5 agencies
-3. **Disputes** - "I sent them first!" with no proof
-4. **Client frustration** - Inbox flooded with unqualified candidates
-5. **Race to bottom** - No time for proper matching
-
-### Agency Death Spiral
+### The Quality Gap
 
 ```
-WhatsApp groups grow
+Speed vs Quality Trade-off:
+
+Send CVs fast (win placement)
         ↓
-Candidates bypass agencies
+Less time for verification
         ↓
-Clients get free candidates
+Unqualified candidates slip through
         ↓
-Why pay €4,000 fee?
+Client frustration
         ↓
-Agencies lose placements
+Lost repeat business
         ↓
-Agencies cut corners
-        ↓
-Quality drops
-        ↓
-Clients trust agencies less
-        ↓
-More direct hiring
-        ↓
-Repeat until dead
+Reputation damage
 ```
+
+**Solution**: AI removes the trade-off—be both faster AND more accurate.
 
 ---
 
-## The Solution: Lighthouse Network
+## The Solution: Lighthouse Platform
 
 ### Three Pillars
 
-#### 1. TIMESTAMP AUTHORITY
-**The neutral ledger everyone trusts**
+#### 1. AI-POWERED MATCHING
+**Brief → Shortlist in minutes, not hours**
 
-- Immutable submission timestamps (blockchain-style hashing)
-- Clear "first submission" proof
-- Ends disputes forever
-- Creates trust between competing agencies
-
-```
-Before: "I sent Sarah first!" / "No, I did!"
-After:  Agency A: 14:32:07.234 ✓ FIRST
-        Agency B: 14:45:12.891 (13 min later)
-```
-
-#### 2. COLLABORATION EXCHANGE
-**Turn competitors into partners**
-
-- Agency A has candidate, no matching job
-- Agency B has job, no matching candidate
-- Platform facilitates introduction
-- Fee splits automatically: 45% / 45% / 10% platform
+- AI parses briefs from any source (WhatsApp, email, phone)
+- Vector embeddings enable semantic search
+- Matching engine ranks candidates by fit
+- AI generates summaries explaining why each candidate matches
 
 ```
-Before: Candidate sits in database unused
-After:  Candidate placed via partner agency
-        Both agencies earn, platform earns
+Before: 2-3 hours to produce shortlist
+After:  15-30 minutes, higher quality matches
 ```
 
-#### 3. QUALITY CERTIFICATION
+#### 2. QUALITY CERTIFICATION
 **Verification tiers that mean something**
 
-| Tier | What's Verified | Who Sees Full Profile |
-|------|-----------------|----------------------|
-| Basic | Registered | Only registering agency |
-| Identity | ID + docs checked | All network agencies (contact redacted) |
-| Verified | References called | All agencies + shortlist clients |
-| Premium | Full background + Vapi voice check | Everyone (premium badge) |
+| Tier | What's Verified | What Client Sees |
+|------|-----------------|-----------------|
+| Basic | Registered | Limited profile |
+| Identity | ID + docs checked | Full profile (contact redacted) |
+| Verified | References called | Full profile + reference summary |
+| Premium | Full background check | Premium badge + detailed report |
+
+#### 3. CLIENT SELF-SERVICE
+**Clients review candidates without constant calls**
+
+- Clients view shortlists via secure portal
+- Feedback system (interested/maybe/no)
+- Interview scheduling
+- Real-time status updates
+
+```
+Before: "Any updates?" calls every day
+After:  Client sees status in real-time
+```
 
 ---
 
@@ -107,34 +102,18 @@ After:  Candidate placed via partner agency
 
 ### Revenue Streams
 
-#### 1. Agency Subscriptions
+#### 1. Placement Fees
 ```
-Starter:     €99/month   - 5 users, 50 submissions/month
-Professional: €199/month  - 15 users, unlimited submissions
-Enterprise:  €499/month  - Unlimited, API access, white-label
-```
-
-#### 2. Platform Fees (Per Placement)
-```
-Standard placement:        10% of agency fee
-Collaboration placement:   10% (from combined fee)
-Network job placement:     15% (jobs visible to all)
+Standard placement:        €4,000 - €8,000 per placement
+Senior positions:          €6,000 - €12,000 (Captain, Chief Engineer, etc.)
+Volume discount:           Negotiable for repeat clients
 ```
 
-#### 3. Client Subscriptions
-```
-Client Portal: €79/month
-- Post unlimited briefs
-- View shortlisted candidates
-- Interview scheduling
-- Feedback system
-```
-
-#### 4. Premium Services
+#### 2. Premium Services
 ```
 Verification upgrades:     €49 per candidate
 Priority placement:        €99 per job
-Reference check (Vapi):    €29 per reference
+Reference check:           €29 per reference
 Background check:          €149 per candidate
 ```
 
@@ -144,92 +123,77 @@ Background check:          €149 per candidate
 
 | Revenue Stream | Calculation | Amount |
 |----------------|-------------|--------|
-| Agency subs (20 agencies × €199 × 12) | 20 × €199 × 12 | €47,760 |
-| Client subs (30 clients × €79 × 12) | 30 × €79 × 12 | €28,440 |
-| Platform fees (300 placements × €400 avg) | 300 × €400 | €120,000 |
-| Collaboration fees (50 splits × €400) | 50 × €400 | €20,000 |
-| Verification services | ~500 × €49 avg | €24,500 |
-| **Lighthouse own placements** | 250 × €4,000 | €1,000,000 |
-| **TOTAL YEAR 1** | | **€1,240,700** |
+| Placements (yacht crew) | 200 × €5,000 avg | €1,000,000 |
+| Placements (household staff) | 50 × €4,000 avg | €200,000 |
+| Verification services | ~300 × €49 avg | €14,700 |
+| Background checks | ~50 × €149 | €7,450 |
+| **TOTAL YEAR 1** | | **€1,222,150** |
 
-*Conservative: Assumes Lighthouse continues own placements while building network*
-
-#### Year 3 (Network Scaled)
+#### Year 3 (AI Efficiency Scaled)
 
 | Revenue Stream | Amount |
 |----------------|--------|
-| Agency subs (100 agencies) | €238,800 |
-| Client subs (150 clients) | €142,200 |
-| Platform fees (1,500 placements) | €600,000 |
-| Collaboration fees (300 splits) | €120,000 |
-| Verification services | €150,000 |
-| Lighthouse placements (reduced to 150) | €600,000 |
-| **TOTAL YEAR 3** | **€1,851,000** |
+| Placements (yacht crew) | €1,500,000 |
+| Placements (household staff) | €500,000 |
+| Verification services | €50,000 |
+| Background checks | €25,000 |
+| **TOTAL YEAR 3** | **€2,075,000** |
 
-#### Year 5 (Industry Standard)
-
-| Revenue Stream | Amount |
-|----------------|--------|
-| Agency subs (300 agencies) | €716,400 |
-| Client subs (500 clients) | €474,000 |
-| Platform fees (5,000 placements) | €2,000,000 |
-| Collaboration fees (1,000 splits) | €400,000 |
-| Verification services | €500,000 |
-| **TOTAL YEAR 5** | **€4,090,400** |
+*Increased placement volume through AI efficiency, not more recruiters*
 
 ---
 
 ## Go-to-Market Strategy
 
-### Phase 1: Lighthouse Power Tools (Month 1-3)
-**Goal**: Build AI advantage internally
+### Phase 1: AI-Powered Recruiting (Month 1-3)
+**Goal**: Build AI advantage
 
 - Deploy AI brief parsing
 - Deploy AI candidate matching
 - Measure: Brief → shortlist time drops to <30 minutes
-- Prove the technology works on own business
+- Prove the technology works
 
 **Success Metric**: 50% reduction in time-to-shortlist
 
-### Phase 2: Collaboration Pilot (Month 4-6)
-**Goal**: Prove multi-agency value
+### Phase 2: Candidate Acquisition (Month 4-6)
+**Goal**: Build candidate database
 
-- Invite 5-10 friendly agencies
-- Free access for 3 months
-- Focus on collaboration exchange (overflow placements)
-- Build case studies
+- Launch public job board
+- SEO optimization for yacht crew jobs
+- Candidate apply flow with CV parsing
+- Profile completeness gamification
 
-**Success Metric**: 10+ collaboration placements
+**Success Metric**: 1,000+ registered candidates
 
 ### Phase 3: Client Portal (Month 7-9)
-**Goal**: Capture client relationship
+**Goal**: Client self-service
 
-- Launch client self-service portal
+- Launch client portal
 - Brief submission (WhatsApp, email, web)
 - Real-time shortlist viewing
 - Interview scheduling
 
 **Success Metric**: 30+ clients actively using portal
 
-### Phase 4: Agency Network Launch (Month 10-12)
-**Goal**: Reach critical mass
+### Phase 4: Verification & Trust (Month 10-12)
+**Goal**: Quality differentiation
 
-- Open to all agencies
-- Launch subscription tiers
-- Activate platform fees
-- PR push: "The MLS for yacht crew"
+- Launch verification tiers
+- Reference checking system
+- ID verification
+- Premium verified candidates
 
-**Success Metric**: 20+ paying agencies
+**Success Metric**: 500+ verified candidates
 
-### Phase 5: Industry Standard (Year 2+)
-**Goal**: Become essential infrastructure
+### Phase 5: Scale & Expand (Year 2+)
+**Goal**: Market leadership
 
-- API for integration with agency tools
 - Mobile app for candidates
 - Expand to luxury household staff
 - International expansion (US, Asia)
+- AI-powered candidate outreach
 
-**Success Metric**: 50%+ of industry placements touch platform
+**Success Metric**: 50%+ more placements than Year 1
 
 ---
 
@@ -238,110 +202,69 @@ Background check:          €149 per candidate
 ### Why Not Just a Job Board?
 
 ```
-CREWDAR / DOCKWALK / YOTSPOT        LIGHTHOUSE NETWORK
+CREWDAR / DOCKWALK / YOTSPOT        LIGHTHOUSE
 ─────────────────────────────       ─────────────────────
-Job listings                    →   Full recruitment workflow
-Candidates apply directly       →   Agencies control submissions
-€35-55/month                   →   Platform fee on success
+Job listings                    →   Full recruitment service
+Candidates apply directly       →   Vetted shortlists delivered
 No verification                →   Tiered verification system
-Competing with agencies        →   Empowering agencies
+Self-service only              →   White-glove recruitment
+No AI matching                 →   AI-powered precision matching
 ```
 
-### Why Agencies Will Join
+### Why Clients Choose Lighthouse
 
-1. **"We're all dying together"**
-   - WhatsApp is the real enemy, not each other
-   - Platform levels playing field
+1. **Speed**
+   - AI matching delivers shortlists in hours, not days
+   - Same-day response to urgent briefs
 
-2. **Access overflow revenue**
-   - Candidates you can't place → income via collaboration
-   - Jobs you can't fill → partner agency fills, you earn
+2. **Quality**
+   - Verified candidates with reference checks
+   - AI ensures relevant matches only
 
-3. **"First CV" proof**
-   - No more disputes
-   - Clear, neutral timestamp
+3. **Convenience**
+   - Self-service portal for viewing candidates
+   - No more "any updates?" calls
 
-4. **Client pressure**
-   - Clients will demand platform submissions
-   - Agencies outside network lose access
+4. **Trust**
+   - Every candidate vetted before submission
+   - Clear verification badges
+   - Reference summaries included
 
-5. **AI advantage**
-   - Better matching than manual search
-   - Brief parsing saves hours
-
-### Why Agencies Won't Fear Cannibalization
-
-**Protection 1: Senior Positions Require Agencies**
-```
-Captain, Chief Officer, Chief Engineer, Chief Stewardess,
-Head Chef, or salary >€7,000/month
-→ MUST go through agency
-→ No direct client-candidate contact
-```
-
-**Protection 2: Contact Information Protected**
-```
-Basic tier: Only registering agency sees contact
-Verified tier: Agencies see profile, not contact
-Premium tier: Contact only revealed after submission accepted
-```
-
-**Protection 3: No Direct Hiring on Platform**
-```
-Candidates cannot apply directly to clients
-All applications route through agencies
-Platform facilitates, doesn't disintermediate
-```
+5. **Expertise**
+   - Deep yacht and household staff knowledge
+   - Understanding of unique position requirements
 
 ---
 
 ## Sales Playbook
 
-### The Pitch to Agencies
+### The Pitch to Clients
 
-> "Look, we're all dying. WhatsApp groups are killing us. Captains hire their friends. Clients ask why they should pay €4,000 when they can post in a Facebook group for free.
+> "Stop wasting time on unqualified CVs.
 >
-> We have two choices: keep fighting each other while the market disappears, or build infrastructure that saves us all.
+> Tell us what you need—via WhatsApp, email, or phone—and we'll deliver a shortlist of verified, AI-matched candidates within 24 hours. Every candidate vetted, references checked, certifications confirmed.
 >
-> Lighthouse Network isn't another job board. It's the MLS for yacht crew. Same rules for everyone. Timestamp authority so 'first CV' disputes are over. Collaboration exchange so your overflow candidates become revenue instead of sitting in a database.
+> Review candidates on your own time through our client portal. Give feedback with one click. Schedule interviews directly.
 >
-> First 10 agencies get founding member rates. You in?"
+> You get the speed of a job board with the quality of a premium agency."
 
 ### Objection Handling
 
-**"You'll steal our candidates"**
-> "Every candidate stays yours. We're not a job board where candidates apply directly. We're infrastructure that makes your candidates more valuable through verification."
+**"Why should I pay €4,000+ when I can post on Crewfinders for free?"**
+> "You get what you pay for. Free posts bring 100 unqualified applications you have to sort through. We bring 5 verified candidates who actually match your requirements. Your time is worth more than that."
 
-**"Why would I share with competitors?"**
-> "You're not sharing your best placements. You're monetizing your overflow. That candidate sitting in your database for 6 months? Either place them through a partner or watch them find a job through WhatsApp anyway."
+**"I've used agencies before and they just send whoever's available"**
+> "That's because they're manually searching databases. We use AI matching that actually reads your brief and finds candidates who fit. Plus our verification system means every candidate has been checked."
 
-**"What about my client relationships?"**
-> "Strengthened. Clients submit briefs to you via the platform. You control what they see. We just make you faster and more accurate."
+**"Can't I just hire through my Captain's network?"**
+> "You can, but you're limited to who they know. Our database of 2,000+ verified candidates gives you access to the best talent, not just the most connected."
 
-**"€199/month is expensive"**
-> "One collaboration placement pays for 2 years of subscription. One hour saved per brief pays for a month. What's expensive is losing placements to WhatsApp."
-
-### The Pitch to Clients
-
-> "Stop drowning in unqualified CVs.
->
-> Post your brief once. Get a shortlist of verified, AI-matched candidates within 24 hours. Every candidate vetted, references checked, certifications confirmed.
->
-> See exactly when each candidate was submitted. No more duplicate submissions from different agencies. Clear audit trail.
->
-> Your agency still handles everything. We just make them better."
+**"Your fee is higher than other agencies"**
+> "You're paying for speed, quality, and convenience. Same-day shortlists, verified candidates, self-service portal. One bad hire costs more than our fee in training, turnover, and hassle."
 
 ---
 
 ## Risk Mitigation
-
-### Risk: Agencies Don't Join
-
-**Mitigation**:
-- Start with friendly agencies (personal relationships)
-- 3 months free for founding members
-- Lead with collaboration value (new revenue, not cost)
-- Build case studies before broad launch
 
 ### Risk: AI Matching Quality Issues
 
@@ -350,23 +273,31 @@ Platform facilitates, doesn't disintermediate
 - Confidence scores flag uncertain matches
 - Feedback loop improves model
 - Manual override always available
-- Start with AI as "assistant" not "replacement"
+- AI augments recruiters, doesn't replace them
 
-### Risk: Price Resistance
-
-**Mitigation**:
-- ROI calculator: "1 collaboration = 2 years subscription"
-- Free tier for small agencies (limited submissions)
-- Platform fee only on success (aligned incentives)
-- Founding member discounts
-
-### Risk: Incumbent Response
+### Risk: Candidate Supply
 
 **Mitigation**:
-- Execution speed (first mover in AI matching)
-- Agency relationships (trust built over years)
-- Network effects (more agencies = more valuable)
-- Focus on niche (yacht/villa, not general recruitment)
+- Public job board attracts active candidates
+- SEO strategy for organic discovery
+- Referral program incentivizes word-of-mouth
+- Social media presence in yachting community
+
+### Risk: Client Acquisition
+
+**Mitigation**:
+- Start with existing relationships
+- Focus on repeat business from satisfied clients
+- Build reputation through quality placements
+- Client referral incentives
+
+### Risk: Competitor Copying AI Approach
+
+**Mitigation**:
+- First mover advantage in niche market
+- Proprietary training data from placements
+- Continuous model improvement
+- Focus on service quality, not just technology
 
 ### Risk: Candidate Privacy Concerns
 
@@ -403,7 +334,7 @@ Platform facilitates, doesn't disintermediate
 |-------|----------|-------------|
 | Foundation | Weeks 1-8 | Core platform, AI matching, recruiter dashboard |
 | Trust & Quality | Weeks 9-14 | Submission system, verification tiers, client portal |
-| Network | Weeks 15-20 | Multi-agency, collaboration exchange, billing |
+| Scale | Weeks 15-20 | Client portal, billing, public launch |
 | Growth | Weeks 21-26 | Proactive intelligence, candidate app, public launch |
 
 ---
@@ -459,26 +390,26 @@ If scaling requires capital:
 - [ ] AI matching accuracy >80% (recruiter agrees with top 3)
 
 ### Phase 2 (Month 6)
-- [ ] 5+ partner agencies active
-- [ ] 10+ collaboration placements
-- [ ] €20K+ platform revenue
-- [ ] NPS >40 from agencies
+- [ ] 1,000+ registered candidates
+- [ ] 50+ placements completed
+- [ ] €250K+ placement revenue
+- [ ] Client portal active with 20+ clients
 
 ### Phase 3 (Month 9)
 - [ ] 30+ clients on portal
 - [ ] 50+ jobs posted via portal
-- [ ] €50K+ monthly platform fees
+- [ ] €75K+ monthly placement fees
 - [ ] 500+ verified candidates
 
 ### Phase 4 (Month 12)
-- [ ] 20+ paying agencies
-- [ ] €100K+ monthly recurring revenue
-- [ ] 1000+ placements tracked
+- [ ] 50+ active clients
+- [ ] €100K+ monthly placement revenue
+- [ ] 200+ placements annually
 - [ ] Industry press coverage
 
 ### Year 3
-- [ ] 100+ agencies
-- [ ] €150K+ MRR
+- [ ] 100+ active clients
+- [ ] €200K+ monthly revenue
 - [ ] 50%+ market awareness
 - [ ] Expansion to second vertical (luxury households)
 
@@ -486,65 +417,43 @@ If scaling requires capital:
 
 ## Appendix: Unit Economics
 
-### Agency LTV Calculation
+### Placement Economics
 
 ```
-Average subscription:     €199/month
-Average tenure:           24 months
-Subscription LTV:         €4,776
+Average placement fee:    €5,000
+Cost per placement:
+- Recruiter time (3 hrs): €75
+- AI/infrastructure:      €5
+- Verification costs:     €30
+- Total COGS:            €110
 
-Average placements/year:  15
-Platform fee/placement:   €400
-Platform fee LTV:         €12,000/year × 2 = €24,000
-
-Collaboration placements: 3/year
-Collab fee:              €200
-Collab LTV:              €600/year × 2 = €1,200
-
-Total Agency LTV:         €29,976
-
-CAC target:              <€3,000 (10:1 LTV:CAC)
+Gross margin per placement: €4,890 (98%)
 ```
 
 ### Client LTV Calculation
 
 ```
-Subscription:            €79/month × 18 months = €1,422
-Verification services:   €300/year × 1.5 = €450
-Total Client LTV:        €1,872
+Average placements/client/year: 3
+Average fee per placement:      €5,000
+Annual revenue per client:      €15,000
+Average client tenure:          3 years
+Client LTV:                     €45,000
 
-CAC target:             <€200
+CAC target:                     <€1,500 (30:1 LTV:CAC)
 ```
 
-### Platform Economics at Scale
+### Operational Economics
 
 ```
-At 100 agencies + 200 clients:
+Monthly costs:
+- Infrastructure (Supabase, Vercel, APIs): €500
+- AI costs (Claude, OpenAI):               €300
+- Communication (Twilio, Resend):          €100
+- Misc:                                    €100
+- Total monthly overhead:                  €1,000
 
-Monthly recurring:
-- Agency subs: 100 × €199 = €19,900
-- Client subs: 200 × €79 = €15,800
-- Subtotal MRR: €35,700
-
-Transaction revenue (monthly avg):
-- Platform fees: 150 placements × €400 = €60,000
-- Collaboration: 30 splits × €200 = €6,000
-- Verification: 100 × €49 = €4,900
-- Subtotal transactions: €70,900
-
-Total monthly revenue: €106,600
-Annual run rate: €1,279,200
-
-Costs at scale:
-- Infrastructure: €2,000/month
-- Support (2 FTE): €8,000/month
-- Sales (2 FTE): €10,000/month
-- Operations (1 FTE): €4,000/month
-- Marketing: €3,000/month
-- Total costs: €27,000/month
-
-Profit margin: 75%
-Annual profit: ~€955,200
+Breakeven: 1 placement every 5 months
+Target: 15-20 placements/month
 ```
 
 ---
@@ -554,11 +463,11 @@ Annual profit: ~€955,200
 1. **This week**: Run database migrations, test AI matching
 2. **Next week**: Build recruiter dashboard MVP
 3. **Month 1**: Deploy internally, process 50 briefs
-4. **Month 2**: Invite 3 friendly agencies to test
-5. **Month 3**: Refine based on feedback, prep for pilot
+4. **Month 2**: Launch public job board, start candidate acquisition
+5. **Month 3**: Launch client portal, onboard first self-service clients
 
 ---
 
-*Document Version: 1.0*
-*Last Updated: November 2024*
+*Document Version: 2.0*
+*Last Updated: January 2025*
 *Author: Lighthouse Crew Network*

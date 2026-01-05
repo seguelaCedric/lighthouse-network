@@ -254,6 +254,48 @@ export async function createCandidate(
 }
 
 /**
+ * Update an existing candidate in Vincere
+ */
+export async function updateCandidate(
+  vincereId: number,
+  data: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    phone?: string;
+    mobile?: string;
+    dateOfBirth?: string;
+    gender?: string;
+    nationality?: string;
+    currentLocation?: string;
+    jobTitle?: string;
+    summary?: string;
+  },
+  client?: VincereClient
+): Promise<void> {
+  const vincere = client ?? getVincereClient();
+
+  // Build update payload with only provided fields
+  const payload: Record<string, unknown> = {};
+  if (data.firstName !== undefined) payload.first_name = data.firstName;
+  if (data.lastName !== undefined) payload.last_name = data.lastName;
+  if (data.email !== undefined) payload.primary_email = data.email;
+  if (data.phone !== undefined) payload.phone = data.phone;
+  if (data.mobile !== undefined) payload.mobile = data.mobile;
+  if (data.dateOfBirth !== undefined) payload.date_of_birth = data.dateOfBirth;
+  if (data.gender !== undefined) payload.gender = data.gender;
+  if (data.nationality !== undefined) payload.nationality = data.nationality;
+  if (data.currentLocation !== undefined) payload.current_location = data.currentLocation;
+  if (data.jobTitle !== undefined) payload.job_title = data.jobTitle;
+  if (data.summary !== undefined) payload.summary = data.summary;
+
+  // Only make request if there are fields to update
+  if (Object.keys(payload).length > 0) {
+    await vincere.put(`/candidate/${vincereId}`, payload);
+  }
+}
+
+/**
  * Helper to get a specific custom field value
  */
 export function getFieldValue(

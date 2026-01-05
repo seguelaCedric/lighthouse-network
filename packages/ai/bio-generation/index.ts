@@ -23,8 +23,9 @@ export * from './types';
 export * from './anonymize';
 export { BIO_GENERATION_SYSTEM_PROMPT, buildBioGenerationPrompt } from './prompts';
 
-// Use Claude 3.5 Haiku for cost-effective generation
-const bioModel = anthropic('claude-3-5-haiku-20241022');
+// Use Claude Sonnet 4.5 for high-quality bio generation
+// Bios are shown to clients, so quality is critical
+const bioModel = anthropic('claude-sonnet-4-20250514');
 
 // ----------------------------------------------------------------------------
 // MAIN GENERATION FUNCTION
@@ -76,8 +77,17 @@ export async function generateCandidateBio(
   // Collect any generation notes
   const notes = collectGenerationNotes(candidate);
 
+  // Generate anonymized version using AI
+  const { aiAnonymizeBio } = await import('./ai-anonymize');
+  const bioAnonymized = await aiAnonymizeBio(
+    text.trim(),
+    candidate.first_name,
+    candidate.last_name
+  );
+
   return {
     bio_full: text.trim(),
+    bio_anonymized: bioAnonymized,
     generation_confidence: confidence,
     generation_notes: notes.length > 0 ? notes : undefined,
   };
@@ -362,3 +372,13 @@ function collectGenerationNotes(candidate: BioGenerationCandidate): string[] {
 
 // Export version constant
 export { BIO_GENERATION_VERSION };
+
+// Export AI anonymization (NEW)
+export { aiAnonymizeBio, aiAnonymizeBiosBatch } from './ai-anonymize';
+
+// Export validation (NEW)
+export {
+  validateAnonymizedBio,
+  validateAnonymizedBioSafe,
+  bioNeedsAnonymization,
+} from './validation';

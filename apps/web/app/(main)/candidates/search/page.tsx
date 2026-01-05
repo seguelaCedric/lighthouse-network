@@ -1097,7 +1097,7 @@ function CandidateSearchPageContent() {
                       {sidebarOpen ? "Hide Filters" : "Show Filters"}
                     </button>
                     <span className="text-sm text-gray-600">
-                      <span className="font-semibold text-navy-900">{totalResults.toLocaleString()}</span>{" "}
+                      <span className="font-semibold text-navy-900">{totalResults.toLocaleString("en-US")}</span>{" "}
                       candidates
                       {isFetching && !isLoading && (
                         <Loader2 className="ml-2 inline size-4 animate-spin text-gray-400" />

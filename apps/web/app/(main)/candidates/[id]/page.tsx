@@ -601,7 +601,7 @@ export default function CandidateProfilePage() {
                         </div>
                         <p className="mt-1 font-semibold text-navy-900">
                           {candidate.desired_salary_min || candidate.desired_salary_max
-                            ? `${candidate.salary_currency || "EUR"} ${candidate.desired_salary_min?.toLocaleString() || "?"} - ${candidate.desired_salary_max?.toLocaleString() || "?"} /month`
+                            ? `${candidate.salary_currency || "EUR"} ${candidate.desired_salary_min?.toLocaleString("en-US") || "?"} - ${candidate.desired_salary_max?.toLocaleString("en-US") || "?"} /month`
                             : "Not set"}
                         </p>
                       </div>

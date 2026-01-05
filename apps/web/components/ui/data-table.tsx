@@ -259,7 +259,7 @@ function DataTable<T extends { id: string | number }>({
             <span>entries</span>
             {totalItems !== undefined && (
               <span className="ml-2 text-gray-400">
-                (Total: {totalItems.toLocaleString()})
+                (Total: {totalItems.toLocaleString("en-US")})
               </span>
             )}
           </div>

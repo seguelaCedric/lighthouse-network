@@ -595,14 +595,12 @@ function calculateScores(candidate: Candidate, job: Job): ScoringResult {
   // ---- AVAILABILITY SCORE (15 points) ----
   let availScore = 0;
   const availDetails: string[] = [];
-  
+
   // Availability status
-  if (candidate.availability_status === 'available') {
+  // Note: 'looking' is treated the same as 'available' per requirements
+  if (candidate.availability_status === 'available' || candidate.availability_status === 'looking') {
     availScore += 10;
-    availDetails.push('Available now');
-  } else if (candidate.availability_status === 'looking') {
-    availScore += 7;
-    availDetails.push('Actively looking');
+    availDetails.push(candidate.availability_status === 'looking' ? 'Actively looking' : 'Available now');
   } else if (candidate.availability_status === 'employed') {
     availScore += 3;
     availDetails.push('Currently employed');
@@ -622,7 +620,7 @@ function calculateScores(candidate: Candidate, job: Job): ScoringResult {
       availScore += 3;
       availDetails.push('Available within 2 weeks of start');
     }
-  } else if (candidate.availability_status === 'available') {
+  } else if (candidate.availability_status === 'available' || candidate.availability_status === 'looking') {
     availScore += 5;
     availDetails.push('Immediately available');
   }
@@ -1301,12 +1299,12 @@ export async function matchCandidatesForJob(
   }
 
   // ============ STAGE 1: QUERY CANDIDATES ============
-  // Filter by availability_status = 'available', match position if specified, limit 100
+  // Filter by availability_status = 'available' or 'looking', match position if specified, limit 100
   let query = supabase
     .from('candidates')
     .select('*')
     .is('deleted_at', null)
-    .eq('availability_status', 'available')
+    .in('availability_status', ['available', 'looking'])
     .limit(100);
 
   // Match position category if job has one
@@ -1429,11 +1427,10 @@ export async function matchCandidatesForJob(
     }
 
     // ---- AVAILABILITY (15 points) ----
-    if (candidate.availability_status === 'available') {
+    // Note: 'looking' is treated the same as 'available' per requirements
+    if (candidate.availability_status === 'available' || candidate.availability_status === 'looking') {
       breakdown.availability += 10;
-      strengths.push('Immediately available');
-    } else if (candidate.availability_status === 'looking') {
-      breakdown.availability += 6;
+      strengths.push(candidate.availability_status === 'looking' ? 'Actively looking' : 'Immediately available');
     } else {
       breakdown.availability += 2;
       concerns.push(`Availability: ${candidate.availability_status}`);
@@ -1589,3 +1586,6 @@ export {
   getAIAssessments,
   CONFIG as MATCHING_CONFIG,
 };
+
+// Re-export candidate-job-matcher for AI-powered job matching
+export * from "./candidate-job-matcher";

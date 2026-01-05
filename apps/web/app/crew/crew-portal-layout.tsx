@@ -5,7 +5,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Anchor,
   User,
   Briefcase,
   Search,
@@ -19,8 +18,10 @@ import {
   FileText,
   UserCircle,
   Gift,
+  Sliders,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Logo } from "@/components/ui/Logo";
 import { signOutCandidate } from "@/lib/auth/candidate-actions";
 
 export interface CrewUser {
@@ -36,24 +37,27 @@ export interface CrewUser {
 interface CrewPortalLayoutProps {
   children: React.ReactNode;
   user: CrewUser;
+  notificationCount?: number;
 }
 
 const navItems = [
   { href: "/crew/dashboard", label: "Dashboard", icon: User },
   { href: "/crew/jobs", label: "Browse Jobs", icon: Search },
   { href: "/crew/applications", label: "My Applications", icon: Briefcase },
-  { href: "/crew/verification", label: "Verification", icon: Shield },
-  { href: "/crew/referrals", label: "Referrals", icon: Gift },
 ];
 
-export function CrewPortalLayout({ children, user }: CrewPortalLayoutProps) {
+export function CrewPortalLayout({
+  children,
+  user,
+  notificationCount = 0,
+}: CrewPortalLayoutProps) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
 
   const isAvailable =
     user.availabilityStatus === "available" ||
-    user.availabilityStatus === "actively_looking";
+    user.availabilityStatus === "looking";
 
   const handleSignOut = async () => {
     await signOutCandidate();
@@ -80,13 +84,8 @@ export function CrewPortalLayout({ children, user }: CrewPortalLayoutProps) {
             </button>
 
             {/* Logo */}
-            <Link href="/crew/dashboard" className="flex items-center gap-2">
-              <div className="flex size-9 items-center justify-center rounded-lg bg-navy-800">
-                <Anchor className="size-5 text-gold-400" />
-              </div>
-              <span className="hidden font-serif text-xl font-semibold text-navy-800 sm:block">
-                Lighthouse
-              </span>
+            <Link href="/crew/dashboard">
+              <Logo size="md" />
             </Link>
           </div>
 
@@ -140,6 +139,11 @@ export function CrewPortalLayout({ children, user }: CrewPortalLayoutProps) {
               className="relative rounded-lg p-2 text-navy-600 transition-colors hover:bg-navy-50"
             >
               <Bell className="size-5" />
+              {notificationCount > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 flex size-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white">
+                  {notificationCount > 9 ? "9+" : notificationCount}
+                </span>
+              )}
             </Link>
 
             {/* Profile Dropdown - Desktop */}
@@ -178,17 +182,41 @@ export function CrewPortalLayout({ children, user }: CrewPortalLayoutProps) {
                         {user.firstName} {user.lastName}
                       </p>
                       <p className="text-sm capitalize text-gray-500">
-                        {user.primaryPosition?.replace(/_/g, " ") || "Yacht Crew"}
+                        {user.primaryPosition?.replace(/_/g, " ") || "Candidate"}
                       </p>
                     </div>
                     <div className="py-1">
                       <Link
-                        href="/crew/profile"
+                        href="/crew/profile/edit"
                         onClick={() => setProfileMenuOpen(false)}
                         className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                       >
                         <UserCircle className="size-4" />
                         My Profile
+                      </Link>
+                      <Link
+                        href="/crew/preferences"
+                        onClick={() => setProfileMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        <Sliders className="size-4" />
+                        Job Preferences
+                      </Link>
+                      <Link
+                        href="/crew/documents"
+                        onClick={() => setProfileMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        <FileText className="size-4" />
+                        Documents
+                      </Link>
+                      <Link
+                        href="/crew/referrals"
+                        onClick={() => setProfileMenuOpen(false)}
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                      >
+                        <Gift className="size-4 text-gold-500" />
+                        Referrals
                       </Link>
                       <Link
                         href="/crew/settings"
@@ -224,12 +252,7 @@ export function CrewPortalLayout({ children, user }: CrewPortalLayoutProps) {
           <div className="fixed inset-y-0 left-0 w-[85vw] max-w-72 bg-white shadow-xl">
             {/* Header */}
             <div className="flex h-16 items-center gap-2 border-b border-gray-100 px-4">
-              <div className="flex size-9 items-center justify-center rounded-lg bg-navy-800">
-                <Anchor className="size-5 text-gold-400" />
-              </div>
-              <span className="font-serif text-xl font-semibold text-navy-800">
-                Lighthouse
-              </span>
+              <Logo size="md" />
             </div>
 
             {/* User Info */}
@@ -254,7 +277,7 @@ export function CrewPortalLayout({ children, user }: CrewPortalLayoutProps) {
                     {user.firstName} {user.lastName}
                   </p>
                   <p className="truncate text-sm capitalize text-gray-500">
-                    {user.primaryPosition?.replace(/_/g, " ") || "Yacht Crew"}
+                    {user.primaryPosition?.replace(/_/g, " ") || "Candidate"}
                   </p>
                 </div>
               </div>
@@ -305,12 +328,36 @@ export function CrewPortalLayout({ children, user }: CrewPortalLayoutProps) {
               <div className="my-2 border-t border-gray-100" />
 
               <Link
-                href="/crew/profile"
+                href="/crew/profile/edit"
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-navy-900"
               >
                 <UserCircle className="size-5" />
                 My Profile
+              </Link>
+              <Link
+                href="/crew/preferences"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-navy-900"
+              >
+                <Sliders className="size-5" />
+                Job Preferences
+              </Link>
+              <Link
+                href="/crew/documents"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-navy-900"
+              >
+                <FileText className="size-5" />
+                Documents
+              </Link>
+              <Link
+                href="/crew/referrals"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-navy-900"
+              >
+                <Gift className="size-5 text-gold-500" />
+                Referrals
               </Link>
               <Link
                 href="/crew/settings"

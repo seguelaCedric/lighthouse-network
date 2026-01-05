@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Anchor } from "lucide-react";
+import { Logo } from "@/components/ui/Logo";
 
 export function PublicFooter() {
   return (
@@ -7,14 +7,7 @@ export function PublicFooter() {
       <div className="mx-auto max-w-6xl px-4 py-12 pb-24 sm:px-6">
         <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
           {/* Logo */}
-          <div className="flex items-center gap-2">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-navy-800">
-              <Anchor className="size-4 text-gold-400" />
-            </div>
-            <span className="font-serif text-lg font-semibold text-navy-800">
-              Lighthouse Careers
-            </span>
-          </div>
+          <Logo size="sm" />
 
           {/* Links */}
           <nav className="flex flex-wrap justify-center gap-6 text-sm">

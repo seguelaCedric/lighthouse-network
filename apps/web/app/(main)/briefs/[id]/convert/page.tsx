@@ -772,9 +772,8 @@ export default function BriefConvertPage() {
                     onChange={handleChange}
                     className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/20"
                   >
-                    <option value="private">Private (only my agency)</option>
-                    <option value="network">Network (partner agencies)</option>
-                    <option value="public">Public (all agencies)</option>
+                    <option value="private">Private (internal use only)</option>
+                    <option value="public">Public (visible on job board)</option>
                   </select>
                 </div>
               </div>
@@ -856,13 +855,13 @@ export default function BriefConvertPage() {
                     <div>
                       <h3 className="font-medium text-navy-900">
                         {currencySymbol}
-                        {parseInt(formData.salary_min || "0").toLocaleString()}
+                        {parseInt(formData.salary_min || "0").toLocaleString("en-US")}
                         {formData.salary_max &&
                           formData.salary_max !== formData.salary_min && (
                             <>
                               {" "}
                               - {currencySymbol}
-                              {parseInt(formData.salary_max).toLocaleString()}
+                              {parseInt(formData.salary_max).toLocaleString("en-US")}
                             </>
                           )}
                         <span className="font-normal text-gray-600">

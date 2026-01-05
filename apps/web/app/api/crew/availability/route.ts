@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
+import { syncAvailabilityUpdate } from "@/lib/vincere/sync-service";
 
 // Schema for updating availability
 const updateAvailabilitySchema = z.object({
@@ -112,6 +113,11 @@ export async function PATCH(request: NextRequest) {
         performed_by: userData.id,
       })
       .then(() => {}, (err) => console.error("Failed to log activity:", err));
+
+    // Sync availability to Vincere (fire-and-forget)
+    syncAvailabilityUpdate(candidate.id, availability_status, available_from || null).catch((err) =>
+      console.error("Vincere sync failed for availability update:", err)
+    );
 
     return NextResponse.json({
       data: updatedCandidate,

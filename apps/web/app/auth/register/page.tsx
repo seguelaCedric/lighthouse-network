@@ -10,7 +10,6 @@ import { signUp } from "@/lib/auth/actions";
 import {
   Eye,
   EyeOff,
-  Anchor,
   Mail,
   Lock,
   ArrowRight,
@@ -25,6 +24,7 @@ import {
   Sparkles,
   Gift,
 } from "lucide-react";
+import { Logo } from "@/components/ui/Logo";
 
 // Step indicator component
 function StepIndicator({
@@ -105,7 +105,7 @@ function Step1({
     <div className="space-y-4">
       <div className="mb-6 text-center">
         <h2 className="font-serif text-2xl font-medium text-navy-800">Create Your Account</h2>
-        <p className="text-sm text-gray-500">Start your journey in the yachting industry</p>
+        <p className="text-sm text-gray-500">Start your journey in yachting or private service</p>
       </div>
 
       {/* Email */}
@@ -365,28 +365,95 @@ function Step2({
 function Step3({
   data,
   onChange,
+  errors,
 }: {
-  data: { primaryPosition: string; yearsExperience: string; currentStatus: string };
+  data: {
+    candidateType: string;
+    primaryPosition: string;
+    otherRoleDetails: string;
+    yearsExperience: string;
+    currentStatus: string;
+  };
   onChange: (field: string, value: string) => void;
+  errors: Record<string, string>;
 }) {
-  const positions = [
+  const roleTypes = [
+    {
+      value: "yacht_crew",
+      label: "Yacht Crew",
+      description: "Roles on board yachts and superyachts",
+    },
+    {
+      value: "household_staff",
+      label: "Household Staff",
+      description: "Private residences, estates, and households",
+    },
+    {
+      value: "both",
+      label: "Both",
+      description: "Open to yacht and household roles",
+    },
+    {
+      value: "other",
+      label: "Other",
+      description: "Other roles or industries",
+    },
+  ];
+
+  const yachtPositions = [
+    // Yacht Crew - Deck
     "Captain",
     "Chief Officer",
     "2nd Officer",
     "3rd Officer",
     "Bosun",
     "Deckhand",
+    // Yacht Crew - Engineering
     "Chief Engineer",
     "2nd Engineer",
     "ETO",
+    // Yacht Crew - Interior
     "Chief Stewardess",
     "2nd Stewardess",
     "3rd Stewardess",
     "Stewardess",
+    // Culinary
     "Head Chef",
     "Sous Chef",
-    "Crew Chef",
+    "Chef de Partie",
+    "Private Chef",
   ];
+
+  const householdPositions = [
+    "Estate Manager",
+    "House Manager",
+    "Butler",
+    "Head Housekeeper",
+    "Housekeeper",
+    "Personal Assistant",
+    "Nanny",
+    "Governess",
+    "Chauffeur",
+    "Security / Close Protection",
+    "Gardener / Groundskeeper",
+    "Maintenance / Handyman",
+    "Laundress",
+    "Couple (Combined Roles)",
+    "Private Chef",
+  ];
+
+  const positionsByType: Record<string, string[]> = {
+    yacht_crew: yachtPositions,
+    household_staff: householdPositions,
+    both: [...yachtPositions, ...householdPositions],
+    other: ["Other"],
+  };
+
+  const positions = data.candidateType
+    ? positionsByType[data.candidateType] || []
+    : [];
+
+  const showOtherRoleDetails = data.candidateType === "other";
 
   const experienceLevels = [
     "Entry Level (0-1 years)",
@@ -410,6 +477,42 @@ function Step3({
         <p className="text-sm text-gray-500">Help us match you with the right opportunities</p>
       </div>
 
+      {/* Role Category */}
+      <div>
+        <label className="mb-1.5 block text-sm font-medium text-navy-900">
+          Role Category
+        </label>
+        <div className="space-y-2">
+          {roleTypes.map((role) => (
+            <label
+              key={role.value}
+              className={cn(
+                "flex cursor-pointer flex-col gap-0.5 rounded-lg border p-3 transition-colors",
+                data.candidateType === role.value
+                  ? "border-gold-400 bg-gold-50"
+                  : "border-gray-200 hover:border-gray-300"
+              )}
+            >
+              <span className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="candidateType"
+                  value={role.value}
+                  checked={data.candidateType === role.value}
+                  onChange={(e) => onChange("candidateType", e.target.value)}
+                  className="size-4 border-gray-300 text-gold-600 focus:ring-gold-500"
+                />
+                <span className="text-sm font-medium text-navy-900">{role.label}</span>
+              </span>
+              <span className="text-xs text-gray-500">{role.description}</span>
+            </label>
+          ))}
+        </div>
+        {errors.candidateType && (
+          <p className="mt-1 text-xs text-error-600">{errors.candidateType}</p>
+        )}
+      </div>
+
       {/* Primary Position */}
       <div>
         <label htmlFor="position" className="mb-1.5 block text-sm font-medium text-navy-900">
@@ -421,9 +524,15 @@ function Step3({
             id="position"
             value={data.primaryPosition}
             onChange={(e) => onChange("primaryPosition", e.target.value)}
-            className="w-full appearance-none rounded-lg border border-gray-200 bg-white py-2.5 pl-10 pr-10 text-navy-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/20"
+            disabled={!data.candidateType}
+            className={cn(
+              "w-full appearance-none rounded-lg border bg-white py-2.5 pl-10 pr-10 text-navy-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/20",
+              !data.candidateType && "border-gray-200 text-gray-400"
+            )}
           >
-            <option value="">Select your primary position</option>
+            <option value="">
+              {data.candidateType ? "Select your primary position" : "Select a role category first"}
+            </option>
             {positions.map((p) => (
               <option key={p} value={p}>
                 {p}
@@ -432,7 +541,29 @@ function Step3({
           </select>
           <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
         </div>
+        {errors.primaryPosition && (
+          <p className="mt-1 text-xs text-error-600">{errors.primaryPosition}</p>
+        )}
       </div>
+
+      {showOtherRoleDetails && (
+        <div>
+          <label htmlFor="otherRole" className="mb-1.5 block text-sm font-medium text-navy-900">
+            Describe Your Role
+          </label>
+          <textarea
+            id="otherRole"
+            rows={4}
+            value={data.otherRoleDetails}
+            onChange={(e) => onChange("otherRoleDetails", e.target.value)}
+            placeholder="e.g. Corporate hospitality, private aviation, luxury concierge, etc."
+            className="w-full rounded-lg border border-gray-200 bg-white p-3 text-navy-900 placeholder:text-gray-400 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/20"
+          />
+          {errors.otherRoleDetails && (
+            <p className="mt-1 text-xs text-error-600">{errors.otherRoleDetails}</p>
+          )}
+        </div>
+      )}
 
       {/* Years of Experience */}
       <div>
@@ -514,7 +645,7 @@ function Step4({ email }: { email: string }) {
             <p className="text-sm font-medium text-navy-900">Almost there!</p>
             <p className="text-xs text-navy-700">
               Click the link in your email to verify your account. Once verified, you'll be able to
-              complete your profile and start browsing exclusive yacht crew positions matched to
+              complete your profile and start browsing exclusive positions matched to
               your experience.
             </p>
           </div>
@@ -560,7 +691,9 @@ function RegisterContent() {
   });
 
   const [step3Data, setStep3Data] = useState({
+    candidateType: "",
     primaryPosition: "",
+    otherRoleDetails: "",
     yearsExperience: "",
     currentStatus: "",
   });
@@ -606,6 +739,7 @@ function RegisterContent() {
 
   const handleStep3Change = (field: string, value: string) => {
     setStep3Data((prev) => ({ ...prev, [field]: value }));
+    setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
   const validateStep1 = (): boolean => {
@@ -656,6 +790,24 @@ function RegisterContent() {
     return Object.keys(newErrors).length === 0;
   };
 
+  const validateStep3 = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (!step3Data.candidateType) {
+      newErrors.candidateType = "Please select a role category";
+    }
+
+    if (!step3Data.primaryPosition) {
+      newErrors.primaryPosition = "Primary position is required";
+    }
+    if (step3Data.candidateType === "other" && !step3Data.otherRoleDetails.trim()) {
+      newErrors.otherRoleDetails = "Please describe your role";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleNext = async () => {
     if (currentStep === 1 && !validateStep1()) {
       return;
@@ -666,6 +818,10 @@ function RegisterContent() {
     }
 
     if (currentStep === 3) {
+      if (!validateStep3()) {
+        return;
+      }
+
       // Submit registration
       setIsLoading(true);
 
@@ -675,6 +831,8 @@ function RegisterContent() {
         full_name: `${step2Data.firstName} ${step2Data.lastName}`,
         phone: step2Data.phone,
         nationality: step2Data.nationality,
+        candidate_type: step3Data.candidateType,
+        other_role_details: step3Data.otherRoleDetails,
         primary_position: step3Data.primaryPosition,
         years_experience: step3Data.yearsExperience,
         current_status: step3Data.currentStatus,
@@ -720,11 +878,8 @@ function RegisterContent() {
       <div className="relative w-full max-w-lg">
         {/* Logo */}
         <div className="mb-6 text-center">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-navy-900">
-              <Anchor className="size-5 text-gold-400" />
-            </div>
-            <span className="text-lg font-bold text-navy-900">Lighthouse Network</span>
+          <Link href="/" className="inline-flex justify-center">
+            <Logo size="xl" />
           </Link>
         </div>
 
@@ -754,7 +909,7 @@ function RegisterContent() {
               <Step2 data={step2Data} onChange={handleStep2Change} errors={errors} />
             )}
             {currentStep === 3 && (
-              <Step3 data={step3Data} onChange={handleStep3Change} />
+              <Step3 data={step3Data} onChange={handleStep3Change} errors={errors} />
             )}
             {currentStep === 4 && <Step4 email={step1Data.email} />}
 

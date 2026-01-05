@@ -5,7 +5,6 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  Anchor,
   Gift,
   CheckCircle,
   Ship,
@@ -19,6 +18,7 @@ import {
   Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/ui/Logo";
 import { cn } from "@/lib/utils";
 
 interface ReferrerInfo {
@@ -85,13 +85,8 @@ function JoinPageContent() {
       {/* Header */}
       <header className="border-b border-gray-100 bg-white/80 backdrop-blur-sm">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-navy-800">
-              <Anchor className="size-5 text-gold-400" />
-            </div>
-            <span className="font-serif text-xl font-semibold text-navy-800">
-              Lighthouse
-            </span>
+          <Link href="/">
+            <Logo size="md" />
           </Link>
 
           <div className="flex items-center gap-2">
@@ -129,11 +124,11 @@ function JoinPageContent() {
         <div className="mb-12 text-center">
           <h1 className="mb-4 font-serif text-4xl font-semibold text-navy-900 sm:text-5xl">
             Your Next{" "}
-            <span className="text-gold-600">Yacht Career Opportunity</span>{" "}
+            <span className="text-gold-600">Career Opportunity</span>{" "}
             Awaits
           </h1>
           <p className="mx-auto max-w-2xl text-lg text-gray-600">
-            Join the exclusive network where elite yacht crew find their perfect
+            Join the exclusive network where elite yacht crew and private household staff find their perfect
             placements. AI-powered matching, verified opportunities, and a
             community that supports your success.
           </p>
@@ -204,11 +199,11 @@ function JoinPageContent() {
                 <div className="flex size-10 items-center justify-center rounded-full bg-navy-100">
                   <Ship className="size-5 text-navy-600" />
                 </div>
-                <h4 className="font-medium text-navy-900">500+ Yacht Jobs</h4>
+                <h4 className="font-medium text-navy-900">500+ Elite Positions</h4>
               </div>
               <p className="text-sm text-gray-600">
-                Access exclusive positions on motor yachts, sailing yachts, and
-                expedition vessels worldwide.
+                Access exclusive opportunities on yachts, private estates, and
+                luxury households worldwide.
               </p>
             </div>
 
@@ -273,8 +268,8 @@ function JoinPageContent() {
               <p className="text-sm text-gray-500">Job Placements</p>
             </div>
             <div className="text-center">
-              <p className="text-3xl font-bold text-navy-900">150+</p>
-              <p className="text-sm text-gray-500">Partner Agencies</p>
+              <p className="text-3xl font-bold text-navy-900">50+</p>
+              <p className="text-sm text-gray-500">Yacht Clients</p>
             </div>
           </div>
         </div>
@@ -302,14 +297,7 @@ function JoinPageContent() {
       <footer className="border-t border-gray-100 bg-white py-8">
         <div className="mx-auto max-w-5xl px-4">
           <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-            <div className="flex items-center gap-2">
-              <div className="flex size-8 items-center justify-center rounded-lg bg-navy-800">
-                <Anchor className="size-4 text-gold-400" />
-              </div>
-              <span className="font-serif text-lg font-semibold text-navy-800">
-                Lighthouse
-              </span>
-            </div>
+            <Logo size="sm" />
 
             <p className="text-sm text-gray-500">
               &copy; {new Date().getFullYear()} Lighthouse Crew Network. All

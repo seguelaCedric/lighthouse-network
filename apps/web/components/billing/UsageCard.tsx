@@ -42,9 +42,9 @@ function UsageItem({
         <span className="text-sm text-gray-600">{label}</span>
       </div>
       <p className="text-3xl font-bold text-navy-800">
-        {used.toLocaleString()}
+        {used.toLocaleString("en-US")}
         <span className="text-base font-normal text-gray-400">
-          /{isUnlimited ? "∞" : limit.toLocaleString()}
+          /{isUnlimited ? "∞" : limit.toLocaleString("en-US")}
         </span>
       </p>
       <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-200">

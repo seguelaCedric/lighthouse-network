@@ -13,13 +13,13 @@ import { loginSchema, type LoginFormData } from "@/lib/auth/validation";
 import {
   Eye,
   EyeOff,
-  Anchor,
   Mail,
   Lock,
   ArrowRight,
   X,
   Smartphone,
 } from "lucide-react";
+import { Logo } from "@/components/ui/Logo";
 
 // Two-Factor Authentication Modal
 function TwoFactorModal({
@@ -200,7 +200,7 @@ export default function LoginPage() {
     }
 
     toast.success("Signed in successfully");
-    router.push("/dashboard");
+    router.push(result.redirectTo || "/dashboard");
     router.refresh();
   };
 
@@ -231,15 +231,13 @@ export default function LoginPage() {
       <div className="relative w-full max-w-md">
         {/* Logo */}
         <div className="mb-8 text-center">
-          <Link href="/" className="inline-block">
-            <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-navy-900 shadow-lg">
-              <Anchor className="size-7 text-gold-400" />
-            </div>
+          <Link href="/" className="inline-flex justify-center">
+            <Logo size="xl" />
           </Link>
-          <h1 className="font-serif text-4xl font-semibold text-navy-800">
-            Crew Sign In
+          <h1 className="mt-4 font-serif text-4xl font-semibold text-navy-800">
+            Sign In
           </h1>
-          <p className="text-sm text-gray-500">Find your next yacht or household position</p>
+          <p className="text-sm text-gray-500">Find your next position in yachting or private service</p>
         </div>
 
         {/* Login Card */}

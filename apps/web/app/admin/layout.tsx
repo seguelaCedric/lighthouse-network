@@ -4,19 +4,14 @@ import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import {
-  CreditCard,
   Users,
-  Building2,
   BarChart3,
   Settings,
   ArrowLeft,
-  Anchor,
   Shield,
 } from "lucide-react";
 
 const navItems = [
-  { href: "/admin/billing", label: "Billing & Fees", icon: CreditCard },
-  { href: "/admin/agencies", label: "Agencies", icon: Building2 },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/admin/settings", label: "Settings", icon: Settings },

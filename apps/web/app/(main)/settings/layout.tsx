@@ -11,8 +11,8 @@ import {
   CreditCard,
   Users,
   ArrowLeft,
-  Anchor,
 } from "lucide-react";
+import { Logo } from "@/components/ui/Logo";
 
 const navItems = [
   { href: "/settings/profile", label: "Profile", icon: User },
@@ -41,9 +41,7 @@ export default function SettingsLayout({
           <ArrowLeft className="size-5" />
         </Link>
         <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-xl bg-navy-900">
-            <Anchor className="size-5 text-gold-400" />
-          </div>
+          <Logo size="md" />
           <div>
             <h1 className="text-4xl font-serif font-semibold text-navy-800">Settings</h1>
             <p className="text-sm text-gray-500">Manage your account and preferences</p>

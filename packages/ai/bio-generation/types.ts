@@ -59,8 +59,14 @@ export interface BioGenerationRequest {
 // ----------------------------------------------------------------------------
 
 export interface BioGenerationResult {
-  /** Complete 5-paragraph bio with candidate name */
+  /** Complete 5-paragraph bio WITH all names (person, yacht, company, property).
+   * Used for paying agency clients who have full access rights. */
   bio_full: string;
+
+  /** AI-anonymized version of bio_full with ALL PII removed.
+   * Used for public lead generation and match reasoning.
+   * Removes: person names, yacht names, company names, property names, references. */
+  bio_anonymized: string;
 
   /** Confidence score 0-1 for the generation quality */
   generation_confidence: number;
