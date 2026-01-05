@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { syncJobApplication } from "@/lib/vincere/sync-service";
 import { getPositionDisplayName } from "@/lib/utils/format-position";
+import { REGION_GROUPS } from "@/lib/utils/job-helpers";
 
 /**
  * Job listing for crew portal
@@ -34,7 +35,7 @@ export interface JobListing {
   createdAt: string;
   // Match info
   matchScore: number | null;
-  matchType: "exact" | "related" | "none";
+  matchType: "match" | "none";
   hasApplied: boolean;
   isSaved: boolean;
 }
@@ -47,7 +48,9 @@ export interface JobFilters {
   region?: string;
   contractType?: string;
   minSalary?: number;
+  maxSalary?: number;
   vesselType?: string;
+  jobType?: "yacht" | "land-based" | "all";
 }
 
 /**
@@ -65,63 +68,6 @@ export interface JobsPageData {
 }
 
 /**
- * Role categories and related positions for better matching
- * Crew members often look for roles in their category or adjacent roles
- */
-const ROLE_CATEGORIES: Record<string, string[]> = {
-  // Interior/Service department
-  interior: [
-    "chief stew", "chief stewardess", "head stew",
-    "second stew", "third stew", "stew", "stewardess",
-    "purser", "interior manager",
-    "housekeeper", "head of house", "house manager",
-    "butler", "service stew"
-  ],
-  // Deck department
-  deck: [
-    "captain", "master",
-    "chief officer", "first officer", "mate",
-    "second officer", "third officer",
-    "bosun", "lead deckhand", "senior deckhand",
-    "deckhand", "deck stew"
-  ],
-  // Engineering department
-  engineering: [
-    "chief engineer", "first engineer",
-    "second engineer", "third engineer",
-    "eto", "electro-technical officer",
-    "engineer"
-  ],
-  // Galley/Culinary
-  galley: [
-    "head chef", "executive chef", "chef",
-    "sous chef", "crew chef",
-    "cook"
-  ],
-  // Specialty roles
-  specialty: [
-    "spa manager", "masseuse", "beautician",
-    "nurse", "nanny", "tutor",
-    "personal assistant", "pa"
-  ],
-};
-
-/**
- * Get related roles for a given position
- */
-function getRelatedRoles(position: string): string[] {
-  const normalizedPos = position.toLowerCase().trim();
-
-  for (const [_category, roles] of Object.entries(ROLE_CATEGORIES)) {
-    if (roles.some(role => normalizedPos.includes(role) || role.includes(normalizedPos))) {
-      return roles;
-    }
-  }
-
-  return [];
-}
-
-/**
  * Normalize a position string for comparison
  */
 function normalizePosition(position: string): string {
@@ -133,70 +79,25 @@ function normalizePosition(position: string): string {
 
 /**
  * Check if a job title matches any of the candidate's sought positions
- *
- * This uses the candidate's explicit job preferences:
- * - positions_held: What roles they've done before (and can do again)
- * - primary_position: Their current/main role
- * - secondary_positions: Other roles they're actively looking for
- *
- * Match levels:
- * - "exact": Job matches their primary position or explicitly sought positions
- * - "related": Job is in their department (same position_category)
- * - "none": Different department entirely
+ * SIMPLE LOGIC: Does the job title contain the position they're looking for?
+ * (Strict containment only; no related-role matching.)
  */
 function getPositionMatchLevel(
   jobTitle: string,
-  candidateSoughtPositions: string[],
-  candidatePrimaryPosition: string | null,
-  candidatePositionCategory: string | null
-): "exact" | "related" | "none" {
+  candidateSoughtPositions: string[]
+): "match" | "none" {
   const normalizedJob = normalizePosition(jobTitle);
 
-  // Check for exact matches against positions the candidate is looking for
+  // Simple check: does the job title contain any position they're seeking?
   for (const position of candidateSoughtPositions) {
     const normalizedPos = normalizePosition(position);
 
-    // Check if job title contains this position or vice versa
-    if (normalizedJob.includes(normalizedPos) || normalizedPos.includes(normalizedJob)) {
-      return "exact";
-    }
+    // Skip empty or "other"
+    if (!normalizedPos || normalizedPos === "other") continue;
 
-    // Check word-level matching for partial matches
-    // e.g., "Second Stew" matches "2nd Stewardess"
-    const posWords = normalizedPos.split(" ");
-    const jobWords = normalizedJob.split(" ");
-
-    // If key role word matches (stew, chef, engineer, deckhand, etc.)
-    const roleWords = ["stew", "chef", "cook", "engineer", "deckhand", "officer", "captain", "bosun", "purser", "nanny", "nurse"];
-    const matchingRoleWord = roleWords.find(rw =>
-      posWords.some(pw => pw.includes(rw)) && jobWords.some(jw => jw.includes(rw))
-    );
-
-    if (matchingRoleWord) {
-      // Check if seniority level matches too
-      const seniorityWords = ["chief", "head", "lead", "senior", "first", "second", "third", "junior", "trainee"];
-      const posSeniority = seniorityWords.find(sw => posWords.some(pw => pw.includes(sw)));
-      const jobSeniority = seniorityWords.find(sw => jobWords.some(jw => jw.includes(sw)));
-
-      // If seniority matches or neither has explicit seniority, it's exact
-      if (posSeniority === jobSeniority || (!posSeniority && !jobSeniority)) {
-        return "exact";
-      }
-      // Same role type but different seniority = related (they might be interested)
-      return "related";
-    }
-  }
-
-  // If no exact match, check if job is in the same department category
-  if (candidatePositionCategory) {
-    const categoryRoles = ROLE_CATEGORIES[candidatePositionCategory];
-    if (categoryRoles) {
-      const jobMatchesCategory = categoryRoles.some(role =>
-        normalizedJob.includes(role)
-      );
-      if (jobMatchesCategory) {
-        return "related";
-      }
+    // Direct containment check only (job title must include sought position)
+    if (normalizedJob.includes(normalizedPos)) {
+      return "match";
     }
   }
 
@@ -205,30 +106,70 @@ function getPositionMatchLevel(
 
 /**
  * Build the list of positions a candidate is seeking
- * This combines their explicit preferences with their experience
+ * This combines their explicit job preferences with their current profile
+ *
+ * Priority order:
+ * 1. Preference positions (what they WANT) - yacht_primary_position, household_primary_position, etc.
+ * 2. Profile positions (what they DO) - primary_position, secondary_positions
+ *
+ * Note: positions_held (historical) is intentionally excluded - we only match
+ * against what they're actively looking for, not their entire work history.
  */
-function buildSoughtPositions(candidate: {
+function resolveIndustryPreference(candidate: {
+  industry_preference?: string | null;
+  candidate_type?: string | null;
+}): "yacht" | "household" | "both" | null {
+  if (candidate.industry_preference === "yacht" || candidate.industry_preference === "household" || candidate.industry_preference === "both") {
+    return candidate.industry_preference;
+  }
+  if (candidate.candidate_type === "yacht_crew") return "yacht";
+  if (candidate.candidate_type === "household_staff") return "household";
+  if (candidate.candidate_type === "both") return "both";
+  return null;
+}
+
+function buildSoughtPositions(
+  candidate: {
   primary_position: string | null;
   secondary_positions: string[] | null;
-  positions_held: string[] | null;
-}): string[] {
+  // Job preference positions (from preferences wizard)
+  yacht_primary_position?: string | null;
+  yacht_secondary_positions?: string[] | null;
+  household_primary_position?: string | null;
+  household_secondary_positions?: string[] | null;
+  industry_preference?: string | null;
+  candidate_type?: string | null;
+  },
+  options?: { includeSecondary?: boolean }
+): string[] {
   const positions = new Set<string>();
+  const includeSecondary = options?.includeSecondary ?? true;
+  const industryPreference = resolveIndustryPreference(candidate);
+  const includeYacht = industryPreference === "yacht" || industryPreference === "both";
+  const includeHousehold = industryPreference === "household" || industryPreference === "both";
 
-  // Primary position is always included
-  if (candidate.primary_position) {
-    positions.add(candidate.primary_position);
+  // Priority 1: Preference positions (what they WANT)
+  if (includeYacht && candidate.yacht_primary_position) {
+    positions.add(candidate.yacht_primary_position);
+  }
+  if (includeHousehold && candidate.household_primary_position) {
+    positions.add(candidate.household_primary_position);
+  }
+  if (includeSecondary && includeYacht && candidate.yacht_secondary_positions?.length) {
+    candidate.yacht_secondary_positions.forEach(p => positions.add(p));
+  }
+  if (includeSecondary && includeHousehold && candidate.household_secondary_positions?.length) {
+    candidate.household_secondary_positions.forEach(p => positions.add(p));
   }
 
-  // Secondary positions are explicitly what they're looking for
-  if (candidate.secondary_positions?.length) {
-    candidate.secondary_positions.forEach(p => positions.add(p));
-  }
-
-  // Positions they've held indicate roles they can fill
-  // Deduplicate and limit to unique roles
-  if (candidate.positions_held?.length) {
-    const uniqueHeld = [...new Set(candidate.positions_held)];
-    uniqueHeld.forEach(p => positions.add(p));
+  // Priority 2: Profile positions (what they DO)
+  if (positions.size === 0) {
+    if (candidate.primary_position) {
+      positions.add(candidate.primary_position);
+    }
+    if (includeSecondary && candidate.secondary_positions?.length) {
+      candidate.secondary_positions.forEach(p => positions.add(p));
+    }
   }
 
   // Format all position names for display (snake_case -> Title Case)
@@ -241,15 +182,10 @@ function buildSoughtPositions(candidate: {
  * Calculate a match score based on candidate profile and job
  *
  * Scoring breakdown:
- * - Role match is the PRIMARY factor (0-50 points)
- *   - Exact role match (job matches a position they're seeking): 50 points
- *   - Related role (same department but different role): 35 points
- *   - No role match: 0 points (different department = not a good match)
+ * - Role match is the PRIMARY factor (50 points if job title contains sought position)
  * - Region match: 25 points
  * - Contract type: 15 points
  * - Salary fit: 10 points
- *
- * The key insight: match against what they're LOOKING FOR, not just their current role
  */
 function calculateMatchScore(
   job: {
@@ -263,36 +199,31 @@ function calculateMatchScore(
   candidate: {
     primary_position: string | null;
     secondary_positions: string[] | null;
-    positions_held: string[] | null;
-    position_category: string | null;
     preferred_regions: string[] | null;
     preferred_contract_types: string[] | null;
     desired_salary_min: number | null;
     desired_salary_max: number | null;
-    years_experience: number | null;
-    has_stcw: boolean;
-    has_eng1: boolean;
+    // Preference positions from wizard
+    yacht_primary_position?: string | null;
+    yacht_secondary_positions?: string[] | null;
+    household_primary_position?: string | null;
+    household_secondary_positions?: string[] | null;
+    industry_preference?: string | null;
+    candidate_type?: string | null;
   }
-): { score: number; matchType: "exact" | "related" | "none" } {
+): { score: number; matchType: "match" | "none" } {
   let score = 0;
 
   // Build the list of positions they're seeking
-  const soughtPositions = buildSoughtPositions(candidate);
+  const soughtPositions = buildSoughtPositions(candidate, { includeSecondary: false });
 
-  // Position match is the most important factor (50 points max)
-  const matchType = getPositionMatchLevel(
-    job.title,
-    soughtPositions,
-    candidate.primary_position,
-    candidate.position_category
-  );
+  // Position match - simple check: does job title contain sought position?
+  const matchType = getPositionMatchLevel(job.title, soughtPositions);
 
-  if (matchType === "exact") {
+  if (matchType === "match") {
     score += 50;
-  } else if (matchType === "related") {
-    score += 35;
   }
-  // No match = 0 points - different department jobs shouldn't score high
+  // No match = 0 points
 
   // Region match (25 points)
   if (candidate.preferred_regions && job.primary_region) {
@@ -342,37 +273,84 @@ export async function getJobsData(
 
   if (!user) return null;
 
-  // Get user record
+  // Get user record (auth_id -> user_id mapping)
   const { data: userData } = await supabase
     .from("users")
     .select("id")
     .eq("auth_id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (!userData) return null;
+  let candidate = null;
 
-  // Get candidate with all position-related fields
-  const { data: candidate } = await supabase
-    .from("candidates")
-    .select(
+  // Try to find candidate by user_id if user record exists
+  if (userData) {
+    const { data: candidateByUserId } = await supabase
+      .from("candidates")
+      .select(
+        `
+        id,
+        primary_position,
+        secondary_position,
+        secondary_positions,
+        positions_held,
+        position_category,
+        preferred_regions,
+        preferred_contract_types,
+        desired_salary_min,
+        desired_salary_max,
+        years_experience,
+        has_stcw,
+        has_eng1,
+        yacht_primary_position,
+        yacht_secondary_positions,
+        household_primary_position,
+        household_secondary_positions,
+        industry_preference,
+        candidate_type
       `
-      id,
-      primary_position,
-      secondary_position,
-      secondary_positions,
-      positions_held,
-      position_category,
-      preferred_regions,
-      preferred_contract_types,
-      desired_salary_min,
-      desired_salary_max,
-      years_experience,
-      has_stcw,
-      has_eng1
-    `
-    )
-    .eq("user_id", userData.id)
-    .single();
+      )
+      .eq("user_id", userData.id)
+      .maybeSingle();
+
+    if (candidateByUserId) {
+      candidate = candidateByUserId;
+    }
+  }
+
+  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
+  if (!candidate && user.email) {
+    const { data: candidateByEmail } = await supabase
+      .from("candidates")
+      .select(
+        `
+        id,
+        primary_position,
+        secondary_position,
+        secondary_positions,
+        positions_held,
+        position_category,
+        preferred_regions,
+        preferred_contract_types,
+        desired_salary_min,
+        desired_salary_max,
+        years_experience,
+        has_stcw,
+        has_eng1,
+        yacht_primary_position,
+        yacht_secondary_positions,
+        household_primary_position,
+        household_secondary_positions,
+        industry_preference,
+        candidate_type
+      `
+      )
+      .eq("email", user.email)
+      .maybeSingle();
+
+    if (candidateByEmail) {
+      candidate = candidateByEmail;
+    }
+  }
 
   if (!candidate) return null;
 
@@ -380,7 +358,12 @@ export async function getJobsData(
   const soughtPositions = buildSoughtPositions({
     primary_position: candidate.primary_position,
     secondary_positions: candidate.secondary_positions,
-    positions_held: candidate.positions_held,
+    yacht_primary_position: candidate.yacht_primary_position,
+    yacht_secondary_positions: candidate.yacht_secondary_positions,
+    household_primary_position: candidate.household_primary_position,
+    household_secondary_positions: candidate.household_secondary_positions,
+    industry_preference: candidate.industry_preference,
+    candidate_type: candidate.candidate_type,
   });
 
   // Get candidate's applied job IDs
@@ -439,13 +422,25 @@ export async function getJobsData(
     query = query.ilike("title", `%${filters.position}%`);
   }
   if (filters?.region) {
-    query = query.ilike("primary_region", `%${filters.region}%`);
+    // If it's a normalized region key, search for any matching keywords
+    const regionGroup = REGION_GROUPS[filters.region];
+    if (regionGroup) {
+      // Build an OR filter for all keywords in this region group
+      const keywordFilters = regionGroup.keywords.map(kw => `primary_region.ilike.%${kw}%`);
+      query = query.or(keywordFilters.join(","));
+    } else {
+      // Fallback to direct search for raw region values
+      query = query.ilike("primary_region", `%${filters.region}%`);
+    }
   }
   if (filters?.contractType) {
     query = query.eq("contract_type", filters.contractType);
   }
   if (filters?.minSalary) {
     query = query.gte("salary_max", filters.minSalary);
+  }
+  if (filters?.maxSalary) {
+    query = query.lte("salary_min", filters.maxSalary);
   }
   if (filters?.vesselType) {
     query = query.ilike("vessel_type", `%${filters.vesselType}%`);
@@ -491,7 +486,8 @@ export async function getJobsData(
       viewsCount: job.views_count || 0,
       publishedAt: job.published_at,
       createdAt: job.created_at,
-      matchScore,
+      // Only set matchScore if position is relevant (not "none")
+      matchScore: matchType !== "none" ? matchScore : null,
       matchType,
       hasApplied: appliedJobIds.includes(job.id),
       isSaved: savedJobIds.includes(job.id),
@@ -534,36 +530,80 @@ export async function getJobById(
 
   if (!user) return null;
 
-  // Get user and candidate
+  // Get user record (auth_id -> user_id mapping)
   const { data: userData } = await supabase
     .from("users")
     .select("id")
     .eq("auth_id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (!userData) return null;
+  let candidate = null;
 
-  const { data: candidate } = await supabase
-    .from("candidates")
-    .select(
+  // Try to find candidate by user_id if user record exists
+  if (userData) {
+    const { data: candidateByUserId } = await supabase
+      .from("candidates")
+      .select(
+        `
+        id,
+        primary_position,
+        secondary_position,
+        secondary_positions,
+        positions_held,
+        position_category,
+        preferred_regions,
+        preferred_contract_types,
+        desired_salary_min,
+        desired_salary_max,
+        years_experience,
+        has_stcw,
+        has_eng1,
+        yacht_primary_position,
+        yacht_secondary_positions,
+        household_primary_position,
+        household_secondary_positions
       `
-      id,
-      primary_position,
-      secondary_position,
-      secondary_positions,
-      positions_held,
-      position_category,
-      preferred_regions,
-      preferred_contract_types,
-      desired_salary_min,
-      desired_salary_max,
-      years_experience,
-      has_stcw,
-      has_eng1
-    `
-    )
-    .eq("user_id", userData.id)
-    .single();
+      )
+      .eq("user_id", userData.id)
+      .maybeSingle();
+
+    if (candidateByUserId) {
+      candidate = candidateByUserId;
+    }
+  }
+
+  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
+  if (!candidate && user.email) {
+    const { data: candidateByEmail } = await supabase
+      .from("candidates")
+      .select(
+        `
+        id,
+        primary_position,
+        secondary_position,
+        secondary_positions,
+        positions_held,
+        position_category,
+        preferred_regions,
+        preferred_contract_types,
+        desired_salary_min,
+        desired_salary_max,
+        years_experience,
+        has_stcw,
+        has_eng1,
+        yacht_primary_position,
+        yacht_secondary_positions,
+        household_primary_position,
+        household_secondary_positions
+      `
+      )
+      .eq("email", user.email)
+      .maybeSingle();
+
+    if (candidateByEmail) {
+      candidate = candidateByEmail;
+    }
+  }
 
   if (!candidate) return null;
 
@@ -611,7 +651,7 @@ export async function getJobById(
     .select("id")
     .eq("candidate_id", candidate.id)
     .eq("job_id", jobId)
-    .single();
+    .maybeSingle();
 
   // Check if saved
   const { data: savedJob } = await supabase
@@ -619,7 +659,7 @@ export async function getJobById(
     .select("id")
     .eq("candidate_id", candidate.id)
     .eq("job_id", jobId)
-    .single();
+    .maybeSingle();
 
   // Increment view count
   await supabase.rpc("increment_job_views", { p_job_id: jobId });
@@ -651,7 +691,8 @@ export async function getJobById(
     viewsCount: job.views_count || 0,
     publishedAt: job.published_at,
     createdAt: job.created_at,
-    matchScore,
+    // Only set matchScore if position is relevant (not "none")
+    matchScore: matchType !== "none" ? matchScore : null,
     matchType,
     hasApplied: !!application,
     isSaved: !!savedJob,
@@ -675,22 +716,40 @@ export async function applyToJob(
     return { success: false, error: "Not authenticated" };
   }
 
-  // Get user and candidate
+  // Get user record (auth_id -> user_id mapping)
   const { data: userData } = await supabase
     .from("users")
     .select("id, organization_id")
     .eq("auth_id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (!userData) {
-    return { success: false, error: "User not found" };
+  let candidate = null;
+
+  // Try to find candidate by user_id if user record exists
+  if (userData) {
+    const { data: candidateByUserId } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("user_id", userData.id)
+      .maybeSingle();
+
+    if (candidateByUserId) {
+      candidate = candidateByUserId;
+    }
   }
 
-  const { data: candidate } = await supabase
-    .from("candidates")
-    .select("id")
-    .eq("user_id", userData.id)
-    .single();
+  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
+  if (!candidate && user.email) {
+    const { data: candidateByEmail } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("email", user.email)
+      .maybeSingle();
+
+    if (candidateByEmail) {
+      candidate = candidateByEmail;
+    }
+  }
 
   if (!candidate) {
     return { success: false, error: "Candidate profile not found" };
@@ -724,7 +783,7 @@ export async function applyToJob(
     .select("id")
     .eq("candidate_id", candidate.id)
     .eq("job_id", jobId)
-    .single();
+    .maybeSingle();
 
   if (existingApp) {
     return { success: false, error: "You have already applied to this job" };
@@ -783,21 +842,40 @@ export async function withdrawApplication(
     return { success: false, error: "Not authenticated" };
   }
 
+  // Get user record (auth_id -> user_id mapping)
   const { data: userData } = await supabase
     .from("users")
     .select("id")
     .eq("auth_id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (!userData) {
-    return { success: false, error: "User not found" };
+  let candidate = null;
+
+  // Try to find candidate by user_id if user record exists
+  if (userData) {
+    const { data: candidateByUserId } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("user_id", userData.id)
+      .maybeSingle();
+
+    if (candidateByUserId) {
+      candidate = candidateByUserId;
+    }
   }
 
-  const { data: candidate } = await supabase
-    .from("candidates")
-    .select("id")
-    .eq("user_id", userData.id)
-    .single();
+  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
+  if (!candidate && user.email) {
+    const { data: candidateByEmail } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("email", user.email)
+      .maybeSingle();
+
+    if (candidateByEmail) {
+      candidate = candidateByEmail;
+    }
+  }
 
   if (!candidate) {
     return { success: false, error: "Candidate profile not found" };
@@ -841,21 +919,40 @@ export async function saveJob(
     return { success: false, error: "Not authenticated" };
   }
 
+  // Get user record (auth_id -> user_id mapping)
   const { data: userData } = await supabase
     .from("users")
     .select("id")
     .eq("auth_id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (!userData) {
-    return { success: false, error: "User not found" };
+  let candidate = null;
+
+  // Try to find candidate by user_id if user record exists
+  if (userData) {
+    const { data: candidateByUserId } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("user_id", userData.id)
+      .maybeSingle();
+
+    if (candidateByUserId) {
+      candidate = candidateByUserId;
+    }
   }
 
-  const { data: candidate } = await supabase
-    .from("candidates")
-    .select("id")
-    .eq("user_id", userData.id)
-    .single();
+  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
+  if (!candidate && user.email) {
+    const { data: candidateByEmail } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("email", user.email)
+      .maybeSingle();
+
+    if (candidateByEmail) {
+      candidate = candidateByEmail;
+    }
+  }
 
   if (!candidate) {
     return { success: false, error: "Candidate profile not found" };
@@ -897,21 +994,40 @@ export async function unsaveJob(
     return { success: false, error: "Not authenticated" };
   }
 
+  // Get user record (auth_id -> user_id mapping)
   const { data: userData } = await supabase
     .from("users")
     .select("id")
     .eq("auth_id", user.id)
-    .single();
+    .maybeSingle();
 
-  if (!userData) {
-    return { success: false, error: "User not found" };
+  let candidate = null;
+
+  // Try to find candidate by user_id if user record exists
+  if (userData) {
+    const { data: candidateByUserId } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("user_id", userData.id)
+      .maybeSingle();
+
+    if (candidateByUserId) {
+      candidate = candidateByUserId;
+    }
   }
 
-  const { data: candidate } = await supabase
-    .from("candidates")
-    .select("id")
-    .eq("user_id", userData.id)
-    .single();
+  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
+  if (!candidate && user.email) {
+    const { data: candidateByEmail } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("email", user.email)
+      .maybeSingle();
+
+    if (candidateByEmail) {
+      candidate = candidateByEmail;
+    }
+  }
 
   if (!candidate) {
     return { success: false, error: "Candidate profile not found" };
