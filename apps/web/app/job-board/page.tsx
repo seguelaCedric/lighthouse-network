@@ -68,8 +68,6 @@ export const metadata: Metadata = {
 
 interface FilterOptions {
   positions: string[];
-  regions: string[];
-  vesselTypes: string[];
   contractTypes: string[];
 }
 
@@ -88,23 +86,76 @@ async function getPublicJobs(): Promise<{ jobs: PublicJob[]; filterOptions: Filt
     console.error("Error fetching jobs:", error);
     return {
       jobs: [],
-      filterOptions: { positions: [], regions: [], vesselTypes: [], contractTypes: [] },
+      filterOptions: { positions: [], contractTypes: [] },
     };
   }
 
   // Extract unique filter options from the data
   const positions = [...new Set(jobs?.map((j) => j.position_category).filter(Boolean) as string[])].sort();
-  const regions = [...new Set(jobs?.map((j) => j.primary_region).filter(Boolean) as string[])].sort();
-  const vesselTypes = [...new Set(jobs?.map((j) => j.vessel_type).filter(Boolean) as string[])].sort();
   const contractTypes = [...new Set(jobs?.map((j) => j.contract_type).filter(Boolean) as string[])].sort();
 
   return {
     jobs: (jobs || []) as PublicJob[],
-    filterOptions: { positions, regions, vesselTypes, contractTypes },
+    filterOptions: { positions, contractTypes },
   };
 }
 
 export default async function JobBoardPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  let dashboardHref = "/dashboard";
+  let appliedJobIds: string[] = [];
+
+  if (user) {
+    const { data: userData } = await supabase
+      .from("users")
+      .select("id, user_type")
+      .eq("auth_id", user.id)
+      .maybeSingle();
+
+    if (userData?.user_type === "candidate") {
+      dashboardHref = "/crew/dashboard";
+    }
+    const userId = userData?.id || null;
+    let candidateId: string | null = null;
+    if (userId) {
+      const { data: candidateByUserId } = await supabase
+        .from("candidates")
+        .select("id")
+        .eq("user_id", userId)
+        .maybeSingle();
+      candidateId = candidateByUserId?.id || null;
+    }
+    if (!candidateId && user.email) {
+      const { data: candidateByEmail } = await supabase
+        .from("candidates")
+        .select("id")
+        .ilike("email", user.email)
+        .maybeSingle();
+      candidateId = candidateByEmail?.id || null;
+    }
+    if (!candidateId) {
+      const { data: candidateByAuthId } = await supabase
+        .from("candidates")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      candidateId = candidateByAuthId?.id || null;
+    }
+
+    if (candidateId) {
+      const { data: appliedJobs } = await supabase
+        .from("applications")
+        .select("job_id")
+        .eq("candidate_id", candidateId);
+      appliedJobIds = (appliedJobs || [])
+        .map((app) => app.job_id as string | null)
+        .filter((jobId): jobId is string => Boolean(jobId));
+    }
+  }
+
   const { jobs, filterOptions } = await getPublicJobs();
 
   return (
@@ -120,6 +171,9 @@ export default async function JobBoardPage() {
           initialJobs={jobs}
           filterOptions={filterOptions}
           totalCount={jobs.length}
+          isAuthenticated={!!user}
+          dashboardHref={dashboardHref}
+          appliedJobIds={appliedJobIds}
         />
       </Suspense>
     </>

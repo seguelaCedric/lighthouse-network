@@ -2,6 +2,7 @@
 
 import {
   AlertTriangle,
+  CheckCircle2,
   ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
@@ -9,6 +10,7 @@ import type { PublicJob } from "./JobBoardCard";
 
 interface JobBoardListItemProps {
   job: PublicJob;
+  isApplied?: boolean;
 }
 
 // Format position category for display
@@ -112,9 +114,17 @@ function isStartingSoon(dateString: string): boolean {
   return diffDays >= 0 && diffDays <= 14;
 }
 
-export function JobBoardListItem({ job }: JobBoardListItemProps) {
+export function JobBoardListItem({ job, isApplied = false }: JobBoardListItemProps) {
   const hasSalary = job.salary_min || job.salary_max;
   const startingSoon = job.start_date && isStartingSoon(job.start_date);
+  const rowToneClass = job.is_urgent
+    ? "bg-red-50/20 hover:bg-red-50/40"
+    : "hover:bg-gray-50/50";
+  const indicatorClass = job.is_urgent
+    ? "bg-red-500"
+    : startingSoon
+      ? "bg-amber-400"
+      : "";
 
   // Build vessel info string
   const vesselInfo = [
@@ -138,9 +148,8 @@ export function JobBoardListItem({ job }: JobBoardListItemProps) {
     <Link href={`/job-board/${job.id}`} className="group block">
       <article
         className={`
-          relative bg-white border-b border-gray-100
-          hover:bg-gray-50/50 transition-colors duration-150
-          ${job.is_urgent ? "bg-red-50/20 hover:bg-red-50/40" : ""}
+          relative bg-white border-b border-gray-100 transition-colors duration-150
+          ${rowToneClass}
         `}
       >
         <div className="px-4 sm:px-6 py-4">
@@ -237,6 +246,12 @@ export function JobBoardListItem({ job }: JobBoardListItemProps) {
 
                 {/* Right Side: Salary + Meta */}
                 <div className="hidden sm:flex flex-col items-end gap-1 flex-shrink-0">
+                  {isApplied && (
+                    <span className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-1 text-xs font-medium text-gray-500 shadow-sm sm:px-4 sm:py-1.5 sm:text-sm">
+                      <CheckCircle2 className="h-4 w-4 text-success-500" />
+                      Applied
+                    </span>
+                  )}
                   {/* Salary - Most Prominent */}
                   <span className={`text-base font-semibold ${hasSalary ? "text-navy-900" : "text-gray-400"}`}>
                     {hasSalary
@@ -261,7 +276,7 @@ export function JobBoardListItem({ job }: JobBoardListItemProps) {
 
               {/* Mobile: Salary + Posted Date */}
               <div className="mt-2 flex items-center justify-between sm:hidden">
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <span className={`text-sm font-semibold ${hasSalary ? "text-navy-900" : "text-gray-400"}`}>
                     {hasSalary
                       ? formatSalaryCompact(
@@ -272,6 +287,12 @@ export function JobBoardListItem({ job }: JobBoardListItemProps) {
                         )
                       : "TBD"}
                   </span>
+                  {isApplied && (
+                    <span className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-1 text-xs font-medium text-gray-500 shadow-sm">
+                      <CheckCircle2 className="h-4 w-4 text-success-500" />
+                      Applied
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center gap-2 text-xs text-gray-400">
                   <span>{job.published_at ? formatPostedDate(job.published_at) : ""}</span>
@@ -283,11 +304,9 @@ export function JobBoardListItem({ job }: JobBoardListItemProps) {
         </div>
 
         {/* Urgent/Soon Indicator Line */}
-        {(job.is_urgent || startingSoon) && (
+        {indicatorClass && (
           <div
-            className={`absolute left-0 top-0 bottom-0 w-1 ${
-              job.is_urgent ? "bg-red-500" : "bg-amber-400"
-            }`}
+            className={`absolute left-0 top-0 bottom-0 w-1 ${indicatorClass}`}
           />
         )}
       </article>

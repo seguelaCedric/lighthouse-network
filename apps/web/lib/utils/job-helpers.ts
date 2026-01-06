@@ -60,13 +60,22 @@ export function normalizeRegion(region: string | null): string | null {
 /**
  * Check if a job is land-based (vs yacht-based)
  */
-export function isLandBasedJob(title: string): boolean {
-  const lower = title.toLowerCase();
+export function isLandBasedJob(title: string, positionCategory?: string | null): boolean {
+  const lower = `${title} ${positionCategory || ""}`.toLowerCase();
   return lower.includes("land based") ||
          lower.includes("land-based") ||
          lower.includes("private estate") ||
          lower.includes("estate manager") ||
+         lower.includes("property manager") ||
          lower.includes("household") ||
+         lower.includes("house manager") ||
+         lower.includes("housekeeper") ||
+         lower.includes("butler") ||
+         lower.includes("nanny") ||
          lower.includes("private residence") ||
+         lower.includes("private chef") ||
+         lower.includes("domestic") ||
+         lower.includes("family office") ||
+         lower.includes("chalet") ||
          lower.includes("villa");
 }

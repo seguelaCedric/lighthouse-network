@@ -2,17 +2,18 @@
 
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Briefcase, ChevronLeft, ChevronRight } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { JobBoardHero } from "@/components/job-board/JobBoardHero";
 import { JobBoardFilters, type JobFilters } from "@/components/job-board/JobBoardFilters";
 import type { PublicJob } from "@/components/job-board/JobBoardCard";
 import { JobBoardListItem } from "@/components/job-board/JobBoardListItem";
+import { signOut } from "@/lib/auth/actions";
+import { isLandBasedJob } from "@/lib/utils/job-helpers";
 
 interface FilterOptions {
   positions: string[];
-  regions: string[];
-  vesselTypes: string[];
   contractTypes: string[];
 }
 
@@ -20,20 +21,33 @@ interface JobBoardClientProps {
   initialJobs: PublicJob[];
   filterOptions: FilterOptions;
   totalCount: number;
+  isAuthenticated: boolean;
+  dashboardHref: string;
+  appliedJobIds?: string[];
 }
 
 const JOBS_PER_PAGE = 20; // List view allows more items per page
 
 const initialFilters: JobFilters = {
   position: "",
-  region: "",
+  jobType: "",
   contractType: "",
-  vesselType: "",
   minSalary: "",
   maxSalary: "",
 };
 
-export function JobBoardClient({ initialJobs, filterOptions, totalCount }: JobBoardClientProps) {
+export function JobBoardClient({
+  initialJobs,
+  filterOptions,
+  totalCount,
+  isAuthenticated,
+  dashboardHref,
+  appliedJobIds = [],
+}: JobBoardClientProps) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const searchString = searchParams.toString();
+  const redirectPath = `${pathname}${searchString ? `?${searchString}` : ""}`;
   const [filters, setFilters] = useState<JobFilters>(initialFilters);
   const [searchQuery, setSearchQuery] = useState("");
   const [appliedSearch, setAppliedSearch] = useState("");
@@ -66,6 +80,11 @@ export function JobBoardClient({ initialJobs, filterOptions, totalCount }: JobBo
   const filteredJobs = useMemo(() => {
     let result = [...initialJobs];
 
+    const isHouseholdJob = (job: PublicJob) => {
+      if (job.vessel_type) return false;
+      return isLandBasedJob(job.title, job.position_category);
+    };
+
     // Apply search
     if (appliedSearch) {
       const searchLower = appliedSearch.toLowerCase();
@@ -84,14 +103,16 @@ export function JobBoardClient({ initialJobs, filterOptions, totalCount }: JobBo
     if (filters.position) {
       result = result.filter((job) => job.position_category === filters.position);
     }
-    if (filters.region) {
-      result = result.filter((job) => job.primary_region === filters.region);
+    if (filters.jobType) {
+      result = result.filter((job) => {
+        const isHousehold = isHouseholdJob(job);
+        if (filters.jobType === "household") return isHousehold;
+        if (filters.jobType === "yacht") return !isHousehold;
+        return true;
+      });
     }
     if (filters.contractType) {
       result = result.filter((job) => job.contract_type === filters.contractType);
-    }
-    if (filters.vesselType) {
-      result = result.filter((job) => job.vessel_type === filters.vesselType);
     }
     if (filters.minSalary) {
       const minSalary = parseInt(filters.minSalary, 10);
@@ -163,18 +184,38 @@ export function JobBoardClient({ initialJobs, filterOptions, totalCount }: JobBo
               <Logo size="md" />
             </Link>
             <div className="flex items-center gap-3">
-              <Link
-                href="/auth/login"
-                className="text-sm font-medium text-navy-600 hover:text-navy-800 transition-colors"
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/auth/register"
-                className="rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 px-5 py-2.5 text-sm font-medium text-white hover:from-gold-600 hover:to-gold-700 transition-all shadow-lg hover:shadow-xl"
-              >
-                Join Now
-              </Link>
+              {isAuthenticated ? (
+                <>
+                  <Link
+                    href={dashboardHref}
+                    className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-navy-700 hover:bg-gray-50 transition-colors"
+                  >
+                    Go to Dashboard
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => signOut()}
+                    className="text-sm font-medium text-navy-600 hover:text-navy-800 transition-colors"
+                  >
+                    Sign Out
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link
+                    href={`/auth/login?redirect=${encodeURIComponent(redirectPath)}`}
+                    className="text-sm font-medium text-navy-600 hover:text-navy-800 transition-colors"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href={`/auth/register?redirect=${encodeURIComponent(redirectPath)}`}
+                    className="rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 px-5 py-2.5 text-sm font-medium text-white hover:from-gold-600 hover:to-gold-700 transition-all shadow-lg hover:shadow-xl"
+                  >
+                    Join Now
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -256,6 +297,7 @@ export function JobBoardClient({ initialJobs, filterOptions, totalCount }: JobBo
                     <JobBoardListItem
                       key={job.id}
                       job={job}
+                      isApplied={appliedJobIds.includes(job.id)}
                     />
                   ))}
                 </div>

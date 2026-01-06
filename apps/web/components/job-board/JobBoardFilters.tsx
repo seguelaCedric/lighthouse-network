@@ -3,11 +3,10 @@
 import { useState } from "react";
 import {
   Filter,
-  MapPin,
-  Ship,
   Briefcase,
   DollarSign,
   Calendar,
+  Home,
   ChevronDown,
   X,
   RotateCcw,
@@ -15,17 +14,14 @@ import {
 
 export interface JobFilters {
   position: string;
-  region: string;
+  jobType: string;
   contractType: string;
-  vesselType: string;
   minSalary: string;
   maxSalary: string;
 }
 
 interface FilterOptions {
   positions: string[];
-  regions: string[];
-  vesselTypes: string[];
   contractTypes: string[];
 }
 
@@ -124,43 +120,20 @@ export function JobBoardFilters({
           </select>
         </div>
 
-        {/* Region */}
+        {/* Job Type */}
         <div>
           <label className="block text-sm font-semibold text-navy-900 mb-2">
-            <MapPin className="inline-block h-4 w-4 mr-2 text-gold-500" />
-            Location
+            <Home className="inline-block h-4 w-4 mr-2 text-gold-500" />
+            Job Type
           </label>
           <select
-            value={filters.region}
-            onChange={(e) => handleFilterChange("region", e.target.value)}
+            value={filters.jobType}
+            onChange={(e) => handleFilterChange("jobType", e.target.value)}
             className="w-full rounded-xl border border-gray-200 px-4 py-3.5 text-gray-900 bg-gray-50/50 focus:bg-white focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 transition-all text-sm font-medium"
           >
-            <option value="">All Locations</option>
-            {filterOptions.regions.map((region) => (
-              <option key={region} value={region}>
-                {region}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Vessel Type */}
-        <div>
-          <label className="block text-sm font-semibold text-navy-900 mb-2">
-            <Ship className="inline-block h-4 w-4 mr-2 text-gold-500" />
-            Vessel Type
-          </label>
-          <select
-            value={filters.vesselType}
-            onChange={(e) => handleFilterChange("vesselType", e.target.value)}
-            className="w-full rounded-xl border border-gray-200 px-4 py-3.5 text-gray-900 bg-gray-50/50 focus:bg-white focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 transition-all text-sm font-medium"
-          >
-            <option value="">All Vessel Types</option>
-            {filterOptions.vesselTypes.map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
+            <option value="">All Jobs</option>
+            <option value="yacht">Yacht Jobs</option>
+            <option value="household">Household Jobs</option>
           </select>
         </div>
 
@@ -257,16 +230,10 @@ export function JobBoardFilters({
                   onRemove={() => handleFilterChange("position", "")}
                 />
               )}
-              {filters.region && (
+              {filters.jobType && (
                 <FilterPill
-                  label={filters.region}
-                  onRemove={() => handleFilterChange("region", "")}
-                />
-              )}
-              {filters.vesselType && (
-                <FilterPill
-                  label={filters.vesselType}
-                  onRemove={() => handleFilterChange("vesselType", "")}
+                  label={filters.jobType === "yacht" ? "Yacht Jobs" : "Household Jobs"}
+                  onRemove={() => handleFilterChange("jobType", "")}
                 />
               )}
               {filters.contractType && (
