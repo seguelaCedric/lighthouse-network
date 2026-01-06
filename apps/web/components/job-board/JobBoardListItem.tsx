@@ -9,7 +9,6 @@ import type { PublicJob } from "./JobBoardCard";
 
 interface JobBoardListItemProps {
   job: PublicJob;
-  matchScore?: number;
 }
 
 // Format position category for display
@@ -113,18 +112,9 @@ function isStartingSoon(dateString: string): boolean {
   return diffDays >= 0 && diffDays <= 14;
 }
 
-// Get match score styles
-function getMatchScoreStyles(score: number): { bg: string; text: string; ring: string } {
-  if (score >= 80) return { bg: "bg-emerald-500", text: "text-white", ring: "ring-emerald-200" };
-  if (score >= 60) return { bg: "bg-gold-500", text: "text-white", ring: "ring-gold-200" };
-  if (score >= 40) return { bg: "bg-amber-500", text: "text-white", ring: "ring-amber-200" };
-  return { bg: "bg-gray-400", text: "text-white", ring: "ring-gray-200" };
-}
-
-export function JobBoardListItem({ job, matchScore }: JobBoardListItemProps) {
+export function JobBoardListItem({ job }: JobBoardListItemProps) {
   const hasSalary = job.salary_min || job.salary_max;
   const startingSoon = job.start_date && isStartingSoon(job.start_date);
-  const matchStyles = matchScore !== undefined ? getMatchScoreStyles(matchScore) : null;
 
   // Build vessel info string
   const vesselInfo = [
@@ -155,23 +145,6 @@ export function JobBoardListItem({ job, matchScore }: JobBoardListItemProps) {
       >
         <div className="px-4 sm:px-6 py-4">
           <div className="flex items-start gap-4">
-            {/* Match Score - Compact Circle */}
-            {matchScore !== undefined && (
-              <div className="hidden sm:flex flex-shrink-0">
-                <div
-                  className={`
-                    flex items-center justify-center w-11 h-11 rounded-full
-                    ${matchStyles?.bg} ${matchStyles?.ring} ring-2
-                    shadow-sm
-                  `}
-                >
-                  <span className={`text-xs font-bold ${matchStyles?.text}`}>
-                    {matchScore}%
-                  </span>
-                </div>
-              </div>
-            )}
-
             {/* Main Content */}
             <div className="flex-1 min-w-0">
               {/* Row 1: Title + Salary + Arrow */}
@@ -286,14 +259,9 @@ export function JobBoardListItem({ job, matchScore }: JobBoardListItemProps) {
                 </div>
               </div>
 
-              {/* Mobile: Salary + Match Score + Posted Date */}
+              {/* Mobile: Salary + Posted Date */}
               <div className="mt-2 flex items-center justify-between sm:hidden">
                 <div className="flex items-center gap-2">
-                  {matchScore !== undefined && (
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${matchStyles?.bg} ${matchStyles?.text}`}>
-                      {matchScore}%
-                    </span>
-                  )}
                   <span className={`text-sm font-semibold ${hasSalary ? "text-navy-900" : "text-gray-400"}`}>
                     {hasSalary
                       ? formatSalaryCompact(

@@ -45,7 +45,6 @@ export interface PublicJob {
 
 interface JobBoardCardProps {
   job: PublicJob;
-  matchScore?: number; // 0-100, only shown for authenticated users
 }
 
 // Format position category for display
@@ -127,33 +126,13 @@ function isStartingSoon(dateString: string): boolean {
   return diffDays >= 0 && diffDays <= 14;
 }
 
-// Get match score color
-function getMatchScoreColor(score: number): string {
-  if (score >= 80) return "from-emerald-500 to-emerald-600";
-  if (score >= 60) return "from-gold-500 to-gold-600";
-  if (score >= 40) return "from-amber-500 to-amber-600";
-  return "from-gray-400 to-gray-500";
-}
-
-export function JobBoardCard({ job, matchScore }: JobBoardCardProps) {
+export function JobBoardCard({ job }: JobBoardCardProps) {
   const hasSalary = job.salary_min || job.salary_max;
   const startingSoon = job.start_date && isStartingSoon(job.start_date);
 
   return (
     <Link href={`/job-board/${job.id}`} className="group block">
       <article className="relative bg-white rounded-2xl border border-gray-100 shadow-lg overflow-hidden transition-all duration-300 hover:shadow-xl hover:border-gold-300 hover:-translate-y-1 ring-1 ring-black/5 hover:ring-gold-500/20">
-        {/* Match Score Badge */}
-        {matchScore !== undefined && (
-          <div className="absolute top-4 right-4 z-10">
-            <div
-              className={`flex items-center gap-1.5 rounded-full bg-gradient-to-r ${getMatchScoreColor(matchScore)} px-3 py-1.5 text-xs font-bold text-white shadow-lg`}
-            >
-              <span>{matchScore}%</span>
-              <span className="text-white/80">Match</span>
-            </div>
-          </div>
-        )}
-
         {/* Urgent Badge */}
         {job.is_urgent && (
           <div className="absolute top-4 left-4 z-10">

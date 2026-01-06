@@ -2,23 +2,18 @@
 
 import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
-import { Briefcase, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { Briefcase, ChevronLeft, ChevronRight } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { JobBoardHero } from "@/components/job-board/JobBoardHero";
 import { JobBoardFilters, type JobFilters } from "@/components/job-board/JobBoardFilters";
-import { JobBoardCard, JobBoardCardSkeleton, type PublicJob } from "@/components/job-board/JobBoardCard";
-import { JobBoardListItem, JobBoardListItemSkeleton } from "@/components/job-board/JobBoardListItem";
-import { JobMatchPrompt } from "@/components/job-board/JobMatchBadge";
+import type { PublicJob } from "@/components/job-board/JobBoardCard";
+import { JobBoardListItem } from "@/components/job-board/JobBoardListItem";
 
 interface FilterOptions {
   positions: string[];
   regions: string[];
   vesselTypes: string[];
   contractTypes: string[];
-}
-
-interface JobWithScore extends PublicJob {
-  matchScore?: number;
 }
 
 interface JobBoardClientProps {
@@ -45,10 +40,7 @@ export function JobBoardClient({ initialJobs, filterOptions, totalCount }: JobBo
   const [currentPage, setCurrentPage] = useState(1);
   const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(true);
   const [matchScores, setMatchScores] = useState<Record<string, { score: number; isRelevant: boolean }>>({});
-  const [isLoadingMatches, setIsLoadingMatches] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Check authentication and load match scores on mount
   useEffect(() => {
     async function loadMatchScores() {
       try {
@@ -59,18 +51,14 @@ export function JobBoardClient({ initialJobs, filterOptions, totalCount }: JobBo
         if (response.ok) {
           const data = await response.json();
           if (data.authenticated && data.scores) {
-            setIsAuthenticated(true);
             setMatchScores(data.scores);
           }
         }
       } catch (error) {
         console.error("Failed to load match scores:", error);
-      } finally {
-        setIsLoadingMatches(false);
       }
     }
 
-    setIsLoadingMatches(true);
     loadMatchScores();
   }, []);
 
@@ -114,28 +102,25 @@ export function JobBoardClient({ initialJobs, filterOptions, totalCount }: JobBo
       result = result.filter((job) => (job.salary_min || job.salary_max || Infinity) <= maxSalary);
     }
 
-    // Add match scores and sort by match score if authenticated
-    // Only include matchScore if the job is relevant (isRelevant === true)
-    const jobsWithScores: JobWithScore[] = result.map((job) => {
-      const matchData = matchScores[job.id];
-      return {
-        ...job,
-        matchScore: matchData?.isRelevant ? matchData.score : undefined,
-      };
-    });
+    const getRelevantScore = (jobId: string) => {
+      const matchData = matchScores[jobId];
+      return matchData?.isRelevant ? matchData.score : undefined;
+    };
 
-    // Sort: urgent first, then by match score (if available and relevant), then by date
-    jobsWithScores.sort((a, b) => {
+    // Sort: urgent first, then by match score (if relevant), then by date
+    result.sort((a, b) => {
       // Urgent jobs first
       if (a.is_urgent && !b.is_urgent) return -1;
       if (!a.is_urgent && b.is_urgent) return 1;
 
       // Then by match score if available (only relevant jobs have scores)
-      if (a.matchScore !== undefined && b.matchScore !== undefined) {
-        return b.matchScore - a.matchScore;
+      const scoreA = getRelevantScore(a.id);
+      const scoreB = getRelevantScore(b.id);
+      if (scoreA !== undefined && scoreB !== undefined) {
+        return scoreB - scoreA;
       }
-      if (a.matchScore !== undefined) return -1;
-      if (b.matchScore !== undefined) return 1;
+      if (scoreA !== undefined) return -1;
+      if (scoreB !== undefined) return 1;
 
       // Then by date
       const dateA = new Date(a.published_at || a.created_at).getTime();
@@ -143,7 +128,7 @@ export function JobBoardClient({ initialJobs, filterOptions, totalCount }: JobBo
       return dateB - dateA;
     });
 
-    return jobsWithScores;
+    return result;
   }, [initialJobs, appliedSearch, filters, matchScores]);
 
   // Pagination
@@ -217,13 +202,6 @@ export function JobBoardClient({ initialJobs, filterOptions, totalCount }: JobBo
                 isCollapsed={isFiltersCollapsed}
                 onToggleCollapse={() => setIsFiltersCollapsed(!isFiltersCollapsed)}
               />
-
-              {/* Match Score Prompt for Unauthenticated */}
-              {!isAuthenticated && !isLoadingMatches && (
-                <div className="mt-6 hidden lg:block">
-                  <JobMatchPrompt />
-                </div>
-              )}
             </div>
           </aside>
 
@@ -244,21 +222,6 @@ export function JobBoardClient({ initialJobs, filterOptions, totalCount }: JobBo
                 )}
               </div>
 
-              {isAuthenticated && (
-                <div className="flex items-center gap-2 text-sm text-gold-600 bg-gold-50 px-3 py-1.5 rounded-full">
-                  {isLoadingMatches ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      <span>Calculating matches...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="h-2 w-2 rounded-full bg-gold-500" />
-                      <span>Sorted by your match score</span>
-                    </>
-                  )}
-                </div>
-              )}
             </div>
 
             {/* Jobs List */}
@@ -275,12 +238,6 @@ export function JobBoardClient({ initialJobs, filterOptions, totalCount }: JobBo
                 >
                   Reset Filters
                 </button>
-              </div>
-            ) : isLoadingMatches ? (
-              <div className="bg-white rounded-2xl border border-gray-100 shadow-lg overflow-hidden">
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                  <JobBoardListItemSkeleton key={i} />
-                ))}
               </div>
             ) : (
               <>
@@ -299,7 +256,6 @@ export function JobBoardClient({ initialJobs, filterOptions, totalCount }: JobBo
                     <JobBoardListItem
                       key={job.id}
                       job={job}
-                      matchScore={job.matchScore}
                     />
                   ))}
                 </div>
@@ -356,13 +312,6 @@ export function JobBoardClient({ initialJobs, filterOptions, totalCount }: JobBo
                   </div>
                 )}
               </>
-            )}
-
-            {/* Mobile Match Prompt */}
-            {!isAuthenticated && !isLoadingMatches && (
-              <div className="mt-8 lg:hidden">
-                <JobMatchPrompt />
-              </div>
             )}
           </div>
         </div>
