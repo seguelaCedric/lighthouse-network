@@ -18,6 +18,7 @@ import {
   Phone,
   Mail,
   Sliders,
+  UserCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -311,6 +312,21 @@ function RadioGroup({
 }
 
 // Main Component
+type PersonalStepErrors = Partial<{
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  nationality: string;
+  phone: string;
+  email: string;
+}>;
+
+type ProfessionalStepErrors = Partial<{
+  candidateType: string;
+  primaryPosition: string;
+  otherRoleDetails: string;
+}>;
+
 export function ProfileEditClient({
   data,
   redirectTo,
@@ -334,6 +350,17 @@ export function ProfileEditClient({
   const [currentStep, setCurrentStep] = React.useState<ProfileStep>("personal");
   const router = useRouter();
   const steps = profileSteps;
+  const [stepErrors, setStepErrors] = React.useState<{
+    personal: PersonalStepErrors;
+    professional: ProfessionalStepErrors;
+    certifications: string;
+    details: string;
+  }>({
+    personal: {},
+    professional: {},
+    certifications: "",
+    details: "",
+  });
 
   // Auto-save state
   const [saveStatus, setSaveStatus] = React.useState<"saved" | "saving" | "error">("saved");
@@ -426,6 +453,92 @@ export function ProfileEditClient({
 
   // Documents
   const [isDragging, setIsDragging] = React.useState(false);
+
+  const validateStep = React.useCallback(
+    (step: ProfileStep) => {
+      if (step === "personal") {
+        const errors: PersonalStepErrors = {};
+        if (!firstName.trim()) errors.firstName = "First name is required.";
+        if (!lastName.trim()) errors.lastName = "Last name is required.";
+        if (!dateOfBirth) errors.dateOfBirth = "Date of birth is required.";
+        if (!nationality) errors.nationality = "Nationality is required.";
+        if (!phone.trim()) errors.phone = "Phone number is required.";
+        if (!email.trim()) errors.email = "Email address is required.";
+        return { isValid: Object.keys(errors).length === 0, errors };
+      }
+
+      if (step === "professional") {
+        const errors: ProfessionalStepErrors = {};
+        if (!candidateType) errors.candidateType = "Role category is required.";
+        if (!primaryPosition) errors.primaryPosition = "Primary position is required.";
+        if (candidateType === "other" && !jobSearchNotes.trim()) {
+          errors.otherRoleDetails = "Please describe your role.";
+        }
+        return { isValid: Object.keys(errors).length === 0, errors };
+      }
+
+      if (step === "certifications") {
+        const isAnswered = (value: string) => value === "yes" || value === "no";
+        let message = "";
+
+        if (candidateType === "household_staff") {
+          if (!isAnswered(hasSchengen)) {
+            message = "Please confirm your Schengen visa status before continuing.";
+          }
+        } else if (candidateType === "other") {
+          if (!isAnswered(hasSchengen) || !isAnswered(hasB1B2)) {
+            message = "Please confirm your Schengen and B1/B2 visa status before continuing.";
+          }
+        } else if (candidateType === "yacht_crew" || candidateType === "both") {
+          if (
+            !isAnswered(hasSTCW) ||
+            !isAnswered(hasENG1) ||
+            !isAnswered(hasSchengen) ||
+            !isAnswered(hasB1B2)
+          ) {
+            message =
+              "Please confirm your STCW, ENG1, Schengen, and B1/B2 status before continuing.";
+          }
+        }
+
+        return { isValid: message === "", message };
+      }
+
+      if (step === "details") {
+        const filledFields =
+          (smoker ? 1 : 0) +
+          (hasTattoos ? 1 : 0) +
+          (maritalStatus ? 1 : 0);
+        if (filledFields < 2) {
+          return {
+            isValid: false,
+            message: "Please complete at least two fields in this section before continuing.",
+          };
+        }
+        return { isValid: true, message: "" };
+      }
+
+      return { isValid: true };
+    },
+    [
+      firstName,
+      lastName,
+      dateOfBirth,
+      nationality,
+      phone,
+      email,
+      candidateType,
+      primaryPosition,
+      jobSearchNotes,
+      hasSTCW,
+      hasENG1,
+      hasSchengen,
+      hasB1B2,
+      smoker,
+      hasTattoos,
+      maritalStatus,
+    ]
+  );
 
   // Load existing certifications from database
   React.useEffect(() => {
@@ -714,6 +827,37 @@ export function ProfileEditClient({
   // Save before navigate - called when user clicks a wizard step
   const handleStepClick = React.useCallback(
     async (targetStep: ProfileStep) => {
+      const currentIndex = profileSteps.indexOf(currentStep);
+      const targetIndex = profileSteps.indexOf(targetStep);
+
+      if (targetIndex > currentIndex) {
+        const validation = validateStep(currentStep);
+        if (!validation.isValid) {
+          setStepErrors((prev) => ({
+            ...prev,
+            personal: currentStep === "personal" ? (validation.errors || {}) : prev.personal,
+            professional:
+              currentStep === "professional" ? (validation.errors || {}) : prev.professional,
+            certifications:
+              currentStep === "certifications"
+                ? (validation.message || "Please complete the required fields.")
+                : prev.certifications,
+            details:
+              currentStep === "details"
+                ? (validation.message || "Please complete the required fields.")
+                : prev.details,
+          }));
+          return;
+        }
+        setStepErrors((prev) => ({
+          ...prev,
+          personal: currentStep === "personal" ? {} : prev.personal,
+          professional: currentStep === "professional" ? {} : prev.professional,
+          certifications: currentStep === "certifications" ? "" : prev.certifications,
+          details: currentStep === "details" ? "" : prev.details,
+        }));
+      }
+
       // 1. Clear debounce timeout to prevent duplicate saves
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
@@ -760,6 +904,7 @@ export function ProfileEditClient({
     },
     [
       autoSave,
+      currentStep,
       firstName, lastName, email, phone, whatsapp, dateOfBirth, gender,
       nationality, secondNationality, currentLocation,
       candidateType,
@@ -769,8 +914,50 @@ export function ProfileEditClient({
       hasSchengen, schengenExpiry, hasB1B2, b1b2Expiry,
       smoker, hasTattoos, tattooLocation, maritalStatus, couplePosition,
       partnerName, partnerPosition,
+      validateStep,
     ]
   );
+
+  React.useEffect(() => {
+    if (Object.keys(stepErrors.personal).length === 0) return;
+    const validation = validateStep("personal");
+    if (validation.isValid) {
+      setStepErrors((prev) => ({ ...prev, personal: {} }));
+    }
+  }, [
+    firstName,
+    lastName,
+    dateOfBirth,
+    nationality,
+    phone,
+    email,
+    stepErrors.personal,
+    validateStep,
+  ]);
+
+  React.useEffect(() => {
+    if (Object.keys(stepErrors.professional).length === 0) return;
+    const validation = validateStep("professional");
+    if (validation.isValid) {
+      setStepErrors((prev) => ({ ...prev, professional: {} }));
+    }
+  }, [candidateType, primaryPosition, jobSearchNotes, stepErrors.professional, validateStep]);
+
+  React.useEffect(() => {
+    if (!stepErrors.certifications) return;
+    const validation = validateStep("certifications");
+    if (validation.isValid) {
+      setStepErrors((prev) => ({ ...prev, certifications: "" }));
+    }
+  }, [candidateType, hasSTCW, hasENG1, hasSchengen, hasB1B2, stepErrors.certifications, validateStep]);
+
+  React.useEffect(() => {
+    if (!stepErrors.details) return;
+    const validation = validateStep("details");
+    if (validation.isValid) {
+      setStepErrors((prev) => ({ ...prev, details: "" }));
+    }
+  }, [smoker, hasTattoos, maritalStatus, stepErrors.details, validateStep]);
 
   const profileCompletion = React.useMemo(() => {
     return calculateProfileCompletion({
@@ -885,7 +1072,7 @@ export function ProfileEditClient({
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <div className="flex gap-6">
           {/* Desktop: Sticky sidebar */}
           <div className="hidden md:block md:w-[280px] md:shrink-0">
@@ -911,10 +1098,31 @@ export function ProfileEditClient({
             </div>
 
             {/* Header: Save status */}
+            <div className="mb-2 flex flex-wrap items-center gap-4">
+              <Link
+                href="/crew/dashboard"
+                className="inline-flex items-center gap-2 text-sm font-medium text-gold-600 hover:text-gold-700"
+              >
+                <ChevronLeft className="size-4" />
+                Back to dashboard
+              </Link>
+              {safeRedirect && (
+                <Link
+                  href={safeRedirect}
+                  className="inline-flex items-center gap-2 text-sm font-medium text-gold-600 hover:text-gold-700"
+                >
+                  <ChevronLeft className="size-4" />
+                  Back to job
+                </Link>
+              )}
+            </div>
             <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
               <div>
-                <h1 className="text-2xl font-bold text-navy-900">Edit Profile</h1>
-                <p className="mt-1 text-sm text-gray-500">
+                <h1 className="flex items-center gap-3 font-serif text-3xl font-semibold text-navy-800">
+                  <UserCircle className="size-7 text-gold-500" />
+                  Edit Profile
+                </h1>
+                <p className="mt-2 text-gray-600">
                   Keep your profile up to date to get the best opportunities
                 </p>
               </div>
@@ -941,18 +1149,6 @@ export function ProfileEditClient({
                 )}
               </div>
             </div>
-            {safeRedirect && (
-              <div className="mb-4">
-                <Link
-                  href={safeRedirect}
-                  className="inline-flex items-center gap-2 text-sm font-medium text-gold-600 hover:text-gold-700"
-                >
-                  <ChevronLeft className="size-4" />
-                  Back to job
-                </Link>
-              </div>
-            )}
-
             <div className="mb-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
               <div className="flex items-center justify-between text-sm">
                 <span className="font-medium text-navy-900">Profile completion</span>
@@ -992,6 +1188,7 @@ export function ProfileEditClient({
                   setEmail={setEmail}
                   currentLocation={currentLocation}
                   setCurrentLocation={setCurrentLocation}
+                  errors={stepErrors.personal}
                 />
               )}
 
@@ -1011,6 +1208,7 @@ export function ProfileEditClient({
             setSecondaryLicense={setSecondaryLicense}
             otherRoleDetails={jobSearchNotes}
             setOtherRoleDetails={setJobSearchNotes}
+            errors={stepErrors.professional}
           />
         )}
         {/* Step 3: Certifications & Visas */}
@@ -1035,6 +1233,7 @@ export function ProfileEditClient({
             setB1B2Expiry={setB1b2Expiry}
             certificationChecklist={certificationChecklist}
             setCertificationChecklist={setCertificationChecklist}
+            error={stepErrors.certifications}
           />
         )}
 
@@ -1056,6 +1255,7 @@ export function ProfileEditClient({
           partnerPosition={partnerPosition}
           setPartnerPosition={setPartnerPosition}
           positionOptions={currentPositionOptions}
+          error={stepErrors.details}
         />
       )}
 
@@ -1083,7 +1283,7 @@ export function ProfileEditClient({
             onClick={() => {
               const currentIndex = steps.indexOf(currentStep);
               if (currentIndex > 0) {
-                setCurrentStep(steps[currentIndex - 1]);
+                handleStepClick(steps[currentIndex - 1]);
               }
             }}
             disabled={steps.indexOf(currentStep) === 0}
@@ -1104,7 +1304,7 @@ export function ProfileEditClient({
             onClick={() => {
               const currentIndex = steps.indexOf(currentStep);
               if (currentIndex < steps.length - 1) {
-                setCurrentStep(steps[currentIndex + 1]);
+                handleStepClick(steps[currentIndex + 1]);
               }
             }}
           >

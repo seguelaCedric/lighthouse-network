@@ -41,6 +41,7 @@ interface PersonalDetailsFormProps {
   partnerPosition: string;
   setPartnerPosition: (value: string) => void;
   positionOptions: PositionOption[];
+  error?: string;
 }
 
 // Custom toggle button component for better visual design
@@ -145,6 +146,7 @@ export function PersonalDetailsForm({
   partnerPosition,
   setPartnerPosition,
   positionOptions,
+  error,
 }: PersonalDetailsFormProps) {
   return (
     <div className="space-y-6">
@@ -154,6 +156,11 @@ export function PersonalDetailsForm({
         <p className="mt-1 text-sm text-gray-500">
           Additional information that helps match you with the right opportunities
         </p>
+        {error && (
+          <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
       </div>
 
       {/* Lifestyle Section */}

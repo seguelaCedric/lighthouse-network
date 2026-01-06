@@ -50,6 +50,7 @@ interface CertificationsFormProps {
   // Certification checklist
   certificationChecklist: CertificationItem[];
   setCertificationChecklist: (value: CertificationItem[]) => void;
+  error?: string;
 }
 
 export function CertificationsForm({
@@ -72,6 +73,7 @@ export function CertificationsForm({
   setB1B2Expiry,
   certificationChecklist,
   setCertificationChecklist,
+  error,
 }: CertificationsFormProps) {
   const showYachtCerts =
     candidateType === "yacht_crew" || candidateType === "both";
@@ -214,6 +216,11 @@ export function CertificationsForm({
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-navy-900">{title}</h2>
         <p className="mt-1 text-sm text-gray-500">{subtitle}</p>
+        {error && (
+          <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
       </div>
 
       {/* Section A: Essential Documents (Yacht Crew) */}

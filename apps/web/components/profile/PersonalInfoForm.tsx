@@ -38,6 +38,14 @@ interface PersonalInfoFormProps {
   setEmail: (value: string) => void;
   currentLocation: string;
   setCurrentLocation: (value: string) => void;
+  errors?: {
+    firstName?: string;
+    lastName?: string;
+    dateOfBirth?: string;
+    nationality?: string;
+    phone?: string;
+    email?: string;
+  };
 }
 
 export function PersonalInfoForm({
@@ -63,6 +71,7 @@ export function PersonalInfoForm({
   setEmail,
   currentLocation,
   setCurrentLocation,
+  errors,
 }: PersonalInfoFormProps) {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = React.useState(false);
@@ -108,6 +117,11 @@ export function PersonalInfoForm({
         <p className="mt-1 text-sm text-gray-500">
           Basic personal details and contact information
         </p>
+        {errors && Object.keys(errors).length > 0 && (
+          <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            Please complete the highlighted fields before continuing.
+          </div>
+        )}
       </div>
 
       {/* Hidden file input */}
@@ -170,20 +184,31 @@ export function PersonalInfoForm({
       </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        <FormField label="First Name" required>
+        <FormField label="First Name" required error={errors?.firstName}>
           <TextInput
             value={firstName}
             onChange={setFirstName}
             placeholder="Enter first name"
+            className={errors?.firstName ? "border-red-500 focus:border-red-500 focus:ring-red-500" : undefined}
           />
         </FormField>
 
-        <FormField label="Last Name" required>
-          <TextInput value={lastName} onChange={setLastName} placeholder="Enter last name" />
+        <FormField label="Last Name" required error={errors?.lastName}>
+          <TextInput
+            value={lastName}
+            onChange={setLastName}
+            placeholder="Enter last name"
+            className={errors?.lastName ? "border-red-500 focus:border-red-500 focus:ring-red-500" : undefined}
+          />
         </FormField>
 
-        <FormField label="Date of Birth" required>
-          <TextInput type="date" value={dateOfBirth} onChange={setDateOfBirth} />
+        <FormField label="Date of Birth" required error={errors?.dateOfBirth}>
+          <TextInput
+            type="date"
+            value={dateOfBirth}
+            onChange={setDateOfBirth}
+            className={errors?.dateOfBirth ? "border-red-500 focus:border-red-500 focus:ring-red-500" : undefined}
+          />
         </FormField>
 
         <FormField label="Gender">
@@ -197,13 +222,14 @@ export function PersonalInfoForm({
           />
         </FormField>
 
-        <FormField label="Nationality" required>
+        <FormField label="Nationality" required error={errors?.nationality}>
           <SearchableSelect
             value={nationality}
             onChange={setNationality}
             options={nationalityOptions}
             placeholder="Select nationality..."
             searchPlaceholder="Type to search nationalities..."
+            className={errors?.nationality ? "border-red-500 focus:border-red-500 focus:ring-red-500" : undefined}
           />
         </FormField>
 
@@ -217,12 +243,13 @@ export function PersonalInfoForm({
           />
         </FormField>
 
-        <FormField label="Phone Number" required>
+        <FormField label="Phone Number" required error={errors?.phone}>
           <TextInput
             value={phone}
             onChange={setPhone}
             placeholder="+1 234 567 8900"
             prefix={<Phone className="size-4 text-gray-400" />}
+            className={errors?.phone ? "border-red-500 focus:border-red-500 focus:ring-red-500" : undefined}
           />
         </FormField>
 
@@ -234,7 +261,7 @@ export function PersonalInfoForm({
           />
         </FormField>
 
-        <FormField label="Email Address" required>
+        <FormField label="Email Address" required error={errors?.email}>
           <div className="relative">
             <TextInput
               type="email"
@@ -242,6 +269,7 @@ export function PersonalInfoForm({
               onChange={setEmail}
               placeholder="email@example.com"
               prefix={<Mail className="size-4 text-gray-400" />}
+              className={errors?.email ? "border-red-500 focus:border-red-500 focus:ring-red-500" : undefined}
             />
           </div>
         </FormField>

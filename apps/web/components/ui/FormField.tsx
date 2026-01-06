@@ -6,10 +6,11 @@ interface FormFieldProps {
   label: string;
   hint?: string;
   required?: boolean;
+  error?: string;
   children: React.ReactNode;
 }
 
-export function FormField({ label, hint, required, children }: FormFieldProps) {
+export function FormField({ label, hint, required, error, children }: FormFieldProps) {
   return (
     <div className="space-y-2">
       <label className="block text-sm font-medium text-gray-700">
@@ -20,6 +21,7 @@ export function FormField({ label, hint, required, children }: FormFieldProps) {
         )}
       </label>
       {children}
+      {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
   );
 }

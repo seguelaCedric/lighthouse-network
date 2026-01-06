@@ -46,6 +46,11 @@ interface ProfessionalDetailsFormProps {
   // Other role details
   otherRoleDetails: string;
   setOtherRoleDetails: (value: string) => void;
+  errors?: {
+    candidateType?: string;
+    primaryPosition?: string;
+    otherRoleDetails?: string;
+  };
 }
 
 export function ProfessionalDetailsForm({
@@ -62,6 +67,7 @@ export function ProfessionalDetailsForm({
   setSecondaryLicense,
   otherRoleDetails,
   setOtherRoleDetails,
+  errors,
 }: ProfessionalDetailsFormProps) {
   const showLicenses = candidateType === "yacht_crew" || candidateType === "both";
   const showOtherRole = candidateType === "other";
@@ -99,9 +105,14 @@ export function ProfessionalDetailsForm({
         <p className="mt-1 text-sm text-gray-500">
           Your role category, position, and licenses
         </p>
+        {errors && Object.keys(errors).length > 0 && (
+          <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            Please complete the highlighted fields before continuing.
+          </div>
+        )}
       </div>
 
-      <FormField label="Role Category" required>
+      <FormField label="Role Category" required error={errors?.candidateType}>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
           {roleCards.map(({ value, label, description, Icon }) => {
             const isSelected = candidateType === value;
@@ -137,11 +148,12 @@ export function ProfessionalDetailsForm({
       </FormField>
 
       {/* Primary Position */}
-      <FormField label="Primary Position" required>
+      <FormField label="Primary Position" required error={errors?.primaryPosition}>
         <SelectInput
           value={primaryPosition}
           onChange={setPrimaryPosition}
           options={positionOptions}
+          className={errors?.primaryPosition ? "border-red-500 focus:border-red-500 focus:ring-red-500" : undefined}
         />
       </FormField>
 
@@ -150,13 +162,17 @@ export function ProfessionalDetailsForm({
           label="Describe Your Role"
           hint="Tell us what you do so we can route you to the right opportunities"
           required
+          error={errors?.otherRoleDetails}
         >
           <textarea
             value={otherRoleDetails}
             onChange={(e) => setOtherRoleDetails(e.target.value)}
             rows={4}
             placeholder="e.g. Corporate hospitality, private aviation, luxury concierge, etc."
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm placeholder:text-gray-400 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/20"
+            className={[
+              "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm placeholder:text-gray-400 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/20",
+              errors?.otherRoleDetails ? "border-red-500 focus:border-red-500 focus:ring-red-500/20" : "",
+            ].join(" ")}
           />
         </FormField>
       )}
