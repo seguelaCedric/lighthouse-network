@@ -93,7 +93,31 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Recruiters can access all documents from their organization
     // Candidates can only access their own documents
     if (userData.user_type === "candidate") {
-      if (document.entityType !== "candidate" || document.entityId !== userData.id) {
+      let candidateId: string | null = null;
+
+      const { data: candidateByUserId } = await supabase
+        .from("candidates")
+        .select("id")
+        .eq("user_id", userData.id)
+        .maybeSingle();
+
+      if (candidateByUserId) {
+        candidateId = candidateByUserId.id;
+      }
+
+      if (!candidateId && user.email) {
+        const { data: candidateByEmail } = await supabase
+          .from("candidates")
+          .select("id")
+          .eq("email", user.email)
+          .maybeSingle();
+
+        if (candidateByEmail) {
+          candidateId = candidateByEmail.id;
+        }
+      }
+
+      if (!candidateId || document.entityType !== "candidate" || document.entityId !== candidateId) {
         return NextResponse.json(
           { error: "You can only access your own documents" },
           { status: 403 }

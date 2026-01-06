@@ -15,6 +15,7 @@ import {
   Plus,
   RefreshCw,
   ChevronRight,
+  ChevronLeft,
   FileImage,
   File,
   Shield,
@@ -23,7 +24,6 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import {
-  DocumentPreviewModal,
   DocumentCategoryTabs,
   categorizeDocumentType,
   filterAndSortDocuments,
@@ -173,14 +173,10 @@ function CertificationStatusBadge({
 // CV Section Component
 function CVSection({
   cv,
-  candidateId,
   onUpload,
-  onPreview,
 }: {
   cv: Document | null;
-  candidateId: string;
   onUpload: () => void;
-  onPreview: (doc: Document) => void;
 }) {
   const [isDeleting, setIsDeleting] = React.useState(false);
 
@@ -255,10 +251,15 @@ function CVSection({
           )}
 
           <div className="flex items-center gap-3 pt-2">
-            <Button variant="secondary" size="sm" onClick={() => onPreview(cv)}>
+            <a
+              href={`/api/documents/${cv.id}/view`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-navy-700 transition-colors hover:bg-gray-50"
+            >
               <Eye className="w-4 h-4" />
               View
-            </Button>
+            </a>
             <a
               href={cv.fileUrl}
               download
@@ -442,11 +443,9 @@ function CertificationsSection({
 function OtherDocumentsSection({
   documents,
   onUpload,
-  onPreview,
 }: {
   documents: Document[];
   onUpload: () => void;
-  onPreview: (doc: Document) => void;
 }) {
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
   const [activeCategory, setActiveCategory] = React.useState<DocumentCategory>("all");
@@ -545,13 +544,15 @@ function OtherDocumentsSection({
                 </div>
                 <div className="flex items-center gap-2">
                   <StatusBadge status={doc.status} />
-                  <button
-                    onClick={() => onPreview(doc)}
+                  <a
+                    href={`/api/documents/${doc.id}/view`}
+                    target="_blank"
+                    rel="noreferrer"
                     className="p-2 text-navy-600 hover:bg-gold-50 rounded-lg transition-colors"
                     title="Preview document"
                   >
                     <Eye className="w-4 h-4" />
-                  </button>
+                  </a>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -989,7 +990,6 @@ function UploadModal({
 export function DocumentsClient({ data }: { data: DocumentsPageData }) {
   const [uploadModalOpen, setUploadModalOpen] = React.useState(false);
   const [uploadType, setUploadType] = React.useState<"cv" | "document">("cv");
-  const [previewDocument, setPreviewDocument] = React.useState<Document | null>(null);
 
   const openCVUpload = () => {
     setUploadType("cv");
@@ -1001,49 +1001,36 @@ export function DocumentsClient({ data }: { data: DocumentsPageData }) {
     setUploadModalOpen(true);
   };
 
-  const handlePreview = (doc: Document) => {
-    setPreviewDocument(doc);
-  };
-
-  const handleDeleteFromPreview = async (id: string) => {
-    const result = await deleteDocument(id);
-    if (result.success) {
-      setPreviewDocument(null);
-      window.location.reload();
-    } else {
-      alert(result.error || "Failed to delete document");
-    }
-  };
-
   return (
     <div className="min-h-screen bg-cream-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-40">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-serif font-semibold text-navy-800">
-                Documents
-              </h1>
-              <p className="text-gray-600 mt-2">
-                Manage your CV, certifications, and supporting documents
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
+      <header className="bg-cream-50">
+        <div className="mx-auto max-w-6xl px-4 py-4 sm:px-6 sm:py-6">
+          <div className="border-b border-gray-200 pb-4">
+            <div className="flex flex-col gap-3 sm:gap-4">
               <Link
                 href="/crew/dashboard"
-                className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-navy-700 border border-gray-200 bg-white rounded-lg hover:bg-gray-50 transition-colors"
+                className="inline-flex items-center gap-2 text-sm font-medium text-gold-600 hover:text-gold-700"
               >
-                <ChevronRight className="w-4 h-4 rotate-180" />
-                Back to Dashboard
+                <ChevronLeft className="w-4 h-4" />
+                Back to dashboard
               </Link>
+              <div>
+                <h1 className="flex items-center gap-3 text-3xl font-serif font-semibold text-navy-800">
+                  <FileText className="size-7 text-gold-500" />
+                  Documents
+                </h1>
+                <p className="text-gray-600 mt-2">
+                  Manage your CV, certifications, and supporting documents
+                </p>
+              </div>
             </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
         {/* Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-[0px_2px_4px_rgba(26,24,22,0.06)] hover:shadow-[0px_4px_8px_rgba(26,24,22,0.08)] transition-shadow">
@@ -1107,9 +1094,7 @@ export function DocumentsClient({ data }: { data: DocumentsPageData }) {
         {/* CV Section */}
         <CVSection
           cv={data.cv}
-          candidateId={data.candidateId}
           onUpload={openCVUpload}
-          onPreview={handlePreview}
         />
 
         {/* Certifications Section */}
@@ -1122,7 +1107,6 @@ export function DocumentsClient({ data }: { data: DocumentsPageData }) {
         <OtherDocumentsSection
           documents={data.documents}
           onUpload={openDocumentUpload}
-          onPreview={handlePreview}
         />
       </main>
 
@@ -1134,22 +1118,6 @@ export function DocumentsClient({ data }: { data: DocumentsPageData }) {
         uploadType={uploadType}
       />
 
-      {/* Document Preview Modal */}
-      <DocumentPreviewModal
-        isOpen={!!previewDocument}
-        onClose={() => setPreviewDocument(null)}
-        doc={previewDocument ? {
-          id: previewDocument.id,
-          name: previewDocument.name,
-          fileUrl: previewDocument.fileUrl,
-          mimeType: previewDocument.mimeType,
-          fileSize: previewDocument.fileSize,
-          uploadedAt: previewDocument.uploadedAt,
-          documentType: previewDocument.documentType,
-          status: previewDocument.status,
-        } : null}
-        onDelete={handleDeleteFromPreview}
-      />
     </div>
   );
 }

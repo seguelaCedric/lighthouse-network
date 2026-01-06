@@ -492,18 +492,21 @@ export default function PreferencesClient({ candidateId, initialData }: Preferen
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
+    <div className="mx-auto max-w-6xl px-4 py-8">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-8 border-b border-gray-200 pb-4">
         <Link
           href="/crew/dashboard"
-          className="mb-4 inline-flex items-center gap-1 text-sm text-gray-500 hover:text-navy-600"
+          className="mb-4 inline-flex items-center gap-2 text-sm font-medium text-gold-600 hover:text-gold-700"
         >
           <ChevronLeft className="size-4" />
-          Back to Dashboard
+          Back to dashboard
         </Link>
-        <h1 className="text-2xl font-bold text-navy-900">Job Preferences</h1>
-        <p className="mt-1 text-gray-600">
+        <h1 className="flex items-center gap-3 font-serif text-3xl font-semibold text-navy-800">
+          <Sparkles className="size-7 text-gold-500" />
+          Job Preferences
+        </h1>
+        <p className="mt-2 text-gray-600">
           Tell us what you&apos;re looking for so we can match you with the right opportunities
         </p>
       </div>

@@ -5,6 +5,10 @@ vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(),
 }));
 
+vi.mock("@supabase/supabase-js", () => ({
+  createClient: vi.fn(),
+}));
+
 vi.mock("@/lib/vincere/sync-service", () => ({
   syncDocumentUpload: vi.fn(),
 }));
@@ -20,6 +24,10 @@ vi.mock("@/lib/services/text-extraction", () => ({
 }));
 
 const { createClient } = await import("@/lib/supabase/server");
+const { createClient: createServiceClient } = await import("@supabase/supabase-js");
+
+process.env.NEXT_PUBLIC_SUPABASE_URL = "http://localhost";
+process.env.SUPABASE_SERVICE_ROLE_KEY = "test-service-key";
 
 describe("documents upload", () => {
   it("uploads without organization_id and inserts document row", async () => {
@@ -77,12 +85,15 @@ describe("documents upload", () => {
     (createClient as unknown as { mockResolvedValue: (value: unknown) => void }).mockResolvedValue(
       supabaseMock
     );
+    (createServiceClient as unknown as { mockReturnValue: (value: unknown) => void }).mockReturnValue(
+      supabaseMock
+    );
 
     const formData = new FormData();
     formData.set("file", new File(["pdf"], "resume.pdf", { type: "application/pdf" }));
     formData.set("entityType", "candidate");
     formData.set("entityId", candidateData.id);
-    formData.set("documentType", "certificate");
+    formData.set("documentType", "certification");
 
     const request = new Request("http://localhost/api/documents/upload", {
       method: "POST",

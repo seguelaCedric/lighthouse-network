@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient as createServiceClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createDocumentVersion } from "@/lib/services/document-service";
 import { documentUploadSchema, validateFile, sanitizeFilename } from "@/lib/validations/documents";
@@ -7,6 +8,18 @@ import { syncDocumentUpload } from "@/lib/vincere/sync-service";
 import { extractText, isExtractable } from "@/lib/services/text-extraction";
 
 const BUCKET_NAME = "documents";
+const serviceSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const serviceSupabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+function getServiceClient() {
+  if (!serviceSupabaseUrl || !serviceSupabaseKey) {
+    return null;
+  }
+
+  return createServiceClient(serviceSupabaseUrl, serviceSupabaseKey, {
+    auth: { persistSession: false },
+  });
+}
 
 /**
  * POST /api/documents/upload
@@ -15,6 +28,9 @@ const BUCKET_NAME = "documents";
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
+    const serviceClient = getServiceClient();
+    const storageClient = serviceClient ?? supabase;
+    const dbClient = serviceClient ?? supabase;
 
     // Check authentication
     const {
@@ -90,12 +106,55 @@ export async function POST(request: NextRequest) {
     // Candidates can only upload to their own profile
     // Recruiters can upload to any entity
     if (userData.user_type === "candidate") {
+      let candidateData: { id: string; user_id?: string | null } | null = null;
+
       // Get the candidate ID for this user
-      const { data: candidateData } = await supabase
+      const { data: candidateByUserId } = await supabase
         .from("candidates")
-        .select("id")
+        .select("id, user_id")
         .eq("user_id", userData.id)
-        .single();
+        .maybeSingle();
+
+      candidateData = candidateByUserId;
+
+      // Fallback for Vincere-imported candidates linked by email
+      if (!candidateData && user.email) {
+        const { data: candidateByEmail } = await supabase
+          .from("candidates")
+          .select("id, user_id")
+          .eq("email", user.email)
+          .maybeSingle();
+
+        if (candidateByEmail) {
+          if (candidateByEmail.user_id && candidateByEmail.user_id !== userData.id) {
+            return NextResponse.json(
+              { error: "You can only upload documents to your own profile" },
+              { status: 403 }
+            );
+          }
+
+          if (!candidateByEmail.user_id) {
+            const { error: linkError } = await supabase
+              .from("candidates")
+              .update({
+                user_id: userData.id,
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", candidateByEmail.id)
+              .is("user_id", null);
+
+            if (linkError) {
+              console.error("Failed to link candidate to user:", linkError);
+              return NextResponse.json(
+                { error: "Failed to link candidate profile" },
+                { status: 500 }
+              );
+            }
+          }
+
+          candidateData = { id: candidateByEmail.id, user_id: userData.id };
+        }
+      }
 
       if (!candidateData || entityType !== "candidate" || entityId !== candidateData.id) {
         return NextResponse.json(
@@ -111,7 +170,7 @@ export async function POST(request: NextRequest) {
     const filePath = `${entityType}/${entityId}/${timestamp}-${sanitizedName}`;
 
     // Upload to Supabase Storage
-    const { error: uploadError } = await supabase.storage
+    const { error: uploadError } = await storageClient.storage
       .from(BUCKET_NAME)
       .upload(filePath, file, {
         cacheControl: "3600",
@@ -129,7 +188,7 @@ export async function POST(request: NextRequest) {
     // Get public URL
     const {
       data: { publicUrl },
-    } = supabase.storage.from(BUCKET_NAME).getPublicUrl(filePath);
+    } = storageClient.storage.from(BUCKET_NAME).getPublicUrl(filePath);
 
     let documentId: string;
     let version: number = 1;
@@ -168,7 +227,7 @@ export async function POST(request: NextRequest) {
 
       if (!result.success || !result.documentId) {
         // Cleanup uploaded file
-        await supabase.storage.from(BUCKET_NAME).remove([filePath]);
+        await storageClient.storage.from(BUCKET_NAME).remove([filePath]);
         return NextResponse.json(
           { error: result.error || "Failed to create document version" },
           { status: 500 }
@@ -212,7 +271,7 @@ export async function POST(request: NextRequest) {
         insertPayload.organization_id = userData.organization_id;
       }
 
-      const { data: documentRecord, error: dbError } = await supabase
+      const { data: documentRecord, error: dbError } = await dbClient
         .from("documents")
         .insert(insertPayload)
         .select()
@@ -227,7 +286,7 @@ export async function POST(request: NextRequest) {
           hint: dbError.hint,
         });
         // Cleanup uploaded file
-        await supabase.storage.from(BUCKET_NAME).remove([filePath]);
+        await storageClient.storage.from(BUCKET_NAME).remove([filePath]);
         return NextResponse.json(
           { error: "Failed to save document record" },
           { status: 500 }

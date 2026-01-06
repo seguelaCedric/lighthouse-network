@@ -250,12 +250,12 @@ export default function CrewReferralsPage() {
   const minPayout = crewStatsData?.program?.min_payout || 5000;
 
   return (
-    <div className="space-y-8">
+    <div className="mx-auto max-w-6xl space-y-8">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between border-b border-gray-200 pb-4">
         <div>
           <h1 className="flex items-center gap-3 font-serif text-3xl font-semibold text-navy-800">
-            <Gift className="size-8 text-gold-500" />
+            <Gift className="size-7 text-gold-500" />
             Referrals & Rewards
           </h1>
           <p className="mt-2 text-gray-600">

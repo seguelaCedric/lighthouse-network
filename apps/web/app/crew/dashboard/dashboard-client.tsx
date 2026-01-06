@@ -256,59 +256,62 @@ export function DashboardClient({ data }: { data: DashboardData }) {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="border-b border-gray-200 bg-white">
+      <header className="bg-gray-50">
         <div className="mx-auto max-w-6xl px-4 py-4 sm:px-6 sm:py-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3 sm:gap-6">
-              {/* Profile Photo */}
-              <div className="relative flex-shrink-0">
-                {candidate.profilePhotoUrl ? (
-                  <Image
-                    src={candidate.profilePhotoUrl}
-                    alt={`${candidate.firstName} ${candidate.lastName}`}
-                    width={64}
-                    height={64}
-                    className="size-12 sm:size-16 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="flex size-12 sm:size-16 items-center justify-center rounded-full bg-gradient-to-br from-navy-100 to-navy-200 text-lg sm:text-xl font-bold text-navy-600">
-                    {candidate.firstName[0]}
-                  </div>
-                )}
-                <Link
-                  href="/crew/profile/edit#photo"
-                  className="absolute -bottom-1 -right-1 flex size-5 sm:size-6 items-center justify-center rounded-full bg-gold-500 text-white shadow-sm hover:bg-gold-600"
-                >
-                  <Camera className="size-2.5 sm:size-3" />
-                </Link>
-              </div>
+          <div className="border-b border-gray-200 pb-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3 sm:gap-6">
+                {/* Profile Photo */}
+                <div className="relative flex-shrink-0">
+                  {candidate.profilePhotoUrl ? (
+                    <Image
+                      src={candidate.profilePhotoUrl}
+                      alt={`${candidate.firstName} ${candidate.lastName}`}
+                      width={64}
+                      height={64}
+                      className="size-12 sm:size-16 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex size-12 sm:size-16 items-center justify-center rounded-full bg-gradient-to-br from-navy-100 to-navy-200 text-lg sm:text-xl font-bold text-navy-600">
+                      {candidate.firstName[0]}
+                    </div>
+                  )}
+                  <Link
+                    href="/crew/profile/edit#photo"
+                    className="absolute -bottom-1 -right-1 flex size-5 sm:size-6 items-center justify-center rounded-full bg-gold-500 text-white shadow-sm hover:bg-gold-600"
+                  >
+                    <Camera className="size-2.5 sm:size-3" />
+                  </Link>
+                </div>
 
-              <div className="min-w-0 flex-1">
-                <h1 className="text-xl sm:text-2xl md:text-4xl font-serif font-semibold text-navy-800">
+                <div className="min-w-0 flex-1">
+                <h1 className="flex items-center gap-3 text-3xl font-serif font-semibold text-navy-800">
+                  <Sparkles className="size-7 text-gold-500" />
                   Welcome back, {candidate.firstName}!
                 </h1>
-                <p className="mt-0.5 sm:mt-1 text-sm sm:text-base text-gray-600">
-                  {(() => {
-                    // Prioritize preference positions (what they WANT) over profile position (what they DO)
-                    const seekingPosition = preferences?.yachtPrimaryPosition || preferences?.householdPrimaryPosition;
-                    if (seekingPosition) {
-                      return <>Looking for <span className="font-medium">{getPositionDisplayName(seekingPosition)}</span> roles</>;
-                    }
-                    if (candidate.primaryPosition) {
-                      return <>Your profile is set to <span className="font-medium">{getPositionDisplayName(candidate.primaryPosition)}</span></>;
-                    }
-                    return "Here's what's happening with your job search";
-                  })()}
-                </p>
+                <p className="mt-2 text-gray-600">
+                    {(() => {
+                      // Prioritize preference positions (what they WANT) over profile position (what they DO)
+                      const seekingPosition = preferences?.yachtPrimaryPosition || preferences?.householdPrimaryPosition;
+                      if (seekingPosition) {
+                        return <>Looking for <span className="font-medium">{getPositionDisplayName(seekingPosition)}</span> roles</>;
+                      }
+                      if (candidate.primaryPosition) {
+                        return <>Your profile is set to <span className="font-medium">{getPositionDisplayName(candidate.primaryPosition)}</span></>;
+                      }
+                      return "Here's what's happening with your job search";
+                    })()}
+                  </p>
+                </div>
               </div>
-            </div>
 
-            {/* Profile Completeness - Hidden on mobile, shown in sidebar */}
-            <div className="hidden sm:flex items-center gap-4">
-              <CircularProgress value={profileCompleteness} />
-              <div>
-                <p className="text-sm font-medium text-navy-900">Profile Strength</p>
-                <p className="text-xs text-gray-500">Complete to get more matches</p>
+              {/* Profile Completeness - Hidden on mobile, shown in sidebar */}
+              <div className="hidden sm:flex items-center gap-4">
+                <CircularProgress value={profileCompleteness} />
+                <div>
+                  <p className="text-sm font-medium text-navy-900">Profile Strength</p>
+                  <p className="text-xs text-gray-500">Complete to get more matches</p>
+                </div>
               </div>
             </div>
           </div>

@@ -152,40 +152,47 @@ export default async function CrewApplicationsPage() {
   const applications = await getApplicationsData(candidate.id);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="font-serif text-3xl font-bold text-navy-800">
-          My Applications
-        </h1>
-        <p className="mt-1 text-gray-600">
-          Track the progress of your job applications
-        </p>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-gray-50">
+        <div className="mx-auto max-w-6xl px-6 py-6">
+          <div className="border-b border-gray-200 pb-4">
+            <h1 className="flex items-center gap-3 font-serif text-3xl font-semibold text-navy-800">
+              <Briefcase className="size-7 text-gold-500" />
+              My Applications
+            </h1>
+            <p className="mt-2 text-gray-600">
+              Track the progress of your job applications
+            </p>
+          </div>
+        </div>
+      </header>
 
       {/* Applications List */}
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
-        {applications.length === 0 ? (
-          <div className="px-6 py-16 text-center">
-            <Briefcase className="mx-auto mb-4 size-12 text-gray-300" />
-            <h3 className="font-medium text-gray-900">No applications yet</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              Start browsing jobs and submit your first application
-            </p>
-            <Link
-              href="/crew/jobs"
-              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-gold-500 px-4 py-2 text-sm font-medium text-white hover:bg-gold-600"
-            >
-              Browse Jobs
-              <ChevronRight className="size-4" />
-            </Link>
-          </div>
-        ) : (
-          <div className="divide-y divide-gray-100">
-            {applications.map((application) => (
-              <ApplicationRow key={application.id} application={application} />
-            ))}
-          </div>
-        )}
+      <div className="mx-auto max-w-6xl px-6 pb-6">
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+          {applications.length === 0 ? (
+            <div className="px-6 py-16 text-center">
+              <Briefcase className="mx-auto mb-4 size-12 text-gray-300" />
+              <h3 className="font-medium text-gray-900">No applications yet</h3>
+              <p className="mt-1 text-sm text-gray-500">
+                Start browsing jobs and submit your first application
+              </p>
+              <Link
+                href="/crew/jobs"
+                className="mt-4 inline-flex items-center gap-2 rounded-lg bg-gold-500 px-4 py-2 text-sm font-medium text-white hover:bg-gold-600"
+              >
+                Browse Jobs
+                <ChevronRight className="size-4" />
+              </Link>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-100">
+              {applications.map((application) => (
+                <ApplicationRow key={application.id} application={application} />
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -715,81 +715,83 @@ export function JobsClient({ data: initialData }: { data: JobsPageData }) {
       )}
 
       {/* Header */}
-      <header className="border-b border-gray-200 bg-white">
+      <header className="bg-gray-50">
         <div className="mx-auto max-w-6xl px-6 py-6">
-          <div className="mb-6">
-            <h1 className="font-serif text-3xl font-medium text-navy-800">
-              Browse Jobs
-            </h1>
-            <p className="mt-2 text-gray-600">
-              {initialData.candidateSoughtPositions.length > 0 ? (
-                <>
-                  Matching jobs for{" "}
-                  <span className="font-medium text-gold-600">
-                    {initialData.candidateSoughtPositions.slice(0, 3).join(", ")}
-                    {initialData.candidateSoughtPositions.length > 3 && (
-                      <span className="text-gray-500"> +{initialData.candidateSoughtPositions.length - 3} more</span>
-                    )}
-                  </span>
-                </>
-              ) : initialData.candidatePosition ? (
-                <>
-                  Jobs matched for <span className="font-medium text-gold-600">{initialData.candidatePosition}</span>
-                </>
-              ) : (
-                "Find your next position in yachting or private service"
-              )}
-            </p>
-          </div>
-
-          {/* Search Bar */}
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search positions, locations..."
-                className="h-12 w-full rounded-xl border border-gray-300 bg-white pl-12 pr-4 text-base placeholder:text-gray-400 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/20"
-              />
-            </div>
-          </div>
-
-          {/* Filter Bar */}
-          <div className="mt-4 border-t border-gray-100 pt-4">
-            <div className="flex items-center justify-between">
-              <button
-                onClick={() => setFiltersExpanded(!filtersExpanded)}
-                className="flex items-center gap-2 text-sm font-medium text-gray-700"
-              >
-                <SlidersHorizontal className="size-4" />
-                Filters
-                {hasActiveFilters && (
-                  <span className="rounded-full bg-gold-500 px-2 py-0.5 text-xs font-bold text-white">
-                    Active
-                  </span>
-                )}
-                {filtersExpanded ? (
-                  <ChevronUp className="size-4" />
+          <div className="border-b border-gray-200 pb-4">
+            <div className="mb-6">
+              <h1 className="flex items-center gap-3 font-serif text-3xl font-semibold text-navy-800">
+                <Search className="size-7 text-gold-500" />
+                Browse Jobs
+              </h1>
+              <p className="mt-2 text-gray-600">
+                {initialData.candidateSoughtPositions.length > 0 ? (
+                  <>
+                    Matching jobs for{" "}
+                    <span className="font-medium text-gold-600">
+                      {initialData.candidateSoughtPositions.slice(0, 3).join(", ")}
+                      {initialData.candidateSoughtPositions.length > 3 && (
+                        <span className="text-gray-500"> +{initialData.candidateSoughtPositions.length - 3} more</span>
+                      )}
+                    </span>
+                  </>
+                ) : initialData.candidatePosition ? (
+                  <>
+                    Jobs matched for <span className="font-medium text-gold-600">{initialData.candidatePosition}</span>
+                  </>
                 ) : (
-                  <ChevronDown className="size-4" />
+                  "Find your next position in yachting or private service"
                 )}
-              </button>
-
-              {hasActiveFilters && (
-                <button
-                  onClick={clearFilters}
-                  className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
-                >
-                  <X className="size-3" />
-                  Clear All
-                </button>
-              )}
+              </p>
             </div>
 
-            {filtersExpanded && (
-              <div className="mt-4 flex flex-wrap items-end gap-4">
+            {/* Search Bar */}
+            <div className="flex items-center gap-4">
+              <div className="relative flex-1">
+                <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search positions, locations..."
+                  className="h-12 w-full rounded-xl border border-gray-300 bg-white pl-12 pr-4 text-base placeholder:text-gray-400 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/20"
+                />
+              </div>
+            </div>
+
+            {/* Filter Bar */}
+            <div className="mt-4 border-t border-gray-100 pt-4">
+              <div className="flex items-center justify-between">
+                <button
+                  onClick={() => setFiltersExpanded(!filtersExpanded)}
+                  className="flex items-center gap-2 text-sm font-medium text-gray-700"
+                >
+                  <SlidersHorizontal className="size-4" />
+                  Filters
+                  {hasActiveFilters && (
+                    <span className="rounded-full bg-gold-500 px-2 py-0.5 text-xs font-bold text-white">
+                      Active
+                    </span>
+                  )}
+                  {filtersExpanded ? (
+                    <ChevronUp className="size-4" />
+                  ) : (
+                    <ChevronDown className="size-4" />
+                  )}
+                </button>
+
+                {hasActiveFilters && (
+                  <button
+                    onClick={clearFilters}
+                    className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+                  >
+                    <X className="size-3" />
+                    Clear All
+                  </button>
+                )}
+              </div>
+
+              {filtersExpanded && (
+                <div className="mt-4 flex flex-wrap items-end gap-4">
                 {/* Region */}
                 <div>
                   <label className="mb-1 block text-xs text-gray-500">
@@ -872,8 +874,9 @@ export function JobsClient({ data: initialData }: { data: JobsPageData }) {
                     />
                   </div>
                 </div>
-              </div>
-            )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>

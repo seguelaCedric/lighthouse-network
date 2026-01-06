@@ -154,11 +154,14 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="font-serif text-3xl font-bold text-navy-800">Settings</h1>
-        <p className="mt-1 text-gray-600">
+      <div className="border-b border-gray-200 pb-4">
+        <h1 className="flex items-center gap-3 font-serif text-3xl font-semibold text-navy-800">
+          <Shield className="size-7 text-gold-500" />
+          Settings
+        </h1>
+        <p className="mt-2 text-gray-600">
           Manage your account preferences and security
         </p>
       </div>
