@@ -287,7 +287,7 @@ export async function createDocumentVersion(
   newFileSize: number,
   newMimeType: string,
   uploadedBy: string,
-  organizationId: string
+  organizationId: string | null
 ): Promise<{ success: boolean; documentId?: string; error?: string }> {
   try {
     const supabase = await createClient();

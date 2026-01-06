@@ -107,17 +107,16 @@ export async function GET(
 
     // Get candidate certifications
     const { data: certifications } = await supabase
-      .from("certifications")
+      .from("candidate_certifications")
       .select(`
         id,
-        name,
-        certificate_type,
-        issuing_authority,
-        issue_date,
+        certification_type,
+        custom_name,
         expiry_date,
-        is_verified
+        has_certification
       `)
       .eq("candidate_id", candidateId)
+      .eq("has_certification", true)
       .order("expiry_date", { ascending: true });
 
     // Get candidate work history
@@ -216,12 +215,12 @@ export async function GET(
       // Detailed info
       certifications: (certifications || []).map((cert) => ({
         id: cert.id,
-        name: cert.name,
-        type: cert.certificate_type,
-        issuingAuthority: cert.issuing_authority,
-        issueDate: cert.issue_date,
+        name: cert.custom_name || cert.certification_type,
+        type: cert.certification_type,
+        issuingAuthority: null,
+        issueDate: null,
         expiryDate: cert.expiry_date,
-        isVerified: cert.is_verified,
+        isVerified: false,
       })),
 
       workHistory: (workHistory || []).map((job) => ({

@@ -58,9 +58,19 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     // Fetch certifications
     const { data: certifications, error: certError } = await supabase
-      .from("certifications")
-      .select("*")
+      .from("candidate_certifications")
+      .select(`
+        id,
+        candidate_id,
+        certification_type,
+        custom_name,
+        expiry_date,
+        has_certification,
+        created_at,
+        updated_at
+      `)
       .eq("candidate_id", id)
+      .eq("has_certification", true)
       .order("created_at", { ascending: false });
 
     if (certError) {
@@ -80,7 +90,23 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     const response: CandidateWithRelations = {
       ...candidate,
-      certifications: certifications ?? [],
+      certifications: (certifications ?? []).map((cert) => ({
+        id: cert.id,
+        candidate_id: cert.candidate_id,
+        name: cert.custom_name || cert.certification_type,
+        type: cert.certification_type,
+        issuing_authority: null,
+        certificate_number: null,
+        issue_date: null,
+        expiry_date: cert.expiry_date,
+        is_verified: false,
+        verified_at: null,
+        verified_by: null,
+        verification_method: null,
+        document_url: null,
+        created_at: cert.created_at,
+        updated_at: cert.updated_at,
+      })),
       references: references ?? [],
     };
 
