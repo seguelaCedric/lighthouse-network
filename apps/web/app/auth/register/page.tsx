@@ -671,6 +671,11 @@ function RegisterContent() {
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const redirectParam = searchParams.get("redirect");
+  const redirectTo =
+    redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")
+      ? redirectParam
+      : null;
 
   // Referral tracking state
   const [referralId, setReferralId] = useState<string | null>(null);
@@ -825,20 +830,25 @@ function RegisterContent() {
       // Submit registration
       setIsLoading(true);
 
-      const result = await signUp(step1Data.email, step1Data.password, {
-        first_name: step2Data.firstName,
-        last_name: step2Data.lastName,
-        full_name: `${step2Data.firstName} ${step2Data.lastName}`,
-        phone: step2Data.phone,
-        nationality: step2Data.nationality,
-        candidate_type: step3Data.candidateType,
-        other_role_details: step3Data.otherRoleDetails,
-        primary_position: step3Data.primaryPosition,
-        years_experience: step3Data.yearsExperience,
-        current_status: step3Data.currentStatus,
-        // Pass referral ID if present (will be used after email verification)
-        referral_id: referralId,
-      });
+      const result = await signUp(
+        step1Data.email,
+        step1Data.password,
+        {
+          first_name: step2Data.firstName,
+          last_name: step2Data.lastName,
+          full_name: `${step2Data.firstName} ${step2Data.lastName}`,
+          phone: step2Data.phone,
+          nationality: step2Data.nationality,
+          candidate_type: step3Data.candidateType,
+          other_role_details: step3Data.otherRoleDetails,
+          primary_position: step3Data.primaryPosition,
+          years_experience: step3Data.yearsExperience,
+          current_status: step3Data.currentStatus,
+          // Pass referral ID if present (will be used after email verification)
+          referral_id: referralId,
+        },
+        redirectTo || undefined
+      );
 
       setIsLoading(false);
 
@@ -864,7 +874,7 @@ function RegisterContent() {
   };
 
   const handleGoToLogin = () => {
-    router.push("/auth/login");
+    router.push(redirectTo ? `/auth/login?redirect=${encodeURIComponent(redirectTo)}` : "/auth/login");
   };
 
   return (
@@ -980,7 +990,10 @@ function RegisterContent() {
           <div className="border-t border-gray-100 p-4 text-center">
             <p className="text-sm text-gray-500">
               Already have an account?{" "}
-              <Link href="/auth/login" className="font-medium text-gold-600 hover:text-gold-700">
+              <Link
+                href={redirectTo ? `/auth/login?redirect=${encodeURIComponent(redirectTo)}` : "/auth/login"}
+                className="font-medium text-gold-600 hover:text-gold-700"
+              >
                 Sign In
               </Link>
             </p>

@@ -234,7 +234,7 @@ function ApplicationRow({
 
   return (
     <Link
-      href={`/crew/applications/${application.id}`}
+      href={`/crew/jobs/${jobData.id}`}
       className="block px-6 py-4 transition-colors hover:bg-gray-50"
     >
       <div className="flex items-start justify-between gap-4">

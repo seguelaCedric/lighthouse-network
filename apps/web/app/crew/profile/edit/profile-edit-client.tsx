@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Camera,
   Check,
@@ -310,7 +311,17 @@ function RadioGroup({
 }
 
 // Main Component
-export function ProfileEditClient({ data }: { data: ProfileData }) {
+export function ProfileEditClient({
+  data,
+  redirectTo,
+}: {
+  data: ProfileData;
+  redirectTo?: string;
+}) {
+  const safeRedirect =
+    redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
+      ? redirectTo
+      : null;
   const { candidate, documents } = data;
   const initialCandidateType: CandidateType =
     candidate.candidateType === "household_staff" ||
@@ -900,7 +911,7 @@ export function ProfileEditClient({ data }: { data: ProfileData }) {
             </div>
 
             {/* Header: Save status */}
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
               <div>
                 <h1 className="text-2xl font-bold text-navy-900">Edit Profile</h1>
                 <p className="mt-1 text-sm text-gray-500">
@@ -930,6 +941,17 @@ export function ProfileEditClient({ data }: { data: ProfileData }) {
                 )}
               </div>
             </div>
+            {safeRedirect && (
+              <div className="mb-4">
+                <Link
+                  href={safeRedirect}
+                  className="inline-flex items-center gap-2 text-sm font-medium text-gold-600 hover:text-gold-700"
+                >
+                  <ChevronLeft className="size-4" />
+                  Back to job
+                </Link>
+              </div>
+            )}
 
             <div className="mb-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
               <div className="flex items-center justify-between text-sm">

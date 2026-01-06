@@ -26,6 +26,8 @@ import { Logo } from "@/components/ui/Logo";
 import { JobPostingJsonLd, JobBreadcrumbJsonLd } from "@/components/seo/JobPostingJsonLd";
 import type { PublicJob } from "@/components/job-board/JobBoardCard";
 import { formatDescriptionFull } from "@/lib/utils/format-description";
+import { JobBoardQuickApplyButton } from "@/components/job-board/JobBoardQuickApplyButton";
+import { signOut } from "@/lib/auth/actions";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -180,6 +182,63 @@ function isStartingSoon(dateString: string): boolean {
 export default async function JobDetailPage({ params }: PageProps) {
   const { id } = await params;
   const job = await getJob(id);
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const isAuthenticated = !!user;
+  let hasApplied = false;
+  let dashboardHref = "/dashboard";
+
+  if (user?.email) {
+    const { data: userData } = await supabase
+      .from("users")
+      .select("id, user_type")
+      .eq("auth_id", user.id)
+      .maybeSingle();
+
+    if (userData?.user_type === "candidate") {
+      dashboardHref = "/crew/dashboard";
+    }
+
+    let candidateId: string | null = null;
+    if (userData?.id) {
+      const { data: candidateByUserId } = await supabase
+        .from("candidates")
+        .select("id")
+        .eq("user_id", userData.id)
+        .maybeSingle();
+      candidateId = candidateByUserId?.id || null;
+    }
+
+    if (!candidateId) {
+      const { data: candidateByEmail } = await supabase
+        .from("candidates")
+        .select("id")
+        .ilike("email", user.email)
+        .maybeSingle();
+      candidateId = candidateByEmail?.id || null;
+    }
+
+    if (!candidateId) {
+      const { data: candidateByAuthId } = await supabase
+        .from("candidates")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      candidateId = candidateByAuthId?.id || null;
+    }
+
+    if (candidateId) {
+      const { data: existingApplication } = await supabase
+        .from("applications")
+        .select("id")
+        .eq("candidate_id", candidateId)
+        .eq("job_id", id)
+        .maybeSingle();
+      hasApplied = !!existingApplication;
+    }
+  }
 
   if (!job) {
     notFound();
@@ -204,18 +263,39 @@ export default async function JobDetailPage({ params }: PageProps) {
                 <Logo size="md" />
               </Link>
               <div className="flex items-center gap-3">
-                <Link
-                  href="/auth/login"
-                  className="text-sm font-medium text-navy-600 hover:text-navy-800 transition-colors"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  href="/auth/register"
-                  className="rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 px-5 py-2.5 text-sm font-medium text-white hover:from-gold-600 hover:to-gold-700 transition-all shadow-lg"
-                >
-                  Join Now
-                </Link>
+                {isAuthenticated ? (
+                  <>
+                    <Link
+                      href={dashboardHref}
+                      className="rounded-xl border border-gray-200 px-4 py-2 text-sm font-medium text-navy-700 hover:bg-gray-50 transition-colors"
+                    >
+                      Go to Dashboard
+                    </Link>
+                    <form action={signOut}>
+                      <button
+                        type="submit"
+                        className="text-sm font-medium text-navy-600 hover:text-navy-800 transition-colors"
+                      >
+                        Sign Out
+                      </button>
+                    </form>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href={`/auth/login?redirect=/job-board/${id}`}
+                      className="text-sm font-medium text-navy-600 hover:text-navy-800 transition-colors"
+                    >
+                      Sign In
+                    </Link>
+                    <Link
+                      href={`/auth/register?redirect=/job-board/${id}`}
+                      className="rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 px-5 py-2.5 text-sm font-medium text-white hover:from-gold-600 hover:to-gold-700 transition-all shadow-lg"
+                    >
+                      Join Now
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -446,13 +526,25 @@ export default async function JobDetailPage({ params }: PageProps) {
               <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 sticky top-24">
                 <h3 className="text-lg font-semibold text-navy-900 mb-4">Apply for this position</h3>
 
-                <Link
-                  href={`/job-board/${id}/apply`}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 px-6 py-3.5 font-medium text-white hover:from-gold-600 hover:to-gold-700 transition-all shadow-lg hover:shadow-xl"
-                >
-                  Apply Now
-                  <ExternalLink className="h-4 w-4" />
-                </Link>
+                {isAuthenticated ? (
+                  <JobBoardQuickApplyButton jobId={id} initialApplied={hasApplied} />
+                ) : (
+                  <div className="space-y-3">
+                    <Link
+                      href={`/auth/login?redirect=/job-board/${id}`}
+                      className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 px-6 py-3.5 font-medium text-white hover:from-gold-600 hover:to-gold-700 transition-all shadow-lg hover:shadow-xl"
+                    >
+                      Sign in to Apply
+                      <ExternalLink className="h-4 w-4" />
+                    </Link>
+                    <Link
+                      href={`/auth/register?redirect=/job-board/${id}`}
+                      className="w-full flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-6 py-3.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                    >
+                      Create Candidate Account
+                    </Link>
+                  </div>
+                )}
 
                 <div className="flex gap-2 mt-4">
                   <button className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">

@@ -63,12 +63,29 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     const document = docResult.document;
 
-    // Check if document belongs to the same organization
+    // Check permissions
     if (document.organizationId !== userData.organization_id) {
-      return NextResponse.json(
-        { error: "You can only approve documents from your organization" },
-        { status: 403 }
-      );
+      // If it's a candidate document, check if the recruiter's agency is linked to the candidate
+      if (document.entityType === "candidate" && userData.organization_id) {
+        const { data: relationship } = await supabase
+          .from("candidate_agency_relationships")
+          .select("id")
+          .eq("candidate_id", document.entityId)
+          .eq("agency_id", userData.organization_id)
+          .maybeSingle();
+
+        if (!relationship) {
+          return NextResponse.json(
+            { error: "You don't have permission to approve this candidate's documents" },
+            { status: 403 }
+          );
+        }
+      } else {
+        return NextResponse.json(
+          { error: "You can only approve documents from your organization" },
+          { status: 403 }
+        );
+      }
     }
 
     // Approve the document

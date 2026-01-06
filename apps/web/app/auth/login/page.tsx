@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -179,9 +179,15 @@ function TwoFactorModal({
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [show2FA, setShow2FA] = useState(false);
+  const redirectParam = searchParams.get("redirect");
+  const redirectTo =
+    redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")
+      ? redirectParam
+      : null;
 
   const {
     register,
@@ -200,13 +206,13 @@ export default function LoginPage() {
     }
 
     toast.success("Signed in successfully");
-    router.push(result.redirectTo || "/dashboard");
+    router.push(redirectTo || result.redirectTo || "/dashboard");
     router.refresh();
   };
 
   const handleGoogleSignIn = async () => {
     try {
-      await signInWithGoogle();
+      await signInWithGoogle(redirectTo || undefined);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to sign in with Google"
@@ -217,7 +223,7 @@ export default function LoginPage() {
   const handle2FAVerify = (code: string) => {
     console.log("2FA code:", code);
     setShow2FA(false);
-    router.push("/dashboard");
+    router.push(redirectTo || "/dashboard");
   };
 
   return (
@@ -419,7 +425,7 @@ export default function LoginPage() {
             <p className="text-sm text-gray-500">
               Don't have an account?{" "}
               <Link
-                href="/auth/register"
+                href={redirectTo ? `/auth/register?redirect=${encodeURIComponent(redirectTo)}` : "/auth/register"}
                 className="font-medium text-gold-600 hover:text-gold-700"
               >
                 Create your profile

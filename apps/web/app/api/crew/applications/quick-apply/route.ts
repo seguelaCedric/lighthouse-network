@@ -8,7 +8,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
-import { checkProfileCompleteness } from "@lighthouse/ai/matcher";
+import { calculateProfileCompletion } from "@/lib/profile-completion";
 
 // ----------------------------------------------------------------------------
 // REQUEST SCHEMA
@@ -43,6 +43,8 @@ const requestSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
+    const DEFAULT_LIGHTHOUSE_ORG_ID = "00000000-0000-0000-0000-000000000001";
+    const isDev = process.env.NODE_ENV !== "production";
 
     // Check authentication
     const {
@@ -56,11 +58,18 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
     }
+    if (!user.email) {
+      return NextResponse.json(
+        { error: "missing_email", message: "Please add an email to your account before applying." },
+        { status: 400 }
+      );
+    }
 
     // Candidate select fields
     const candidateSelectFields = `
-      id, first_name, last_name, email, phone,
-      primary_position, yacht_primary_position, household_primary_position,
+      id, user_id, first_name, last_name, email, phone,
+      date_of_birth, nationality, current_location,
+      candidate_type, primary_position, yacht_primary_position, household_primary_position,
       secondary_positions, years_experience,
       preferred_yacht_types, preferred_yacht_size_min, preferred_yacht_size_max,
       preferred_regions, preferred_contract_types,
@@ -69,59 +78,194 @@ export async function POST(request: NextRequest) {
       availability_status, available_from,
       has_stcw, stcw_expiry, has_eng1, eng1_expiry, highest_license,
       has_schengen, has_b1b2, has_c1d,
-      nationality, second_nationality,
+      industry_preference, second_nationality,
       is_smoker, has_visible_tattoos, is_couple, partner_position,
-      verification_tier, embedding, bio
+      verification_tier, avatar_url, embedding
     `;
 
     // Get user record (auth_id -> user_id mapping)
     const { data: userData } = await supabase
       .from("users")
-      .select("id")
+      .select("id, email, user_type")
       .eq("auth_id", user.id)
-      .single();
+      .maybeSingle();
 
     let candidate = null;
     let userId = userData?.id;
+    let candidateSource: "user_id" | "email" | "created" | "none" = "none";
+    let userUpserted = false;
+    let candidateByUserIdError: unknown = null;
+    let candidateByEmailError: unknown = null;
+    let candidateByAuthIdError: unknown = null;
+    let createCandidateError: unknown = null;
+    const userMetadata = (user.user_metadata || {}) as Record<string, unknown>;
+    const email = user.email.toLowerCase();
+    const metaFirst = typeof userMetadata.first_name === "string" ? userMetadata.first_name : null;
+    const metaLast = typeof userMetadata.last_name === "string" ? userMetadata.last_name : null;
+    const metaFull = typeof userMetadata.full_name === "string" ? userMetadata.full_name : null;
+    const emailLocalPart = email.split("@")[0]?.replace(/[^a-zA-Z0-9]+/g, " ").trim();
+    const nameParts = emailLocalPart ? emailLocalPart.split(" ").filter(Boolean) : [];
+    const derivedFirst = metaFirst || nameParts[0] || "Candidate";
+    const derivedLast = metaLast || nameParts.slice(1).join(" ") || "Profile";
+
+    if (!userId) {
+      const { data: createdUser, error: createUserError } = await supabase
+        .from("users")
+        .upsert(
+          {
+            auth_id: user.id,
+            email,
+            first_name: derivedFirst,
+            last_name: derivedLast,
+            phone: (userMetadata.phone as string) || null,
+            user_type: "candidate",
+            organization_id: DEFAULT_LIGHTHOUSE_ORG_ID,
+            is_active: true,
+          },
+          { onConflict: "auth_id" }
+        )
+        .select("id")
+        .single();
+
+      if (!createUserError && createdUser?.id) {
+        userId = createdUser.id;
+        userUpserted = true;
+      } else if (createUserError) {
+        console.error("Quick apply user upsert failed:", createUserError);
+      }
+    }
 
     // Try to find candidate by user_id if user record exists
-    if (userData) {
-      const { data: candidateByUserId } = await supabase
+    if (userId) {
+      const { data: candidateByUserId, error } = await supabase
         .from("candidates")
         .select(candidateSelectFields)
-        .eq("user_id", userData.id)
+        .eq("user_id", userId)
         .single();
 
       candidate = candidateByUserId;
+      candidateByUserIdError = error;
+      if (candidate) {
+        candidateSource = "user_id";
+      }
     }
 
     // Fallback: Try to find candidate by email (for Vincere-imported candidates)
     if (!candidate && user.email) {
-      const { data: candidateByEmail } = await supabase
+      const { data: candidateByEmail, error } = await supabase
         .from("candidates")
         .select(candidateSelectFields)
-        .eq("email", user.email)
+        .ilike("email", email)
         .single();
 
       candidate = candidateByEmail;
+      candidateByEmailError = error;
+      if (candidate) {
+        candidateSource = "email";
+      }
 
-      // If found by email, get/create the user_id link
-      if (candidateByEmail?.id && !userId) {
-        // Use candidate ID as fallback for userId in application
+      // If found by email, link user_id when possible
+      if (candidateByEmail?.id && userId) {
+        if (!candidateByEmail.user_id) {
+          await supabase
+            .from("candidates")
+            .update({ user_id: userId })
+            .eq("id", candidateByEmail.id);
+        }
+      } else if (candidateByEmail?.id && !userId) {
         userId = candidateByEmail.id;
       }
     }
 
     if (!candidate) {
-      return NextResponse.json(
-        {
-          error: "profile_incomplete",
-          message: "No candidate profile found. Please complete your profile first.",
-          missingFields: ["profile"],
-          completeness: 0,
-        },
-        { status: 403 }
-      );
+      const { data: candidateByAuthId, error } = await supabase
+        .from("candidates")
+        .select(candidateSelectFields)
+        .eq("user_id", user.id)
+        .single();
+
+      candidate = candidateByAuthId;
+      candidateByAuthIdError = error;
+      if (candidate) {
+        candidateSource = "user_id";
+        if (userId && candidate.user_id !== userId) {
+          await supabase
+            .from("candidates")
+            .update({ user_id: userId })
+            .eq("id", candidate.id);
+        }
+      }
+    }
+
+    if (!candidate && user.email) {
+      const parsedYears =
+        userMetadata.years_experience !== undefined && userMetadata.years_experience !== null
+          ? parseInt(String(userMetadata.years_experience), 10)
+          : null;
+      const yearsExperience = Number.isNaN(parsedYears) ? null : parsedYears;
+      const { data: newCandidate, error } = await supabase
+        .from("candidates")
+        .insert({
+          user_id: userId || null,
+          first_name: derivedFirst,
+          last_name: derivedLast,
+          email,
+          phone: (userMetadata.phone as string) || null,
+          whatsapp: (userMetadata.phone as string) || null,
+          nationality: (userMetadata.nationality as string) || null,
+          candidate_type: (userMetadata.candidate_type as string) || null,
+          primary_position: (userMetadata.primary_position as string) || null,
+          years_experience: yearsExperience,
+          availability_status: "looking",
+          source: "self_registration",
+        })
+        .select(candidateSelectFields)
+        .single();
+
+      createCandidateError = error;
+      if (error) {
+        console.error("Quick apply candidate creation failed:", error);
+        if (error.code === "23505") {
+          const { data: existingByEmail } = await supabase
+            .from("candidates")
+            .select(candidateSelectFields)
+            .ilike("email", email)
+            .single();
+          candidate = existingByEmail;
+          if (candidate) {
+            candidateSource = "email";
+          }
+        }
+      } else {
+        candidate = newCandidate;
+        if (candidate) {
+          candidateSource = "created";
+        }
+      }
+    }
+
+    if (!candidate) {
+      const payload: Record<string, unknown> = {
+        error: "profile_incomplete",
+        message: "Please complete your profile before applying.",
+        missingFields: ["profile"],
+        completeness: 0,
+      };
+      if (isDev) {
+        payload.debug = {
+          candidateSource,
+          authEmail: user.email,
+          userEmail: userData?.email,
+          userType: userData?.user_type,
+          userId,
+          userUpserted,
+          candidateByUserIdError,
+          candidateByEmailError,
+          candidateByAuthIdError,
+          createCandidateError,
+        };
+      }
+      return NextResponse.json(payload, { status: 403 });
     }
 
     // Parse request body
@@ -148,19 +292,65 @@ export async function POST(request: NextRequest) {
 
     const { jobId } = parseResult.data;
 
-    // Check profile completeness (minimum 70% required)
-    const profileStatus = checkProfileCompleteness(candidate);
+    let cvDocuments: Array<{ type?: string | null; document_type?: string | null }> = [];
+    const { data: docsByType, error: docsByTypeError } = await supabase
+      .from("documents")
+      .select("type")
+      .eq("entity_type", "candidate")
+      .eq("entity_id", candidate.id)
+      .eq("type", "cv")
+      .limit(1);
+    if (!docsByTypeError && docsByType) {
+      cvDocuments = docsByType;
+    } else {
+      const { data: docsByDocumentType, error: docsByDocumentTypeError } = await supabase
+        .from("documents")
+        .select("document_type")
+        .eq("entity_type", "candidate")
+        .eq("entity_id", candidate.id)
+        .eq("document_type", "cv")
+        .limit(1);
+      if (!docsByDocumentTypeError && docsByDocumentType) {
+        cvDocuments = docsByDocumentType;
+      }
+    }
 
-    if (!profileStatus.canQuickApply) {
-      return NextResponse.json(
-        {
-          error: "profile_incomplete",
-          message: `Your profile is ${profileStatus.completeness}% complete. You need at least 70% to quick apply.`,
-          missingFields: profileStatus.missingFields,
-          completeness: profileStatus.completeness,
-        },
-        { status: 403 }
-      );
+    const profileStatus = calculateProfileCompletion({
+      firstName: candidate.first_name,
+      lastName: candidate.last_name,
+      email: candidate.email,
+      phone: candidate.phone,
+      dateOfBirth: candidate.date_of_birth,
+      nationality: candidate.nationality,
+      currentLocation: candidate.current_location,
+      candidateType: candidate.candidate_type,
+      primaryPosition: candidate.primary_position,
+      avatarUrl: candidate.avatar_url,
+      hasStcw: candidate.has_stcw,
+      hasEng1: candidate.has_eng1,
+      industryPreference: candidate.industry_preference,
+      verificationTier: candidate.verification_tier,
+      documents: (cvDocuments || []).map((doc) => ({
+        type: doc.type || doc.document_type || "",
+      })),
+    });
+
+    if (profileStatus.score < 70) {
+      const payload: Record<string, unknown> = {
+        error: "profile_incomplete",
+        message: `Your profile is ${profileStatus.score}% complete. You need at least 70% to quick apply.`,
+        missingFields: profileStatus.actions.filter((action) => !action.completed).map((action) => action.id),
+        completeness: profileStatus.score,
+      };
+      if (isDev) {
+        payload.debug = {
+          candidateId: candidate.id,
+          candidateSource,
+          userId,
+          userUpserted,
+        };
+      }
+      return NextResponse.json(payload, { status: 403 });
     }
 
     // Check if job exists and is open

@@ -33,6 +33,9 @@ export interface VerificationSectionProps {
   candidateId: string;
   tier: VerificationTier;
   checklist: VerificationChecklist;
+  progress: number;
+  cvUrl?: string;
+  idUrl?: string | null;
   onReviewID?: () => void;
   onVerifyReference?: () => void;
   className?: string;
@@ -71,25 +74,27 @@ function CheckItem({ label, completed, pending, icon, action }: CheckItemProps) 
           <span className="text-xs text-gold-600">(pending)</span>
         )}
       </div>
-      {action && !completed && (
-        action.href ? (
-          <Link href={action.href}>
-            <Button variant="ghost" size="sm" className="h-7 text-xs text-gold-600 hover:text-gold-700">
+      {action && (completed || pending) && (
+        action.href || action.onClick ? (
+          action.href ? (
+            <Link href={action.href}>
+              <Button variant="ghost" size="sm" className="h-7 text-xs text-gold-600 hover:text-gold-700">
+                {action.label}
+                <ChevronRight className="ml-1 size-3" />
+              </Button>
+            </Link>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs text-gold-600 hover:text-gold-700"
+              onClick={action.onClick}
+            >
               {action.label}
               <ChevronRight className="ml-1 size-3" />
             </Button>
-          </Link>
-        ) : (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 text-xs text-gold-600 hover:text-gold-700"
-            onClick={action.onClick}
-          >
-            {action.label}
-            <ChevronRight className="ml-1 size-3" />
-          </Button>
-        )
+          )
+        ) : null
       )}
     </div>
   );
@@ -99,22 +104,14 @@ export function VerificationSection({
   candidateId,
   tier,
   checklist,
+  progress,
+  cvUrl,
+  idUrl,
   onReviewID,
   onVerifyReference,
   className,
 }: VerificationSectionProps) {
   const tierInfo = tierConfig[tier];
-
-  // Calculate progress
-  let completedSteps = 0;
-  const totalSteps = 5;
-  if (checklist.email_verified) completedSteps++;
-  if (checklist.cv_uploaded) completedSteps++;
-  if (checklist.id_verified) completedSteps++;
-  if (checklist.references_verified >= 2) completedSteps++;
-  if (checklist.voice_verified) completedSteps++;
-
-  const progress = Math.round((completedSteps / totalSteps) * 100);
 
   return (
     <div className={cn("rounded-xl border border-gray-200 bg-white", className)}>
@@ -147,12 +144,12 @@ export function VerificationSection({
                 tier === "premium"
                   ? "bg-gradient-to-r from-gold-400 to-gold-500"
                   : tier === "verified"
-                  ? "bg-success-500"
-                  : tier === "references" || tier === "identity"
-                  ? "bg-gold-500"
-                  : tier === "basic"
-                  ? "bg-blue-500"
-                  : "bg-gray-300"
+                    ? "bg-success-500"
+                    : tier === "references" || tier === "identity"
+                      ? "bg-gold-500"
+                      : tier === "basic"
+                        ? "bg-blue-500"
+                        : "bg-gray-300"
               )}
               style={{ width: `${progress}%` }}
             />
@@ -184,6 +181,11 @@ export function VerificationSection({
             label="CV uploaded"
             completed={checklist.cv_uploaded}
             icon={<FileText className="size-4" />}
+            action={
+              cvUrl
+                ? { label: "View", onClick: () => window.open(cvUrl, "_blank") }
+                : undefined
+            }
           />
           <CheckItem
             label="ID document verified"
@@ -193,7 +195,9 @@ export function VerificationSection({
             action={
               checklist.id_pending
                 ? { label: "Review", onClick: onReviewID }
-                : undefined
+                : idUrl
+                  ? { label: "View", onClick: () => window.open(idUrl, "_blank") }
+                  : undefined
             }
           />
           <CheckItem

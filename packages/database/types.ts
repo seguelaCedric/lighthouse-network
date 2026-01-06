@@ -52,20 +52,20 @@ export type JobStatus =
   | 'filled'
   | 'closed';
 
-export type SubmissionStatus = 
-  | 'pending' 
-  | 'shortlisted' 
-  | 'interviewing' 
-  | 'offer' 
-  | 'placed' 
-  | 'rejected' 
+export type SubmissionStatus =
+  | 'pending'
+  | 'shortlisted'
+  | 'interviewing'
+  | 'offer'
+  | 'placed'
+  | 'rejected'
   | 'withdrawn';
 
-export type ContractType = 
-  | 'permanent' 
-  | 'rotational' 
-  | 'seasonal' 
-  | 'temporary' 
+export type ContractType =
+  | 'permanent'
+  | 'rotational'
+  | 'seasonal'
+  | 'temporary'
   | 'freelance';
 
 export type PositionCategory =
@@ -106,12 +106,12 @@ export type BriefStatus =
   | 'converted'
   | 'abandoned';
 
-export type CommChannel = 
-  | 'email' 
-  | 'whatsapp' 
-  | 'sms' 
-  | 'phone' 
-  | 'platform' 
+export type CommChannel =
+  | 'email'
+  | 'whatsapp'
+  | 'sms'
+  | 'phone'
+  | 'platform'
   | 'in_person';
 
 // ----------------------------------------------------------------------------
@@ -132,23 +132,23 @@ export interface Organization extends BaseEntity {
   type: OrgType;
   name: string;
   slug: string | null;
-  
+
   // Contact
   email: string | null;
   phone: string | null;
   website: string | null;
-  
+
   // Address
   address_line1: string | null;
   address_line2: string | null;
   city: string | null;
   country: string | null;
   postal_code: string | null;
-  
+
   // Agency fields
   agency_license: string | null;
   commission_rate: number;
-  
+
   // Vessel fields (for clients)
   vessel_name: string | null;
   vessel_type: string | null;
@@ -156,18 +156,18 @@ export interface Organization extends BaseEntity {
   vessel_flag: string | null;
   vessel_year: number | null;
   imo_number: string | null;
-  
+
   // Management company fields
   fleet_size: number | null;
-  
+
   // Subscription
   subscription_tier: string;
   subscription_status: string;
   stripe_customer_id: string | null;
-  
+
   // Settings
   settings: Record<string, unknown>;
-  
+
   deleted_at: string | null;
 }
 
@@ -185,15 +185,15 @@ export interface User extends BaseEntity {
   auth_id: string | null;
   organization_id: string | null;
   role: UserRole;
-  
+
   email: string;
   first_name: string | null;
   last_name: string | null;
   phone: string | null;
   avatar_url: string | null;
-  
+
   preferences: Record<string, unknown>;
-  
+
   is_active: boolean;
   last_login_at: string | null;
 }
@@ -323,6 +323,7 @@ export interface Candidate extends BaseEntity {
 
   // Generated Bio (5-paragraph candidate brief)
   bio_full: string | null;
+  bio_anonymized: string | null;
   bio_generated_at: string | null;
   bio_generation_version: number | null;
 
@@ -368,16 +369,16 @@ export type CandidateCertification = Certification;
 export interface CandidateAgencyRelationship extends BaseEntity {
   candidate_id: string;
   agency_id: string;
-  
+
   relationship_type: string;
-  
+
   is_exclusive: boolean;
   exclusive_until: string | null;
-  
+
   agency_candidate_id: string | null;
   agency_notes: string | null;
   agency_rating: number | null;
-  
+
   interviewed_at: string | null;
   interviewed_by: string | null;
   interview_notes: string | null;
@@ -530,24 +531,24 @@ export interface Submission extends BaseEntity {
   candidate_id: string;
   agency_id: string;
   submitted_by: string;
-  
+
   submitted_at: string;
   submission_hash: string;
-  
+
   status: SubmissionStatus;
   status_changed_at: string | null;
   status_changed_by: string | null;
-  
+
   cover_note: string | null;
-  
+
   match_score: number | null;
   match_reasoning: string | null;
-  
+
   client_viewed_at: string | null;
   client_rating: number | null;
   client_feedback: string | null;
   rejection_reason: string | null;
-  
+
   interview_scheduled_at: string | null;
   interview_completed_at: string | null;
   interview_notes: string | null;
@@ -647,33 +648,33 @@ export interface Placement extends BaseEntity {
   job_id: string;
   candidate_id: string;
   client_id: string;
-  
+
   placing_agency_id: string;
   sourcing_agency_id: string | null;
-  
+
   start_date: string | null;
   end_date: string | null;
   contract_type: ContractType | null;
-  
+
   salary_agreed: number | null;
   salary_currency: string;
-  
+
   total_fee: number | null;
   fee_currency: string;
-  
+
   placing_agency_fee: number | null;
   sourcing_agency_fee: number | null;
   platform_fee: number | null;
-  
+
   invoice_sent_at: string | null;
   invoice_amount: number | null;
   paid_at: string | null;
   paid_amount: number | null;
-  
+
   status: string;
   cancelled_at: string | null;
   cancellation_reason: string | null;
-  
+
   guarantee_period_days: number;
   guarantee_ends_at: string | null;
   guarantee_claimed: boolean;
@@ -686,20 +687,20 @@ export interface Placement extends BaseEntity {
 
 export interface Certification extends BaseEntity {
   candidate_id: string;
-  
+
   name: string;
   type: string | null;
   issuing_authority: string | null;
   certificate_number: string | null;
-  
+
   issue_date: string | null;
   expiry_date: string | null;
-  
+
   is_verified: boolean;
   verified_at: string | null;
   verified_by: string | null;
   verification_method: string | null;
-  
+
   document_url: string | null;
 }
 
@@ -795,21 +796,21 @@ export const VERIFICATION_TIER_INFO: Record<VerificationTier, { label: string; d
 export interface Brief extends BaseEntity {
   source: CommChannel;
   source_identifier: string | null;
-  
+
   raw_content: string;
   attachments: string[] | null;
-  
+
   client_id: string | null;
   client_user_id: string | null;
-  
+
   assigned_agency_id: string | null;
   assigned_user_id: string | null;
-  
+
   parsed_at: string | null;
   parsed_requirements: JobRequirements | null;
   parsing_confidence: number | null;
   parsing_ambiguities: string[] | null;
-  
+
   converted_to_job_id: string | null;
   converted_at: string | null;
 
@@ -830,20 +831,20 @@ export type BriefInsert = Omit<Brief, 'id' | 'created_at' | 'updated_at'>;
 export interface Interaction extends BaseEntity {
   user_id: string | null;
   agency_id: string | null;
-  
+
   entity_type: string;
   entity_id: string;
-  
+
   type: string;
   channel: CommChannel | null;
   direction: 'inbound' | 'outbound' | null;
-  
+
   subject: string | null;
   content: string | null;
-  
+
   job_id: string | null;
   submission_id: string | null;
-  
+
   occurred_at: string;
 }
 
@@ -854,15 +855,15 @@ export interface Interaction extends BaseEntity {
 export interface Message extends BaseEntity {
   job_id: string | null;
   submission_id: string | null;
-  
+
   from_user_id: string | null;
   from_org_id: string | null;
   to_user_id: string | null;
   to_org_id: string | null;
-  
+
   content: string;
   attachments: { name: string; url: string; type: string }[] | null;
-  
+
   read_at: string | null;
 }
 
@@ -873,19 +874,19 @@ export interface Message extends BaseEntity {
 export interface Alert extends BaseEntity {
   user_id: string | null;
   organization_id: string | null;
-  
+
   type: string;
   title: string;
   message: string | null;
-  
+
   entity_type: string | null;
   entity_id: string | null;
-  
+
   action_url: string | null;
   action_text: string | null;
-  
+
   priority: 'low' | 'normal' | 'high' | 'urgent';
-  
+
   read_at: string | null;
   dismissed_at: string | null;
   expires_at: string | null;
@@ -898,25 +899,25 @@ export interface Alert extends BaseEntity {
 export interface CollaborationRequest extends BaseEntity {
   requesting_agency_id: string;
   requesting_user_id: string;
-  
+
   type: 'candidate_access' | 'job_share' | 'introduction';
-  
+
   candidate_id: string | null;
   job_id: string | null;
-  
+
   owning_agency_id: string;
-  
+
   proposed_split: string | null;
   message: string | null;
-  
+
   status: 'pending' | 'approved' | 'rejected' | 'expired';
   responded_at: string | null;
   responded_by: string | null;
   response_message: string | null;
-  
+
   approved_requesting_share: number | null;
   approved_owning_share: number | null;
-  
+
   expires_at: string;
 }
 
@@ -977,35 +978,35 @@ export interface CandidateMatch {
 export interface ParsedBrief {
   position: string;
   position_category?: PositionCategory;
-  
+
   vessel?: {
     name?: string;
     type?: string;
     size_min?: number;
     size_max?: number;
   };
-  
+
   contract?: {
     type?: ContractType;
     start_date?: string;
     end_date?: string;
     rotation?: string;
   };
-  
+
   location?: {
     region?: string;
     itinerary?: string;
   };
-  
+
   compensation?: {
     salary_min?: number;
     salary_max?: number;
     currency?: string;
     benefits?: string;
   };
-  
+
   requirements?: JobRequirements;
-  
+
   confidence: number;
   ambiguities: string[];
   raw_text: string;

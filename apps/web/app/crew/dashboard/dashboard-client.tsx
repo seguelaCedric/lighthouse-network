@@ -221,9 +221,15 @@ export function DashboardClient({ data }: { data: DashboardData }) {
     candidate.availabilityStatus === "available" || candidate.availabilityStatus === "looking"
   );
   const [availableFrom, setAvailableFrom] = React.useState(
-    candidate.availableFrom ? candidate.availableFrom.split("T")[0] : new Date().toISOString().split("T")[0]
+    candidate.availableFrom ? candidate.availableFrom.split("T")[0] : ""
   );
   const [isUpdating, setIsUpdating] = React.useState(false);
+
+  useEffect(() => {
+    if (!candidate.availableFrom) {
+      setAvailableFrom(new Date().toISOString().split("T")[0]);
+    }
+  }, [candidate.availableFrom]);
 
   const handleAvailabilityToggle = async () => {
     setIsUpdating(true);
@@ -482,24 +488,38 @@ export function DashboardClient({ data }: { data: DashboardData }) {
                     </Link>
                   </div>
                 ) : (
-                  applications.slice(0, 5).map((app) => (
-                    <div key={app.id} className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4">
-                      <div className="flex items-center gap-3 sm:gap-4">
-                        <div className="flex size-8 sm:size-10 items-center justify-center rounded-full bg-navy-100 flex-shrink-0">
-                          <Ship className="size-4 sm:size-5 text-navy-600" />
+                  applications.slice(0, 5).map((app) => {
+                    const href = app.jobId ? `/crew/jobs/${app.jobId}` : "/crew/jobs";
+                    return (
+                      <Link
+                        key={app.id}
+                        href={href}
+                        className="flex flex-col gap-2 px-4 py-3 transition-colors hover:bg-gray-50 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-4"
+                      >
+                        <div className="flex min-w-0 flex-1 items-center gap-3 sm:gap-4">
+                          <div className="flex size-8 sm:size-10 items-center justify-center rounded-full bg-navy-100 flex-shrink-0">
+                            <Ship className="size-4 sm:size-5 text-navy-600" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-medium text-navy-900 text-sm sm:text-base truncate" title={app.position}>
+                              {app.position}
+                            </h4>
+                            <p
+                              className="text-xs sm:text-sm text-gray-500 truncate"
+                              title={app.vesselName || "Employer TBA"}
+                            >
+                              {app.vesselName || "Employer TBA"}
+                            </p>
+                          </div>
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <h4 className="font-medium text-navy-900 text-sm sm:text-base truncate">{app.position}</h4>
-                          <p className="text-xs sm:text-sm text-gray-500 truncate">{app.vesselName || "Employer TBA"}</p>
-                        </div>
-                      </div>
 
-                      <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-6 pl-11 sm:pl-0">
-                        <p className="text-xs text-gray-400">Applied {formatDate(app.appliedDate)}</p>
-                        <ApplicationStatus status={app.status} />
-                      </div>
-                    </div>
-                  ))
+                        <div className="flex shrink-0 items-center justify-between gap-3 pl-11 sm:justify-end sm:gap-6 sm:pl-0">
+                          <p className="text-xs text-gray-400">Applied {formatDate(app.appliedDate)}</p>
+                          <ApplicationStatus status={app.status} />
+                        </div>
+                      </Link>
+                    );
+                  })
                 )}
               </div>
 

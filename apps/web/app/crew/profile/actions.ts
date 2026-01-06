@@ -216,19 +216,18 @@ export async function getProfileData(): Promise<ProfileData | null> {
 
   // Get certifications
   const { data: certifications } = await supabase
-    .from("certifications")
+    .from("candidate_certifications")
     .select(
       `
       id,
-      name,
-      issuing_authority,
-      certificate_number,
-      issue_date,
+      certification_type,
+      custom_name,
       expiry_date,
-      document_url
+      has_certification
     `
     )
     .eq("candidate_id", candidate.id)
+    .eq("has_certification", true)
     .order("expiry_date", { ascending: true });
 
   // Get documents
@@ -304,12 +303,12 @@ export async function getProfileData(): Promise<ProfileData | null> {
     },
     certifications: (certifications || []).map((cert) => ({
       id: cert.id,
-      name: cert.name,
-      issuingAuthority: cert.issuing_authority,
-      certificateNumber: cert.certificate_number,
-      issueDate: cert.issue_date,
+      name: cert.custom_name || cert.certification_type,
+      issuingAuthority: null,
+      certificateNumber: null,
+      issueDate: null,
       expiryDate: cert.expiry_date,
-      documentUrl: cert.document_url,
+      documentUrl: null,
     })),
     documents: (documents || []).map((doc) => ({
       id: doc.id,
@@ -895,14 +894,13 @@ export async function addCertification(data: {
   }
 
   const { data: certification, error } = await supabase
-    .from("certifications")
+    .from("candidate_certifications")
     .insert({
       candidate_id: candidate.id,
-      name: data.name,
-      issuing_authority: data.issuingAuthority,
-      certificate_number: data.certificateNumber,
-      issue_date: data.issueDate,
-      expiry_date: data.expiryDate,
+      certification_type: "other",
+      custom_name: data.name,
+      expiry_date: data.expiryDate || null,
+      has_certification: true,
     })
     .select("id")
     .maybeSingle();
@@ -944,14 +942,11 @@ export async function updateCertification(
     updated_at: new Date().toISOString(),
   };
 
-  if (data.name !== undefined) updateData.name = data.name;
-  if (data.issuingAuthority !== undefined) updateData.issuing_authority = data.issuingAuthority;
-  if (data.certificateNumber !== undefined) updateData.certificate_number = data.certificateNumber;
-  if (data.issueDate !== undefined) updateData.issue_date = data.issueDate;
-  if (data.expiryDate !== undefined) updateData.expiry_date = data.expiryDate;
+  if (data.name !== undefined) updateData.custom_name = data.name;
+  if (data.expiryDate !== undefined) updateData.expiry_date = data.expiryDate || null;
 
   const { error } = await supabase
-    .from("certifications")
+    .from("candidate_certifications")
     .update(updateData)
     .eq("id", certificationId);
 
@@ -980,7 +975,7 @@ export async function deleteCertification(certificationId: string): Promise<{ su
   }
 
   const { error } = await supabase
-    .from("certifications")
+    .from("candidate_certifications")
     .delete()
     .eq("id", certificationId);
 

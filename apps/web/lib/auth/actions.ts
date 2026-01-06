@@ -63,16 +63,25 @@ export async function signUp(
     years_experience?: string;
     current_status?: string;
     referral_id?: string | null;
-  }
+  },
+  redirectTo?: string
 ): Promise<AuthResult> {
   const supabase = await createClient();
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const safeRedirect =
+    redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
+      ? redirectTo
+      : null;
+  const emailRedirectTo = safeRedirect
+    ? `${baseUrl}/auth/callback?next=${encodeURIComponent(safeRedirect)}`
+    : `${baseUrl}/auth/callback`;
 
   const { error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: metadata,
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/auth/callback`,
+      emailRedirectTo,
     },
   });
 
@@ -129,13 +138,21 @@ export async function updatePassword(password: string): Promise<AuthResult> {
   return { success: true };
 }
 
-export async function signInWithGoogle(): Promise<void> {
+export async function signInWithGoogle(redirectTo?: string): Promise<void> {
   const supabase = await createClient();
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const safeRedirect =
+    redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
+      ? redirectTo
+      : null;
+  const oauthRedirectTo = safeRedirect
+    ? `${baseUrl}/auth/callback?next=${encodeURIComponent(safeRedirect)}`
+    : `${baseUrl}/auth/callback`;
 
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/auth/callback`,
+      redirectTo: oauthRedirectTo,
     },
   });
 

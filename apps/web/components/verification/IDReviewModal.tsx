@@ -75,7 +75,7 @@ export function IDReviewModal({
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "approve",
+          approved: true,
           notes: notes.trim() || undefined,
         }),
       });
@@ -106,9 +106,8 @@ export function IDReviewModal({
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "reject",
-          rejection_reason: rejectionReason,
-          notes: notes.trim() || undefined,
+          approved: false,
+          notes: `Rejection reason: ${rejectionReason}. ${notes.trim()}`.trim(),
         }),
       });
 

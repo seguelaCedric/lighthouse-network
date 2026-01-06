@@ -50,9 +50,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     // Fetch certifications
     const { data, error } = await supabase
-      .from("certifications")
-      .select("*")
+      .from("candidate_certifications")
+      .select("id, certification_type, custom_name, expiry_date, has_certification, created_at")
       .eq("candidate_id", candidateId)
+      .eq("has_certification", true)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -63,7 +64,18 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    return NextResponse.json({ data: data ?? [] });
+    return NextResponse.json({
+      data: (data ?? []).map((cert) => ({
+        id: cert.id,
+        name: cert.custom_name || cert.certification_type,
+        issuing_authority: null,
+        certificate_number: null,
+        issue_date: null,
+        expiry_date: cert.expiry_date,
+        is_verified: false,
+        document_url: null,
+      })),
+    });
   } catch (error) {
     console.error("Unexpected error:", error);
     return NextResponse.json(
@@ -137,15 +149,18 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     const certificationData = {
-      ...parseResult.data,
       candidate_id: candidateId,
+      certification_type: parseResult.data.type || "other",
+      custom_name: parseResult.data.name,
+      expiry_date: parseResult.data.expiry_date || null,
+      has_certification: true,
     };
 
     // Insert certification
     const { data, error } = await supabase
-      .from("certifications")
+      .from("candidate_certifications")
       .insert(certificationData)
-      .select()
+      .select("id, certification_type, custom_name, expiry_date, has_certification, created_at")
       .single();
 
     if (error) {
@@ -156,7 +171,21 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    return NextResponse.json({ data }, { status: 201 });
+    return NextResponse.json(
+      {
+        data: {
+          id: data.id,
+          name: data.custom_name || data.certification_type,
+          issuing_authority: null,
+          certificate_number: null,
+          issue_date: null,
+          expiry_date: data.expiry_date,
+          is_verified: false,
+          document_url: null,
+        },
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error("Unexpected error:", error);
     return NextResponse.json(

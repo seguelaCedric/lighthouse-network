@@ -1505,7 +1505,8 @@ export async function matchCandidatesForJob(
       'premium': 10
     };
     breakdown.verification = tierScores[candidate.verification_tier] ?? 2;
-    if (candidate.verification_tier === 'verified' || candidate.verification_tier === 'premium') {
+    const identityVerifiedTiers = new Set(['identity', 'verified', 'premium']);
+    if (identityVerifiedTiers.has(candidate.verification_tier)) {
       strengths.push(`${candidate.verification_tier} verified`);
     }
 

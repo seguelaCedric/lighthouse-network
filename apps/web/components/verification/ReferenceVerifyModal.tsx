@@ -112,6 +112,7 @@ export function ReferenceVerifyModal({
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+            status: "verified",
             contacted_via: method,
             rating,
             would_rehire: wouldRehire === "yes" ? true : wouldRehire === "no" ? false : null,
@@ -312,8 +313,8 @@ export function ReferenceVerifyModal({
                         ? opt.value === "yes"
                           ? "border-success-500 bg-success-50 text-success-700"
                           : opt.value === "no"
-                          ? "border-error-500 bg-error-50 text-error-700"
-                          : "border-gold-500 bg-gold-50 text-gold-700"
+                            ? "border-error-500 bg-error-50 text-error-700"
+                            : "border-gold-500 bg-gold-50 text-gold-700"
                         : "border-gray-200 hover:bg-gray-50"
                     )}
                   >

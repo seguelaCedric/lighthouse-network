@@ -308,7 +308,8 @@ function generatePublicSummary(candidate: CandidateData, score: number): string 
     parts.push(`${candidate.years_experience}+ years experience`);
   }
 
-  if (candidate.verification_tier === 'verified' || candidate.verification_tier === 'premium') {
+  const identityVerifiedTiers = new Set(['identity', 'verified', 'premium']);
+  if (identityVerifiedTiers.has(candidate.verification_tier)) {
     parts.push('verified profile');
   }
 
