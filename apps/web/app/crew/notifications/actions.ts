@@ -155,11 +155,12 @@ export async function getNotificationsData(): Promise<NotificationsData | null> 
     }
   }
 
-  // Get certifications from certifications table for expiry alerts
+  // Get certifications from candidate_certifications for expiry alerts
   const { data: certifications } = await supabase
-    .from("certifications")
-    .select("id, name, expiry_date")
+    .from("candidate_certifications")
+    .select("id, certification_type, custom_name, expiry_date")
     .eq("candidate_id", candidate.id)
+    .eq("has_certification", true)
     .not("expiry_date", "is", null)
     .lte("expiry_date", ninetyDaysFromNow.toISOString().split("T")[0])
     .order("expiry_date", { ascending: true });
@@ -171,7 +172,8 @@ export async function getNotificationsData(): Promise<NotificationsData | null> 
       const isUrgent = expiryDate <= thirtyDaysFromNow;
 
       // Avoid duplicate alerts for STCW/ENG1 (already handled above)
-      const certNameLower = cert.name.toLowerCase();
+      const certName = cert.custom_name || cert.certification_type;
+      const certNameLower = certName.toLowerCase();
       if (certNameLower.includes("stcw") || certNameLower.includes("eng1")) {
         continue;
       }
@@ -179,17 +181,17 @@ export async function getNotificationsData(): Promise<NotificationsData | null> 
       notifications.push({
         id: `cert-${cert.id}`,
         type: "certification",
-        title: isExpired ? `${cert.name} Expired` : `${cert.name} Expiring`,
+        title: isExpired ? `${certName} Expired` : `${certName} Expiring`,
         description: isExpired
-          ? `Your ${cert.name} expired on ${expiryDate.toLocaleDateString("en-GB")}.`
-          : `Your ${cert.name} expires on ${expiryDate.toLocaleDateString("en-GB")}.`,
+          ? `Your ${certName} expired on ${expiryDate.toLocaleDateString("en-GB")}.`
+          : `Your ${certName} expires on ${expiryDate.toLocaleDateString("en-GB")}.`,
         date: now.toISOString(),
         urgent: isExpired || isUrgent,
         isRead: false,
         actionLabel: "Update Certificate",
         actionHref: "/crew/documents#certificates",
         metadata: {
-          certName: cert.name,
+          certName,
           expiryDate: cert.expiry_date,
         },
       });

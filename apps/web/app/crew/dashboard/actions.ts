@@ -49,6 +49,7 @@ export interface MatchedJob {
 
 export interface CandidateApplication {
   id: string;
+  jobId: string | null;
   position: string;
   vesselName: string | null;
   appliedDate: string;
@@ -554,6 +555,7 @@ export async function getDashboardData(): Promise<DashboardData | null> {
 
       return {
         id: app.id,
+        jobId: (app.job as any)?.id || null,
         position: (app.job as any)?.title || "Unknown Position",
         vesselName: (app.job as any)?.vessel_name || null,
         appliedDate: app.applied_at,
@@ -619,11 +621,12 @@ export async function getDashboardData(): Promise<DashboardData | null> {
     }
   }
 
-  // Get certifications from certifications table for expiry alerts
+  // Get certifications from candidate_certifications for expiry alerts
   const { data: certifications } = await supabase
-    .from("certifications")
-    .select("id, name, expiry_date")
+    .from("candidate_certifications")
+    .select("id, certification_type, custom_name, expiry_date")
     .eq("candidate_id", candidate.id)
+    .eq("has_certification", true)
     .not("expiry_date", "is", null)
     .lte("expiry_date", ninetyDaysFromNow.toISOString().split("T")[0])
     .order("expiry_date", { ascending: true });
@@ -634,9 +637,10 @@ export async function getDashboardData(): Promise<DashboardData | null> {
       const isUrgent = expiryDate <= thirtyDaysFromNow;
 
       // Avoid duplicate alerts for STCW/ENG1
+      const certName = cert.custom_name || cert.certification_type;
       if (
-        cert.name.toLowerCase().includes("stcw") ||
-        cert.name.toLowerCase().includes("eng1")
+        certName.toLowerCase().includes("stcw") ||
+        certName.toLowerCase().includes("eng1")
       ) {
         continue;
       }
@@ -644,8 +648,8 @@ export async function getDashboardData(): Promise<DashboardData | null> {
       alerts.push({
         id: `cert-${cert.id}`,
         type: "certification",
-        title: `${cert.name} Expiring`,
-        description: `Your ${cert.name} expires on ${formatExpiryDate(expiryDate)}.`,
+        title: `${certName} Expiring`,
+        description: `Your ${certName} expires on ${formatExpiryDate(expiryDate)}.`,
         date: now.toISOString(),
         urgent: isUrgent,
         actionLabel: "Update Certificate",
@@ -684,6 +688,10 @@ export async function getDashboardData(): Promise<DashboardData | null> {
     preferencesCompletedAt: candidate.preferences_completed_at,
   };
 
+  // Check if candidate has identity verification (identity, verified, or premium tier)
+  const identityVerifiedTiers = new Set(["identity", "verified", "premium"]);
+  const isIdentityVerified = identityVerifiedTiers.has(candidate.verification_tier || "");
+
   return {
     candidate: dashboardCandidate,
     profileCompleteness: score,
@@ -692,7 +700,7 @@ export async function getDashboardData(): Promise<DashboardData | null> {
     applications: mappedApplications,
     alerts,
     preferences,
-    isIdentityVerified: candidate.verification_tier === "verified",
+    isIdentityVerified,
   };
 }
 

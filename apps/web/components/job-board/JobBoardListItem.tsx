@@ -246,12 +246,6 @@ export function JobBoardListItem({ job, isApplied = false }: JobBoardListItemPro
 
                 {/* Right Side: Salary + Meta */}
                 <div className="hidden sm:flex flex-col items-end gap-1 flex-shrink-0">
-                  {isApplied && (
-                    <span className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-1 text-xs font-medium text-gray-500 shadow-sm sm:px-4 sm:py-1.5 sm:text-sm">
-                      <CheckCircle2 className="h-4 w-4 text-success-500" />
-                      Applied
-                    </span>
-                  )}
                   {/* Salary - Most Prominent */}
                   <span className={`text-base font-semibold ${hasSalary ? "text-navy-900" : "text-gray-400"}`}>
                     {hasSalary
@@ -263,6 +257,12 @@ export function JobBoardListItem({ job, isApplied = false }: JobBoardListItemPro
                         )
                       : "TBD"}
                   </span>
+                  {isApplied && (
+                    <span className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-1 text-xs font-medium text-gray-500 shadow-sm">
+                      <CheckCircle2 className="h-4 w-4 text-success-500" />
+                      Applied
+                    </span>
+                  )}
 
                   {/* Posted Date */}
                   <div className="flex items-center gap-2">

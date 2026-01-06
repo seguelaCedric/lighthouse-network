@@ -118,17 +118,16 @@ export async function getDocumentsData(): Promise<DocumentsPageData | null> {
 
   // Get certifications with their document status
   const { data: certifications } = await supabase
-    .from("certifications")
+    .from("candidate_certifications")
     .select(`
       id,
-      name,
-      issuing_authority,
-      certificate_number,
-      issue_date,
+      certification_type,
+      custom_name,
       expiry_date,
-      document_url
+      has_certification
     `)
     .eq("candidate_id", candidate.id)
+    .eq("has_certification", true)
     .order("expiry_date", { ascending: true });
 
   // Find CV document
@@ -145,6 +144,10 @@ export async function getDocumentsData(): Promise<DocumentsPageData | null> {
       let status: CertificationDocument["status"] = "no_document";
       let daysUntilExpiry: number | null = null;
 
+      if (cert.has_certification) {
+        status = "valid";
+      }
+
       if (cert.expiry_date) {
         const expiryDate = new Date(cert.expiry_date);
         daysUntilExpiry = Math.ceil(
@@ -155,21 +158,17 @@ export async function getDocumentsData(): Promise<DocumentsPageData | null> {
           status = "expired";
         } else if (expiryDate < thirtyDaysFromNow) {
           status = "expiring_soon";
-        } else if (cert.document_url) {
-          status = "valid";
         }
-      } else if (cert.document_url) {
-        status = "valid";
       }
 
       return {
         id: cert.id,
-        name: cert.name,
-        issuingAuthority: cert.issuing_authority,
-        certificateNumber: cert.certificate_number,
-        issueDate: cert.issue_date,
+        name: cert.custom_name || cert.certification_type,
+        issuingAuthority: null,
+        certificateNumber: null,
+        issueDate: null,
         expiryDate: cert.expiry_date,
-        documentUrl: cert.document_url,
+        documentUrl: null,
         status,
         daysUntilExpiry,
       };
@@ -378,7 +377,7 @@ export async function uploadCertificationDocument(
 
   // Verify certification belongs to this candidate
   const { data: cert } = await supabase
-    .from("certifications")
+    .from("candidate_certifications")
     .select("id, candidate_id")
     .eq("id", certificationId)
     .single();
@@ -389,7 +388,7 @@ export async function uploadCertificationDocument(
 
   // Update certification with document URL
   const { error } = await supabase
-    .from("certifications")
+    .from("candidate_certifications")
     .update({
       document_url: fileUrl,
       updated_at: new Date().toISOString(),

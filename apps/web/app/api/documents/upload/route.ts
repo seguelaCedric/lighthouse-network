@@ -136,6 +136,25 @@ export async function POST(request: NextRequest) {
 
     // Check if this is a new version of an existing document
     if (replaceDocumentId) {
+      let organizationId = userData.organization_id;
+
+      if (!organizationId) {
+        const { data: parentDoc } = await supabase
+          .from("documents")
+          .select("organization_id")
+          .eq("id", replaceDocumentId)
+          .maybeSingle();
+
+        organizationId = parentDoc?.organization_id || null;
+      }
+
+      if (!organizationId) {
+        console.warn("Document version upload without organization_id.", {
+          userId: userData.id,
+          documentId: replaceDocumentId,
+        });
+      }
+
       // Create new version using the database function
       const result = await createDocumentVersion(
         replaceDocumentId,
@@ -144,7 +163,7 @@ export async function POST(request: NextRequest) {
         file.size,
         file.type,
         userData.id,
-        userData.organization_id
+        organizationId ?? null
       );
 
       if (!result.success || !result.documentId) {
@@ -168,33 +187,34 @@ export async function POST(request: NextRequest) {
       version = docData?.version || 1;
     } else {
       // Create new document
-      // All users must have an organization_id set during registration
       if (!userData.organization_id) {
-        return NextResponse.json(
-          { error: "User account is missing organization assignment. Please contact support." },
-          { status: 500 }
-        );
+        console.warn("Document upload without organization_id for user:", userData.id);
+      }
+
+      const insertPayload: Record<string, unknown> = {
+        entity_type: entityType,
+        entity_id: entityId,
+        type: documentType,
+        name: file.name,
+        description: description || null,
+        file_url: publicUrl,
+        file_path: filePath,
+        file_size: file.size,
+        mime_type: file.type,
+        expiry_date: expiryDate || null,
+        uploaded_by: userData.id,
+        status: "pending",
+        version: 1,
+        is_latest_version: true,
+      };
+
+      if (userData.organization_id) {
+        insertPayload.organization_id = userData.organization_id;
       }
 
       const { data: documentRecord, error: dbError } = await supabase
         .from("documents")
-        .insert({
-          entity_type: entityType,
-          entity_id: entityId,
-          type: documentType,
-          name: file.name,
-          description: description || null,
-          file_url: publicUrl,
-          file_path: filePath,
-          file_size: file.size,
-          mime_type: file.type,
-          expiry_date: expiryDate || null,
-          uploaded_by: userData.id,
-          organization_id: userData.organization_id,
-          status: "pending",
-          version: 1,
-          is_latest_version: true,
-        })
+        .insert(insertPayload)
         .select()
         .single();
 

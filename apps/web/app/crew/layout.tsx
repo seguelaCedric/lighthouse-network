@@ -32,15 +32,17 @@ async function getNotificationCount(
 
   // Check other certifications (exclude STCW/ENG1 to avoid double counting)
   const { data: certs } = await supabase
-    .from("certifications")
-    .select("id, name")
+    .from("candidate_certifications")
+    .select("id, certification_type, custom_name, expiry_date")
     .eq("candidate_id", candidateId)
+    .eq("has_certification", true)
     .not("expiry_date", "is", null)
     .lte("expiry_date", ninetyDaysFromNow.toISOString().split("T")[0]);
 
   // Filter out STCW/ENG1 duplicates
   const otherCerts = (certs || []).filter((cert) => {
-    const nameLower = cert.name.toLowerCase();
+    const name = cert.custom_name || cert.certification_type;
+    const nameLower = name.toLowerCase();
     return !nameLower.includes("stcw") && !nameLower.includes("eng1");
   });
   count += otherCerts.length;
