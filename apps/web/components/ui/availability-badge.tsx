@@ -5,7 +5,9 @@ import { cn } from "@/lib/utils";
 
 export type AvailabilityStatus =
   | "available"
-  | "not_looking";
+  | "not_looking"
+  | "on_contract"
+  | "notice_period";
 
 export interface AvailabilityBadgeProps {
   status: AvailabilityStatus;
@@ -28,6 +30,16 @@ const statusConfig: Record<
     label: "Not Looking",
     dotClassName: "bg-gray-400",
     badgeClassName: "bg-gray-100 text-gray-500 border border-gray-200",
+  },
+  on_contract: {
+    label: "On Contract",
+    dotClassName: "bg-warning-600",
+    badgeClassName: "bg-warning-50 text-warning-800 border border-warning-300",
+  },
+  notice_period: {
+    label: "Notice Period",
+    dotClassName: "bg-gold-600",
+    badgeClassName: "bg-gold-50 text-gold-800 border border-gold-300",
   },
 };
 

@@ -5,7 +5,8 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { PublicHeader } from "@/components/pricing/PublicHeader";
 import { PublicFooter } from "@/components/pricing/PublicFooter";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   CheckCircle,
   Clock,
@@ -194,12 +195,15 @@ function ThankYouContent() {
                         <p className="text-sm text-gray-600 mb-3">
                           Download our comprehensive guide to hiring exceptional private household staff
                         </p>
-                        <Button variant="secondary" size="sm" asChild>
-                          <a href="/resources/hiring-guide" target="_blank" rel="noopener noreferrer">
-                            Download Guide
-                            <ArrowRight className="ml-2 h-4 w-4" />
-                          </a>
-                        </Button>
+                        <a
+                          href="/resources/hiring-guide"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={cn(buttonVariants({ variant: "secondary", size: "sm" }))}
+                        >
+                          Download Guide
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </a>
                       </div>
                     </div>
                   </div>
@@ -275,17 +279,13 @@ function ThankYouContent() {
                   <Search className="mr-2 h-5 w-5" />
                   Browse More Candidates
                 </Button>
-                <Button
-                  variant="secondary"
-                  className="w-full"
-                  size="lg"
-                  asChild
+                <Link
+                  href="/private-staff"
+                  className={cn(buttonVariants({ variant: "secondary", size: "lg" }), "w-full")}
                 >
-                  <Link href="/private-staff">
-                    Learn More About Our Services
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Link>
-                </Button>
+                  Learn More About Our Services
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
               </div>
             </div>
           </div>

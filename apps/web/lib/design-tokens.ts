@@ -395,6 +395,16 @@ export const availabilityStatus = {
     bgColor: colors.gray[100],
     label: "Not Looking",
   },
+  on_contract: {
+    color: colors.warning[600],
+    bgColor: colors.warning[50],
+    label: "On Contract",
+  },
+  notice_period: {
+    color: colors.gold[600],
+    bgColor: colors.gold[50],
+    label: "Notice Period",
+  },
 } as const;
 
 // =============================================================================

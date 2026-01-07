@@ -233,8 +233,8 @@ export function DashboardClient({ data }: { data: DashboardData }) {
 
   const handleAvailabilityToggle = async () => {
     setIsUpdating(true);
-    const newStatus = isAvailable ? "not_looking" : "available";
-    const result = await updateAvailability(newStatus as any, availableFrom);
+    const newStatus = isAvailable ? "unavailable" : "available";
+    const result = await updateAvailability(newStatus, availableFrom);
     if (result.success) {
       setIsAvailable(!isAvailable);
     }
@@ -245,7 +245,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
     const newDate = e.target.value;
     setAvailableFrom(newDate);
     setIsUpdating(true);
-    await updateAvailability(isAvailable ? "available" : "not_looking", newDate);
+    await updateAvailability(isAvailable ? "available" : "unavailable", newDate);
     setIsUpdating(false);
   };
 
