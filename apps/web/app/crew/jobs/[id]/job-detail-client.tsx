@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -23,6 +23,9 @@ import {
   Upload,
 } from "lucide-react";
 import { applyToJob, type JobListing } from "../actions";
+import { InlineCVUpload } from "@/components/documents/InlineCVUpload";
+import { calculateProfileCompletion } from "@/lib/profile-completion";
+import { candidateHasCV } from "@/lib/utils/candidate-cv";
 
 interface JobDetailClientProps {
   job: JobListing;
@@ -113,6 +116,25 @@ function getMatchBgColor(score: number | null): string {
   return "bg-orange-100";
 }
 
+interface CandidateData {
+  id: string;
+  firstName?: string | null;
+  lastName?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  dateOfBirth?: string | null;
+  nationality?: string | null;
+  currentLocation?: string | null;
+  candidateType?: string | null;
+  primaryPosition?: string | null;
+  avatarUrl?: string | null;
+  hasStcw?: boolean;
+  hasEng1?: boolean;
+  industryPreference?: string | null;
+  verificationTier?: string | null;
+  documents?: Array<{ type: string }>;
+}
+
 export function JobDetailClient({ job }: JobDetailClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -120,10 +142,86 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
   const [error, setError] = useState<string | null>(null);
   const [errorDismissed, setErrorDismissed] = useState(false);
   const [showApplyModal, setShowApplyModal] = useState(false);
+  const [showCVUpload, setShowCVUpload] = useState(false);
   const [coverNote, setCoverNote] = useState("");
+  const [candidateData, setCandidateData] = useState<CandidateData | null>(null);
+  const [profileCompletion, setProfileCompletion] = useState<{ score: number; actions: Array<{ id: string; label: string }> } | null>(null);
+  const [hasCV, setHasCV] = useState<boolean | null>(null);
+  const [isLoadingCandidate, setIsLoadingCandidate] = useState(true);
 
   const hasSalary = job.salaryMin || job.salaryMax;
   const startingSoon = job.startDate && isStartingSoon(job.startDate);
+
+  // Fetch candidate data and profile completion
+  useEffect(() => {
+    async function fetchCandidateData() {
+      try {
+        const response = await fetch("/api/crew/profile");
+        if (response.ok) {
+          const data = await response.json();
+          const candidate = data.data;
+          
+          if (candidate) {
+            setCandidateData({
+              id: candidate.id,
+              firstName: candidate.first_name,
+              lastName: candidate.last_name,
+              email: candidate.email,
+              phone: candidate.phone,
+              dateOfBirth: candidate.date_of_birth,
+              nationality: candidate.nationality,
+              currentLocation: candidate.current_location,
+              candidateType: candidate.candidate_type,
+              primaryPosition: candidate.primary_position,
+              avatarUrl: candidate.avatar_url,
+              hasStcw: candidate.has_stcw,
+              hasEng1: candidate.has_eng1,
+              industryPreference: candidate.industry_preference,
+              verificationTier: candidate.verification_tier,
+              documents: candidate.documents?.map((doc: { document_type?: string; type?: string }) => ({
+                type: doc.document_type || doc.type || "",
+              })) || [],
+            });
+
+            // Calculate profile completion
+            const completion = calculateProfileCompletion({
+              firstName: candidate.first_name,
+              lastName: candidate.last_name,
+              email: candidate.email,
+              phone: candidate.phone,
+              dateOfBirth: candidate.date_of_birth,
+              nationality: candidate.nationality,
+              currentLocation: candidate.current_location,
+              candidateType: candidate.candidate_type,
+              primaryPosition: candidate.primary_position,
+              avatarUrl: candidate.avatar_url,
+              hasStcw: candidate.has_stcw,
+              hasEng1: candidate.has_eng1,
+              industryPreference: candidate.industry_preference,
+              verificationTier: candidate.verification_tier,
+              documents: candidate.documents?.map((doc: { document_type?: string; type?: string }) => ({
+                type: doc.document_type || doc.type || "",
+              })) || [],
+            });
+            setProfileCompletion(completion);
+
+            // Check if candidate has CV by checking documents
+            const hasCvDoc = candidate.documents?.some(
+              (doc: { document_type?: string; type?: string }) =>
+                (doc.document_type === "cv" || doc.type === "cv")
+            );
+            setHasCV(hasCvDoc || false);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch candidate data:", error);
+      } finally {
+        setIsLoadingCandidate(false);
+      }
+    }
+
+    fetchCandidateData();
+  }, []);
 
   const handleApply = () => {
     setError(null);
@@ -133,10 +231,43 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
       if (result.success) {
         setHasApplied(true);
         setShowApplyModal(false);
+        setShowCVUpload(false);
       } else {
-        setError(result.error || "Failed to submit application");
+        const errorMsg = result.error || "Failed to submit application";
+        setError(errorMsg);
+        // Show CV upload if CV error
+        if (errorMsg.includes("upload a CV") || errorMsg.includes("CV")) {
+          setShowCVUpload(true);
+        }
       }
     });
+  };
+
+  const handleCVUploadSuccess = async () => {
+    // Refresh candidate data to check if CV is now available
+    setHasCV(true);
+    setShowCVUpload(false);
+    setError(null);
+    setErrorDismissed(false);
+    
+    // Recalculate profile completion
+    if (candidateData) {
+      const updatedDocuments = [...(candidateData.documents || []), { type: "cv" }];
+      const completion = calculateProfileCompletion({
+        ...candidateData,
+        documents: updatedDocuments,
+      });
+      setProfileCompletion(completion);
+      
+      // Update candidate data with new documents
+      setCandidateData({
+        ...candidateData,
+        documents: updatedDocuments,
+      });
+    }
+    
+    // Wait a moment for the state to update, then the apply button will be available
+    // The isCVError check will automatically become false since error is cleared
   };
 
   const isCVError = error?.includes("upload a CV") || error?.includes("CV");
@@ -334,6 +465,30 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
 
         {/* Sidebar */}
         <div className="lg:col-span-1 space-y-6">
+          {/* Profile Completion Card */}
+          {!isLoadingCandidate && profileCompletion && (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+              <h3 className="text-sm font-semibold text-navy-900 mb-3">Profile Completion</h3>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Overall Progress</span>
+                  <span className="font-semibold text-navy-900">{profileCompletion.score}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-gradient-to-r from-gold-500 to-gold-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${profileCompletion.score}%` }}
+                  />
+                </div>
+                {profileCompletion.score < 100 && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    Complete your profile to improve your job matches
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Apply Card */}
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sticky top-24">
             <h3 className="text-lg font-semibold text-navy-900 mb-4">
@@ -346,15 +501,6 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
                   <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
                     <p className="font-medium mb-2">{error}</p>
-                    {isCVError && (
-                      <Link
-                        href="/crew/documents?upload=cv"
-                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-100 hover:bg-red-200 border border-red-300 rounded-lg text-red-800 font-medium text-xs transition-colors"
-                      >
-                        <Upload className="h-3.5 w-3.5" />
-                        Upload CV Now
-                      </Link>
-                    )}
                   </div>
                   <button
                     onClick={() => setErrorDismissed(true)}
@@ -367,6 +513,18 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
               </div>
             )}
 
+            {/* CV Upload Section */}
+            {isCVError && candidateData && showCVUpload && (
+              <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <h4 className="text-sm font-semibold text-amber-900 mb-3">Upload Your CV</h4>
+                <InlineCVUpload
+                  candidateId={candidateData.id}
+                  onUploadSuccess={handleCVUploadSuccess}
+                  onUploadError={(err) => setError(err)}
+                />
+              </div>
+            )}
+
             {hasApplied ? (
               <div className="flex items-center gap-3 p-4 bg-green-50 border border-green-200 rounded-xl text-green-700">
                 <Check className="h-5 w-5" />
@@ -374,20 +532,32 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
               </div>
             ) : (
               <>
-                <button
-                  onClick={() => setShowApplyModal(true)}
-                  disabled={isPending}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 px-6 py-3.5 font-medium text-white hover:from-gold-600 hover:to-gold-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isPending ? (
-                    <>
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                      Applying...
-                    </>
-                  ) : (
-                    "Apply Now"
-                  )}
-                </button>
+                {!isCVError && (
+                  <button
+                    onClick={() => setShowApplyModal(true)}
+                    disabled={isPending || (hasCV === false)}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 px-6 py-3.5 font-medium text-white hover:from-gold-600 hover:to-gold-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isPending ? (
+                      <>
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        Applying...
+                      </>
+                    ) : (
+                      "Apply Now"
+                    )}
+                  </button>
+                )}
+
+                {isCVError && !showCVUpload && (
+                  <button
+                    onClick={() => setShowCVUpload(true)}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 px-6 py-3.5 font-medium text-white hover:from-gold-600 hover:to-gold-700 transition-all shadow-lg hover:shadow-xl"
+                  >
+                    <Upload className="h-5 w-5" />
+                    Upload CV to Apply
+                  </button>
+                )}
 
                 {job.applyDeadline && (
                   <p className="text-sm text-gray-500 mt-4 text-center">
@@ -455,14 +625,14 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
                   <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />
                   <div className="flex-1">
                     <p className="font-medium mb-2">{error}</p>
-                    {isCVError && (
-                      <Link
-                        href="/crew/documents?upload=cv"
+                    {isCVError && candidateData && !showCVUpload && (
+                      <button
+                        onClick={() => setShowCVUpload(true)}
                         className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-100 hover:bg-red-200 border border-red-300 rounded-lg text-red-800 font-medium text-xs transition-colors"
                       >
                         <Upload className="h-3.5 w-3.5" />
                         Upload CV Now
-                      </Link>
+                      </button>
                     )}
                   </div>
                   <button
@@ -476,28 +646,63 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
               </div>
             )}
 
+            {/* Profile Completion in Modal */}
+            {profileCompletion && (
+              <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center justify-between text-sm mb-2">
+                  <span className="text-gray-600">Profile Completion</span>
+                  <span className="font-semibold text-navy-900">{profileCompletion.score}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-gradient-to-r from-gold-500 to-gold-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${profileCompletion.score}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* CV Upload in Modal */}
+            {isCVError && candidateData && showCVUpload && (
+              <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <h4 className="text-sm font-semibold text-amber-900 mb-3">Upload Your CV</h4>
+                <InlineCVUpload
+                  candidateId={candidateData.id}
+                  onUploadSuccess={handleCVUploadSuccess}
+                  onUploadError={(err) => setError(err)}
+                />
+              </div>
+            )}
+
             <div className="flex gap-3">
               <button
-                onClick={() => setShowApplyModal(false)}
+                onClick={() => {
+                  setShowApplyModal(false);
+                  setError(null);
+                  setErrorDismissed(false);
+                  setShowCVUpload(false);
+                }}
                 disabled={isPending}
                 className="flex-1 px-4 py-3 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
-              <button
-                onClick={handleApply}
-                disabled={isPending}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-gold-500 to-gold-600 text-white font-medium rounded-xl hover:from-gold-600 hover:to-gold-700 transition-all disabled:opacity-50"
-              >
-                {isPending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Submitting...
-                  </>
-                ) : (
-                  "Submit Application"
-                )}
-              </button>
+              {!isCVError && (
+                <button
+                  onClick={handleApply}
+                  disabled={isPending}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-gold-500 to-gold-600 text-white font-medium rounded-xl hover:from-gold-600 hover:to-gold-700 transition-all disabled:opacity-50"
+                >
+                  {isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    "Submit Application"
+                  )}
+                </button>
+              )}
             </div>
           </div>
         </div>

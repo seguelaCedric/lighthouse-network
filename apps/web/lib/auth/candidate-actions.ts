@@ -80,7 +80,8 @@ export async function registerCandidate(
 
   // Create or update user record with user_type = 'candidate'
   // All candidates belong to Lighthouse Careers organization by default
-  const DEFAULT_LIGHTHOUSE_ORG_ID = "00000000-0000-0000-0000-000000000001";
+  // Use the actual Lighthouse Careers org ID where recruiters belong
+  const DEFAULT_LIGHTHOUSE_ORG_ID = "c4e1e6ff-b71a-4fbd-bb31-dd282d981436";
 
   const { error: userError } = await supabase.from("users").upsert(
     {
@@ -167,6 +168,33 @@ export async function registerCandidate(
     }
 
     candidateId = newCandidate.id;
+  }
+
+  // Create candidate-agency relationship so Lighthouse Careers can see the candidate
+  if (candidateId) {
+    // Check if relationship already exists
+    const { data: existingRelationship } = await supabase
+      .from("candidate_agency_relationships")
+      .select("id")
+      .eq("candidate_id", candidateId)
+      .eq("agency_id", DEFAULT_LIGHTHOUSE_ORG_ID)
+      .maybeSingle();
+
+    if (!existingRelationship) {
+      const { error: relationshipError } = await supabase
+        .from("candidate_agency_relationships")
+        .insert({
+          candidate_id: candidateId,
+          agency_id: DEFAULT_LIGHTHOUSE_ORG_ID,
+          relationship_type: "registered",
+          is_exclusive: false,
+        });
+
+      if (relationshipError) {
+        console.error("Failed to create candidate-agency relationship:", relationshipError);
+        // Don't fail the registration, but log the error
+      }
+    }
   }
 
   // Save CV document if provided

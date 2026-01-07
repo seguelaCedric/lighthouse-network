@@ -97,6 +97,16 @@ export function JobBoardQuickApplyButton({
             });
             return;
           }
+          if (errorCode === "cv_required") {
+            setError(
+              (data?.message as string) || "You must upload a CV before applying to jobs."
+            );
+            setAction({
+              label: "Upload CV",
+              href: `/crew/documents?upload=cv&redirect=/job-board/${jobId}`,
+            });
+            return;
+          }
           const debug =
             data?.debug && typeof data.debug === "object"
               ? ` Debug: ${JSON.stringify(data.debug)}`

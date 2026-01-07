@@ -101,7 +101,8 @@ export async function signUp(
 
   // If this is a candidate registration, create user and candidate records
   if (isCandidate && authData.user && metadata) {
-    const DEFAULT_LIGHTHOUSE_ORG_ID = "00000000-0000-0000-0000-000000000001";
+    // Use the actual Lighthouse Careers org ID where recruiters belong
+    const DEFAULT_LIGHTHOUSE_ORG_ID = "c4e1e6ff-b71a-4fbd-bb31-dd282d981436";
 
     // Create or update user record with user_type = 'candidate'
     const { error: userError } = await supabase.from("users").upsert(
@@ -135,11 +136,14 @@ export async function signUp(
     // Check if candidate already exists (by email)
     const { data: existingCandidate } = await supabase
       .from("candidates")
-      .select("id, user_id")
+      .select("id, user_id, first_name, last_name, phone, nationality, candidate_type, primary_position, years_experience")
       .eq("email", email.toLowerCase())
       .maybeSingle();
 
+    let candidateId: string | null = null;
+
     if (existingCandidate) {
+      candidateId = existingCandidate.id;
       // Link existing candidate to user account if not already linked
       if (!existingCandidate.user_id && userRecord?.id) {
         const { error: updateError } = await supabase
@@ -167,26 +171,59 @@ export async function signUp(
       }
     } else {
       // Create new candidate record
-      const { error: candidateError } = await supabase.from("candidates").insert({
-        user_id: userRecord?.id || null,
-        first_name: metadata.first_name || "",
-        last_name: metadata.last_name || "",
-        email: email.toLowerCase(),
-        phone: metadata.phone || null,
-        whatsapp: metadata.phone || null,
-        nationality: metadata.nationality || null,
-        candidate_type: metadata.candidate_type || null,
-        primary_position: metadata.primary_position || null,
-        years_experience: metadata.years_experience
-          ? parseInt(metadata.years_experience)
-          : null,
-        source: "self_registration",
-        availability_status: "looking",
-      });
+      const { data: newCandidate, error: candidateError } = await supabase
+        .from("candidates")
+        .insert({
+          user_id: userRecord?.id || null,
+          first_name: metadata.first_name || "",
+          last_name: metadata.last_name || "",
+          email: email.toLowerCase(),
+          phone: metadata.phone || null,
+          whatsapp: metadata.phone || null,
+          nationality: metadata.nationality || null,
+          candidate_type: metadata.candidate_type || null,
+          primary_position: metadata.primary_position || null,
+          years_experience: metadata.years_experience
+            ? parseInt(metadata.years_experience)
+            : null,
+          source: "self_registration",
+          availability_status: "looking",
+        })
+        .select("id")
+        .single();
 
-      if (candidateError) {
+      if (candidateError || !newCandidate) {
         console.error("Failed to create candidate record:", candidateError);
         // Don't fail the registration, but log the error
+      } else {
+        candidateId = newCandidate.id;
+      }
+    }
+
+    // Create candidate-agency relationship so Lighthouse Careers can see the candidate
+    if (candidateId) {
+      // Check if relationship already exists
+      const { data: existingRelationship } = await supabase
+        .from("candidate_agency_relationships")
+        .select("id")
+        .eq("candidate_id", candidateId)
+        .eq("agency_id", DEFAULT_LIGHTHOUSE_ORG_ID)
+        .maybeSingle();
+
+      if (!existingRelationship) {
+        const { error: relationshipError } = await supabase
+          .from("candidate_agency_relationships")
+          .insert({
+            candidate_id: candidateId,
+            agency_id: DEFAULT_LIGHTHOUSE_ORG_ID,
+            relationship_type: "registered",
+            is_exclusive: false,
+          });
+
+        if (relationshipError) {
+          console.error("Failed to create candidate-agency relationship:", relationshipError);
+          // Don't fail the registration, but log the error
+        }
       }
     }
   }
