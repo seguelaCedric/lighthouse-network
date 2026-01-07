@@ -21,7 +21,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/ui/stat-card";
 import { cn } from "@/lib/utils";
-import type { DashboardStats, DashboardBrief, DashboardJob, DashboardApplication } from "./page";
+import type {
+  DashboardStats,
+  DashboardBrief,
+  DashboardJob,
+  DashboardApplication,
+} from "./dashboard-types";
 import type { BriefStatus } from "@lighthouse/database";
 
 interface DashboardClientProps {
