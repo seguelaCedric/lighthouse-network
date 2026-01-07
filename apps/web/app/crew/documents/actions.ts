@@ -222,8 +222,8 @@ export async function getDocumentsData(): Promise<DocumentsPageData | null> {
     )
   );
 
-  const documentCertifications: CertificationDocument[] = certificationDocuments
-    .map((doc) => {
+  const documentCertifications = certificationDocuments
+    .map((doc): CertificationDocument | null => {
       const displayName = stripFileExtension(doc.name || "Certification");
       const normalizedName = normalizeCertificationName(displayName);
       if (normalizedName && certificationNames.has(normalizedName)) {
