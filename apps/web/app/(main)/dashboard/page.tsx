@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { DashboardClient } from "./dashboard-client";
 import { DashboardSkeleton } from "./dashboard-skeleton";
+import type { BriefStatus } from "@lighthouse/database";
 import type {
   DashboardStats,
   DashboardBrief,
