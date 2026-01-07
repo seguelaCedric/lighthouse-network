@@ -29,6 +29,11 @@ function buildName(member: SignatureMember) {
   return `${first} ${last}`.trim();
 }
 
+function formatTel(value?: string | null) {
+  if (!value) return "";
+  return value.replace(/[^0-9+]/g, "");
+}
+
 function renderIconSvg(type: "linkedin" | "facebook") {
   const stroke = "#C3A578";
   if (type === "linkedin") {
@@ -43,6 +48,7 @@ export function buildSignatureHtml(member: SignatureMember, settings: SignatureS
   const role = escapeHtml(member.role || "");
   const email = escapeHtml(member.email || "");
   const phone = escapeHtml(member.phone_number || "");
+  const phoneHref = formatTel(member.phone_number);
   const logoUrl = settings.logo_url || "";
   const logoWidth = settings.logo_width || 140;
 
@@ -65,8 +71,8 @@ export function buildSignatureHtml(member: SignatureMember, settings: SignatureS
       <div style="font-size: 14px; font-weight: 700; color: #111827;">${name}</div>
       <div style="font-size: 13px; color: #C3A578;">${role}</div>
       <div style="margin-top: 8px; font-size: 13px;">
-        ${email ? `<div><a href="mailto:${escapeHtml(member.email)}" style="color:#1f2937; text-decoration:none;">${email}</a></div>` : ""}
-        ${phone ? `<div><a href="tel:${escapeHtml(member.phone_number)}" style="color:#1f2937; text-decoration:none;">${phone}</a></div>` : ""}
+        ${email ? `<div><span style="color:#C3A578; font-weight:600; margin-right:6px;">E</span><a href="mailto:${escapeHtml(member.email)}" style="color:#1f2937; text-decoration:none;">${email}</a></div>` : ""}
+        ${phone ? `<div><span style="color:#C3A578; font-weight:600; margin-right:6px;">T</span><a href="tel:${escapeHtml(phoneHref)}" style="color:#1f2937; text-decoration:none;">${phone}</a></div>` : ""}
       </div>
       ${socialLinks ? `<div style="margin-top: 10px; display:flex; align-items:center;">${socialLinks}</div>` : ""}
     </td>

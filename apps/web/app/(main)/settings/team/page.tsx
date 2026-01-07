@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,14 +15,11 @@ import {
   Edit,
   Trash2,
   X,
-  ChevronDown,
   Check,
   Clock,
   Crown,
   Eye,
-  FileText,
   Briefcase,
-  Settings,
 } from "lucide-react";
 
 // Types
@@ -32,59 +29,10 @@ interface TeamMember {
   email: string;
   photo: string | null;
   role: "owner" | "admin" | "recruiter" | "viewer";
-  status: "active" | "pending" | "inactive";
+  status: "active" | "inactive";
   lastActive?: Date;
-  invitedAt?: Date;
+  isCurrentUser?: boolean;
 }
-
-// Mock team members
-const mockTeamMembers: TeamMember[] = [
-  {
-    id: "1",
-    name: "Emma Richardson",
-    email: "emma@lighthousenetwork.com",
-    photo: null,
-    role: "owner",
-    status: "active",
-    lastActive: new Date(Date.now() - 5 * 60 * 1000),
-  },
-  {
-    id: "2",
-    name: "James Wilson",
-    email: "james@lighthousenetwork.com",
-    photo: null,
-    role: "admin",
-    status: "active",
-    lastActive: new Date(Date.now() - 2 * 60 * 60 * 1000),
-  },
-  {
-    id: "3",
-    name: "Sophie Martin",
-    email: "sophie@lighthousenetwork.com",
-    photo: null,
-    role: "recruiter",
-    status: "active",
-    lastActive: new Date(Date.now() - 24 * 60 * 60 * 1000),
-  },
-  {
-    id: "4",
-    name: "Michael Chen",
-    email: "michael@lighthousenetwork.com",
-    photo: null,
-    role: "recruiter",
-    status: "pending",
-    invitedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-  },
-  {
-    id: "5",
-    name: "Laura Davis",
-    email: "laura@lighthousenetwork.com",
-    photo: null,
-    role: "viewer",
-    status: "inactive",
-    lastActive: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-  },
-];
 
 // Role permissions
 const rolePermissions = {
@@ -240,14 +188,14 @@ function TeamMemberRow({
   member,
   onEdit,
   onRemove,
-  onResendInvite,
 }: {
   member: TeamMember;
   onEdit: () => void;
   onRemove: () => void;
-  onResendInvite: () => void;
 }) {
   const [showMenu, setShowMenu] = useState(false);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
   const roleInfo = rolePermissions[member.role];
   const Icon = roleInfo.icon;
   const initials = member.name.split(" ").map((n) => n[0]).join("");
@@ -278,7 +226,7 @@ function TeamMemberRow({
           <div>
             <div className="flex items-center gap-2">
               <p className="font-medium text-navy-900">{member.name}</p>
-              {member.role === "owner" && (
+              {member.isCurrentUser && (
                 <span className="rounded bg-gold-100 px-1.5 py-0.5 text-xs font-medium text-gold-700">
                   You
                 </span>
@@ -302,60 +250,55 @@ function TeamMemberRow({
             "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium",
             member.status === "active"
               ? "bg-success-100 text-success-700"
-              : member.status === "pending"
-                ? "bg-gold-100 text-gold-700"
-                : "bg-gray-100 text-gray-600"
+              : "bg-gray-100 text-gray-600"
           )}
         >
           {member.status === "active" && <UserCheck className="size-3" />}
-          {member.status === "pending" && <Clock className="size-3" />}
           {member.status === "inactive" && <UserX className="size-3" />}
           {member.status.charAt(0).toUpperCase() + member.status.slice(1)}
         </span>
       </td>
       <td className="px-3 py-4">
         <span className="text-sm text-gray-500">
-          {member.status === "pending"
-            ? `Invited ${formatLastActive(member.invitedAt)}`
-            : formatLastActive(member.lastActive)}
+          {formatLastActive(member.lastActive)}
         </span>
       </td>
       <td className="py-4 pl-3 pr-4">
         <div className="relative">
           <button
-            onClick={() => setShowMenu(!showMenu)}
-            className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            ref={buttonRef}
+            onClick={() => {
+              if (!showMenu && buttonRef.current) {
+                const rect = buttonRef.current.getBoundingClientRect();
+                setMenuPosition({
+                  top: rect.bottom + 8,
+                  left: rect.right,
+                });
+              }
+              setShowMenu(!showMenu);
+            }}
+            className="rounded-lg border border-gray-200 p-2 text-navy-600 hover:bg-gray-50 hover:text-navy-700 disabled:opacity-80"
             disabled={member.role === "owner"}
           >
             <MoreVertical className="size-4" />
           </button>
           {showMenu && member.role !== "owner" && (
             <>
-              <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />
-              <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
-                {member.status === "pending" ? (
-                  <button
-                    onClick={() => {
-                      onResendInvite();
-                      setShowMenu(false);
-                    }}
-                    className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                  >
-                    <Mail className="size-4" />
-                    Resend Invite
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => {
-                      onEdit();
-                      setShowMenu(false);
-                    }}
-                    className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                  >
-                    <Edit className="size-4" />
-                    Edit Role
-                  </button>
-                )}
+              <div className="fixed inset-0 z-[90]" onClick={() => setShowMenu(false)} />
+              <div
+                className="fixed z-[100] w-48 -translate-x-full rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
+                style={{ top: menuPosition?.top ?? 0, left: menuPosition?.left ?? 0 }}
+              >
+                <button
+                  onClick={() => {
+                    onEdit();
+                    setShowMenu(false);
+                  }}
+                  className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  <Edit className="size-4" />
+                  Edit Role
+                </button>
                 <button
                   onClick={() => {
                     onRemove();
@@ -376,15 +319,69 @@ function TeamMemberRow({
 }
 
 export default function TeamSettingsPage() {
-  const [members, setMembers] = useState(mockTeamMembers);
+  const [members, setMembers] = useState<TeamMember[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showPermissions, setShowPermissions] = useState(false);
 
-  const filteredMembers = members.filter(
-    (m) =>
-      m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      m.email.toLowerCase().includes(searchQuery.toLowerCase())
+  useEffect(() => {
+    const loadMembers = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await fetch("/api/admin/team-users", { cache: "no-store" });
+        const payload = await response.json();
+
+        if (!response.ok) {
+          throw new Error(payload?.error || "Failed to load team members");
+        }
+
+        const normalized = (payload.users || []).map((member: {
+          id: string;
+          first_name?: string | null;
+          last_name?: string | null;
+          email: string;
+          role: TeamMember["role"];
+          avatar_url?: string | null;
+          is_active?: boolean | null;
+          last_login_at?: string | null;
+          is_current_user?: boolean;
+        }) => {
+          const name = `${member.first_name ?? ""} ${member.last_name ?? ""}`.trim();
+          return {
+            id: member.id,
+            name: name || member.email.split("@")[0],
+            email: member.email,
+            photo: member.avatar_url ?? null,
+            role: member.role,
+            status: member.is_active ? "active" : "inactive",
+            lastActive: member.last_login_at ? new Date(member.last_login_at) : undefined,
+            isCurrentUser: member.is_current_user ?? false,
+          } as TeamMember;
+        });
+
+        setMembers(normalized);
+      } catch (loadError) {
+        const message = loadError instanceof Error ? loadError.message : "Failed to load team members";
+        setError(message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadMembers();
+  }, []);
+
+  const filteredMembers = useMemo(
+    () =>
+      members.filter(
+        (m) =>
+          m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          m.email.toLowerCase().includes(searchQuery.toLowerCase())
+      ),
+    [members, searchQuery]
   );
 
   const handleInvite = (email: string, role: string) => {
@@ -405,7 +402,6 @@ export default function TeamSettingsPage() {
   };
 
   const activeCount = members.filter((m) => m.status === "active").length;
-  const pendingCount = members.filter((m) => m.status === "pending").length;
 
   return (
     <div className="space-y-6">
@@ -422,6 +418,12 @@ export default function TeamSettingsPage() {
           Invite Member
         </Button>
       </div>
+
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-3">
@@ -453,7 +455,7 @@ export default function TeamSettingsPage() {
               <Clock className="size-5 text-gold-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-navy-900">{pendingCount}</p>
+              <p className="text-2xl font-bold text-navy-900">0</p>
               <p className="text-sm text-gray-500">Pending Invites</p>
             </div>
           </div>
@@ -506,20 +508,27 @@ export default function TeamSettingsPage() {
               </tr>
             </thead>
             <tbody>
-              {filteredMembers.map((member) => (
-                <TeamMemberRow
-                  key={member.id}
-                  member={member}
-                  onEdit={() => console.log("Edit:", member.id)}
-                  onRemove={() => handleRemove(member.id)}
-                  onResendInvite={() => console.log("Resend:", member.id)}
-                />
-              ))}
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="py-6 text-center text-sm text-gray-500">
+                    Loading team members...
+                  </td>
+                </tr>
+              ) : (
+                filteredMembers.map((member) => (
+                  <TeamMemberRow
+                    key={member.id}
+                    member={member}
+                    onEdit={() => console.log("Edit:", member.id)}
+                    onRemove={() => handleRemove(member.id)}
+                  />
+                ))
+              )}
             </tbody>
           </table>
         </div>
 
-        {filteredMembers.length === 0 && (
+        {!loading && filteredMembers.length === 0 && (
           <div className="py-8 text-center">
             <Users className="mx-auto mb-2 size-8 text-gray-300" />
             <p className="text-sm text-gray-500">No team members found</p>

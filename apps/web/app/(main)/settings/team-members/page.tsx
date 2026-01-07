@@ -134,6 +134,10 @@ export default function TeamMembersSettingsPage() {
   };
 
   const handleEdit = (member: TeamMember) => {
+    if (!member.id) {
+      setError("Unable to edit this member (missing id). Refresh and try again.");
+      return;
+    }
     setEditingId(member.id);
     const derivedFirst = member.first_name ?? member.name.split(" ")[0] ?? "";
     const derivedLast = member.last_name ?? member.name.split(" ").slice(1).join(" ") ?? "";
@@ -190,7 +194,18 @@ export default function TeamMembersSettingsPage() {
       setSaving(true);
       setError(null);
 
+      const isEditing = Boolean(editingId);
+      const isValidUuid = (value: string) =>
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+          value
+        );
+
+      if (isEditing && (!editingId || !isValidUuid(editingId))) {
+        throw new Error("Missing team member id. Close and re-open the modal.");
+      }
+
       const payload = {
+        id: editingId,
         first_name: formState.first_name.trim(),
         last_name: formState.last_name.trim(),
         role: formState.role.trim(),
@@ -209,9 +224,9 @@ export default function TeamMembersSettingsPage() {
       }
 
       const response = await fetch(
-        editingId ? `/api/admin/team-members/${editingId}` : "/api/admin/team-members",
+        isEditing ? `/api/admin/team-members/${editingId}` : "/api/admin/team-members",
         {
-          method: editingId ? "PATCH" : "POST",
+          method: isEditing ? "PATCH" : "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         }
@@ -219,7 +234,8 @@ export default function TeamMembersSettingsPage() {
 
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data?.error || "Failed to save team member");
+        const detail = data?.details ? ` (${data.details})` : "";
+        throw new Error((data?.error || "Failed to save team member") + detail);
       }
 
       await loadMembers();

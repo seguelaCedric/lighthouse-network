@@ -42,6 +42,12 @@ export async function PATCH(
 
     const { supabase, organizationId } = result;
     const payload = await request.json();
+    const targetId =
+      params?.id && params.id !== "undefined" ? params.id : payload?.id;
+
+    if (!targetId) {
+      return NextResponse.json({ error: "Invalid team member id" }, { status: 400 });
+    }
 
     const updates: Record<string, unknown> = {};
 
@@ -79,7 +85,7 @@ export async function PATCH(
     const { data, error } = await supabase
       .from("team_members")
       .update(updates)
-      .eq("id", params.id)
+      .eq("id", targetId)
       .eq("organization_id", organizationId)
       .select(
         "id, name, first_name, last_name, role, bio, languages, email, phone_number, image_url, linkedin_url, facebook_url, sort_order, is_active"
@@ -88,7 +94,10 @@ export async function PATCH(
 
     if (error) {
       console.error("Failed to update team member:", error);
-      return NextResponse.json({ error: "Failed to update team member" }, { status: 500 });
+      return NextResponse.json(
+        { error: "Failed to update team member", details: error.message },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ teamMember: data });
