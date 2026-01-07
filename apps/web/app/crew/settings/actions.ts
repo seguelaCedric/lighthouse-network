@@ -145,7 +145,7 @@ export async function updateNotificationSettings(data: {
   const { error } = await supabase
     .from("candidates")
     .update(updateData)
-    .eq("user_id", userData.id);
+    .eq("user_id", candidateUserId);
 
   if (error) {
     console.error("Error updating notification settings:", error);
