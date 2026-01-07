@@ -80,7 +80,7 @@ export async function getSettingsData(): Promise<CandidateSettings | null> {
   if (!candidate) return null;
 
   return {
-    email: candidate.email || userData.email || user.email || "",
+    email: candidate.email || userData?.email || user.email || "",
     emailNotifications: candidate.email_notifications ?? true,
     jobAlerts: candidate.job_alerts ?? true,
     marketingEmails: candidate.marketing_emails ?? false,
