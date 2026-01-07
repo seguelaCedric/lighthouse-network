@@ -350,14 +350,16 @@ export async function requestAccountDeletion(data: {
     return { success: false, error: "Failed to process deletion request" };
   }
 
-  // Mark user as inactive
-  await supabase
-    .from("users")
-    .update({
-      is_active: false,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", userData.id);
+  // Mark user as inactive (if user record exists)
+  if (userData) {
+    await supabase
+      .from("users")
+      .update({
+        is_active: false,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", userData.id);
+  }
 
   // Sign out the user
   await supabase.auth.signOut();
