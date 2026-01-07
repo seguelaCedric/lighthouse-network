@@ -129,6 +129,14 @@ export async function POST(request: NextRequest) {
     const { webhook_url, url, events, active, secret } = parseResult.data;
     const webhookUrl = webhook_url || url; // Support both formats
 
+    // Ensure webhookUrl is defined (webhook_url is required in schema, but url is optional)
+    if (!webhookUrl) {
+      return NextResponse.json(
+        { error: "webhook_url is required" },
+        { status: 400 }
+      );
+    }
+
     // Convert event strings to Vincere format
     // If events are provided as strings like ['job.created', 'job.updated'], 
     // convert to Vincere format with entity_type and action_types
