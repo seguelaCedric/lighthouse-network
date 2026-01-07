@@ -65,6 +65,14 @@ export const metadata: Metadata = {
   },
 };
 
+// Stats
+const stats = [
+  { value: "300+", label: "Placements/Year" },
+  { value: "500+", label: "Satisfied Clients" },
+  { value: "20+", label: "Years Experience" },
+  { value: "24h", label: "First Candidates" },
+];
+
 const benefits = [
   {
     icon: Zap,
@@ -319,37 +327,61 @@ export default function YachtCrewPage() {
 
       <PublicHeader />
 
-      {/* Hero Section - More dramatic */}
-      <section className="relative min-h-[70vh] overflow-hidden bg-navy-900">
-        {/* Background image */}
-        <div className="absolute inset-0">
-          <Image
-            src="/images/yacht/hero.jpg"
-            alt="Luxury superyacht at sea"
-            fill
-            className="object-cover"
-            priority
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-navy-900 via-navy-900/90 to-navy-900/70" />
+      {/* Hero Section */}
+      <section className="relative min-h-[70vh] overflow-hidden">
+        {/* Rich navy gradient */}
+        <div className="absolute inset-0 bg-gradient-to-b from-navy-800 via-navy-900 to-[#0c1525]" />
+
+        {/* Warm champagne ambient light from top */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(195,165,120,0.15),transparent_60%)]" />
+
+        {/* Subtle side accents for depth */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_80%_at_0%_50%,rgba(195,165,120,0.06),transparent_50%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_80%_at_100%_50%,rgba(195,165,120,0.06),transparent_50%)]" />
+
+        {/* Art Deco sunburst pattern */}
+        <div className="absolute inset-0 opacity-[0.15]">
+          <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <radialGradient id="sunburst-fade" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#C3A578" stopOpacity="1"/>
+                <stop offset="100%" stopColor="#C3A578" stopOpacity="0.3"/>
+              </radialGradient>
+            </defs>
+            <g stroke="url(#sunburst-fade)" strokeWidth="0.5" fill="none">
+              {/* Radiating lines from center */}
+              {[...Array(36)].map((_, i) => {
+                const angle = (i * 10) * (Math.PI / 180);
+                const x2 = Math.round((50 + 70 * Math.cos(angle)) * 100) / 100;
+                const y2 = Math.round((50 + 70 * Math.sin(angle)) * 100) / 100;
+                return <line key={i} x1="50%" y1="50%" x2={`${x2}%`} y2={`${y2}%`} />;
+              })}
+            </g>
+            {/* Concentric arcs */}
+            <circle cx="50%" cy="50%" r="15%" fill="none" stroke="#C3A578" strokeWidth="0.3" opacity="0.5"/>
+            <circle cx="50%" cy="50%" r="30%" fill="none" stroke="#C3A578" strokeWidth="0.3" opacity="0.4"/>
+            <circle cx="50%" cy="50%" r="45%" fill="none" stroke="#C3A578" strokeWidth="0.3" opacity="0.3"/>
+          </svg>
         </div>
 
-        {/* Decorative elements */}
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-navy-900 to-transparent" />
-        <div className="absolute right-0 top-1/4 h-96 w-96 rounded-full bg-gold-500/10 blur-3xl" />
-        <div className="absolute left-1/4 top-1/2 h-64 w-64 rounded-full bg-blue-500/10 blur-3xl" />
-
         <div className="relative mx-auto flex min-h-[70vh] max-w-6xl flex-col items-center justify-center px-4 py-20 text-center sm:px-6">
-          <div className="mb-6 inline-flex items-center rounded-full border border-gold-500/30 bg-gold-500/10 px-5 py-2 text-sm font-medium text-gold-300">
-            <Ship className="mr-2 h-4 w-4" />
-            500+ Satisfied Clients
+          {/* Trust badge - above fold social proof */}
+          <div className="mb-6 inline-flex items-center gap-3 rounded-full border border-gold-500/30 bg-gold-500/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm">
+            <div className="flex items-center gap-2">
+              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gold-500 text-xs font-bold text-navy-900">4.9</div>
+              <div className="flex">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="h-4 w-4 fill-gold-400 text-gold-400" />
+                ))}
+              </div>
+            </div>
+            <span className="hidden sm:inline">Trusted by 500+ Clients Worldwide</span>
+            <span className="sm:hidden">500+ Clients</span>
           </div>
 
           <h1 className="font-serif text-4xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">
-            24h Candidate Delivery
-            <br />
-            <span className="bg-gradient-to-r from-gold-400 to-gold-200 bg-clip-text text-transparent">
-              Instead of 48h
-            </span>
+            Hire vetted candidates within{" "}
+            <span className="text-gold-400">24h</span>
           </h1>
 
           <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-300 sm:text-xl">
@@ -389,6 +421,20 @@ export default function YachtCrewPage() {
               <CheckCircle className="h-5 w-5 text-gold-400" />
               <span>Global Coverage</span>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="relative -mt-12 z-10">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6">
+          <div className="grid grid-cols-2 gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-xl sm:grid-cols-4 sm:gap-8 sm:p-8">
+            {stats.map((stat) => (
+              <div key={stat.label} className="text-center">
+                <div className="text-2xl font-bold text-navy-900 sm:text-3xl">{stat.value}</div>
+                <div className="mt-1 text-sm text-gray-600">{stat.label}</div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -435,6 +481,52 @@ export default function YachtCrewPage() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Feature Image Section */}
+      <section className="py-20 sm:py-28 bg-gray-50">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="grid gap-12 lg:grid-cols-2 lg:items-center">
+            <div className="relative">
+              <div className="relative aspect-[4/3] overflow-hidden rounded-2xl shadow-2xl">
+                <Image
+                  src="/images/yacht/superyacht-flyboarder.jpeg"
+                  alt="Luxury superyacht with water sports activities"
+                  fill
+                  className="object-cover"
+                />
+              </div>
+              {/* Decorative element */}
+              <div className="absolute -bottom-6 -right-6 -z-10 h-full w-full rounded-2xl bg-gold-100" />
+            </div>
+            <div>
+              <h2 className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl">
+                Exceptional Crew for
+                <span className="text-gold-600"> Exceptional Yachts</span>
+              </h2>
+              <p className="mt-6 text-lg text-gray-600 leading-relaxed">
+                We understand that your yacht is more than just a vessel—it's a floating
+                sanctuary that reflects your lifestyle and standards. Our rigorous selection
+                process ensures every candidate we present embodies the professionalism,
+                expertise, and service excellence your yacht deserves.
+              </p>
+              <ul className="mt-8 space-y-4">
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-gold-500" />
+                  <span className="text-gray-600">Comprehensive reference checks from previous captains and HODs</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-gold-500" />
+                  <span className="text-gray-600">Certificate verification (STCW, MCA, ENG1, etc.)</span>
+                </li>
+                <li className="flex items-start gap-3">
+                  <CheckCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-gold-500" />
+                  <span className="text-gray-600">Personality and cultural fit assessment for your yacht's unique environment</span>
+                </li>
+              </ul>
             </div>
           </div>
         </div>
@@ -529,70 +621,65 @@ export default function YachtCrewPage() {
         </div>
       </section>
 
-      {/* Departments Section - Interactive cards with images */}
+      {/* Departments Section */}
       <section className="bg-gray-50 py-20 sm:py-28">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="mb-16 text-center">
-            <h2 className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl">
-              All Departments Covered
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-gray-600">
-              We place crew across every department on superyachts worldwide.
-            </p>
+          {/* Section Header with Image */}
+          <div className="mb-16 grid gap-8 lg:grid-cols-2 lg:items-center">
+            <div>
+              <h2 className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl">
+                All Departments Covered
+              </h2>
+              <p className="mt-4 text-lg text-gray-600">
+                We place exceptional professionals across all yacht departments. From deck
+                to engineering, galley to interior—our extensive network covers every aspect of
+                superyacht crew recruitment.
+              </p>
+            </div>
+            <div className="relative aspect-[16/9] overflow-hidden rounded-2xl shadow-xl">
+              <Image
+                src="/images/yacht/deck.jpg"
+                alt="Professional yacht crew"
+                fill
+                className="object-cover"
+              />
+            </div>
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {departments.map((dept) => {
               const Icon = dept.icon;
               return (
                 <div
                   key={dept.name}
-                  className="group overflow-hidden rounded-2xl border border-gray-200 bg-white transition-all hover:-translate-y-1 hover:shadow-xl"
+                  className="group rounded-2xl border border-gray-200 bg-white p-6 transition-all hover:-translate-y-1 hover:shadow-xl"
                 >
-                  {/* Image section */}
-                  <div className="relative h-48 overflow-hidden">
-                    <Image
-                      src={dept.image}
-                      alt={`${dept.name} department on a superyacht`}
-                      fill
-                      className="object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                    <div className="absolute bottom-4 left-4 flex items-center gap-3">
-                      <div
-                        className={`inline-flex h-10 w-10 items-center justify-center rounded-lg ${dept.color} text-white shadow-lg`}
+                  <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gold-100">
+                    <Icon className="h-6 w-6 text-gold-600" />
+                  </div>
+                  <h3 className="mb-4 text-xl font-semibold text-navy-900">
+                    {dept.name}
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {dept.positions.slice(0, 6).map((position) => (
+                      <span
+                        key={position}
+                        className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700"
                       >
-                        <Icon className="h-5 w-5" />
-                      </div>
-                      <h3 className="text-xl font-semibold text-white">
-                        {dept.name}
-                      </h3>
-                    </div>
-                  </div>
-
-                  {/* Content section */}
-                  <div className="p-6">
-                    <div className="mb-4 flex flex-wrap gap-2">
-                      {dept.positions.slice(0, 8).map((position) => (
-                        <span
-                          key={position}
-                          className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700"
-                        >
-                          {position}
-                        </span>
-                      ))}
-                      <span className="inline-flex items-center rounded-full bg-gold-100 px-3 py-1 text-xs font-medium text-gold-700">
-                        & more
+                        {position}
                       </span>
-                    </div>
-                    <Link
-                      href={`/job-board?department=${dept.slug}`}
-                      className="inline-flex items-center text-sm font-medium text-gold-600 transition-colors hover:text-gold-700"
-                    >
-                      View All {dept.name} Positions
-                      <ArrowRight className="ml-1 h-4 w-4" />
-                    </Link>
+                    ))}
+                    <span className="inline-flex items-center rounded-full bg-gold-100 px-3 py-1 text-xs font-medium text-gold-700">
+                      & more
+                    </span>
                   </div>
+                  <Link
+                    href={`/job-board?department=${dept.slug}`}
+                    className="mt-4 inline-flex items-center text-sm font-medium text-gold-600 transition-colors hover:text-gold-700"
+                  >
+                    View All {dept.name} Positions
+                    <ArrowRight className="ml-1 h-4 w-4" />
+                  </Link>
                 </div>
               );
             })}
@@ -600,34 +687,34 @@ export default function YachtCrewPage() {
         </div>
       </section>
 
-      {/* Benefits Section - Grid layout */}
-      <section className="py-20 sm:py-28">
+      {/* Benefits Section */}
+      <section className="py-20 sm:py-28 bg-gray-50">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="mb-16 text-center">
             <h2 className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl">
               Why Choose Lighthouse Careers
             </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-gray-600">
+              Two decades of experience placing exceptional talent on exceptional yachts.
+            </p>
           </div>
 
-          <div className="mx-auto max-w-3xl">
-            <ul className="space-y-4 text-lg text-gray-700">
-              <li className="flex items-start gap-3">
-                <CheckCircle className="mt-1 h-6 w-6 flex-shrink-0 text-gold-600" />
-                <span>20+ years of industry knowledge and connections</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle className="mt-1 h-6 w-6 flex-shrink-0 text-gold-600" />
-                <span>Recruiters who listen and deliver suitable candidates in a timely manner</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle className="mt-1 h-6 w-6 flex-shrink-0 text-gold-600" />
-                <span>Certificates and references checks are done for you</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle className="mt-1 h-6 w-6 flex-shrink-0 text-gold-600" />
-                <span>Many repeated clients and long term placements</span>
-              </li>
-            </ul>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {benefits.map((benefit) => {
+              const Icon = benefit.icon;
+              return (
+                <div
+                  key={benefit.title}
+                  className="rounded-xl border border-gray-200 bg-white p-6 transition-shadow hover:shadow-lg"
+                >
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gold-100">
+                    <Icon className="h-6 w-6 text-gold-600" />
+                  </div>
+                  <h3 className="mb-2 font-semibold text-navy-900">{benefit.title}</h3>
+                  <p className="text-sm text-gray-600">{benefit.description}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>

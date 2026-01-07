@@ -33,6 +33,8 @@ export const metadata: Metadata = {
 const stats = [
   { value: "300+", label: "Placements/Year" },
   { value: "500+", label: "Satisfied Clients" },
+  { value: "20+", label: "Years Experience" },
+  { value: "24h", label: "First Candidates" },
 ];
 
 const values = [

@@ -63,7 +63,7 @@ export function AudienceSplit() {
               <Link href="/salary-guide" className="flex-1">
                 <Button variant="secondary" className="w-full">
                   <DollarSign className="mr-2 h-4 w-4" />
-                  2025 Salary Guide
+                  2026 Salary Guide
                 </Button>
               </Link>
             </div>

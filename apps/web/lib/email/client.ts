@@ -44,6 +44,11 @@ export async function sendEmail(params: {
   text?: string;
   from?: string;
   replyTo?: string;
+  attachments?: Array<{
+    filename: string;
+    content: Buffer | string;
+    contentType?: string;
+  }>;
 }): Promise<SendEmailResult> {
   try {
     const client = getResendClient();
@@ -55,6 +60,13 @@ export async function sendEmail(params: {
       html: params.html,
       text: params.text,
       replyTo: params.replyTo,
+      attachments: params.attachments?.map((att) => ({
+        filename: att.filename,
+        content: typeof att.content === "string" 
+          ? Buffer.from(att.content).toString("base64")
+          : att.content.toString("base64"),
+        content_type: att.contentType || "application/pdf",
+      })),
     });
 
     if (error) {

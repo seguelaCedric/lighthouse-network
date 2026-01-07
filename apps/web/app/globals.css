@@ -799,3 +799,99 @@ h2 {
     background-color: inherit;
   }
 }
+
+/* ============================================
+   PRINT STYLES FOR SALARY GUIDE
+   ============================================ */
+@media print {
+  /* Hide navigation and non-essential elements */
+  header,
+  footer,
+  nav,
+  .no-print,
+  .lead-capture-section,
+  a[href^="#"] {
+    display: none !important;
+  }
+
+  /* Keep buttons visible but style them as links */
+  button {
+    display: none !important;
+  }
+
+  /* Page setup */
+  @page {
+    size: A4;
+    margin: 15mm 10mm;
+  }
+
+  /* Ensure content fits on page */
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 12pt;
+    line-height: 1.4;
+  }
+
+  /* Make links visible and styled for print */
+  a[href^="http"],
+  a[href^="https"],
+  a[href^="mailto"] {
+    color: #1a2b4a !important;
+    text-decoration: underline !important;
+    display: inline !important;
+  }
+
+  /* Style CTA buttons as links in print */
+  a[href^="http"]:not([href*="#"]),
+  a[href^="https"]:not([href*="#"]),
+  a[href^="mailto"] {
+    border: 2px solid #1a2b4a !important;
+    padding: 8px 16px !important;
+    display: inline-block !important;
+    text-decoration: none !important;
+    border-radius: 4px !important;
+    margin: 4px !important;
+  }
+
+  /* Prevent page breaks inside tables */
+  table {
+    page-break-inside: avoid;
+  }
+
+  /* Ensure tables don't overflow */
+  .overflow-x-auto {
+    overflow: visible !important;
+  }
+
+  /* Print-friendly colors */
+  .text-navy-900,
+  .text-gray-900 {
+    color: #000 !important;
+  }
+
+  .text-gray-600,
+  .text-gray-700 {
+    color: #333 !important;
+  }
+
+  /* Remove backgrounds for better printing */
+  .bg-gray-50,
+  .bg-navy-900,
+  .bg-gradient-to-br {
+    background: white !important;
+  }
+
+  /* Ensure borders are visible */
+  .border-gray-200,
+  .border-gray-300 {
+    border-color: #ccc !important;
+  }
+
+  /* Remove shadows */
+  .shadow-sm,
+  .shadow-md,
+  .shadow-lg {
+    box-shadow: none !important;
+  }
+}

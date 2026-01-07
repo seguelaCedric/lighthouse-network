@@ -19,10 +19,29 @@ export function LeadCapture({ variant = "both" }: LeadCaptureProps) {
   const handleCandidateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setCandidateLoading(true);
-    // Simulate API call - replace with actual implementation
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setCandidateSubmitted(true);
-    setCandidateLoading(false);
+    
+    try {
+      const response = await fetch("/api/salary-guide/request", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: candidateEmail }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to request salary guide");
+      }
+
+      setCandidateSubmitted(true);
+    } catch (error) {
+      console.error("Error requesting salary guide:", error);
+      alert(error instanceof Error ? error.message : "Failed to request salary guide. Please try again.");
+    } finally {
+      setCandidateLoading(false);
+    }
   };
 
   const handleClientSubmit = async (e: React.FormEvent) => {
@@ -58,11 +77,11 @@ export function LeadCapture({ variant = "both" }: LeadCaptureProps) {
               </div>
 
               <h3 className="mb-2 font-serif text-xl font-semibold text-white">
-                2025 Yacht Crew Salary Guide
+                2026 Yacht Crew & Private Household Salary Guide
               </h3>
               <p className="mb-6 text-sm text-gray-400">
                 Know your worth. Get the latest salary ranges for all positions,
-                from Junior Stew to Captain, across different yacht sizes.
+                from Junior Stew to Captain, and from Nanny to Estate Manager.
               </p>
 
               {/* What's included */}

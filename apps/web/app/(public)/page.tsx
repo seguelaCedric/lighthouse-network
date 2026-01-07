@@ -34,8 +34,10 @@ import {
 } from "lucide-react";
 
 const stats = [
-  { value: "300+", label: "Placements/Year" },
   { value: "500+", label: "Satisfied Clients" },
+  { value: "300+", label: "Placements/Year" },
+  { value: "50+", label: "Countries" },
+  { value: "20+", label: "Years of Trust" },
 ];
 
 const benefits = [

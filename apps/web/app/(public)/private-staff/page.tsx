@@ -339,7 +339,7 @@ export default function PrivateStaffPage() {
             Find Your Perfect Household Staff
             <br />
             <span className="text-gold-400">
-              Within 48 Hours
+              Within 24h
             </span>
           </h1>
 
@@ -412,8 +412,8 @@ export default function PrivateStaffPage() {
             <div className="relative">
               <div className="relative aspect-[4/3] overflow-hidden rounded-2xl shadow-2xl">
                 <Image
-                  src="/images/private-staff/estate.jpg"
-                  alt="Luxury estate and household management"
+                  src="/images/private-staff/mansion-marbella.jpeg"
+                  alt="Exceptional luxury mansion in Marbella"
                   fill
                   className="object-cover"
                 />

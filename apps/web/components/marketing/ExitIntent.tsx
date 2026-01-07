@@ -110,7 +110,7 @@ export function ExitIntent() {
                 <Download className="h-8 w-8 text-gold-600" />
               </div>
               <h2 className="font-serif text-2xl font-semibold text-navy-900">
-                Free 2025 Salary Guide
+                Free 2026 Salary Guide
               </h2>
               <p className="mt-2 text-gray-600">
                 Know your worth. Get industry-standard salary ranges for yacht crew and private household positions.
