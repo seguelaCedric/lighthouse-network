@@ -76,11 +76,18 @@ export async function signUp(
     ? `${baseUrl}/auth/callback?next=${encodeURIComponent(safeRedirect)}`
     : `${baseUrl}/auth/callback`;
 
-  const { error } = await supabase.auth.signUp({
+  // Determine if this is a candidate registration
+  // Candidates have primary_position or candidate_type in metadata
+  const isCandidate = !!(metadata?.primary_position || metadata?.candidate_type);
+
+  const { data: authData, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: metadata,
+      data: {
+        ...metadata,
+        user_type: isCandidate ? "candidate" : undefined,
+      },
       emailRedirectTo,
     },
   });
@@ -90,6 +97,98 @@ export async function signUp(
       success: false,
       error: error.message,
     };
+  }
+
+  // If this is a candidate registration, create user and candidate records
+  if (isCandidate && authData.user && metadata) {
+    const DEFAULT_LIGHTHOUSE_ORG_ID = "00000000-0000-0000-0000-000000000001";
+
+    // Create or update user record with user_type = 'candidate'
+    const { error: userError } = await supabase.from("users").upsert(
+      {
+        auth_id: authData.user.id,
+        email: email.toLowerCase(),
+        first_name: metadata.first_name || "",
+        last_name: metadata.last_name || "",
+        phone: metadata.phone || null,
+        user_type: "candidate",
+        organization_id: DEFAULT_LIGHTHOUSE_ORG_ID,
+        is_active: true,
+      },
+      {
+        onConflict: "auth_id",
+      }
+    );
+
+    if (userError) {
+      console.error("Failed to create user record:", userError);
+      // Continue anyway - the user record might already exist
+    }
+
+    // Get the user record to link to candidate
+    const { data: userRecord } = await supabase
+      .from("users")
+      .select("id")
+      .eq("auth_id", authData.user.id)
+      .single();
+
+    // Check if candidate already exists (by email)
+    const { data: existingCandidate } = await supabase
+      .from("candidates")
+      .select("id, user_id")
+      .eq("email", email.toLowerCase())
+      .maybeSingle();
+
+    if (existingCandidate) {
+      // Link existing candidate to user account if not already linked
+      if (!existingCandidate.user_id && userRecord?.id) {
+        const { error: updateError } = await supabase
+          .from("candidates")
+          .update({
+            user_id: userRecord.id,
+            first_name: metadata.first_name || existingCandidate.first_name,
+            last_name: metadata.last_name || existingCandidate.last_name,
+            phone: metadata.phone || existingCandidate.phone,
+            whatsapp: metadata.phone || existingCandidate.phone,
+            nationality: metadata.nationality || existingCandidate.nationality,
+            candidate_type: metadata.candidate_type || existingCandidate.candidate_type,
+            primary_position: metadata.primary_position || existingCandidate.primary_position,
+            years_experience: metadata.years_experience
+              ? parseInt(metadata.years_experience)
+              : existingCandidate.years_experience,
+            availability_status: "looking",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existingCandidate.id);
+
+        if (updateError) {
+          console.error("Failed to update candidate:", updateError);
+        }
+      }
+    } else {
+      // Create new candidate record
+      const { error: candidateError } = await supabase.from("candidates").insert({
+        user_id: userRecord?.id || null,
+        first_name: metadata.first_name || "",
+        last_name: metadata.last_name || "",
+        email: email.toLowerCase(),
+        phone: metadata.phone || null,
+        whatsapp: metadata.phone || null,
+        nationality: metadata.nationality || null,
+        candidate_type: metadata.candidate_type || null,
+        primary_position: metadata.primary_position || null,
+        years_experience: metadata.years_experience
+          ? parseInt(metadata.years_experience)
+          : null,
+        source: "self_registration",
+        availability_status: "looking",
+      });
+
+      if (candidateError) {
+        console.error("Failed to create candidate record:", candidateError);
+        // Don't fail the registration, but log the error
+      }
+    }
   }
 
   revalidatePath("/", "layout");
