@@ -40,6 +40,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Validate CV is provided
+    if (!cv || cv.size === 0) {
+      return NextResponse.json(
+        { error: "CV is required to apply for jobs. Please upload your CV." },
+        { status: 400 }
+      );
+    }
+
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -144,45 +152,51 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Upload CV if provided
+    // Upload CV (required, already validated above)
     let cvUrl: string | null = null;
     let cvPath: string | null = null;
 
-    if (cv) {
-      const timestamp = Date.now();
-      const extension = cv.name.split(".").pop() || "pdf";
-      const sanitizedName = cv.name.replace(/[^a-zA-Z0-9.-]/g, "_").substring(0, 50);
-      cvPath = `candidates/${candidateId}/cv/${timestamp}-${sanitizedName}`;
+    const timestamp = Date.now();
+    const extension = cv.name.split(".").pop() || "pdf";
+    const sanitizedName = cv.name.replace(/[^a-zA-Z0-9.-]/g, "_").substring(0, 50);
+    cvPath = `candidates/${candidateId}/cv/${timestamp}-${sanitizedName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from("documents")
-        .upload(cvPath, cv, {
-          cacheControl: "3600",
-          upsert: false,
-        });
+    const { error: uploadError } = await supabase.storage
+      .from("documents")
+      .upload(cvPath, cv, {
+        cacheControl: "3600",
+        upsert: false,
+      });
 
-      if (uploadError) {
-        console.error("CV upload error:", uploadError);
-        // Don't fail the application, just proceed without CV
-      } else {
-        const { data: urlData } = supabase.storage
-          .from("documents")
-          .getPublicUrl(cvPath);
-        cvUrl = urlData.publicUrl;
+    if (uploadError) {
+      console.error("CV upload error:", uploadError);
+      return NextResponse.json(
+        { error: "Failed to upload CV. Please try again." },
+        { status: 500 }
+      );
+    }
 
-        // Save document record
-        await supabase.from("documents").insert({
-          entity_type: "candidate",
-          entity_id: candidateId,
-          file_name: cv.name,
-          file_path: cvPath,
-          file_url: cvUrl,
-          file_size: cv.size,
-          mime_type: cv.type,
-          document_type: "cv",
-          organization_id: job.created_by_agency_id,
-        });
-      }
+    const { data: urlData } = supabase.storage
+      .from("documents")
+      .getPublicUrl(cvPath);
+    cvUrl = urlData.publicUrl;
+
+    // Save document record
+    const { error: docError } = await supabase.from("documents").insert({
+      entity_type: "candidate",
+      entity_id: candidateId,
+      file_name: cv.name,
+      file_path: cvPath,
+      file_url: cvUrl,
+      file_size: cv.size,
+      mime_type: cv.type,
+      document_type: "cv",
+      organization_id: job.created_by_agency_id,
+    });
+
+    if (docError) {
+      console.error("Failed to save CV document record:", docError);
+      // Continue with application even if document record fails
     }
 
     // Create application

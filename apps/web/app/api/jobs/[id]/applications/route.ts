@@ -5,6 +5,7 @@ import {
   createApplicationSchema,
 } from "@/lib/validations/job";
 import { trackReferralApplication } from "@/lib/referrals";
+import { candidateHasCV } from "@/lib/utils/candidate-cv";
 import type {
   ApplicationWithDetails,
   PaginatedResponse,
@@ -230,6 +231,17 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json(
         { error: "Candidate not found" },
         { status: 404 }
+      );
+    }
+
+    // Check if candidate has a CV (required for applications)
+    const hasCV = await candidateHasCV(supabase, applicationData.candidate_id);
+    if (!hasCV) {
+      return NextResponse.json(
+        {
+          error: "Candidate must have a CV before applying to jobs. Please ensure the candidate has uploaded a CV.",
+        },
+        { status: 403 }
       );
     }
 

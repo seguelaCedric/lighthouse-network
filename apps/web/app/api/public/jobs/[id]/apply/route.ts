@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { applyToJobSchema } from "@/lib/validations/public-job";
+import { candidateHasCV } from "@/lib/utils/candidate-cv";
 
 /**
  * POST /api/public/jobs/[id]/apply
@@ -60,6 +61,17 @@ export async function POST(
     if (!candidate) {
       return NextResponse.json(
         { error: "You must have a candidate profile to apply for jobs. Please complete your profile first." },
+        { status: 403 }
+      );
+    }
+
+    // Check if candidate has a CV
+    const hasCV = await candidateHasCV(supabase, candidate.id);
+    if (!hasCV) {
+      return NextResponse.json(
+        {
+          error: "You must upload a CV before applying to jobs. Please upload your CV in the Documents section.",
+        },
         { status: 403 }
       );
     }

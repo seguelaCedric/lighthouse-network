@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
 import { calculateProfileCompletion } from "@/lib/profile-completion";
+import { candidateHasCV } from "@/lib/utils/candidate-cv";
 
 // ----------------------------------------------------------------------------
 // REQUEST SCHEMA
@@ -291,6 +292,18 @@ export async function POST(request: NextRequest) {
     }
 
     const { jobId } = parseResult.data;
+
+    // Check if candidate has a CV (required for applications)
+    const hasCV = await candidateHasCV(supabase, candidate.id);
+    if (!hasCV) {
+      return NextResponse.json(
+        {
+          error: "cv_required",
+          message: "You must upload a CV before applying to jobs. Please upload your CV in the Documents section.",
+        },
+        { status: 403 }
+      );
+    }
 
     let cvDocuments: Array<{ type?: string | null; document_type?: string | null }> = [];
     const { data: docsByType, error: docsByTypeError } = await supabase

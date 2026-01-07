@@ -23,6 +23,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   DocumentCategoryTabs,
   categorizeDocumentType,
@@ -1015,9 +1016,36 @@ function UploadModal({
 
 // Main Component
 export function DocumentsClient({ data }: { data: DocumentsPageData }) {
+  const searchParams = useSearchParams();
   const [uploadModalOpen, setUploadModalOpen] = React.useState(false);
   const [uploadType, setUploadType] = React.useState<"cv" | "document">("cv");
   const [uploadDocumentType, setUploadDocumentType] = React.useState<string | undefined>();
+
+  const openCVUpload = React.useCallback(() => {
+    setUploadType("cv");
+    setUploadDocumentType("cv");
+    setUploadModalOpen(true);
+  }, []);
+
+  const openDocumentUpload = React.useCallback((docType?: string) => {
+    setUploadType("document");
+    setUploadDocumentType(docType ?? "other");
+    setUploadModalOpen(true);
+  }, []);
+
+  // Auto-open CV upload modal if coming from job application
+  React.useEffect(() => {
+    const uploadParam = searchParams.get("upload");
+    if (uploadParam === "cv" && !uploadModalOpen) {
+      setUploadType("cv");
+      setUploadDocumentType("cv");
+      setUploadModalOpen(true);
+      // Clean up URL without reloading
+      const url = new URL(window.location.href);
+      url.searchParams.delete("upload");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, [searchParams, uploadModalOpen]);
 
   const handleDownload = async (doc: Document) => {
     try {
@@ -1032,18 +1060,6 @@ export function DocumentsClient({ data }: { data: DocumentsPageData }) {
       console.error("Download error:", error);
       alert("An error occurred while downloading");
     }
-  };
-
-  const openCVUpload = () => {
-    setUploadType("cv");
-    setUploadDocumentType("cv");
-    setUploadModalOpen(true);
-  };
-
-  const openDocumentUpload = (docType?: string) => {
-    setUploadType("document");
-    setUploadDocumentType(docType ?? "other");
-    setUploadModalOpen(true);
   };
 
   return (

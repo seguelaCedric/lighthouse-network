@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { syncJobApplication } from "@/lib/vincere/sync-service";
 import { getPositionDisplayName } from "@/lib/utils/format-position";
 import { REGION_GROUPS } from "@/lib/utils/job-helpers";
+import { candidateHasCV } from "@/lib/utils/candidate-cv";
 
 /**
  * Job listing for crew portal
@@ -753,6 +754,15 @@ export async function applyToJob(
 
   if (!candidate) {
     return { success: false, error: "Candidate profile not found" };
+  }
+
+  // Check if candidate has a CV
+  const hasCV = await candidateHasCV(supabase, candidate.id);
+  if (!hasCV) {
+    return {
+      success: false,
+      error: "You must upload a CV before applying to jobs. Please upload your CV in the Documents section.",
+    };
   }
 
   // Check job exists and is open

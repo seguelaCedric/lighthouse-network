@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   MapPin,
@@ -19,6 +20,7 @@ import {
   Loader2,
   Check,
   X,
+  Upload,
 } from "lucide-react";
 import { applyToJob, type JobListing } from "../actions";
 
@@ -112,9 +114,11 @@ function getMatchBgColor(score: number | null): string {
 }
 
 export function JobDetailClient({ job }: JobDetailClientProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [hasApplied, setHasApplied] = useState(job.hasApplied);
   const [error, setError] = useState<string | null>(null);
+  const [errorDismissed, setErrorDismissed] = useState(false);
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [coverNote, setCoverNote] = useState("");
 
@@ -123,6 +127,7 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
 
   const handleApply = () => {
     setError(null);
+    setErrorDismissed(false);
     startTransition(async () => {
       const result = await applyToJob(job.id, coverNote || undefined);
       if (result.success) {
@@ -133,6 +138,8 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
       }
     });
   };
+
+  const isCVError = error?.includes("upload a CV") || error?.includes("CV");
 
   return (
     <div className="space-y-6">
@@ -333,10 +340,30 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
               {hasApplied ? "Application Submitted" : "Apply for this position"}
             </h3>
 
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2 text-red-700 text-sm">
-                <X className="h-4 w-4 flex-shrink-0" />
-                {error}
+            {error && !errorDismissed && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="font-medium mb-2">{error}</p>
+                    {isCVError && (
+                      <Link
+                        href="/crew/documents?upload=cv"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-100 hover:bg-red-200 border border-red-300 rounded-lg text-red-800 font-medium text-xs transition-colors"
+                      >
+                        <Upload className="h-3.5 w-3.5" />
+                        Upload CV Now
+                      </Link>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setErrorDismissed(true)}
+                    className="flex-shrink-0 p-1 hover:bg-red-100 rounded transition-colors"
+                    aria-label="Dismiss error"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             )}
 
@@ -422,9 +449,30 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
               />
             </div>
 
-            {error && (
+            {error && !errorDismissed && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                {error}
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="font-medium mb-2">{error}</p>
+                    {isCVError && (
+                      <Link
+                        href="/crew/documents?upload=cv"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-100 hover:bg-red-200 border border-red-300 rounded-lg text-red-800 font-medium text-xs transition-colors"
+                      >
+                        <Upload className="h-3.5 w-3.5" />
+                        Upload CV Now
+                      </Link>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => setErrorDismissed(true)}
+                    className="flex-shrink-0 p-1 hover:bg-red-100 rounded transition-colors"
+                    aria-label="Dismiss error"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
             )}
 
