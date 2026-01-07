@@ -206,6 +206,7 @@ export default function CandidateProfilePage() {
   const [selectedRefForVerify, setSelectedRefForVerify] = React.useState<CandidateReference | null>(null);
 
   // Document state for certifications and references tabs
+  const [certDocuments, setCertDocuments] = React.useState<Document[]>([]);
   const [refDocuments, setRefDocuments] = React.useState<Document[]>([]);
   const [cvDocuments, setCvDocuments] = React.useState<Document[]>([]);
   const [docsLoading, setDocsLoading] = React.useState(false);
@@ -269,10 +270,16 @@ export default function CandidateProfilePage() {
 
     setDocsLoading(true);
     try {
-      const [refRes, cvRes] = await Promise.all([
+      const [certRes, refRes, cvRes] = await Promise.all([
+        fetch(`/api/candidates/${candidateId}/documents?documentType=certification&latestOnly=true`),
         fetch(`/api/candidates/${candidateId}/documents?documentType=reference&latestOnly=true`),
         fetch(`/api/candidates/${candidateId}/documents?documentType=cv&latestOnly=true`),
       ]);
+
+      if (certRes.ok) {
+        const certData = await certRes.json();
+        setCertDocuments(certData.documents || []);
+      }
 
       if (refRes.ok) {
         const refData = await refRes.json();
