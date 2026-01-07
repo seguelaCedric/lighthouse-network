@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { syncCandidateUpdate } from "@/lib/vincere/sync-service";
-import type { Candidate } from "../../../../packages/database/types";
+import type { Candidate } from "../../../../../packages/database/types";
 
 /**
  * Profile data types
@@ -523,11 +523,13 @@ export async function updateProfessionalDetails(data: {
   if (data.secondaryPositions !== undefined) syncData.secondary_positions = data.secondaryPositions;
   if (data.yearsExperience !== undefined) syncData.years_experience = data.yearsExperience;
   if (data.experienceSummary !== undefined) syncData.profile_summary = data.experienceSummary;
-  if (data.candidateType !== undefined) syncData.candidate_type = data.candidateType as 'yacht_crew' | 'household_staff' | 'other' | 'both' | null;
+  if (data.candidateType !== undefined) {
+    syncData.candidate_type = data.candidateType as 'yacht_crew' | 'household_staff' | 'other' | 'both' | null;
+  }
   if (data.keySkills !== undefined) syncData.search_keywords = data.keySkills;
   if (data.highestLicense !== undefined) syncData.highest_license = data.highestLicense;
   if (data.secondaryLicense !== undefined) syncData.second_license = data.secondaryLicense;
-  if (data.jobSearchNotes !== undefined) syncData.job_search_notes = data.jobSearchNotes;
+  // Note: job_search_notes is not part of Candidate type, so we skip it in sync
   
   syncCandidateUpdate(candidate.id, syncData).catch((err) => console.error("Vincere sync failed for professional details update:", err));
 
