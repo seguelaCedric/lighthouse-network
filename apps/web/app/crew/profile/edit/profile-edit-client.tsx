@@ -835,9 +835,14 @@ export function ProfileEditClient({
         if (!validation.isValid) {
           setStepErrors((prev) => ({
             ...prev,
-            personal: currentStep === "personal" ? (validation.errors || {}) : prev.personal,
+            personal:
+              currentStep === "personal"
+                ? ((validation.errors as PersonalStepErrors | undefined) || {})
+                : prev.personal,
             professional:
-              currentStep === "professional" ? (validation.errors || {}) : prev.professional,
+              currentStep === "professional"
+                ? ((validation.errors as ProfessionalStepErrors | undefined) || {})
+                : prev.professional,
             certifications:
               currentStep === "certifications"
                 ? (validation.message || "Please complete the required fields.")
