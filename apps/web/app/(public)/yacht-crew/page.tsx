@@ -439,8 +439,11 @@ export default function YachtCrewPage() {
         </div>
       </section>
 
+      {/* Spacer to prevent overlap */}
+      <div className="h-8 sm:h-12"></div>
+
       {/* Process Section - Visual steps */}
-      <section className="relative -mt-16 pb-20">
+      <section className="relative pb-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-xl sm:p-12">
             <div className="mb-12 text-center">

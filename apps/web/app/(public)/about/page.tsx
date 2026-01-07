@@ -171,7 +171,7 @@ export default async function AboutPage() {
       </section>
 
       {/* Stats */}
-      <section className="relative -mt-12 z-10">
+      <section className="relative -mt-8 sm:-mt-12 z-10">
         <div className="mx-auto max-w-5xl px-4 sm:px-6">
           <div className="grid grid-cols-2 gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-xl sm:grid-cols-4 sm:gap-8 sm:p-8">
             {stats.map((stat) => (
@@ -185,6 +185,9 @@ export default async function AboutPage() {
           </div>
         </div>
       </section>
+
+      {/* Spacer to prevent overlap with next section */}
+      <div className="h-12 sm:h-20"></div>
 
       {/* Mission Section */}
       <section className="py-20 sm:py-28">

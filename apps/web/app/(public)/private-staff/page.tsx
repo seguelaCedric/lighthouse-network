@@ -1,12 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { PublicHeader } from "@/components/pricing/PublicHeader";
 import { PublicFooter } from "@/components/pricing/PublicFooter";
 import { Button } from "@/components/ui/button";
-import { BriefMatcher } from "@/components/marketing/BriefMatcher";
 import { FAQSection, type FAQItem } from "@/components/marketing/FAQSection";
 import { StickyCTA } from "@/components/marketing/StickyCTA";
 import { ExitIntent } from "@/components/marketing/ExitIntent";
@@ -30,13 +28,14 @@ import {
   Briefcase,
   Star,
   Quote,
-  Phone,
   Check,
 } from "lucide-react";
-// Stats - based on yacht-crew numbers
+// Stats - matching yacht-crew layout
 const stats = [
   { value: "300+", label: "Placements/Year" },
   { value: "500+", label: "Satisfied Clients" },
+  { value: "20+", label: "Years Experience" },
+  { value: "24h", label: "First Candidates" },
 ];
 
 const benefits = [
@@ -262,8 +261,6 @@ const breadcrumbSchema = {
 };
 
 export default function PrivateStaffPage() {
-  const [showBriefMatcher, setShowBriefMatcher] = useState(false);
-
   return (
     <div className="min-h-screen bg-white">
       {/* JSON-LD Schemas */}
@@ -366,42 +363,102 @@ export default function PrivateStaffPage() {
           </div>
 
           <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-            <Button
-              size="lg"
-              className="min-w-[220px] bg-gold-500 text-navy-900 hover:bg-gold-400"
-              onClick={() => setShowBriefMatcher(true)}
-            >
-              <Sparkles className="mr-2 h-5 w-5" />
-              See Matching Candidates
-            </Button>
             <Link href="/contact">
+              <Button size="lg" className="min-w-[220px]">
+                Start Receiving Applicants
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
+            <Link href="/job-board">
               <Button
                 variant="secondary"
                 size="lg"
-                className="min-w-[220px] border-white/30 bg-transparent text-white hover:bg-white/10"
+                className="min-w-[220px] border-white/20 text-white hover:bg-white/10"
               >
-                <Phone className="mr-2 h-5 w-5" />
-                Speak to a Consultant
+                View Open Positions
               </Button>
             </Link>
           </div>
 
-          {/* Stats row */}
-          <div className="mt-16 grid grid-cols-3 gap-8">
+          {/* Trust badges */}
+          <div className="mt-16 flex flex-wrap items-center justify-center gap-8 text-sm text-gray-400">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-gold-400" />
+              <span>300+ Placements/Year</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-gold-400" />
+              <span>500+ Satisfied Clients</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-gold-400" />
+              <span>Global Coverage</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="relative -mt-12 z-10">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6">
+          <div className="grid grid-cols-2 gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-xl sm:grid-cols-4 sm:gap-8 sm:p-8">
             {stats.map((stat) => (
               <div key={stat.label} className="text-center">
-                <div className="text-2xl font-bold text-white sm:text-3xl">{stat.value}</div>
-                <div className="mt-1 text-sm text-white/70">{stat.label}</div>
+                <div className="text-2xl font-bold text-navy-900 sm:text-3xl">{stat.value}</div>
+                <div className="mt-1 text-sm text-gray-600">{stat.label}</div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Brief Matcher Section */}
-      <section className="relative -mt-16 pb-12 sm:pb-20">
-        <div className="mx-auto max-w-2xl px-4 sm:px-6">
-          <BriefMatcher variant="inline" />
+      {/* Spacer to prevent overlap */}
+      <div className="h-8 sm:h-12"></div>
+
+      {/* Process Section - Visual steps */}
+      <section className="relative pb-20">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-xl sm:p-12">
+            <div className="mb-12 text-center">
+              <h2 className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl">
+                How It Works
+              </h2>
+              <p className="mx-auto mt-4 max-w-2xl text-gray-600">
+                Our streamlined process gets you qualified candidates fast.
+              </p>
+            </div>
+
+            <div className="grid gap-8 lg:grid-cols-3">
+              {steps.map((step, index) => {
+                const Icon = step.icon;
+                return (
+                  <div key={step.number} className="relative">
+                    {/* Connector line */}
+                    {index < steps.length - 1 && (
+                      <div className="absolute left-1/2 top-20 hidden h-px w-full bg-gradient-to-r from-gold-300 to-gold-100 lg:block" />
+                    )}
+
+                    <div className="relative flex flex-col items-center text-center">
+                      {/* Number badge */}
+                      <div className="relative mb-6">
+                        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-gold-400 to-gold-600 shadow-lg shadow-gold-500/25">
+                          <Icon className="h-8 w-8 text-white" />
+                        </div>
+                        <div className="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full bg-navy-900 text-sm font-bold text-white">
+                          {step.number}
+                        </div>
+                      </div>
+
+                      <h3 className="mb-3 text-xl font-semibold text-navy-900">
+                        {step.title}
+                      </h3>
+                      <p className="text-gray-600">{step.description}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -451,55 +508,6 @@ export default function PrivateStaffPage() {
         </div>
       </section>
 
-      {/* Process Section */}
-      <section className="py-20 sm:py-28 bg-white">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-xl sm:p-12">
-            <div className="mb-12 text-center">
-              <h2 className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl">
-                Our Process
-              </h2>
-              <p className="mx-auto mt-4 max-w-2xl text-gray-600">
-                A refined approach to matching the right staff with the right household.
-              </p>
-            </div>
-
-            <div className="grid gap-8 lg:grid-cols-3">
-              {steps.map((step, index) => {
-                return (
-                  <div key={step.number} className="relative">
-                    {index < steps.length - 1 && (
-                      <div className="absolute left-1/2 top-20 hidden h-px w-full bg-gradient-to-r from-gold-300 to-gold-100 lg:block" />
-                    )}
-
-                    <div className="relative flex flex-col items-center text-center">
-                      <div className="relative mb-6">
-                        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-gold-100 to-gold-200 shadow-lg">
-                          <Image
-                            src={step.image}
-                            alt={step.title}
-                            width={40}
-                            height={40}
-                            className="object-contain"
-                          />
-                        </div>
-                        <div className="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full bg-navy-900 text-sm font-bold text-white">
-                          {step.number}
-                        </div>
-                      </div>
-
-                      <h3 className="mb-3 text-xl font-semibold text-navy-900">
-                        {step.title}
-                      </h3>
-                      <p className="text-gray-600">{step.description}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </section>
 
       {/* Departments Section */}
       <section className="bg-gray-50 py-20 sm:py-28">
@@ -715,14 +723,12 @@ export default function PrivateStaffPage() {
             discretion guaranteed.
           </p>
           <div className="mt-10 flex flex-col justify-center gap-4 sm:flex-row">
-            <Button
-              size="lg"
-              className="min-w-[220px]"
-              onClick={() => setShowBriefMatcher(true)}
-            >
-              See Matching Candidates
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
+            <Link href="/contact">
+              <Button size="lg" className="min-w-[220px]">
+                Start Receiving Applicants
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+            </Link>
             <a href="mailto:admin@lighthouse-careers.com">
               <Button
                 variant="secondary"
@@ -738,11 +744,6 @@ export default function PrivateStaffPage() {
 
       <PublicFooter />
       <StickyCTA />
-
-      {/* Brief Matcher Modal */}
-      {showBriefMatcher && (
-        <BriefMatcher variant="modal" onClose={() => setShowBriefMatcher(false)} />
-      )}
     </div>
   );
 }
