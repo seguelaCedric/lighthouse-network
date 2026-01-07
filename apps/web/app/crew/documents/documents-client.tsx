@@ -502,7 +502,7 @@ function OtherDocumentsSection({
           <Button
             variant="primary"
             size="sm"
-            onClick={onUpload}
+            onClick={() => onUpload()}
             leftIcon={<Upload className="w-4 h-4" />}
             className="w-full sm:w-auto"
           >
@@ -602,7 +602,7 @@ function OtherDocumentsSection({
             <p className="text-gray-500 mb-6 max-w-sm mx-auto">
               Upload your passport, visa, references, and other important documents to complete your profile.
             </p>
-          <Button variant="primary" onClick={onUpload} leftIcon={<Upload className="w-4 h-4" />}>
+          <Button variant="primary" onClick={() => onUpload()} leftIcon={<Upload className="w-4 h-4" />}>
             Upload Document
           </Button>
           </div>
