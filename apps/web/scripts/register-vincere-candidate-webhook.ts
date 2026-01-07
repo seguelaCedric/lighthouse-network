@@ -69,14 +69,14 @@ async function main() {
   }
 
   // Get webhook URL from argument or environment
-  let webhookUrl = process.argv[2];
+  let webhookUrl: string | null = process.argv[2] || null;
   if (!webhookUrl) {
     webhookUrl =
       process.env.NEXT_PUBLIC_APP_URL ||
       process.env.NEXT_PUBLIC_SITE_URL ||
-      process.env.VERCEL_URL
+      (process.env.VERCEL_URL
         ? `https://${process.env.VERCEL_URL}`
-        : null;
+        : null);
   }
 
   if (!webhookUrl) {
@@ -88,13 +88,16 @@ async function main() {
     process.exit(1);
   }
 
+  // TypeScript now knows webhookUrl is string after the check
+  let finalWebhookUrl: string = webhookUrl;
+
   // Ensure URL ends with the webhook path
   const webhookPath = "/api/webhooks/vincere/candidates";
-  if (!webhookUrl.endsWith(webhookPath)) {
-    webhookUrl = `${webhookUrl.replace(/\/$/, "")}${webhookPath}`;
+  if (!finalWebhookUrl.endsWith(webhookPath)) {
+    finalWebhookUrl = `${finalWebhookUrl.replace(/\/$/, "")}${webhookPath}`;
   }
 
-  console.log(`📡 Webhook URL: ${webhookUrl}`);
+  console.log(`📡 Webhook URL: ${finalWebhookUrl}`);
   console.log(`📋 Events: CANDIDATE entity with CREATE, UPDATE, ARCHIVE, DELETE actions`);
   console.log("");
 
@@ -107,7 +110,7 @@ async function main() {
     console.log(`   Found ${existingWebhooks.length} existing webhook(s)`);
 
     // Check if webhook already exists
-    const existing = existingWebhooks.find((w) => (w.webhook_url || w.url) === webhookUrl);
+    const existing = existingWebhooks.find((w) => (w.webhook_url || w.url) === finalWebhookUrl);
 
     if (existing) {
       console.log(`\n⚠️  Webhook already exists with ID: ${existing.id}`);
@@ -127,7 +130,7 @@ async function main() {
     // Register the webhook
     console.log("\n📝 Registering candidate webhook...");
     const webhook = await registerCandidateWebhook(
-      webhookUrl,
+      finalWebhookUrl,
       ['CREATE', 'UPDATE', 'ARCHIVE', 'DELETE']
     );
 
@@ -149,7 +152,7 @@ async function main() {
     console.log("🎉 Done! Vincere will now send candidate updates to your webhook endpoint.");
     console.log("");
     console.log("   Test the webhook:");
-    console.log(`   curl ${webhookUrl.replace("/api/webhooks/vincere/candidates", "")}/api/webhooks/vincere/candidates`);
+    console.log(`   curl ${finalWebhookUrl.replace("/api/webhooks/vincere/candidates", "")}/api/webhooks/vincere/candidates`);
   } catch (error) {
     console.error("\n❌ Error registering webhook:");
     if (error instanceof Error) {
