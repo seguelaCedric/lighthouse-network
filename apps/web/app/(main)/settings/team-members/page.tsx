@@ -550,7 +550,7 @@ export default function TeamMembersSettingsPage() {
                   {formState.image_url && (
                     <Image
                       src={formState.image_url}
-                      alt={formState.name || "Team member"}
+                      alt={`${formState.first_name} ${formState.last_name}`.trim() || "Team member"}
                       fill
                       className="object-cover object-top"
                     />
