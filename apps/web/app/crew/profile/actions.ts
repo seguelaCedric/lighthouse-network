@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { syncCandidateUpdate } from "@/lib/vincere/sync-service";
+import type { Candidate } from "../../../../packages/database/types";
 
 /**
  * Profile data types
@@ -517,17 +518,18 @@ export async function updateProfessionalDetails(data: {
   }
 
   // Sync to Vincere (fire-and-forget) - include all fields that may have changed
-  syncCandidateUpdate(candidate.id, {
-    primary_position: data.primaryPosition,
-    secondary_positions: data.secondaryPositions,
-    years_experience: data.yearsExperience,
-    profile_summary: data.experienceSummary,
-    candidate_type: data.candidateType,
-    search_keywords: data.keySkills, // Map keySkills to search_keywords for summary inclusion
-    highest_license: data.highestLicense,
-    second_license: data.secondaryLicense,
-    job_search_notes: data.jobSearchNotes,
-  }).catch((err) => console.error("Vincere sync failed for professional details update:", err));
+  const syncData: Partial<Candidate> = {};
+  if (data.primaryPosition !== undefined) syncData.primary_position = data.primaryPosition;
+  if (data.secondaryPositions !== undefined) syncData.secondary_positions = data.secondaryPositions;
+  if (data.yearsExperience !== undefined) syncData.years_experience = data.yearsExperience;
+  if (data.experienceSummary !== undefined) syncData.profile_summary = data.experienceSummary;
+  if (data.candidateType !== undefined) syncData.candidate_type = data.candidateType as 'yacht_crew' | 'household_staff' | 'other' | 'both' | null;
+  if (data.keySkills !== undefined) syncData.search_keywords = data.keySkills;
+  if (data.highestLicense !== undefined) syncData.highest_license = data.highestLicense;
+  if (data.secondaryLicense !== undefined) syncData.second_license = data.secondaryLicense;
+  if (data.jobSearchNotes !== undefined) syncData.job_search_notes = data.jobSearchNotes;
+  
+  syncCandidateUpdate(candidate.id, syncData).catch((err) => console.error("Vincere sync failed for professional details update:", err));
 
   revalidatePath("/crew/profile/edit");
   revalidatePath("/crew/dashboard");
