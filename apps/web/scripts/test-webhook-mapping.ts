@@ -368,7 +368,7 @@ async function testCandidateMapping() {
         summary: "Experienced yacht stewardess",
       };
       
-      const sampleCustomFields: Record<string, unknown> = {};
+      const sampleCustomFields: Record<string, VincereCustomField> = {};
       
       const mappedCandidate = mapVincereToCandidate(sampleCandidate as any, sampleCustomFields);
       
