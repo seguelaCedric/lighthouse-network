@@ -507,7 +507,7 @@ export async function updateProfessionalDetails(data: {
   const { error } = await supabase
     .from("candidates")
     .update(updateData)
-    .eq("user_id", userData.id);
+    .eq("id", candidate.id);
 
   if (error) {
     console.error("Error updating professional details:", error);
@@ -608,7 +608,7 @@ export async function updateWorkPreferences(data: {
   const { error } = await supabase
     .from("candidates")
     .update(updateData)
-    .eq("user_id", userData.id);
+    .eq("id", candidate.id);
 
   if (error) {
     console.error("Error updating work preferences:", error);
@@ -709,7 +709,7 @@ export async function updateSpecialCircumstances(data: {
   const { error } = await supabase
     .from("candidates")
     .update(updateData)
-    .eq("user_id", userData.id);
+    .eq("id", candidate.id);
 
   if (error) {
     console.error("Error updating special circumstances:", error);
