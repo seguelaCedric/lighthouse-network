@@ -30,25 +30,30 @@ export function TeamMemberCard({ member }: { member: TeamMember }) {
           fill
           className="object-cover object-top transition-transform duration-500 group-hover:scale-105"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-navy-900/60 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-navy-900/70 via-navy-900/20 to-transparent" />
 
         {/* Name overlay */}
-        <div className="absolute bottom-0 left-0 right-0 p-4">
+        <div className="absolute bottom-0 left-0 right-0 z-20 p-4">
           <h3 className="text-lg font-semibold text-white">{member.name}</h3>
           <p className="text-sm text-gold-300">{member.role}</p>
+        </div>
+
+        {/* Bio overlay */}
+        <div className="absolute inset-0 z-10 flex items-end bg-navy-900/80 px-4 pb-16 pt-6 text-white opacity-100 transition-all duration-300 sm:translate-y-2 sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100">
+          <div className="space-y-3">
+            <p className="text-sm leading-relaxed text-gray-100">{member.bio}</p>
+            {member.languages && (
+              <p className="text-xs text-gold-200">
+                <span className="font-semibold text-gold-100">Languages:</span>{" "}
+                {member.languages}
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Info */}
       <div className="p-5">
-        <p className="text-sm text-gray-600">{member.bio}</p>
-
-        {member.languages && (
-          <p className="mt-3 text-xs text-gray-500">
-            <span className="font-medium">Languages:</span> {member.languages}
-          </p>
-        )}
-
         {/* Social Icons */}
         {hasSocials && (
           <div className="mt-4 flex items-center gap-2">
