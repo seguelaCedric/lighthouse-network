@@ -59,6 +59,8 @@ interface DocumentListProps {
   entityId?: string;
   isRecruiter?: boolean;
   onDocumentsChange?: () => void;
+  excludeDocumentTypes?: DocumentType[];
+  showStatusBadges?: boolean;
 }
 
 const DOCUMENT_TYPE_CONFIG: Record<
@@ -89,6 +91,8 @@ export default function DocumentList({
   entityId,
   isRecruiter = false,
   onDocumentsChange,
+  excludeDocumentTypes,
+  showStatusBadges,
 }: DocumentListProps) {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [filteredDocuments, setFilteredDocuments] = useState<Document[]>([]);
@@ -153,7 +157,13 @@ export default function DocumentList({
       );
       if (!response.ok) throw new Error("Failed to fetch documents");
       const data = await response.json();
-      setDocuments(data.documents || []);
+      const fetchedDocuments = data.documents || [];
+      const filteredDocuments = excludeDocumentTypes?.length
+        ? fetchedDocuments.filter(
+            (doc: Document) => !excludeDocumentTypes.includes(doc.documentType)
+          )
+        : fetchedDocuments;
+      setDocuments(filteredDocuments);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load documents");
     } finally {
@@ -361,6 +371,7 @@ export default function DocumentList({
                       onDelete={handleDelete}
                       isRecruiter={isRecruiter}
                       showActions={true}
+                      showStatusBadge={showStatusBadges}
                     />
                   ))}
                 </div>

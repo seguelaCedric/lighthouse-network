@@ -7,9 +7,9 @@
  */
 
 // Use require for CommonJS modules that don't support ESM properly
-// pdf-parse v1 exports the function directly
+// Load pdf-parse from its lib entry to avoid the test runner side effects.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const pdfParse = require('pdf-parse');
+const pdfParse = require('pdf-parse/lib/pdf-parse');
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const mammoth = require('mammoth');
 

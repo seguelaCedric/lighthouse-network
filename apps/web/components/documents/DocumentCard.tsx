@@ -66,6 +66,7 @@ interface DocumentCardProps {
   onViewVersions?: (documentId: string) => void;
   showActions?: boolean;
   isRecruiter?: boolean;
+  showStatusBadge?: boolean;
 }
 
 const DOCUMENT_TYPE_CONFIG: Record<
@@ -182,6 +183,7 @@ export default function DocumentCard({
   onViewVersions,
   showActions = true,
   isRecruiter = false,
+  showStatusBadge,
 }: DocumentCardProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [showRejectModal, setShowRejectModal] = useState(false);
@@ -210,6 +212,8 @@ export default function DocumentCard({
   const canPreview = isImageFile || isPdfFile || isOfficeDoc;
   const expired = document.expiryDate ? isExpired(document.expiryDate) : false;
   const expiringSoon = document.expiryDate ? isExpiringSoon(document.expiryDate) : false;
+
+  const shouldShowStatus = showStatusBadge ?? document.documentType === "cv";
 
   // Fetch signed URL from API
   // When forPreview=true, the URL will have Content-Disposition: inline for in-browser viewing
@@ -379,7 +383,7 @@ export default function DocumentCard({
                       </button>
                     )}
                     {/* Approve button - show for pending and rejected documents */}
-                    {isRecruiter && (document.status === "pending" || document.status === "rejected") && (
+                    {isRecruiter && shouldShowStatus && (document.status === "pending" || document.status === "rejected") && (
                       <button
                         onClick={() => {
                           handleApprove();
@@ -392,7 +396,7 @@ export default function DocumentCard({
                       </button>
                     )}
                     {/* Reject button - show for pending and approved documents */}
-                    {isRecruiter && (document.status === "pending" || document.status === "approved") && (
+                    {isRecruiter && shouldShowStatus && (document.status === "pending" || document.status === "approved") && (
                       <button
                         onClick={() => {
                           setShowRejectModal(true);
@@ -431,12 +435,14 @@ export default function DocumentCard({
         {/* Status and Expiry Badges */}
         <div className="flex flex-wrap gap-2 mb-3">
           {/* Status Badge */}
-          <div
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${statusConfig.bgClassName} ${statusConfig.className}`}
-          >
-            <StatusIcon className="w-4 h-4" />
-            {statusConfig.label}
-          </div>
+          {shouldShowStatus && (
+            <div
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${statusConfig.bgClassName} ${statusConfig.className}`}
+            >
+              <StatusIcon className="w-4 h-4" />
+              {statusConfig.label}
+            </div>
+          )}
 
           {/* Expiry Warning */}
           {expired && (
@@ -457,7 +463,7 @@ export default function DocumentCard({
         </div>
 
         {/* Rejection Reason */}
-        {document.status === "rejected" && document.rejectionReason && (
+        {shouldShowStatus && document.status === "rejected" && document.rejectionReason && (
           <div className="bg-error-50 border border-error-200 rounded-lg p-3 mb-3">
             <p className="text-sm font-medium text-error-900 mb-1">
               Rejection Reason:
@@ -467,12 +473,12 @@ export default function DocumentCard({
         )}
 
         {/* Approval/Rejection Info */}
-        {document.status === "approved" && document.approvedAt && (
+        {shouldShowStatus && document.status === "approved" && document.approvedAt && (
           <p className="text-xs text-gray-500">
             Approved {formatDistanceToNow(new Date(document.approvedAt), { addSuffix: true })}
           </p>
         )}
-        {document.status === "rejected" && document.rejectedAt && (
+        {shouldShowStatus && document.status === "rejected" && document.rejectedAt && (
           <p className="text-xs text-gray-500">
             Rejected {formatDistanceToNow(new Date(document.rejectedAt), { addSuffix: true })}
           </p>

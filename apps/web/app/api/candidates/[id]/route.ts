@@ -3,6 +3,11 @@ import { createClient } from "@/lib/supabase/server";
 import { updateCandidateSchema } from "@/lib/validations/candidate";
 import type { CandidateWithRelations } from "@lighthouse/database";
 
+const stripFileExtension = (name: string) => name.replace(/\.[^/.]+$/, "");
+
+const normalizeCertificationName = (name: string) =>
+  name.trim().toLowerCase();
+
 interface RouteParams {
   params: Promise<{ id: string }>;
 }
@@ -77,6 +82,20 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       console.error("Error fetching certifications:", certError);
     }
 
+    const { data: certificationDocuments, error: certDocsError } = await supabase
+      .from("documents")
+      .select("id, name, file_url, expiry_date, created_at")
+      .eq("entity_type", "candidate")
+      .eq("entity_id", id)
+      .eq("type", "certification")
+      .eq("is_latest_version", true)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false });
+
+    if (certDocsError) {
+      console.error("Error fetching certification documents:", certDocsError);
+    }
+
     // Fetch references
     const { data: references, error: refError } = await supabase
       .from("candidate_references")
@@ -88,12 +107,27 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       console.error("Error fetching references:", refError);
     }
 
-    const response: CandidateWithRelations = {
-      ...candidate,
-      certifications: (certifications ?? []).map((cert) => ({
+    const certificationDocsByName = new Map(
+      (certificationDocuments ?? []).map((doc) => [
+        normalizeCertificationName(stripFileExtension(doc.name || "")),
+        doc,
+      ])
+    );
+
+    const matchedDocumentIds = new Set<string>();
+
+    const baseCertifications = (certifications ?? []).map((cert) => {
+      const displayName = cert.custom_name || cert.certification_type;
+      const normalizedName = normalizeCertificationName(displayName);
+      const matchingDoc = certificationDocsByName.get(normalizedName);
+      if (matchingDoc) {
+        matchedDocumentIds.add(matchingDoc.id);
+      }
+
+      return {
         id: cert.id,
         candidate_id: cert.candidate_id,
-        name: cert.custom_name || cert.certification_type,
+        name: displayName,
         type: cert.certification_type,
         issuing_authority: null,
         certificate_number: null,
@@ -103,10 +137,53 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         verified_at: null,
         verified_by: null,
         verification_method: null,
-        document_url: null,
+        document_url: matchingDoc ? `/api/documents/${matchingDoc.id}/view` : null,
         created_at: cert.created_at,
         updated_at: cert.updated_at,
-      })),
+      };
+    });
+
+    const certificationNames = new Set(
+      baseCertifications.map((cert) =>
+        normalizeCertificationName(cert.name)
+      )
+    );
+
+    const documentCertifications = (certificationDocuments ?? [])
+      .map((doc) => {
+        if (matchedDocumentIds.has(doc.id)) {
+          return null;
+        }
+
+        const displayName = stripFileExtension(doc.name || "Certification");
+        const normalizedName = normalizeCertificationName(displayName);
+        if (normalizedName && certificationNames.has(normalizedName)) {
+          return null;
+        }
+
+        return {
+          id: `doc-${doc.id}`,
+          candidate_id: id,
+          name: displayName,
+          type: "uploaded_document",
+          issuing_authority: null,
+          certificate_number: null,
+          issue_date: null,
+          expiry_date: doc.expiry_date,
+          is_verified: false,
+          verified_at: null,
+          verified_by: null,
+          verification_method: null,
+          document_url: `/api/documents/${doc.id}/view`,
+          created_at: doc.created_at,
+          updated_at: doc.created_at,
+        };
+      })
+      .filter((cert): cert is NonNullable<typeof cert> => cert !== null);
+
+    const response: CandidateWithRelations = {
+      ...candidate,
+      certifications: [...baseCertifications, ...documentCertifications],
       references: references ?? [],
     };
 

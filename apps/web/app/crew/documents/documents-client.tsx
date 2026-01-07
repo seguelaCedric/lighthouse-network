@@ -35,6 +35,7 @@ import {
   type SortOption,
   type QueuedFile,
 } from "@/components/documents";
+import DocumentCard from "@/components/documents/DocumentCard";
 import {
   type DocumentsPageData,
   type Document,
@@ -174,9 +175,11 @@ function CertificationStatusBadge({
 function CVSection({
   cv,
   onUpload,
+  onDownload,
 }: {
   cv: Document | null;
   onUpload: () => void;
+  onDownload: (doc: Document) => void;
 }) {
   const [isDeleting, setIsDeleting] = React.useState(false);
 
@@ -200,7 +203,7 @@ function CVSection({
 
   return (
     <div id="cv" className="bg-white rounded-xl border border-gray-200 p-6 shadow-[0px_2px_4px_rgba(26,24,22,0.06)] scroll-mt-24">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
         <div className="flex items-center gap-4">
           <div className="p-3 bg-gold-100 rounded-xl">
             <FileText className="w-6 h-6 text-gold-600" />
@@ -229,6 +232,15 @@ function CVSection({
                 {cv.version > 1 && ` • Version ${cv.version}`}
               </p>
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="text-error-600 hover:text-error-700 hover:bg-error-50"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
           </div>
 
           {cv.status === "rejected" && cv.rejectionReason && (
@@ -250,31 +262,31 @@ function CVSection({
             </div>
           )}
 
-          <div className="flex items-center gap-3 pt-2">
+          <div className="flex flex-wrap items-center gap-3 pt-2">
             <a
               href={`/api/documents/${cv.id}/view`}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-navy-700 transition-colors hover:bg-gray-50"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-navy-700 transition-colors hover:bg-gray-50 sm:w-auto"
             >
               <Eye className="w-4 h-4" />
               View
             </a>
-            <a
-              href={cv.fileUrl}
-              download
-              className="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-sm font-medium text-navy-700 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            <button
+              type="button"
+              onClick={() => onDownload(cv)}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-navy-700 transition-colors hover:bg-gray-50 sm:w-auto"
             >
               <Download className="w-4 h-4" />
               Download
-            </a>
+            </button>
             <Button
               variant="primary"
               size="sm"
               onClick={onUpload}
-              className="ml-auto"
+              className="w-full sm:ml-auto sm:w-auto"
+              leftIcon={<RefreshCw className="w-4 h-4" />}
             >
-              <RefreshCw className="w-4 h-4" />
               Upload New Version
             </Button>
             <Button
@@ -282,7 +294,7 @@ function CVSection({
               size="sm"
               onClick={handleDelete}
               disabled={isDeleting}
-              className="text-error-600 hover:text-error-700 hover:bg-error-50"
+              className="w-full text-error-600 hover:text-error-700 hover:bg-error-50 sm:hidden"
             >
               <Trash2 className="w-4 h-4" />
             </Button>
@@ -297,8 +309,12 @@ function CVSection({
           <p className="text-gray-500 mb-6 max-w-sm mx-auto">
             Upload your CV to apply for jobs and let employers discover your experience.
           </p>
-          <Button onClick={onUpload}>
-            <Upload className="w-4 h-4" />
+          <Button
+            variant="primary"
+            onClick={onUpload}
+            leftIcon={<Upload className="w-4 h-4" />}
+            className="w-full sm:w-auto"
+          >
             Upload CV
           </Button>
         </div>
@@ -310,10 +326,12 @@ function CVSection({
 // Certifications Section Component
 function CertificationsSection({
   certifications,
+  certificationDocuments,
   onUpload,
 }: {
   certifications: CertificationDocument[];
-  onUpload: () => void;
+  certificationDocuments: Document[];
+  onUpload: (docType?: string) => void;
 }) {
   const expiring = certifications.filter((c) => c.status === "expiring_soon");
   const expired = certifications.filter((c) => c.status === "expired");
@@ -335,10 +353,11 @@ function CertificationsSection({
           </div>
         </div>
         <Button
-          onClick={onUpload}
-          className="inline-flex items-center justify-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-gradient-to-r from-gold-500 to-gold-600 rounded-lg hover:from-gold-600 hover:to-gold-700 transition-all shadow-sm"
+          variant="primary"
+          size="sm"
+          onClick={() => onUpload("certification")}
+          leftIcon={<Plus className="w-4 h-4" />}
         >
-          <Plus className="w-4 h-4" />
           Add Certification
         </Button>
       </div>
@@ -366,55 +385,40 @@ function CertificationsSection({
         </div>
       )}
 
-      {certifications.length > 0 ? (
-        <div className="space-y-3">
-          {certifications.map((cert) => (
-            <div
-              key={cert.id}
-              className="flex items-center justify-between p-4 bg-cream-50 rounded-xl border border-gray-100 hover:border-gray-200 hover:shadow-sm transition-all"
-            >
-              <div className="flex items-center gap-4 min-w-0">
-                <div className="p-2.5 bg-white rounded-xl border border-gray-200 shadow-sm">
-                  <Shield className="w-5 h-5 text-navy-600" />
-                </div>
-                <div className="min-w-0">
-                  <p className="font-medium text-navy-800">{cert.name}</p>
-                  <div className="flex items-center gap-3 text-sm text-gray-500">
-                    {cert.issuingAuthority && (
-                      <span>{cert.issuingAuthority}</span>
-                    )}
-                    {cert.expiryDate && (
-                      <span>Expires: {formatDate(cert.expiryDate)}</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <CertificationStatusBadge
-                  status={cert.status}
-                  daysUntilExpiry={cert.daysUntilExpiry}
-                />
-                {cert.documentUrl ? (
-                  <a
-                    href={cert.documentUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-2 text-navy-600 hover:bg-gold-50 rounded-lg transition-colors"
-                    title="View document"
-                  >
-                    <Eye className="w-4 h-4" />
-                  </a>
-                ) : (
-                  <button
-                    onClick={onUpload}
-                    className="p-2 text-navy-600 hover:bg-gold-50 rounded-lg transition-colors"
-                    title="Upload document"
-                  >
-                    <Upload className="w-4 h-4" />
-                  </button>
-                )}
-              </div>
-            </div>
+      {certificationDocuments.length > 0 ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {certificationDocuments.map((doc) => (
+            <DocumentCard
+              key={doc.id}
+              document={{
+                id: doc.id,
+                documentType: doc.documentType as "certification",
+                fileUrl: doc.fileUrl,
+                name: doc.name,
+                fileSize: doc.fileSize,
+                mimeType: doc.mimeType,
+                description: doc.description || undefined,
+                status: doc.status,
+                version: doc.version,
+                isLatestVersion: true,
+                expiryDate: doc.expiryDate || undefined,
+                uploadedAt: doc.uploadedAt,
+                rejectedAt: undefined,
+                rejectedBy: undefined,
+                rejectionReason: doc.rejectionReason || undefined,
+              }}
+              showActions={true}
+              isRecruiter={false}
+              showStatusBadge={false}
+              onDelete={async (documentId) => {
+                const result = await deleteDocument(documentId);
+                if (result.success) {
+                  window.location.reload();
+                } else {
+                  alert(result.error || "Failed to delete document");
+                }
+              }}
+            />
           ))}
         </div>
       ) : (
@@ -427,11 +431,11 @@ function CertificationsSection({
             Add your STCW, ENG1, and other maritime certifications to complete your profile.
           </p>
           <Button
-            onClick={onUpload}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-gold-500 to-gold-600 rounded-lg hover:from-gold-600 hover:to-gold-700 transition-all shadow-sm"
+            variant="primary"
+            onClick={() => onUpload("certification")}
+            leftIcon={<Plus className="w-4 h-4" />}
           >
-            <Plus className="w-4 h-4" />
-            Add Certifications
+            Add Certification
           </Button>
         </div>
       )}
@@ -445,11 +449,10 @@ function OtherDocumentsSection({
   onUpload,
 }: {
   documents: Document[];
-  onUpload: () => void;
+  onUpload: (docType?: string) => void;
 }) {
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
   const [activeCategory, setActiveCategory] = React.useState<DocumentCategory>("all");
-  const [activeStatus, setActiveStatus] = React.useState<DocumentStatus>("all");
   const [sortBy, setSortBy] = React.useState<SortOption>("newest");
 
   const handleDelete = async (doc: Document) => {
@@ -474,15 +477,15 @@ function OtherDocumentsSection({
 
   // Filter and sort documents
   const filteredDocuments = React.useMemo(
-    () => filterAndSortDocuments(documents, activeCategory, activeStatus, sortBy),
-    [documents, activeCategory, activeStatus, sortBy]
+    () => filterAndSortDocuments(documents, activeCategory, "all", sortBy),
+    [documents, activeCategory, sortBy]
   );
 
   return (
     <div id="other-documents" className="scroll-mt-24 space-y-4">
       {/* Section Header */}
       <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-[0px_2px_4px_rgba(26,24,22,0.06)]">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-gold-100 rounded-xl">
               <File className="w-5 h-5 text-gold-600" />
@@ -496,8 +499,13 @@ function OtherDocumentsSection({
               </p>
             </div>
           </div>
-          <Button variant="secondary" size="sm" onClick={onUpload}>
-            <Upload className="w-4 h-4 mr-2" />
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={onUpload}
+            leftIcon={<Upload className="w-4 h-4" />}
+            className="w-full sm:w-auto"
+          >
             Upload
           </Button>
         </div>
@@ -508,11 +516,12 @@ function OtherDocumentsSection({
         <DocumentCategoryTabs
           activeCategory={activeCategory}
           onCategoryChange={setActiveCategory}
-          activeStatus={activeStatus}
-          onStatusChange={setActiveStatus}
+          activeStatus="all"
+          onStatusChange={() => {}}
           sortBy={sortBy}
           onSortChange={setSortBy}
           counts={counts}
+          hideStatusFilter={true}
         />
       )}
 
@@ -523,33 +532,27 @@ function OtherDocumentsSection({
             {filteredDocuments.map((doc) => (
               <div
                 key={doc.id}
-                className="flex items-center justify-between p-4 hover:bg-cream-50/50 transition-colors"
+                className="flex flex-col gap-3 p-4 hover:bg-cream-50/50 transition-colors sm:flex-row sm:items-center sm:justify-between"
               >
-                <div className="flex items-center gap-4 min-w-0">
-                  <div className="p-2.5 bg-cream-50 rounded-lg border border-gray-100">
-                    {getFileIcon(doc.mimeType)}
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500">
+                    <span className="font-medium text-navy-700">
+                      {DOCUMENT_TYPE_LABELS[doc.documentType] || doc.documentType}
+                    </span>
+                    <span className="hidden text-gray-300 sm:inline">•</span>
+                    <span className="text-gray-500">Uploaded {formatDate(doc.uploadedAt)}</span>
                   </div>
-                  <div className="min-w-0">
-                    <p className="font-medium text-navy-800 truncate">
-                      {doc.name}
-                    </p>
-                    <div className="flex items-center gap-3 text-sm text-gray-500 mt-0.5">
-                      <span className="text-navy-600 font-medium">
-                        {DOCUMENT_TYPE_LABELS[doc.documentType] || doc.documentType}
-                      </span>
-                      <span>{formatFileSize(doc.fileSize)}</span>
-                      <span>Uploaded {formatDate(doc.uploadedAt)}</span>
-                    </div>
-                  </div>
+                  <p className="mt-1 break-words font-medium text-navy-900 sm:truncate">
+                    {doc.name}
+                  </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <StatusBadge status={doc.status} />
+                <div className="flex items-center gap-2 sm:shrink-0">
                   <a
                     href={`/api/documents/${doc.id}/view`}
                     target="_blank"
                     rel="noreferrer"
                     className="p-2 text-navy-600 hover:bg-gold-50 rounded-lg transition-colors"
-                    title="Preview document"
+                    title="View document"
                   >
                     <Eye className="w-4 h-4" />
                   </a>
@@ -581,7 +584,6 @@ function OtherDocumentsSection({
             <button
               onClick={() => {
                 setActiveCategory("all");
-                setActiveStatus("all");
               }}
               className="text-sm font-medium text-gold-600 hover:text-gold-700"
             >
@@ -600,10 +602,9 @@ function OtherDocumentsSection({
             <p className="text-gray-500 mb-6 max-w-sm mx-auto">
               Upload your passport, visa, references, and other important documents to complete your profile.
             </p>
-            <Button onClick={onUpload}>
-              <Upload className="w-4 h-4 mr-2" />
-              Upload Document
-            </Button>
+          <Button variant="primary" onClick={onUpload} leftIcon={<Upload className="w-4 h-4" />}>
+            Upload Document
+          </Button>
           </div>
         )}
       </div>
@@ -617,14 +618,33 @@ function UploadModal({
   onClose,
   candidateId,
   uploadType,
+  initialDocumentType,
 }: {
   isOpen: boolean;
   onClose: () => void;
   candidateId: string;
   uploadType: "cv" | "document";
+  initialDocumentType?: string;
 }) {
+  const allowedDocumentTypes = [
+    "cv",
+    "certification",
+    "passport",
+    "visa",
+    "medical",
+    "reference",
+    "contract",
+    "photo",
+    "other",
+  ];
+
+  const normalizeDocumentType = (docType?: string) =>
+    docType && allowedDocumentTypes.includes(docType) ? docType : "other";
+
   const [queuedFiles, setQueuedFiles] = React.useState<QueuedFile[]>([]);
-  const [documentType, setDocumentType] = React.useState(uploadType === "cv" ? "cv" : "other");
+  const [documentType, setDocumentType] = React.useState(
+    uploadType === "cv" ? "cv" : "other"
+  );
   const [isUploading, setIsUploading] = React.useState(false);
   const [isDragging, setIsDragging] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -724,12 +744,13 @@ function UploadModal({
     queuedFile: QueuedFile,
     docType: string
   ): Promise<void> => {
+    const normalizedDocType = normalizeDocumentType(docType);
     return new Promise((resolve, reject) => {
       const formData = new FormData();
       formData.append("file", queuedFile.file);
       formData.append("entityType", "candidate");
       formData.append("entityId", candidateId);
-      formData.append("documentType", docType);
+      formData.append("documentType", normalizedDocType);
 
       const xhr = new XMLHttpRequest();
 
@@ -848,7 +869,9 @@ function UploadModal({
 
   const resetForm = () => {
     setQueuedFiles([]);
-    setDocumentType(uploadType === "cv" ? "cv" : "other");
+    setDocumentType(
+      normalizeDocumentType(initialDocumentType) || (uploadType === "cv" ? "cv" : "other")
+    );
     setError(null);
     setIsDragging(false);
     if (fileInputRef.current) {
@@ -859,8 +882,12 @@ function UploadModal({
   React.useEffect(() => {
     if (!isOpen) {
       resetForm();
+      return;
     }
-  }, [isOpen]);
+    setDocumentType(
+      normalizeDocumentType(initialDocumentType) || (uploadType === "cv" ? "cv" : "other")
+    );
+  }, [isOpen, initialDocumentType, uploadType]);
 
   if (!isOpen) return null;
 
@@ -990,14 +1017,32 @@ function UploadModal({
 export function DocumentsClient({ data }: { data: DocumentsPageData }) {
   const [uploadModalOpen, setUploadModalOpen] = React.useState(false);
   const [uploadType, setUploadType] = React.useState<"cv" | "document">("cv");
+  const [uploadDocumentType, setUploadDocumentType] = React.useState<string | undefined>();
+
+  const handleDownload = async (doc: Document) => {
+    try {
+      const response = await fetch(`/api/documents/${doc.id}/download`);
+      const payload = await response.json();
+      if (!response.ok || !payload?.url) {
+        alert(payload?.error || "Failed to download document");
+        return;
+      }
+      window.open(payload.url, "_blank", "noreferrer");
+    } catch (error) {
+      console.error("Download error:", error);
+      alert("An error occurred while downloading");
+    }
+  };
 
   const openCVUpload = () => {
     setUploadType("cv");
+    setUploadDocumentType("cv");
     setUploadModalOpen(true);
   };
 
-  const openDocumentUpload = () => {
+  const openDocumentUpload = (docType?: string) => {
     setUploadType("document");
+    setUploadDocumentType(docType ?? "other");
     setUploadModalOpen(true);
   };
 
@@ -1031,76 +1076,11 @@ export function DocumentsClient({ data }: { data: DocumentsPageData }) {
 
       {/* Main Content */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-[0px_2px_4px_rgba(26,24,22,0.06)] hover:shadow-[0px_4px_8px_rgba(26,24,22,0.08)] transition-shadow">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-gold-100 rounded-xl">
-                <FileText className="w-5 h-5 text-gold-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-navy-800">
-                  {data.cv ? 1 : 0}
-                </p>
-                <p className="text-sm text-gray-500">CV Uploaded</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-[0px_2px_4px_rgba(26,24,22,0.06)] hover:shadow-[0px_4px_8px_rgba(26,24,22,0.08)] transition-shadow">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-gold-100 rounded-xl">
-                <Award className="w-5 h-5 text-gold-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-navy-800">
-                  {data.certifications.length}
-                </p>
-                <p className="text-sm text-gray-500">Certifications</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-[0px_2px_4px_rgba(26,24,22,0.06)] hover:shadow-[0px_4px_8px_rgba(26,24,22,0.08)] transition-shadow">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-success-100 rounded-xl">
-                <CheckCircle2 className="w-5 h-5 text-success-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-navy-800">
-                  {data.certifications.filter((c) => c.status === "valid").length}
-                </p>
-                <p className="text-sm text-gray-500">Valid</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-[0px_2px_4px_rgba(26,24,22,0.06)] hover:shadow-[0px_4px_8px_rgba(26,24,22,0.08)] transition-shadow">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-warning-100 rounded-xl">
-                <AlertTriangle className="w-5 h-5 text-warning-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-navy-800">
-                  {
-                    data.certifications.filter(
-                      (c) => c.status === "expired" || c.status === "expiring_soon"
-                    ).length
-                  }
-                </p>
-                <p className="text-sm text-gray-500">Need Attention</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* CV Section */}
         <CVSection
           cv={data.cv}
           onUpload={openCVUpload}
-        />
-
-        {/* Certifications Section */}
-        <CertificationsSection
-          certifications={data.certifications}
-          onUpload={openDocumentUpload}
+          onDownload={handleDownload}
         />
 
         {/* Other Documents Section */}
@@ -1116,6 +1096,7 @@ export function DocumentsClient({ data }: { data: DocumentsPageData }) {
         onClose={() => setUploadModalOpen(false)}
         candidateId={data.candidateId}
         uploadType={uploadType}
+        initialDocumentType={uploadDocumentType}
       />
 
     </div>

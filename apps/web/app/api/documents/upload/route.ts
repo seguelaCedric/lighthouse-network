@@ -296,6 +296,26 @@ export async function POST(request: NextRequest) {
       documentId = documentRecord.id;
     }
 
+    // If this is a certification for a candidate, create a certification entry
+    if (documentType === "certification" && entityType === "candidate" && !replaceDocumentId) {
+      const baseName = file.name.replace(/\.[^/.]+$/, "");
+      const certificationType = `custom_${documentId}`;
+
+      const { error: certificationError } = await supabase
+        .from("candidate_certifications")
+        .insert({
+          candidate_id: entityId,
+          certification_type: certificationType,
+          has_certification: true,
+          custom_name: baseName,
+          expiry_date: expiryDate || null,
+        });
+
+      if (certificationError) {
+        console.error("Error creating certification:", certificationError);
+      }
+    }
+
     // If this is a CV for a candidate, extract text and update candidate status
     if (documentType === "cv" && entityType === "candidate") {
       // Update candidate CV status

@@ -129,7 +129,6 @@ const tabs = [
   { id: "profile", label: "Profile", icon: User },
   { id: "cv", label: "CV", icon: FileText },
   { id: "bios", label: "Bios", icon: Sparkles },
-  { id: "certifications", label: "Certifications", icon: Award },
   { id: "references", label: "References", icon: Users },
   { id: "documents", label: "Documents", icon: FileCheck },
   { id: "notes", label: "Notes", icon: StickyNote },
@@ -207,7 +206,6 @@ export default function CandidateProfilePage() {
   const [selectedRefForVerify, setSelectedRefForVerify] = React.useState<CandidateReference | null>(null);
 
   // Document state for certifications and references tabs
-  const [certDocuments, setCertDocuments] = React.useState<Document[]>([]);
   const [refDocuments, setRefDocuments] = React.useState<Document[]>([]);
   const [cvDocuments, setCvDocuments] = React.useState<Document[]>([]);
   const [docsLoading, setDocsLoading] = React.useState(false);
@@ -271,16 +269,10 @@ export default function CandidateProfilePage() {
 
     setDocsLoading(true);
     try {
-      const [certRes, refRes, cvRes] = await Promise.all([
-        fetch(`/api/candidates/${candidateId}/documents?documentType=certification&latestOnly=true`),
+      const [refRes, cvRes] = await Promise.all([
         fetch(`/api/candidates/${candidateId}/documents?documentType=reference&latestOnly=true`),
         fetch(`/api/candidates/${candidateId}/documents?documentType=cv&latestOnly=true`),
       ]);
-
-      if (certRes.ok) {
-        const certData = await certRes.json();
-        setCertDocuments(certData.documents || []);
-      }
 
       if (refRes.ok) {
         const refData = await refRes.json();
@@ -1162,127 +1154,6 @@ export default function CandidateProfilePage() {
           )}
 
           {/* Certifications Tab */}
-          {activeTab === "certifications" && (
-            <div className="space-y-6">
-              {/* Structured Certifications */}
-              <div className="rounded-xl border border-gray-200 bg-white">
-                <div className="border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-navy-800">All Certifications</h2>
-                  <Button variant="secondary" size="sm" leftIcon={<Plus className="size-4" />}>
-                    Add Certification
-                  </Button>
-                </div>
-                <div className="divide-y divide-gray-100">
-                  {candidate.certifications && candidate.certifications.length > 0 ? (
-                    candidate.certifications.map((cert) => {
-                      const status = getCertStatus(cert.expiry_date);
-                      return (
-                        <div key={cert.id} className="flex items-center justify-between px-6 py-4">
-                          <div className="flex items-start gap-4">
-                            <CertStatusIcon status={status} verified={cert.is_verified || false} />
-                            <div>
-                              <p className="font-medium text-navy-900">{cert.name}</p>
-                              <p className="text-sm text-gray-500">{cert.issuing_authority || "Unknown issuer"}</p>
-                              {cert.issue_date && (
-                                <p className="text-xs text-gray-400">Issued: {formatDate(cert.issue_date)}</p>
-                              )}
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            {cert.expiry_date ? (
-                              <span
-                                className={cn(
-                                  "text-sm",
-                                  status === "valid"
-                                    ? "text-success-600"
-                                    : status === "expiring"
-                                      ? "text-warning-600"
-                                      : status === "expired"
-                                        ? "text-error-600"
-                                        : "text-gray-500"
-                                )}
-                              >
-                                {status === "expiring" && getDaysUntil(cert.expiry_date)
-                                  ? `${getDaysUntil(cert.expiry_date)} days left`
-                                  : formatDate(cert.expiry_date)}
-                              </span>
-                            ) : (
-                              <span className="text-sm text-gray-400">No expiry</span>
-                            )}
-                            {cert.is_verified && (
-                              <p className="text-xs text-success-600 flex items-center gap-1 justify-end mt-1">
-                                <Check className="size-3" />
-                                Verified
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <div className="px-6 py-12 text-center">
-                      <Award className="mx-auto mb-4 size-12 text-gray-300" />
-                      <h3 className="text-lg font-medium text-navy-900 mb-2">No certifications</h3>
-                      <p className="text-gray-600">Add certifications for this candidate</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Uploaded Certificate Documents */}
-              <div className="rounded-xl border border-gray-200 bg-white">
-                <div className="border-b border-gray-100 px-6 py-4 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-semibold text-navy-800">Uploaded Certificates</h2>
-                    {certDocuments.length > 0 && (
-                      <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-sm rounded">
-                        {certDocuments.length}
-                      </span>
-                    )}
-                  </div>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    leftIcon={<Upload className="size-4" />}
-                    onClick={() => handleUploadClick("certification")}
-                  >
-                    Upload Document
-                  </Button>
-                </div>
-                <div className="p-6">
-                  {docsLoading ? (
-                    <div className="flex items-center justify-center py-8">
-                      <Loader2 className="size-6 text-gold-600 animate-spin" />
-                    </div>
-                  ) : certDocuments.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {certDocuments.map((doc) => (
-                        <DocumentCard
-                          key={doc.id}
-                          document={doc}
-                          isRecruiter={true}
-                          showActions={true}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <FileText className="mx-auto mb-4 size-12 text-gray-300" />
-                      <h3 className="text-lg font-medium text-navy-900 mb-2">No certificate documents</h3>
-                      <p className="text-gray-600 mb-4">Upload certificate files (PDF, images) for this candidate</p>
-                      <Button
-                        variant="secondary"
-                        leftIcon={<Upload className="size-4" />}
-                        onClick={() => handleUploadClick("certification")}
-                      >
-                        Upload Certificate
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* References Tab */}
           {activeTab === "references" && (
@@ -1402,6 +1273,8 @@ export default function CandidateProfilePage() {
               <DocumentList
                 candidateId={candidate.id}
                 isRecruiter={true}
+                excludeDocumentTypes={["certification"]}
+                showStatusBadges={false}
               />
             </div>
           )}
