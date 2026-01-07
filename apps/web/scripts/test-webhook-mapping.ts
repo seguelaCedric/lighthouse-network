@@ -14,6 +14,7 @@ import {
   getCandidateWithCustomFields,
   mapVincereToJob,
   mapVincereToCandidate,
+  VincereCustomField,
 } from "../lib/vincere";
 import { createClient } from "@supabase/supabase-js";
 
@@ -167,7 +168,7 @@ async function testJobMapping() {
         closed_job: false,
       };
       
-      const sampleCustomFields: Record<string, unknown> = {};
+      const sampleCustomFields: Record<string, VincereCustomField> = {};
       
       const mappedJob = mapVincereToJob(sampleJob as any, sampleCustomFields);
       
