@@ -92,7 +92,7 @@ export async function GET(request: NextRequest) {
       await page.waitForSelector("h1", { timeout: 10000 });
       
       // Wait a bit more for any animations or lazy-loaded content
-      await page.waitForTimeout(1000);
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       // Generate PDF with optimized settings
       pdfBuffer = Buffer.from(await page.pdf({

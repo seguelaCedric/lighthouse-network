@@ -5,6 +5,7 @@ import { PublicHeader } from "@/components/pricing/PublicHeader";
 import { PublicFooter } from "@/components/pricing/PublicFooter";
 import { Button } from "@/components/ui/button";
 import { LeadCapture } from "@/components/marketing/LeadCapture";
+import { SalaryGuidePDFDownload } from "@/components/marketing/SalaryGuidePDFDownload";
 import {
   Ship,
   Users,
@@ -889,6 +890,7 @@ export default function SalaryGuidePage({ searchParams }: SalaryGuidePageProps) 
                 Household Salaries
               </Button>
             </a>
+            <SalaryGuidePDFDownload />
           </div>
         </div>
       </section>
