@@ -403,7 +403,7 @@ export async function updatePersonalInfo(data: {
   const { error } = await supabase
     .from("candidates")
     .update(updateData)
-    .eq("user_id", userData.id);
+    .eq("id", candidate.id);
 
   if (error) {
     console.error("Error updating personal info:", error);
