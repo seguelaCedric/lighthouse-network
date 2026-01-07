@@ -235,6 +235,7 @@ export interface Candidate extends BaseEntity {
   secondary_position: string | null;
   secondary_positions: string[] | null;
   position_category: PositionCategory | null;
+  candidate_type: 'yacht_crew' | 'household_staff' | 'other' | 'both' | null;
   years_experience: number | null;
 
   // Yacht experience
