@@ -34,7 +34,7 @@ async function requireAdmin() {
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const result = await requireAdmin();
@@ -42,8 +42,9 @@ export async function PATCH(
 
     const { supabase, organizationId } = result;
     const payload = await request.json();
+    const resolvedParams = await params;
     const targetId =
-      params?.id && params.id !== "undefined" ? params.id : payload?.id;
+      resolvedParams?.id && resolvedParams.id !== "undefined" ? resolvedParams.id : payload?.id;
 
     if (!targetId) {
       return NextResponse.json({ error: "Invalid team member id" }, { status: 400 });
@@ -109,18 +110,19 @@ export async function PATCH(
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const result = await requireAdmin();
     if (result.error) return result.error;
 
     const { supabase, organizationId } = result;
+    const resolvedParams = await params;
 
     const { error } = await supabase
       .from("team_members")
       .delete()
-      .eq("id", params.id)
+      .eq("id", resolvedParams.id)
       .eq("organization_id", organizationId);
 
     if (error) {
