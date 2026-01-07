@@ -136,3 +136,24 @@ export type {
   ClassificationResult,
   ClassificationSummary,
 } from './document-classifier';
+
+// Webhook Management
+export {
+  listWebhooks,
+  createWebhook,
+  updateWebhook,
+  deleteWebhook,
+} from './client';
+
+export type { VincereWebhook } from './client';
+
+// Webhook Utilities
+export {
+  registerJobWebhook,
+  registerCandidateWebhook,
+  findWebhookByUrl,
+  ensureJobWebhook,
+  DEFAULT_JOB_WEBHOOK_EVENTS,
+  JOB_WEBHOOK_EVENT,
+  CANDIDATE_WEBHOOK_EVENT,
+} from './webhooks';

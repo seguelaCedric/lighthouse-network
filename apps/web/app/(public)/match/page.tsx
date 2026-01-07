@@ -317,7 +317,7 @@ function MatchPageContent() {
               <span className="block text-gradient-gold">Crew & Staff</span>
             </h1>
             <p className="mx-auto max-w-2xl text-lg text-white/90 sm:text-xl">
-              Our AI instantly matches your requirements against 44,000+ vetted yacht crew and private staff professionals
+              Our AI instantly matches your requirements against 300+ placements per year of vetted yacht crew and private staff professionals
             </p>
             {/* Trust indicators */}
             <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-sm text-gray-400">
@@ -483,7 +483,7 @@ function MatchPageContent() {
                       Searching our candidate database...
                     </h3>
                     <p className="body-md max-w-md mx-auto">
-                      Our AI is matching your requirements against 44,000+ professionals
+                      Our AI is matching your requirements against 300+ placements per year
                     </p>
                     {/* Progress dots */}
                     <div className="flex justify-center gap-2 mt-6">
@@ -516,7 +516,7 @@ function MatchPageContent() {
                     </h3>
                     <p className="body-md max-w-md mx-auto mb-8 text-center">
                       Select a role and enter your requirements to instantly see matching candidates
-                      from our database of 44,000+ vetted professionals.
+                      from our database of 300+ placements per year.
                     </p>
                     {/* Example queries */}
                     <div className="flex flex-wrap justify-center gap-3">

@@ -269,7 +269,7 @@ async function importPages() {
         row.meta_description ||
         row.description ||
         row.excerpt ||
-        `Find vetted ${parsed.position} professionals in ${parsed.city || parsed.state || parsed.country}. Lighthouse Careers - 20+ years experience, 22,000+ candidates.`,
+        `Find vetted ${parsed.position} professionals in ${parsed.city || parsed.state || parsed.country}. Lighthouse Careers - 500+ satisfied clients, 300+ placements per year.`,
       hero_headline:
         row.hero_headline || row.h1 || row.headline || generateHeadline(parsed),
       hero_subheadline:

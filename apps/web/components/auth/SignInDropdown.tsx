@@ -61,7 +61,7 @@ export function SignInDropdown() {
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-1"
       >
-        Sign In
+        Log in
         <ChevronDown
           className={cn(
             "h-4 w-4 transition-transform duration-200",

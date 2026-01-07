@@ -106,7 +106,7 @@ function ThankYouContent() {
                     <div className="flex-1 pt-1">
                       <h3 className="font-semibold text-navy-900 mb-1">We Review Your Requirements</h3>
                       <p className="text-gray-600 text-sm">
-                        Our recruitment specialists analyze your brief and match it against our database of 44,000+ professionals.
+                        Our recruitment specialists analyze your brief and match it against our database of 300+ placements per year.
                       </p>
                     </div>
                   </div>
@@ -251,7 +251,7 @@ function ThankYouContent() {
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-success-100">
                     <Users className="h-5 w-5 text-success-600" />
                   </div>
-                  <h3 className="font-semibold text-navy-900">Trusted by 450+ Clients</h3>
+                  <h3 className="font-semibold text-navy-900">Trusted by 500+ Clients</h3>
                 </div>
                 <p className="text-sm text-gray-600 mb-4">
                   Join hundreds of satisfied employers who have found exceptional talent through our network.

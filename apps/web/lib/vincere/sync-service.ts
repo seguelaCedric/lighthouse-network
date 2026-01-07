@@ -107,6 +107,30 @@ function isRetryableError(error: unknown): boolean {
 }
 
 /**
+ * Log sync error with structured context
+ */
+function logSyncError(
+  syncType: SyncType,
+  candidateId: string,
+  error: unknown,
+  context?: Record<string, unknown>
+): void {
+  const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+  const errorStack = error instanceof Error ? error.stack : undefined;
+  
+  const logContext = {
+    syncType,
+    candidateId,
+    error: errorMessage,
+    ...(errorStack && { stack: errorStack }),
+    ...context,
+    timestamp: new Date().toISOString(),
+  };
+  
+  console.error(`[VincereSync] ${syncType} failed:`, JSON.stringify(logContext, null, 2));
+}
+
+/**
  * Queue a failed sync operation for retry
  */
 async function queueForRetry(
@@ -119,15 +143,27 @@ async function queueForRetry(
 
   const nextRetryAt = new Date(Date.now() + RETRY_DELAYS[0]).toISOString();
 
-  await supabase.from('vincere_sync_queue').insert({
-    candidate_id: candidateId,
-    sync_type: syncType,
-    payload,
-    status: 'pending',
-    attempts: 1,
-    last_error: error,
-    next_retry_at: nextRetryAt,
-  });
+  try {
+    await supabase.from('vincere_sync_queue').insert({
+      candidate_id: candidateId,
+      sync_type: syncType,
+      payload,
+      status: 'pending',
+      attempts: 1,
+      last_error: error,
+      next_retry_at: nextRetryAt,
+    });
+    
+    logSyncError(syncType, candidateId, new Error(error), { queued: true, nextRetryAt });
+  } catch (queueError) {
+    // If we can't even queue the retry, log it as a critical error
+    console.error('[VincereSync] CRITICAL: Failed to queue retry:', {
+      candidateId,
+      syncType,
+      originalError: error,
+      queueError: queueError instanceof Error ? queueError.message : 'Unknown error',
+    });
+  }
 }
 
 // ============================================================================
@@ -181,7 +217,7 @@ export async function syncCandidateCreation(
       vincereId = existingCandidate.id;
       console.log(`[VincereSync] Found existing Vincere candidate ${vincereId} for email ${candidate.email}`);
     } else {
-      // Create new candidate in Vincere
+      // Create new candidate in Vincere with all available basic data
       const result = await createCandidate(
         {
           firstName: candidate.first_name,
@@ -201,6 +237,17 @@ export async function syncCandidateCreation(
 
       vincereId = result.id;
       console.log(`[VincereSync] Created Vincere candidate ${vincereId} for ${candidate.email}`);
+      
+      // After creation, update custom fields if any are available
+      // This ensures all custom field data is synced during registration
+      const { basicData: _, customFields } = mapCandidateToVincere(candidate);
+      if (customFields.length > 0) {
+        await updateCustomFields(vincereId, customFields, vincere);
+        console.log(`[VincereSync] Updated ${customFields.length} custom fields for new candidate ${vincereId}`);
+      }
+      
+      // TODO: Set candidate_source_id to VINCERE_SYSTEM_IDS.candidateSourceBubble (29105) or create Network source ID
+      // This may require a separate API call or custom field update
     }
 
     // Update our database with vincere_id
@@ -212,7 +259,7 @@ export async function syncCandidateCreation(
     return { success: true, vincereId };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[VincereSync] Create sync failed:', errorMessage);
+    logSyncError('create', candidateId, error);
 
     if (isRetryableError(error)) {
       await queueForRetry(candidateId, 'create', {}, errorMessage);
@@ -310,7 +357,7 @@ export async function syncCandidateUpdate(
     return { success: true, vincereId };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[VincereSync] Update sync failed:', errorMessage);
+    logSyncError('update', candidateId, error, { changedFields });
 
     if (isRetryableError(error)) {
       await queueForRetry(candidateId, 'update', { changedFields }, errorMessage);
@@ -406,7 +453,7 @@ export async function syncDocumentUpload(
     return { success: true, vincereId };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[VincereSync] Document sync failed:', errorMessage);
+    logSyncError('document', candidateId, error, { documentType, fileName });
 
     if (isRetryableError(error)) {
       await queueForRetry(candidateId, 'document', { documentUrl, fileName, mimeType, documentType }, errorMessage);
@@ -488,14 +535,14 @@ export async function syncJobApplication(
     const jobVincereId = parseInt(job.external_id);
     const vincere = getVincereClient();
 
-    // Add candidate to job shortlist
-    await addCandidateToJob(jobVincereId, candidateVincereId, VINCERE_APPLICATION_STAGES.APPLIED, vincere);
+    // Add candidate to job shortlist (use SHORTLIST stage as per requirements)
+    await addCandidateToJob(jobVincereId, candidateVincereId, VINCERE_APPLICATION_STAGES.SHORTLIST, vincere);
 
     console.log(`[VincereSync] Added candidate ${candidateVincereId} to job ${jobVincereId}`);
     return { success: true, vincereId: candidateVincereId };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[VincereSync] Application sync failed:', errorMessage);
+    logSyncError('application', candidateId, error, { jobId });
 
     if (isRetryableError(error)) {
       await queueForRetry(candidateId, 'application', { jobId }, errorMessage);
@@ -588,7 +635,7 @@ export async function syncAvailabilityUpdate(
     return { success: true, vincereId };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('[VincereSync] Availability sync failed:', errorMessage);
+    logSyncError('availability', candidateId, error, { status, availableFrom });
 
     if (isRetryableError(error)) {
       await queueForRetry(candidateId, 'availability', { status, availableFrom }, errorMessage);

@@ -27,14 +27,12 @@ import {
 export const metadata: Metadata = {
   title: "About Us | Lighthouse Careers",
   description:
-    "Learn about Lighthouse Careers - over 14 years of yacht crew and private household staff recruitment expertise. Meet our team of industry specialists.",
+    "Learn about Lighthouse Careers - 500+ satisfied clients in yacht crew and private household staff recruitment expertise. Meet our team of industry specialists.",
 };
 
 const stats = [
-  { value: "44,000+", label: "Candidates" },
-  { value: "200+", label: "Placements/Year" },
-  { value: "14+", label: "Years Experience" },
-  { value: "450+", label: "Satisfied Clients" },
+  { value: "300+", label: "Placements/Year" },
+  { value: "500+", label: "Satisfied Clients" },
 ];
 
 const values = [
@@ -141,14 +139,13 @@ export default async function AboutPage() {
           </div>
 
           <h1 className="font-serif text-4xl font-semibold text-white sm:text-5xl lg:text-6xl">
-            We Don&apos;t Just Fill Positions.<br />
-            <span className="text-gold-400">We Build Legacies.</span>
+            We don&apos;t just fill positions, we build long lasting partnerships.
           </h1>
 
           <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-300 sm:text-xl">
             From superyachts cruising the Mediterranean to private estates serving royalty,
-            we&apos;ve spent 14+ years placing exceptional people in extraordinary roles.
-            Our team has walked in your shoes, we know what excellence looks like.
+            we&apos;ve spent over 20 years placing exceptional people in some of the most exclusive roles.
+            Our team of specialists come from the industry and have first-hand experience in delivering the highest level of service on super yachts and private households.
           </p>
 
           <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
@@ -193,8 +190,7 @@ export default async function AboutPage() {
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <div>
               <h2 className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl">
-                Finding the Perfect Fit.<br />
-                <span className="text-gold-600">Every Single Time.</span>
+                Finding the Right Fit.
               </h2>
               <p className="mt-6 text-lg text-gray-600">
                 Our entire team has real industry experience, from luxury hotels and cruise ships

@@ -288,12 +288,12 @@ export default function TestimonialsPage() {
             </div>
             <div className="h-12 w-px bg-white/10" />
             <div className="text-center">
-              <div className="font-serif text-3xl font-bold text-gold-400">14+</div>
+              <div className="font-serif text-3xl font-bold text-gold-400">20+</div>
               <div className="mt-1 text-sm text-gray-400">Years of Trust</div>
             </div>
             <div className="h-12 w-px bg-white/10" />
             <div className="text-center">
-              <div className="font-serif text-3xl font-bold text-gold-400">450+</div>
+              <div className="font-serif text-3xl font-bold text-gold-400">500+</div>
               <div className="mt-1 text-sm text-gray-400">Satisfied Clients</div>
             </div>
           </div>

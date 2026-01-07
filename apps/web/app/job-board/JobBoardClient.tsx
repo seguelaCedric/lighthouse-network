@@ -206,7 +206,7 @@ export function JobBoardClient({
                     href={`/auth/login?redirect=${encodeURIComponent(redirectPath)}`}
                     className="text-sm font-medium text-navy-600 hover:text-navy-800 transition-colors"
                   >
-                    Sign In
+                    Log in
                   </Link>
                   <Link
                     href={`/auth/register?redirect=${encodeURIComponent(redirectPath)}`}

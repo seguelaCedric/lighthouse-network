@@ -546,7 +546,7 @@ export function LeadCaptureForm({
             </Button>
 
             <p className="mt-4 text-center text-xs text-gray-500">
-              No spam, ever. Your information is kept confidential. Join 450+ satisfied clients.
+              No spam, ever. Your information is kept confidential. Join 500+ satisfied clients.
             </p>
 
             {/* Direct Contact Option */}

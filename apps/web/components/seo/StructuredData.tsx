@@ -37,7 +37,7 @@ export function StructuredData({ data }: Props) {
       url: "https://lighthouse-careers.com",
       foundingDate: "2002",
       description:
-        "Premium yacht crew and private household staffing agency with 20+ years experience",
+        "Premium yacht crew and private household staffing agency with 500+ satisfied clients",
       logo: "https://lighthouse-careers.com/logo.png",
       contactPoint: {
         "@type": "ContactPoint",
@@ -99,7 +99,7 @@ export function StructuredData({ data }: Props) {
     logo: "https://lighthouse-careers.com/logo.png",
     foundingDate: "2002",
     description:
-      "Premium yacht crew and private household staffing agency with over 20 years of experience, connecting verified candidates with discerning clients worldwide.",
+      "Premium yacht crew and private household staffing agency with 500+ satisfied clients, connecting verified candidates with discerning clients worldwide.",
     address: {
       "@type": "PostalAddress",
       addressCountry: "FR",
@@ -148,7 +148,7 @@ export function StructuredData({ data }: Props) {
         name: `How long does it take to hire a ${data.position}?`,
         acceptedAnswer: {
           "@type": "Answer",
-          text: `Typically 2-4 weeks from initial brief to placement, depending on specific requirements and availability. With our network of 22,000+ candidates, we can often present qualified shortlists within 48 hours.`,
+          text: `Typically 2-4 weeks from initial brief to placement, depending on specific requirements and availability. With 300+ placements per year, we can often present qualified shortlists within 48 hours.`,
         },
       },
       {

@@ -29,7 +29,7 @@ import {
 export const metadata: Metadata = {
   title: "Yacht Crew Recruitment Agency | Hire Vetted Crew in 48 Hours | Lighthouse",
   description:
-    "Premier yacht crew recruitment specialists with 20+ years of industry experience. We place Captains, Engineers, Chefs, and Stewardesses on superyachts worldwide. Vetted candidates delivered in 48 hours. No upfront fees.",
+    "Premier yacht crew recruitment specialists with 500+ satisfied clients. We place Captains, Engineers, Chefs, and Stewardesses on superyachts worldwide. Vetted candidates delivered in 48 hours. No upfront fees.",
   keywords: [
     "yacht crew recruitment",
     "yacht crew agency",
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Yacht Crew Recruitment | Hire Vetted Crew in 48 Hours",
     description:
-      "Premier yacht crew recruitment specialists with 20+ years of industry experience. Captains, Engineers, Chefs, and Interior crew for superyachts worldwide.",
+      "Premier yacht crew recruitment specialists with 500+ satisfied clients. Captains, Engineers, Chefs, and Interior crew for superyachts worldwide.",
     type: "website",
     url: "https://lighthouse-careers.com/yacht-crew/",
     siteName: "Lighthouse Careers",
@@ -341,14 +341,14 @@ export default function YachtCrewPage() {
         <div className="relative mx-auto flex min-h-[70vh] max-w-6xl flex-col items-center justify-center px-4 py-20 text-center sm:px-6">
           <div className="mb-6 inline-flex items-center rounded-full border border-gold-500/30 bg-gold-500/10 px-5 py-2 text-sm font-medium text-gold-300">
             <Ship className="mr-2 h-4 w-4" />
-            20+ Years of Industry Experience
+            500+ Satisfied Clients
           </div>
 
           <h1 className="font-serif text-4xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">
-            Hire Vetted Yacht Crew
+            24h Candidate Delivery
             <br />
             <span className="bg-gradient-to-r from-gold-400 to-gold-200 bg-clip-text text-transparent">
-              in 48 Hours
+              Instead of 48h
             </span>
           </h1>
 
@@ -379,11 +379,11 @@ export default function YachtCrewPage() {
           <div className="mt-16 flex flex-wrap items-center justify-center gap-8 text-sm text-gray-400">
             <div className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-gold-400" />
-              <span>44,000+ Candidates</span>
+              <span>300+ Placements/Year</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-gold-400" />
-              <span>14+ Years Experience</span>
+              <span>500+ Satisfied Clients</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-gold-400" />
@@ -522,7 +522,7 @@ export default function YachtCrewPage() {
             </div>
             <div className="h-12 w-px bg-white/10" />
             <div className="text-center">
-              <div className="font-serif text-3xl font-bold text-gold-400">14+</div>
+              <div className="font-serif text-3xl font-bold text-gold-400">20+</div>
               <div className="mt-1 text-sm text-gray-400">Years of Trust</div>
             </div>
           </div>
@@ -605,29 +605,29 @@ export default function YachtCrewPage() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="mb-16 text-center">
             <h2 className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl">
-              Why Choose Lighthouse
+              Why Choose Lighthouse Careers
             </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-gray-600">
-              We&apos;ve refined our process over 25 years to deliver exceptional results.
-            </p>
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {benefits.map((benefit) => {
-              const Icon = benefit.icon;
-              return (
-                <div
-                  key={benefit.title}
-                  className="rounded-xl border border-gray-200 bg-white p-6 transition-shadow hover:shadow-lg"
-                >
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gold-100">
-                    <Icon className="h-6 w-6 text-gold-600" />
-                  </div>
-                  <h3 className="mb-2 font-semibold text-navy-900">{benefit.title}</h3>
-                  <p className="text-sm text-gray-600">{benefit.description}</p>
-                </div>
-              );
-            })}
+          <div className="mx-auto max-w-3xl">
+            <ul className="space-y-4 text-lg text-gray-700">
+              <li className="flex items-start gap-3">
+                <CheckCircle className="mt-1 h-6 w-6 flex-shrink-0 text-gold-600" />
+                <span>20+ years of industry knowledge and connections</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <CheckCircle className="mt-1 h-6 w-6 flex-shrink-0 text-gold-600" />
+                <span>Recruiters who listen and deliver suitable candidates in a timely manner</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <CheckCircle className="mt-1 h-6 w-6 flex-shrink-0 text-gold-600" />
+                <span>Certificates and references checks are done for you</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <CheckCircle className="mt-1 h-6 w-6 flex-shrink-0 text-gold-600" />
+                <span>Many repeated clients and long term placements</span>
+              </li>
+            </ul>
           </div>
         </div>
       </section>

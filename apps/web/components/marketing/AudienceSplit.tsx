@@ -32,7 +32,7 @@ export function AudienceSplit() {
               I&apos;m Looking for My Next Position
             </h3>
             <p className="mb-6 text-gray-600">
-              Join 44,000+ candidates who&apos;ve found their dream roles on superyachts,
+              Join 300+ placements per year - candidates who&apos;ve found their dream roles on superyachts,
               in private villas, and prestigious households worldwide.
             </p>
 

@@ -2,7 +2,7 @@ import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Private Household Staff Recruitment | Butlers, Estate Managers, Nannies | Lighthouse",
-  description: "Find exceptional private household staff within 48 hours. Butlers, Estate Managers, Housekeepers, Nannies - 14+ years matching rare talents with luxury households worldwide. No upfront fees.",
+  description: "Find exceptional private household staff within 48 hours. Butlers, Estate Managers, Housekeepers, Nannies - 500+ satisfied clients matching rare talents with luxury households worldwide. No upfront fees.",
   keywords: [
     "private staff recruitment",
     "butler recruitment",

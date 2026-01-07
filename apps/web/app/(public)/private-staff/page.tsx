@@ -27,7 +27,6 @@ import {
   FileText,
   Users,
   Award,
-  Car,
   Briefcase,
   Star,
   Quote,
@@ -36,9 +35,8 @@ import {
 } from "lucide-react";
 // Stats - based on yacht-crew numbers
 const stats = [
-  { value: "44,000+", label: "Candidates" },
-  { value: "20+", label: "Years Experience" },
-  { value: "450+", label: "Satisfied Clients" },
+  { value: "300+", label: "Placements/Year" },
+  { value: "500+", label: "Satisfied Clients" },
 ];
 
 const benefits = [
@@ -93,7 +91,7 @@ const departments = [
     positions: ["House Manager", "Estate Manager", "Personal Assistant", "Travelling PA", "Family Office", "Guardian", "Property Manager", "Lifestyle Manager"],
   },
   {
-    name: "Culinary",
+    name: "Kitchen",
     icon: ChefHat,
     image: "/images/private-staff/dept-culinary.png",
     color: "bg-red-500",
@@ -112,13 +110,6 @@ const departments = [
     image: "/images/private-staff/dept-service.png",
     color: "bg-gold-500",
     positions: ["Butler", "Waiting Staff", "Valet", "Footman", "Sommelier", "Barista", "House Butler", "Private Host"],
-  },
-  {
-    name: "Transport",
-    icon: Car,
-    image: "/images/private-staff/dept-transport.png",
-    color: "bg-gray-700",
-    positions: ["Chauffeur", "Security Driver", "Pilot", "Yacht Captain", "Fleet Manager", "Travel Coordinator", "Personal Driver", "Bodyguard Driver"],
   },
   {
     name: "Childcare",
@@ -219,7 +210,7 @@ const organizationSchema = {
   name: "Lighthouse Careers",
   url: "https://lighthouse-careers.com",
   logo: "https://lighthouse-careers.com/logo.png",
-  description: "Premium private household staff recruitment agency with 20+ years of industry experience placing exceptional talent worldwide.",
+  description: "Premium private household staff recruitment agency with 500+ satisfied clients placing exceptional talent worldwide.",
   sameAs: [
     "https://www.linkedin.com/company/lighthouse-careers",
   ],
@@ -340,8 +331,8 @@ export default function PrivateStaffPage() {
                 ))}
               </div>
             </div>
-            <span className="hidden sm:inline">Trusted by 450+ Clients Worldwide</span>
-            <span className="sm:hidden">450+ Clients</span>
+            <span className="hidden sm:inline">Trusted by 500+ Clients Worldwide</span>
+            <span className="sm:hidden">500+ Clients</span>
           </div>
 
           <h1 className="font-serif text-4xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">
@@ -444,10 +435,6 @@ export default function PrivateStaffPage() {
               <ul className="mt-8 space-y-4">
                 <li className="flex items-start gap-3">
                   <CheckCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-gold-500" />
-                  <span className="text-gray-600">Comprehensive background verification</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <CheckCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-gold-500" />
                   <span className="text-gray-600">In-depth reference checks from previous principals</span>
                 </li>
                 <li className="flex items-start gap-3">
@@ -525,7 +512,7 @@ export default function PrivateStaffPage() {
               </h2>
               <p className="mt-4 text-lg text-gray-600">
                 We place exceptional professionals across all household roles. From estate management
-                to childcare, culinary to security—our extensive network covers every aspect of
+                to childcare, kitchen to security—our extensive network covers every aspect of
                 luxury household staffing.
               </p>
             </div>
@@ -681,8 +668,8 @@ export default function PrivateStaffPage() {
                   <div className="text-sm text-gray-600">Years Industry Experience</div>
                 </div>
                 <div className="rounded-xl bg-white p-4 shadow-sm">
-                  <div className="text-2xl font-bold text-gold-600">44,000+</div>
-                  <div className="text-sm text-gray-600">Vetted Professionals</div>
+                  <div className="text-2xl font-bold text-gold-600">300+</div>
+                  <div className="text-sm text-gray-600">Placements/Year</div>
                 </div>
                 <div className="rounded-xl bg-white p-4 shadow-sm">
                   <div className="text-2xl font-bold text-gold-600">48hr</div>

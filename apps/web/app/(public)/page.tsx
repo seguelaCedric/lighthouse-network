@@ -34,10 +34,8 @@ import {
 } from "lucide-react";
 
 const stats = [
-  { value: "44,000+", label: "Candidates" },
-  { value: "200+", label: "Placements/Year" },
-  { value: "14+", label: "Years Experience" },
-  { value: "450+", label: "Satisfied Clients" },
+  { value: "300+", label: "Placements/Year" },
+  { value: "500+", label: "Satisfied Clients" },
 ];
 
 const benefits = [
@@ -202,7 +200,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-white">
       <ExitIntent />
-      <UrgencyBanner />
+      <UrgencyBanner showJobCount={false} />
       <PublicHeader />
 
       {/* Hero Section */}
@@ -243,8 +241,8 @@ export default function HomePage() {
                   ))}
                 </div>
               </div>
-              <span className="hidden sm:inline">Trusted by 450+ Clients Worldwide</span>
-              <span className="sm:hidden">450+ Clients trust us</span>
+              <span className="hidden sm:inline">Trusted by 500+ Clients Worldwide</span>
+              <span className="sm:hidden">500+ Clients trust us</span>
             </div>
 
             <h1 className="font-serif text-4xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">
@@ -256,7 +254,7 @@ export default function HomePage() {
             <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-300 sm:text-xl">
               Stop competing with 500 applicants. Get matched to positions on superyachts,
               in private villas, or luxury estates - or find pre-screened staff that actually show up.
-              14+ years placing top talent worldwide.
+              500+ satisfied clients placing top talent worldwide.
             </p>
 
             {/* Trust indicators - risk reversal */}
@@ -363,7 +361,7 @@ export default function HomePage() {
                 recruitment process smooth and seamless for both clients and candidates.
               </p>
               <p className="mt-4 text-gray-600">
-                With over 14 years of experience, we understand what it takes to match
+                With 500+ satisfied clients, we understand what it takes to match
                 exceptional talent with discerning employers. Our team of industry
                 specialists has real-world experience in the sectors we recruit for.
               </p>
@@ -399,7 +397,7 @@ export default function HomePage() {
               <div className="mt-8 flex flex-col gap-4 sm:flex-row">
                 <Link href="/about">
                   <Button variant="primary">
-                    Why 450+ Clients Trust Us
+                    Why 500+ Clients Trust Us
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
@@ -441,8 +439,8 @@ export default function HomePage() {
               </div>
               {/* Floating badge */}
               <div className="absolute -bottom-4 -left-4 rounded-xl bg-navy-900 px-6 py-4 text-white shadow-xl">
-                <div className="text-2xl font-bold text-gold-400">14+</div>
-                <div className="text-sm text-gray-300">Years Experience</div>
+                <div className="text-2xl font-bold text-gold-400">500+</div>
+                <div className="text-sm text-gray-300">Satisfied Clients</div>
               </div>
             </div>
           </div>
@@ -641,7 +639,7 @@ export default function HomePage() {
             </div>
             <div className="h-12 w-px bg-white/10" />
             <div className="text-center">
-              <div className="font-serif text-3xl font-bold text-gold-400">14+</div>
+              <div className="font-serif text-3xl font-bold text-gold-400">20+</div>
               <div className="mt-1 text-sm text-gray-400">Years of Trust</div>
             </div>
           </div>

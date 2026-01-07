@@ -23,7 +23,7 @@ import {
 export const metadata: Metadata = {
   title: "Hire Yacht Crew & Private Staff | Lighthouse Careers",
   description:
-    "Find pre-screened yacht crew and private household staff. No upfront fees, same-day candidates, free replacement guarantee. 14+ years experience, 450+ satisfied clients.",
+    "Find pre-screened yacht crew and private household staff. No upfront fees, same-day candidates, free replacement guarantee. 500+ satisfied clients, 300+ placements per year.",
 };
 
 const benefits = [
@@ -87,9 +87,8 @@ const services = [
 ];
 
 const stats = [
-  { value: "44,000+", label: "Candidates in Database" },
-  { value: "450+", label: "Satisfied Clients" },
-  { value: "14+", label: "Years Experience" },
+  { value: "300+", label: "Placements/Year" },
+  { value: "500+", label: "Satisfied Clients" },
   { value: "48h", label: "Average Time to Shortlist" },
 ];
 

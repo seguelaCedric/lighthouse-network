@@ -11,10 +11,10 @@ import { useState } from "react";
 import { useAuth } from "@/providers/AuthProvider";
 
 const navItems = [
-  { href: "/job-board", label: "Job Board" },
-  { href: "/yacht-crew", label: "Yacht Crew" },
-  { href: "/private-staff", label: "Private Staff" },
   { href: "/about", label: "About" },
+  { href: "/yacht-crew", label: "Yacht Crew" },
+  { href: "/private-staff", label: "Household staff" },
+  { href: "/job-board", label: "Job board" },
   { href: "/contact", label: "Contact" },
 ];
 
@@ -121,12 +121,12 @@ export function PublicHeader() {
               <>
                 <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)}>
                   <Button variant="ghost" className="w-full">
-                    Sign In
+                    Log in
                   </Button>
                 </Link>
                 <Link href="/join" onClick={() => setMobileMenuOpen(false)}>
                   <Button variant="primary" className="w-full">
-                    Sign Up
+                    Register
                   </Button>
                 </Link>
               </>

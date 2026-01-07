@@ -127,8 +127,15 @@ export class VincereClient {
 
     if (!response.ok) {
       const errorText = await response.text();
+      // Log error details for debugging
+      if (response.status >= 400) {
+        console.error(`Vincere API Error ${response.status}:`, errorText);
+        console.error(`Request URL: ${url}`);
+        console.error(`Request Method: ${method}`);
+        if (data) console.error(`Request Data:`, JSON.stringify(data, null, 2));
+      }
       throw new VincereApiError(
-        `Vincere API error: ${response.status} ${response.statusText}`,
+        `Vincere API error: ${response.status} ${response.statusText} - ${errorText}`,
         response.status,
         errorText
       );
@@ -280,6 +287,72 @@ export class VincereClient {
 
     return response.arrayBuffer();
   }
+}
+
+// ============================================================================
+// WEBHOOK MANAGEMENT
+// ============================================================================
+
+/**
+ * Vincere webhook event
+ */
+export interface VincereWebhookEvent {
+  entity_type: string; // e.g., 'JOB', 'POSITION', 'CANDIDATE'
+  action_types: string[]; // e.g., ['CREATE', 'UPDATE', 'DELETE']
+}
+
+/**
+ * Vincere webhook configuration
+ */
+export interface VincereWebhook {
+  id?: number;
+  webhook_url: string; // Vincere API uses webhook_url, not url
+  url?: string; // Keep for backward compatibility
+  events: VincereWebhookEvent[] | string[]; // Can be array of event objects or strings
+  active?: boolean;
+  secret?: string;
+}
+
+/**
+ * List all webhooks
+ */
+export async function listWebhooks(client?: VincereClient): Promise<VincereWebhook[]> {
+  const vincere = client ?? getVincereClient();
+  return vincere.get<VincereWebhook[]>('/webhooks');
+}
+
+/**
+ * Create a new webhook
+ */
+export async function createWebhook(
+  webhook: Omit<VincereWebhook, 'id'>,
+  client?: VincereClient
+): Promise<VincereWebhook> {
+  const vincere = client ?? getVincereClient();
+  return vincere.post<VincereWebhook>('/webhooks', webhook);
+}
+
+/**
+ * Update an existing webhook
+ */
+export async function updateWebhook(
+  webhookId: number,
+  webhook: Partial<Omit<VincereWebhook, 'id'>>,
+  client?: VincereClient
+): Promise<VincereWebhook> {
+  const vincere = client ?? getVincereClient();
+  return vincere.put<VincereWebhook>(`/webhooks/${webhookId}`, webhook);
+}
+
+/**
+ * Delete a webhook
+ */
+export async function deleteWebhook(
+  webhookId: number,
+  client?: VincereClient
+): Promise<void> {
+  const vincere = client ?? getVincereClient();
+  await vincere.delete(`/webhooks/${webhookId}`);
 }
 
 /**

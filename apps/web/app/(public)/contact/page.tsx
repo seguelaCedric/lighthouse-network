@@ -243,7 +243,7 @@ export default function ContactPage() {
               {/* Office Info */}
               <div className="rounded-2xl bg-navy-900 p-8 text-white">
                 <p className="mb-6 text-gray-400">
-                  Over 20 years of experience connecting exceptional talent with
+                  500+ satisfied clients connecting exceptional talent with
                   discerning employers in the yacht and private household sectors.
                 </p>
 

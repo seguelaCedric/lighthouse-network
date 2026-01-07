@@ -245,11 +245,15 @@ export function mapVincereToCandidate(
   }
 
   // Handle smoker field (1=Yes, 2=No, 3=Social)
+  // Note: Database stores as boolean | null, but Vincere supports 3=Social
+  // For now, we map 3 to null (unknown) since boolean doesn't support 'social'
+  // TODO: Consider adding a separate field or extending type to support 'social'
   const smokerValue = getField('smoker') as number | null;
   let is_smoker: boolean | null = null;
   if (smokerValue === 1) is_smoker = true;
   else if (smokerValue === 2) is_smoker = false;
-  // Note: smokerValue === 3 means "social" - we could store this differently if needed
+  // smokerValue === 3 means "social" - currently mapped to null
+  // This preserves the data but doesn't distinguish between "No" and "Social"
 
   // Process extended data if provided
   // Note: functional expertises will be appended to profile_summary since there's no 'skills' column
@@ -400,9 +404,33 @@ export function mapCandidateToVincere(
   if (candidate.nationality) basicData.nationality = candidate.nationality;
   if (candidate.current_location) basicData.current_location = candidate.current_location;
   if (candidate.primary_position) basicData.job_title = candidate.primary_position;
-  if (candidate.profile_summary) basicData.summary = candidate.profile_summary;
+  
+  // Build comprehensive summary including all relevant fields
+  const summaryParts: string[] = [];
+  if (candidate.profile_summary) summaryParts.push(candidate.profile_summary);
+  
+  // Append years of experience if available
+  if (candidate.years_experience) {
+    summaryParts.push(`\n\nYears of Experience: ${candidate.years_experience}`);
+  }
+  
+  // Append secondary positions if available
+  if (candidate.secondary_positions && candidate.secondary_positions.length > 0) {
+    summaryParts.push(`\n\nSecondary Positions: ${candidate.secondary_positions.join(', ')}`);
+  }
+  
+  // Append key skills if available (stored in search_keywords or similar)
+  if (candidate.search_keywords && candidate.search_keywords.length > 0) {
+    summaryParts.push(`\n\nKey Skills: ${candidate.search_keywords.join(', ')}`);
+  }
+  
+  if (summaryParts.length > 0) {
+    basicData.summary = summaryParts.join('');
+  }
 
-  // Custom fields - boolean fields (1=Yes, 2=No)
+  // Custom fields - boolean fields (1=Yes, 2=No, 3=Social)
+  // Note: Database stores is_smoker as boolean | null, so we can only map true→1, false→2
+  // If Vincere has value 3 (Social), it will be read as null (limitation until DB supports 'social')
   if (candidate.is_smoker !== null && candidate.is_smoker !== undefined) {
     customFields.push({
       fieldKey: VINCERE_FIELD_KEYS.smoker,

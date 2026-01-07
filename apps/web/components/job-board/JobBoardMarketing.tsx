@@ -41,10 +41,8 @@ interface JobBoardMarketingProps {
 }
 
 const stats = [
-  { value: "44,000+", label: "Candidates" },
-  { value: "200+", label: "Placements/Year" },
-  { value: "14+", label: "Years Experience" },
-  { value: "450+", label: "Satisfied Clients" },
+  { value: "300+", label: "Placements/Year" },
+  { value: "500+", label: "Satisfied Clients" },
 ];
 
 const benefits = [
@@ -311,9 +309,13 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
               <span className="block text-gradient-gold">Household Jobs</span>
             </h1>
 
-            <p className="mx-auto max-w-2xl text-lg text-white/90 sm:text-xl mb-10">
-              Join 44,000+ professionals finding their next role. AI-powered matching, verified
-              employers, and direct application to top agencies. Free forever.
+            <p className="mx-auto max-w-2xl text-lg text-white/90 sm:text-xl mb-6">
+              Become one of our top talents. AI-powered matching, verified employers, and access to exclusive roles. Free forever.
+            </p>
+            
+            {/* Job Stats */}
+            <p className="mx-auto max-w-2xl text-base text-gold-300 sm:text-lg mb-10 font-medium">
+              100+ Job listings / 10+ posted today
             </p>
 
             {/* CTAs */}
@@ -486,15 +488,11 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
         <div className="container max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-gold-500/30 bg-gold-500/10 px-5 py-2.5 text-sm font-medium text-gold-300 mb-8 backdrop-blur-sm">
             <Sparkles className="h-4 w-4" />
-            Join 44,000+ Professionals
+            Join 300+ Placements/Year
           </div>
           <h2 className="font-serif text-4xl sm:text-5xl font-semibold text-white mb-6">
             Ready to Find Your Next Elite Position?
           </h2>
-          <p className="text-xl text-white/90 mb-10 max-w-2xl mx-auto">
-            Sign up free today and get instant access to verified jobs from top recruitment agencies
-            worldwide. No credit card required.
-          </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href={signUpUrl}

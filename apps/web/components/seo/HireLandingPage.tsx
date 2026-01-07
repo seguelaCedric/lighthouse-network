@@ -56,13 +56,13 @@ const defaultBenefits = [
   },
   {
     icon: Award,
-    title: "20+ Years Experience",
+    title: "500+ Satisfied Clients",
     description:
       "Trusted by private households and superyachts worldwide since 2002.",
   },
   {
     icon: Users,
-    title: "22,000+ Candidates",
+    title: "300+ Placements/Year",
     description:
       "Access our global network of pre-screened, experienced professionals.",
   },
@@ -143,7 +143,7 @@ export function HireLandingPage({ data }: Props) {
 
               <p className="mt-4 text-gray-400">
                 {data.intro_content ||
-                  `Lighthouse Careers connects you with exceptional ${data.position} professionals in ${locationString}. With over 20 years of experience and 22,000+ candidates in our network, we find the perfect match for your needs.`}
+                  `Lighthouse Careers connects you with exceptional ${data.position} professionals in ${locationString}. With 500+ satisfied clients and 300+ placements per year, we find the perfect match for your needs.`}
               </p>
 
               <div className="mt-8 flex flex-col gap-4 sm:flex-row">
@@ -175,7 +175,7 @@ export function HireLandingPage({ data }: Props) {
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle className="h-5 w-5 text-gold-400" />
-                  <span>20+ years trusted</span>
+                  <span>500+ satisfied clients</span>
                 </div>
               </div>
             </div>
@@ -283,9 +283,8 @@ export function HireLandingPage({ data }: Props) {
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              { value: "20+", label: "Years Experience" },
-              { value: "22,000+", label: "Candidates" },
-              { value: "112,000+", label: "Placements" },
+              { value: "500+", label: "Satisfied Clients" },
+              { value: "300+", label: "Placements/Year" },
               { value: "50+", label: "Countries" },
             ].map((stat) => (
               <div key={stat.label} className="text-center">

@@ -416,9 +416,11 @@ export async function updatePersonalInfo(data: {
     last_name: data.lastName,
     email: data.email,
     phone: data.phone,
+    whatsapp: data.whatsapp,
     date_of_birth: data.dateOfBirth,
     gender: data.gender,
     nationality: data.nationality,
+    second_nationality: data.secondNationality,
     current_location: data.currentLocation,
   }).catch((err) => console.error("Vincere sync failed for personal info update:", err));
 
@@ -514,13 +516,17 @@ export async function updateProfessionalDetails(data: {
     return { success: false, error: "Failed to update professional details" };
   }
 
-  // Sync to Vincere (fire-and-forget)
+  // Sync to Vincere (fire-and-forget) - include all fields that may have changed
   syncCandidateUpdate(candidate.id, {
     primary_position: data.primaryPosition,
     secondary_positions: data.secondaryPositions,
     years_experience: data.yearsExperience,
+    profile_summary: data.experienceSummary,
+    candidate_type: data.candidateType,
+    search_keywords: data.keySkills, // Map keySkills to search_keywords for summary inclusion
     highest_license: data.highestLicense,
     second_license: data.secondaryLicense,
+    job_search_notes: data.jobSearchNotes,
   }).catch((err) => console.error("Vincere sync failed for professional details update:", err));
 
   revalidatePath("/crew/profile/edit");
@@ -623,8 +629,8 @@ export async function updateWorkPreferences(data: {
     preferred_contract_types: data.preferredContractTypes as ("permanent" | "rotational" | "seasonal" | "temporary" | "freelance")[] | undefined,
     preferred_regions: data.preferredRegions,
     salary_currency: data.salaryCurrency,
-    salary_min: data.salaryMin,
-    salary_max: data.salaryMax,
+    desired_salary_min: data.salaryMin,
+    desired_salary_max: data.salaryMax,
     available_from: data.availableFrom,
   }).catch((err) => console.error("Vincere sync failed for work preferences update:", err));
 

@@ -118,12 +118,12 @@ export function AuthMenu() {
     <div className="flex items-center gap-2">
       <Link href="/auth/login">
         <Button variant="ghost" size="sm">
-          Sign In
+          Log in
         </Button>
       </Link>
       <Link href="/join">
         <Button variant="primary" size="sm">
-          Sign Up
+          Register
         </Button>
       </Link>
     </div>
