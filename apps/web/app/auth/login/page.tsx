@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
@@ -177,7 +177,8 @@ function TwoFactorModal({
   );
 }
 
-export default function LoginPage() {
+// Login form component that uses searchParams
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
@@ -465,5 +466,21 @@ export default function LoginPage() {
         <TwoFactorModal onClose={() => setShow2FA(false)} onVerify={handle2FAVerify} />
       )}
     </div>
+  );
+}
+
+// Main page component with Suspense boundary
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="text-center">
+          <div className="mb-4 inline-block size-8 animate-spin rounded-full border-4 border-gold-200 border-t-gold-600"></div>
+          <p className="text-sm text-gray-500">Loading...</p>
+        </div>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }
