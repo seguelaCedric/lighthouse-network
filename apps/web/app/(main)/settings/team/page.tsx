@@ -29,9 +29,10 @@ interface TeamMember {
   email: string;
   photo: string | null;
   role: "owner" | "admin" | "recruiter" | "viewer";
-  status: "active" | "inactive";
+  status: "active" | "inactive" | "pending";
   lastActive?: Date;
   isCurrentUser?: boolean;
+  invitedAt?: Date;
 }
 
 // Role permissions
