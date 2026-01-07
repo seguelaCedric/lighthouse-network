@@ -5,6 +5,7 @@ import { PublicHeader } from "@/components/pricing/PublicHeader";
 import { PublicFooter } from "@/components/pricing/PublicFooter";
 import { TeamMemberCard } from "@/components/marketing/TeamMemberCard";
 import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/server";
 import {
   Users,
   Award,
@@ -62,80 +63,6 @@ const values = [
       "We serve clients and candidates worldwide, with deep local market knowledge.",
   },
 ];
-
-const team = [
-  {
-    name: "Milica Seguela",
-    role: "Director / Captains and Pursers",
-    bio: "Milica heads up the team and offers a wealth of experience, having spent her entire career in the service industry – from working in luxury hotels, to private households, cruise ships and the yachting industry. She has a Hotel Management degree and over a decade experience in placing senior crew in the yacht crew recruitment sector, as well as household staff.",
-    languages: "English, French, Serbo-Croatian",
-    email: "ms@lighthouse-careers.com",
-    image: "https://www.lighthouse-careers.com/wp-content/uploads/2024/12/Milica-after-AI-filter.png",
-    linkedin: "https://www.linkedin.com/in/milica-seguela-53a4b814/",
-    facebook: "https://www.facebook.com/profile.php?id=100006010186497",
-  },
-  {
-    name: "Phil Richards",
-    role: "Engineering department",
-    bio: "With a 16-year tenure in the yachting industry, Phil honed his expertise as a Chief Engineer aboard a number of vessels. Progressing to the role of a Technical Manager. Passionate about steering engineers' career paths, he remains dedicated to nurturing talent and providing invaluable industry guidance to both candidates and clients.",
-    email: "pr@lighthouse-careers.com",
-    image: "https://www.lighthouse-careers.com/wp-content/uploads/2024/12/Phil.png",
-    linkedin: "https://www.linkedin.com/in/phil-richards-a1906985/",
-  },
-  {
-    name: "Joaneen Botha",
-    role: "Deck department",
-    bio: "With over 10 years at sea, Joaneen rose to Chief Stew on yachts over 100 meters, mastering crew dynamics and vessel needs. After studying in New York, she thrived as an international recruitment consultant in the Netherlands, specializing in top talent. Her dual expertise in yachting and recruitment uniquely positions her to connect exceptional candidates with luxury yacht roles.",
-    email: "jb@lighthouse-careers.com",
-    image: "https://www.lighthouse-careers.com/wp-content/uploads/2025/01/JOANEEN-3.png",
-    linkedin: "https://www.linkedin.com/in/joaneenbotha",
-  },
-  {
-    name: "Waldi Coetzee",
-    role: "Interior Department",
-    bio: "Having spent 11 years on yachts up to 100m, and another 3 years as Crew Coordinator, Waldi now draws on her deep maritime experience as a recruiter. She matches seasoned interior crew with yachts, using her firsthand understanding of vessel needs and team dynamics to build the perfect onboard teams. Dedicated to finding the perfect match every time!",
-    email: "wc@lighthouse-careers.com",
-    image: "https://www.lighthouse-careers.com/wp-content/uploads/2025/12/PHOTO-2025-12-01-16-29-31.jpg",
-  },
-  {
-    name: "Charlie Cartledge",
-    role: "Deck Department",
-    bio: "Charlie is British and grew up in the coastal town of Dover. With a BA in Sports Journalism and a deep-rooted passion for sports, they have shaped a diverse career path that blends communication with technical expertise. Over the past three years, he has gained valuable experience in yacht recruitment, focusing on the Deck department.",
-    email: "cc@lighthouse-careers.com",
-    image: "https://www.lighthouse-careers.com/wp-content/uploads/2024/12/Charlie-scaled.jpg",
-    linkedin: "https://www.linkedin.com/in/charles-cartledge/",
-  },
-  {
-    name: "Laura Hayes",
-    role: "Interior department",
-    bio: "Laura has over four years of hands-on experience onboard yachts, working her way up to a Head of House. Now, she's channelling her passion for the yachting world into yacht crew recruitment, where she can leverage her first-hand knowledge to help build strong, reliable interior teams.",
-    email: "lh@lighthouse-careers.com",
-    image: "https://www.lighthouse-careers.com/wp-content/uploads/2025/03/PHOTO-2025-03-18-11-34-54.jpg",
-  },
-  {
-    name: "Britt McBride",
-    role: "Interior department / Specialist roles",
-    bio: "Britt is an Australian national. She is a fully qualified nurse with over a decade of hospital experience and over four years working aboard yachts as a nurse and housekeeper. She remains dedicated to nurturing talent and offering valuable industry insight to candidates coming from similar backgrounds.",
-    email: "bm@lighthouse-careers.com",
-    image: "https://www.lighthouse-careers.com/wp-content/uploads/2025/05/Britt-Headshot-1.jpeg",
-  },
-  {
-    name: "Ornela Grmusa",
-    role: "Administrator",
-    bio: "Ornela is Croatian, who lived and worked in the UK for many years. Coming from a seaside town, she loves everything to do with the sea. Ornela previously worked on board cruise liners, as well as in admin roles. She now looks after all things admin and ensures smooth running of our daily business.",
-    languages: "English, Italian, Croatian",
-    email: "admin@lighthouse-careers.com",
-    image: "https://www.lighthouse-careers.com/wp-content/uploads/2024/12/Ornela.png",
-  },
-  {
-    name: "Kaoutar Zahouane",
-    role: "Admin/ Digital Marketing",
-    bio: "Kaoutar grew up in Morocco and moved to France in 2017 to pursue a career in International Business Management. With a Master's degree in Marketing, she is particularly passionate about digital marketing and is keen to gain more experience in the recruitment industry.",
-    languages: "Arabic, French, English",
-    image: "https://www.lighthouse-careers.com/wp-content/uploads/2024/12/Kaoutar.png",
-  },
-];
-
 const testimonials = [
   {
     quote: "I wanted to say a few words of thanks for your all your time and efforts over the past few years, working on behalf of Axioma and indeed the other vessels I have worked on. You and your team has always been a massive help in trying to help find us the right candidate for the right job in this ever expanding and delicate industry.",
@@ -163,7 +90,9 @@ const testimonials = [
   },
 ];
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  const team = await getTeamMembers();
+
   return (
     <div className="min-h-screen bg-white">
       <PublicHeader />
@@ -553,4 +482,77 @@ export default function AboutPage() {
       <PublicFooter />
     </div>
   );
+}
+
+async function getTeamMembers() {
+  const supabase = await createClient();
+  const targetOrgId = await getPrimaryAgencyId(supabase);
+  if (!targetOrgId) {
+    return [];
+  }
+  const { data } = await supabase
+    .from("team_members")
+    .select(
+      "name, role, bio, languages, email, image_url, linkedin_url, facebook_url"
+    )
+    .eq("is_active", true)
+    .eq("organization_id", targetOrgId)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+
+  return (data || [])
+    .filter((member) => member.image_url)
+    .map((member) => ({
+      name: member.name,
+      role: member.role,
+      bio: member.bio,
+      languages: member.languages ?? undefined,
+      email: member.email ?? undefined,
+      image: member.image_url ?? "",
+      linkedin: member.linkedin_url ?? undefined,
+      facebook: member.facebook_url ?? undefined,
+    }));
+}
+
+async function getPrimaryAgencyId(
+  supabase: Awaited<ReturnType<typeof createClient>>
+) {
+  const { data: agencies } = await supabase
+    .from("organizations")
+    .select("id, slug, created_at")
+    .eq("type", "agency");
+
+  if (!agencies || agencies.length === 0) {
+    return null;
+  }
+
+  if (agencies.length === 1) {
+    return agencies[0].id;
+  }
+
+  const lighthouseAgencies = agencies.filter(
+    (agency) => agency.slug === "lighthouse"
+  );
+  const candidates = lighthouseAgencies.length > 0 ? lighthouseAgencies : agencies;
+
+  const counts = await Promise.all(
+    candidates.map(async (agency) => {
+      const { count } = await supabase
+        .from("team_members")
+        .select("id", { count: "exact", head: true })
+        .eq("organization_id", agency.id);
+      return {
+        id: agency.id,
+        created_at: agency.created_at,
+        count: count ?? 0,
+      };
+    })
+  );
+
+  counts.sort((a, b) => {
+    if (b.count !== a.count) return b.count - a.count;
+    return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+  });
+
+  return counts[0]?.id ?? candidates[0].id;
 }

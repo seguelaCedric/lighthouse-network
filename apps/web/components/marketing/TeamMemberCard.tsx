@@ -39,7 +39,7 @@ export function TeamMemberCard({ member }: { member: TeamMember }) {
         </div>
 
         {/* Bio overlay */}
-        <div className="absolute inset-0 z-10 flex items-end bg-navy-900/80 px-4 pb-16 pt-6 text-white opacity-100 transition-all duration-300 sm:translate-y-2 sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100">
+        <div className="absolute inset-0 z-10 hidden items-end bg-navy-900/80 px-4 pb-16 pt-6 text-white opacity-0 transition-all duration-300 sm:flex sm:translate-y-2 sm:group-hover:translate-y-0 sm:group-hover:opacity-100">
           <div className="space-y-3">
             <p className="text-sm leading-relaxed text-gray-100">{member.bio}</p>
             {member.languages && (
@@ -54,6 +54,15 @@ export function TeamMemberCard({ member }: { member: TeamMember }) {
 
       {/* Info */}
       <div className="p-5">
+        <div className="space-y-3 sm:hidden">
+          <p className="text-sm text-gray-600">{member.bio}</p>
+          {member.languages && (
+            <p className="text-xs text-gray-500">
+              <span className="font-medium">Languages:</span> {member.languages}
+            </p>
+          )}
+        </div>
+
         {/* Social Icons */}
         {hasSocials && (
           <div className="mt-4 flex items-center gap-2">

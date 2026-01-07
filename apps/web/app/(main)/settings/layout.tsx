@@ -10,9 +10,10 @@ import {
   Plug,
   CreditCard,
   Users,
+  Info,
+  Signature,
   ArrowLeft,
 } from "lucide-react";
-import { Logo } from "@/components/ui/Logo";
 
 const navItems = [
   { href: "/settings/profile", label: "Profile", icon: User },
@@ -21,6 +22,8 @@ const navItems = [
   { href: "/settings/integrations", label: "Integrations", icon: Plug },
   { href: "/settings/billing", label: "Billing", icon: CreditCard },
   { href: "/settings/team", label: "Team", icon: Users },
+  { href: "/settings/team-members", label: "About Page", icon: Info },
+  { href: "/settings/signatures", label: "Signatures", icon: Signature },
 ];
 
 export default function SettingsLayout({
@@ -40,12 +43,13 @@ export default function SettingsLayout({
         >
           <ArrowLeft className="size-5" />
         </Link>
-        <div className="flex items-center gap-3">
-          <Logo size="md" />
-          <div>
-            <h1 className="text-4xl font-serif font-semibold text-navy-800">Settings</h1>
-            <p className="text-sm text-gray-500">Manage your account and preferences</p>
-          </div>
+        <div>
+          <h1 className="text-4xl font-serif font-semibold text-navy-800">
+            Settings
+          </h1>
+          <p className="text-sm text-gray-500">
+            Manage your account and preferences
+          </p>
         </div>
       </div>
 
