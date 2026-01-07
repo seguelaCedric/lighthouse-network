@@ -7,6 +7,19 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+// Validate phone number format (international format)
+function validatePhoneNumber(phone: string): boolean {
+  // Remove spaces and common formatting characters for validation
+  const cleaned = phone.replace(/[\s\-\(\)\.]/g, "");
+  // Should start with + and have at least 8 digits after
+  return /^\+[1-9]\d{7,19}$/.test(cleaned);
+}
+
+// Format phone number for storage (remove formatting, keep + and digits)
+function formatPhoneForStorage(phone: string): string {
+  return phone.replace(/[^\d+]/g, "");
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -16,6 +29,7 @@ export async function POST(request: Request) {
       name,
       email,
       phone,
+      company,
       message,
       landing_page_id,
       position_needed,
@@ -29,12 +43,24 @@ export async function POST(request: Request) {
       matched_count,
     } = body;
 
-    // Validate required fields
-    // For brief_match type, only email is required
+    // Validate required fields based on type
     if (type === 'brief_match') {
-      if (!email) {
+      // For brief_match, require name, email, and phone
+      if (!name || !name.trim()) {
+        return NextResponse.json(
+          { error: "Name is required" },
+          { status: 400 }
+        );
+      }
+      if (!email || !email.trim()) {
         return NextResponse.json(
           { error: "Email is required" },
+          { status: 400 }
+        );
+      }
+      if (!phone || !phone.trim()) {
+        return NextResponse.json(
+          { error: "Phone number is required" },
           { status: 400 }
         );
       }
@@ -47,38 +73,94 @@ export async function POST(request: Request) {
       }
     }
 
-    // Basic email validation
-    if (!email.includes("@")) {
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
       return NextResponse.json(
         { error: "Invalid email address" },
         { status: 400 }
       );
     }
 
-    // Build message for brief_match type
+    // Phone validation for brief_match type
+    if (type === 'brief_match' && phone) {
+      if (!validatePhoneNumber(phone)) {
+        return NextResponse.json(
+          { error: "Please enter a valid phone number with country code (e.g., +33 6 12 34 56 78)" },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Build comprehensive message for brief_match type
     let finalMessage = message || null;
     if (type === 'brief_match' && brief) {
-      finalMessage = `AI Brief Match Request
-Role: ${brief.role || 'Not specified'}
-Location: ${brief.location || 'Any'}
-Timeline: ${brief.timeline || 'Flexible'}
-Requirements: ${brief.requirements || 'None specified'}
-
-Matched Candidates: ${matched_count || 0}`;
+      const messageParts: string[] = [];
+      messageParts.push("AI Brief Match Request");
+      messageParts.push("");
+      
+      // Include company if provided
+      if (company && company.trim()) {
+        messageParts.push(`Company/Organization: ${company.trim()}`);
+        messageParts.push("");
+      }
+      
+      if (brief.query) {
+        messageParts.push(`Search Query: ${brief.query}`);
+        messageParts.push("");
+      }
+      
+      if (brief.position) {
+        messageParts.push(`Position: ${brief.position}`);
+      }
+      
+      if (brief.location) {
+        messageParts.push(`Location: ${brief.location}`);
+      }
+      
+      if (brief.timeline) {
+        messageParts.push(`Timeline: ${brief.timeline}`);
+      }
+      
+      if (brief.budget) {
+        messageParts.push(`Budget: ${brief.budget}`);
+      }
+      
+      if (brief.additional_notes) {
+        messageParts.push("");
+        messageParts.push(`Additional Notes: ${brief.additional_notes}`);
+      }
+      
+      messageParts.push("");
+      messageParts.push(`Matched Candidates: ${matched_count || 0}`);
+      
+      finalMessage = messageParts.join("\n");
+    } else if (company && company.trim()) {
+      // For non-brief_match types, include company in message if provided
+      finalMessage = finalMessage 
+        ? `${finalMessage}\n\nCompany: ${company.trim()}`
+        : `Company: ${company.trim()}`;
     }
+
+    // Extract position and location from structured brief if available
+    const extractedPosition = position_needed || brief?.position || null;
+    const extractedLocation = location || brief?.location || null;
+
+    // Format phone for storage
+    const formattedPhone = phone ? formatPhoneForStorage(phone) : null;
 
     // Insert inquiry
     const { data, error } = await supabase
       .from("seo_inquiries")
       .insert({
-        name: name || (type === 'brief_match' ? 'Brief Match Lead' : null),
-        email,
-        phone: phone || null,
+        name: name?.trim() || (type === 'brief_match' ? 'Brief Match Lead' : null),
+        email: email.trim(),
+        phone: formattedPhone,
         message: finalMessage,
         landing_page_id: landing_page_id || null,
-        position_needed: position_needed || brief?.role || null,
-        location: location || brief?.location || null,
-        source_url: source_url || (type === 'brief_match' ? '/private-staff' : null),
+        position_needed: extractedPosition,
+        location: extractedLocation,
+        source_url: source_url || (type === 'brief_match' ? '/match' : null),
         utm_source: utm_source || (type === 'brief_match' ? 'brief_matcher' : null),
         utm_medium: utm_medium || null,
         utm_campaign: utm_campaign || null,
@@ -96,9 +178,11 @@ Matched Candidates: ${matched_count || 0}`;
     }
 
     // TODO: Send notification email using Resend
+    // Include company name in notification if provided
     // await sendInquiryNotification({
     //   to: "admin@lighthouse-careers.com",
     //   inquiry: data,
+    //   company: company,
     // });
 
     return NextResponse.json({ success: true, id: data.id });

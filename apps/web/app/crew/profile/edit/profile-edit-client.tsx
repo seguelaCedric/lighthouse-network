@@ -398,13 +398,31 @@ export function ProfileEditClient({
     [candidateType]
   );
 
+  // Track the original primary position from database to preserve it
+  const originalPrimaryPosition = React.useRef(candidate.primaryPosition || "");
+  const isInitialMount = React.useRef(true);
+
   React.useEffect(() => {
     const allowedValues = new Set(currentPositionOptions.map((option) => option.value));
 
-    if (primaryPosition && !allowedValues.has(primaryPosition)) {
-      setPrimaryPosition("");
+    // On initial mount, always preserve the position from database
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      // If position exists in database, keep it even if not in current candidate type options
+      // The position is valid - candidate type might just need to match
+      return;
     }
 
+    // After initial mount, only validate if user manually changes candidate type
+    // Don't clear the position if it's the original from database
+    if (primaryPosition && !allowedValues.has(primaryPosition)) {
+      // Only clear if this is NOT the original position from registration/database
+      if (primaryPosition !== originalPrimaryPosition.current) {
+        setPrimaryPosition("");
+      }
+    }
+
+    // Always filter secondary positions to match current candidate type
     setSecondaryPositions((prev) => prev.filter((value) => allowedValues.has(value)));
   }, [candidateType, currentPositionOptions, primaryPosition]);
 

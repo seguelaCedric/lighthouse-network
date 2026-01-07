@@ -404,7 +404,7 @@ export async function POST(request: NextRequest) {
 
     // Build filter arrays - include ALL verification tiers by default (including unverified)
     const verificationTiers = filters?.verification_tiers || ['unverified', 'basic', 'identity', 'verified', 'premium'];
-    const availabilityStatuses = filters?.availability_statuses || ['available', 'looking', 'employed'];
+    const availabilityStatuses = filters?.availability_statuses || ['available', 'not_looking'];
 
     // Extract experience from query for DISPLAY only (not filtering)
     const extractedExperience = parseExperienceFromQuery(query);

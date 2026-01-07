@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { mapPositionToDatabaseValue } from "@/lib/utils/position-mapping";
 
 export type AuthResult = {
   success: boolean;
@@ -156,11 +157,13 @@ export async function signUp(
             whatsapp: metadata.phone || existingCandidate.phone,
             nationality: metadata.nationality || existingCandidate.nationality,
             candidate_type: metadata.candidate_type || existingCandidate.candidate_type,
-            primary_position: metadata.primary_position || existingCandidate.primary_position,
+            primary_position: metadata.primary_position 
+              ? mapPositionToDatabaseValue(metadata.primary_position)
+              : existingCandidate.primary_position,
             years_experience: metadata.years_experience
               ? parseInt(metadata.years_experience)
               : existingCandidate.years_experience,
-            availability_status: "looking",
+            availability_status: "available",
             updated_at: new Date().toISOString(),
           })
           .eq("id", existingCandidate.id);
@@ -181,8 +184,10 @@ export async function signUp(
           phone: metadata.phone || null,
           whatsapp: metadata.phone || null,
           nationality: metadata.nationality || null,
-          candidate_type: metadata.candidate_type || null,
-          primary_position: metadata.primary_position || null,
+        candidate_type: metadata.candidate_type || null,
+        primary_position: metadata.primary_position 
+          ? mapPositionToDatabaseValue(metadata.primary_position)
+          : null,
           years_experience: metadata.years_experience
             ? parseInt(metadata.years_experience)
             : null,

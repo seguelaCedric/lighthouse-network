@@ -3,10 +3,7 @@ import { z } from "zod";
 // Enums matching database types
 export const availabilityStatusSchema = z.enum([
   "available",
-  "notice_period",
   "not_looking",
-  "on_contract",
-  "unknown",
 ]);
 
 export const verificationTierSchema = z.union([

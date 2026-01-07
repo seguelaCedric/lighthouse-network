@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { PublicHeader } from "@/components/pricing/PublicHeader";
 import { PublicFooter } from "@/components/pricing/PublicFooter";
@@ -32,19 +33,19 @@ const benefits = [
     icon: Award,
     title: "Completion Certificate",
     description:
-      "Demonstrates your commitment to the industry and helps crew agents assess your suitability for positions.",
+      "Get a completion certificate that crew agents use to assess your commitment to the industry and which job roll suits you",
   },
   {
     icon: GraduationCap,
     title: "Fully Funded Education",
     description:
-      "Access to a comprehensive starter education programme valued at up to €3,980 - completely free.",
+      "Unlock the opportunity to get a fully funded starter Education Programme up to the value of €3,980",
   },
   {
     icon: Briefcase,
     title: "Apprenticeship Opportunity",
     description:
-      "Top candidates may qualify for a fully paid 3-year luxury yacht apprenticeship worth over €118,000.",
+      "Unlock the opportunity to get a fully paid 3-year Luxury Yacht Apprenticeship valued at over €118,000",
   },
 ];
 
@@ -53,31 +54,37 @@ const modules = [
     icon: Anchor,
     title: "Deck Operations",
     topics: ["Seamanship basics", "Navigation fundamentals", "Safety at sea", "Tender operations"],
+    image: "/images/pccp/pccp-course-deck.jpg",
   },
   {
     icon: Shield,
     title: "Safety Protocols",
     topics: ["Emergency procedures", "Fire safety", "Life-saving equipment", "First aid basics"],
+    image: "/images/pccp/pccp-course-safety.jpg",
   },
   {
     icon: Ship,
     title: "Sailing Fundamentals",
     topics: ["Weather patterns", "Knot tying", "Line handling", "Anchoring procedures"],
+    image: "/images/pccp/pccp-course-sailing.jpg",
   },
   {
     icon: Sparkles,
     title: "Interior Operations",
     topics: ["Housekeeping standards", "Cabin service", "Laundry protocols", "Guest areas"],
+    image: "/images/pccp/pccp-course-interior.jpg",
   },
   {
     icon: Star,
     title: "Service Standards",
     topics: ["Fine dining service", "Guest etiquette", "Beverage service", "Table settings"],
+    image: "/images/pccp/pccp-course-service.jpg",
   },
   {
     icon: BookOpen,
     title: "Contractual Knowledge",
     topics: ["MLC 2006 basics", "Employment rights", "Working hours", "Leave entitlements"],
+    image: "/images/pccp/pccp-course-contractual.jpg",
   },
 ];
 
@@ -110,72 +117,85 @@ export default function AffiliatesPCCPPage() {
       <PublicHeader />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 py-20 sm:py-32">
-        {/* Decorative elements */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute left-1/4 top-1/4 h-96 w-96 rounded-full bg-gold-400 blur-3xl" />
-          <div className="absolute bottom-1/4 right-1/4 h-64 w-64 rounded-full bg-blue-500 blur-3xl" />
+      <section className="relative overflow-hidden py-20 sm:py-32">
+        {/* Hero Image Background */}
+        <div className="absolute inset-0">
+          <Image
+            src="/images/pccp/pccp-hero.jpg"
+            alt="PCCP Programme"
+            fill
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-navy-900/90 via-navy-800/85 to-navy-900/90" />
         </div>
 
+        {/* Supported By Badge */}
         <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="grid items-center gap-12 lg:grid-cols-2">
-            <div>
-              <div className="mb-6 inline-flex items-center rounded-full border border-gold-500/30 bg-gold-500/10 px-4 py-1.5 text-sm font-medium text-gold-300">
-                <GraduationCap className="mr-2 h-4 w-4" />
-                Progressive Crew Career Programme
-              </div>
-
-              <h1 className="font-serif text-4xl font-semibold leading-tight text-white sm:text-5xl">
-                Launch Your
-                <br />
-                <span className="bg-gradient-to-r from-gold-400 to-gold-200 bg-clip-text text-transparent">
-                  Superyacht Career
-                </span>
-              </h1>
-
-              <p className="mt-6 text-lg text-gray-300">
-                The PCCP is your gateway to the superyacht industry. Our
-                comprehensive e-learning programme provides the foundation you
-                need to start an exciting career on luxury yachts worldwide.
-              </p>
-
-              <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-                <Link href="/join">
-                  <Button size="lg">
-                    Apply Now
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </Link>
-                <a href="#how-it-works">
-                  <Button
-                    variant="secondary"
-                    size="lg"
-                    className="border-white/20 text-white hover:bg-white/10"
-                  >
-                    Learn More
-                  </Button>
-                </a>
-              </div>
+          <div className="mb-8 flex items-center justify-center gap-4">
+            <span className="text-sm font-medium text-white/80">Supported By</span>
+            <div className="relative h-12 w-48">
+              <Image
+                src="/images/pccp/pccp-logo.png"
+                alt="PCCP Logo"
+                fill
+                className="object-contain"
+              />
             </div>
+          </div>
+        </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
-                <div className="font-serif text-3xl font-bold text-gold-400">€3,980</div>
-                <div className="mt-1 text-sm text-gray-400">Programme Value</div>
-              </div>
-              <div className="rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
-                <div className="font-serif text-3xl font-bold text-gold-400">€118K+</div>
-                <div className="mt-1 text-sm text-gray-400">Apprenticeship Value</div>
-              </div>
-              <div className="rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
-                <div className="font-serif text-3xl font-bold text-gold-400">6</div>
-                <div className="mt-1 text-sm text-gray-400">Learning Modules</div>
-              </div>
-              <div className="rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
-                <div className="font-serif text-3xl font-bold text-gold-400">100%</div>
-                <div className="mt-1 text-sm text-gray-400">Free to Candidates</div>
-              </div>
+        {/* Main Content */}
+        <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="text-center">
+            <h1 className="font-serif text-4xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">
+              THE PROGRESSIVE CREW CAREER PROGRAMME
+              <br />
+              <span className="bg-gradient-to-r from-gold-400 to-gold-200 bg-clip-text text-transparent">
+                OFFERS EXTRAORDINARY OPPORTUNITIES
+              </span>
+            </h1>
+
+            <p className="mt-6 text-xl text-gray-300">
+              FOR PEOPLE WHO WANT TO EXCEL.
+            </p>
+
+            <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <Link href="/join">
+                <Button size="lg">
+                  Apply Now
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
+              <a href="#how-it-works">
+                <Button
+                  variant="secondary"
+                  size="lg"
+                  className="border-white/20 text-white hover:bg-white/10"
+                >
+                  Learn More
+                </Button>
+              </a>
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="mt-16 grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div className="rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+              <div className="font-serif text-3xl font-bold text-gold-400">€3,980</div>
+              <div className="mt-1 text-sm text-gray-400">Programme Value</div>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+              <div className="font-serif text-3xl font-bold text-gold-400">€118K+</div>
+              <div className="mt-1 text-sm text-gray-400">Apprenticeship Value</div>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+              <div className="font-serif text-3xl font-bold text-gold-400">6</div>
+              <div className="mt-1 text-sm text-gray-400">Learning Modules</div>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+              <div className="font-serif text-3xl font-bold text-gold-400">100%</div>
+              <div className="mt-1 text-sm text-gray-400">Free to Candidates</div>
             </div>
           </div>
         </div>
@@ -187,19 +207,22 @@ export default function AffiliatesPCCPPage() {
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <div>
               <h2 className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl">
-                What is the PCCP?
+                PROGRESSIVE CREW CAREER PROGRAMME
               </h2>
               <p className="mt-6 text-lg text-gray-600">
-                The Progressive Crew Career Programme has been designed as a
-                starting point for individuals aspiring to work as crew members
-                on yachts. It provides a safe and robust knowledge base for
-                those entering an industry that is exciting but challenging.
+                The superyacht industry actively seeks individuals who are committed to building a professional career. The E-Learning course package offered by the Progressive Crew Career Programme has been designed as a starting point for individuals aspiring to work as crew members on yachts.
               </p>
               <p className="mt-4 text-gray-600">
-                Whether you dream of working on the deck of a superyacht,
-                providing five-star interior service, or mastering the galley,
-                the PCCP gives you the foundational knowledge and credentials to
-                get started.
+                The Progressive Crew Career Programme aims to provide a safe and robust knowledge base for those entering an industry that is exciting but challenging, and which without proper preparation can become an expensive endeavour with minimal results.
+              </p>
+              <p className="mt-4 text-gray-600">
+                Completing the E-Learning courses demonstrates to crew agents and others that you are dedicated to making a career in this industry. Your completion certificate instils trust that you are serious about a professional career in luxury yachting, even if you have limited prior experience, it also demonstrates that you have made every effort to be as prepared as possible for the industry as a newcomer.
+              </p>
+              <p className="mt-4 text-gray-600">
+                By completing the E-Learning course package you will not only gain a completion certificate that crew agents and employers can take seriously, but you will also unlock two other opportunities.
+              </p>
+              <p className="mt-4 text-gray-600">
+                The PCCP fully funded starter Education Programme up to the value of €3,980, and for extraordinary candidates, a fully paid 3-year Luxury Yacht Apprenticeship valued at over €118,000.
               </p>
 
               <div className="mt-8 flex flex-wrap gap-6">
@@ -254,12 +277,8 @@ export default function AffiliatesPCCPPage() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="mb-16 text-center">
             <h2 className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl">
-              Programme Benefits
+              THE PROGRESSIVE CREW CAREER PROGRAMME IS OUR RECOMMENDED WAY FOR NEW CREW TO GAIN INVALUABLE KNOWLEDGE AND IMPROVE THEIR CHANCES OF SUCCEEDING IN A COMPETITIVE INDUSTRY.
             </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-gray-600">
-              Complete the PCCP and unlock these exclusive benefits to jumpstart
-              your career.
-            </p>
           </div>
 
           <div className="grid gap-8 lg:grid-cols-3">
@@ -306,23 +325,33 @@ export default function AffiliatesPCCPPage() {
               return (
                 <div
                   key={module.title}
-                  className="rounded-xl border border-gray-200 bg-white p-6 transition-shadow hover:shadow-lg"
+                  className="group overflow-hidden rounded-xl border border-gray-200 bg-white transition-shadow hover:shadow-lg"
                 >
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-navy-100">
-                    <Icon className="h-6 w-6 text-navy-600" />
+                  <div className="relative h-48 w-full overflow-hidden">
+                    <Image
+                      src={module.image}
+                      alt={module.title}
+                      fill
+                      className="object-cover transition-transform group-hover:scale-105"
+                    />
                   </div>
-                  <h3 className="mb-4 font-semibold text-navy-900">{module.title}</h3>
-                  <ul className="space-y-2">
-                    {module.topics.map((topic) => (
-                      <li
-                        key={topic}
-                        className="flex items-center text-sm text-gray-600"
-                      >
-                        <CheckCircle className="mr-2 h-4 w-4 text-gold-500" />
-                        {topic}
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="p-6">
+                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-navy-100">
+                      <Icon className="h-6 w-6 text-navy-600" />
+                    </div>
+                    <h3 className="mb-4 font-semibold text-navy-900">{module.title}</h3>
+                    <ul className="space-y-2">
+                      {module.topics.map((topic) => (
+                        <li
+                          key={topic}
+                          className="flex items-center text-sm text-gray-600"
+                        >
+                          <CheckCircle className="mr-2 h-4 w-4 text-gold-500" />
+                          {topic}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
               );
             })}
@@ -377,6 +406,30 @@ export default function AffiliatesPCCPPage() {
           <div className="mt-8">
             <div className="font-semibold text-navy-900">Alex Thompson</div>
             <div className="text-sm text-gray-500">PCCP Graduate, Now Deckhand</div>
+          </div>
+        </div>
+      </section>
+
+      {/* Mission Section */}
+      <section className="bg-gray-50 py-20 sm:py-28">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="text-center">
+            <h2 className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl">
+              Our Mission
+            </h2>
+            <p className="mx-auto mt-6 max-w-3xl text-lg text-gray-600">
+              We strive to be the first-choice recruitment service provider for both clients and candidates alike. Our goal is to make the recruitment process as smooth and seamless as possible
+            </p>
+            <div className="mt-8 flex justify-center">
+              <div className="relative h-24 w-64">
+                <Image
+                  src="/images/pccp/ilo-logo.png"
+                  alt="ILO Maritime Labour Convention"
+                  fill
+                  className="object-contain"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </section>

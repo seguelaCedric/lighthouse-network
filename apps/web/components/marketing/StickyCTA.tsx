@@ -59,7 +59,7 @@ export function StickyCTA() {
           <Link href="/hire" className="flex-1 sm:flex-none">
             <Button variant="secondary" size="sm" className="w-full sm:w-auto">
               <Users className="mr-1.5 h-4 w-4" />
-              <span className="hidden sm:inline">Hire Staff</span>
+              <span className="hidden sm:inline">Hire Crew & Staff</span>
               <span className="sm:hidden">Hire</span>
             </Button>
           </Link>

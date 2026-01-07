@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
           primary_position: primaryPosition,
           available_from: availableFrom || null,
           source: "job_board",
-          availability_status: availableFrom ? "available" : "looking",
+          availability_status: "available",
         })
         .select("id")
         .single();

@@ -2,15 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, Phone, MessageCircle, Building2, Briefcase, Users } from "lucide-react";
+import { Menu, X, Phone, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { SignInDropdown } from "@/components/auth/SignInDropdown";
+import { AuthMenu } from "@/components/auth/AuthMenu";
 import { Logo } from "@/components/ui/Logo";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { useAuth } from "@/providers/AuthProvider";
 
 const navItems = [
-  { href: "/job-board", label: "Find Jobs" },
+  { href: "/job-board", label: "Job Board" },
   { href: "/yacht-crew", label: "Yacht Crew" },
   { href: "/private-staff", label: "Private Staff" },
   { href: "/about", label: "About" },
@@ -20,6 +21,7 @@ const navItems = [
 export function PublicHeader() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, loading } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 border-b border-gray-100 bg-white/95 backdrop-blur-sm">
@@ -27,15 +29,15 @@ export function PublicHeader() {
       <div className="hidden gradient-gold-shimmer sm:block">
         <div className="mx-auto flex h-8 max-w-6xl items-center justify-end gap-4 px-4 text-xs sm:px-6">
           <a
-            href="tel:+33451088780"
+            href="tel:+33676410299"
             className="flex items-center gap-1.5 text-navy-900 hover:text-navy-700"
           >
             <Phone className="h-3 w-3" />
-            <span>+33 451 088 780</span>
+            <span>+33 6 76 41 02 99</span>
           </a>
           <span className="text-navy-600">|</span>
           <a
-            href="https://wa.me/33451088780"
+            href="https://wa.me/33676410299"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 text-navy-900 hover:text-navy-700"
@@ -72,19 +74,7 @@ export function PublicHeader() {
 
         {/* Desktop CTA */}
         <div className="hidden items-center gap-3 sm:flex">
-          <Link
-            href="/hire"
-            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:text-navy-800"
-          >
-            <Building2 className="h-4 w-4" />
-            For Employers
-          </Link>
-          <SignInDropdown />
-          <Link href="/join">
-            <Button variant="primary" size="sm">
-              Find Work
-            </Button>
-          </Link>
+          <AuthMenu />
         </div>
 
         {/* Mobile Menu Button */}
@@ -117,34 +107,30 @@ export function PublicHeader() {
             ))}
           </nav>
           <div className="mt-4 flex flex-col gap-2 border-t border-gray-100 pt-4">
-            {/* Sign In Options */}
-            <p className="px-4 text-xs font-medium uppercase tracking-wider text-gray-400">Sign In</p>
-            <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)}>
-              <Button variant="ghost" className="w-full justify-start gap-2">
-                <Briefcase className="h-4 w-4 text-gold-600" />
-                I'm looking for work
-              </Button>
-            </Link>
-            <Link href="/employer/login" onClick={() => setMobileMenuOpen(false)}>
-              <Button variant="ghost" className="w-full justify-start gap-2">
-                <Users className="h-4 w-4 text-navy-600" />
-                I'm hiring staff
-              </Button>
-            </Link>
-
-            {/* CTA Buttons */}
-            <div className="mt-2 flex flex-col gap-2 border-t border-gray-100 pt-4">
-              <Link href="/join" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant="primary" className="w-full">
-                  Find Work
+            {loading ? (
+              <div className="px-4 py-2">
+                <div className="h-10 w-full animate-pulse rounded bg-gray-200" />
+              </div>
+            ) : user ? (
+              <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                <Button variant="ghost" className="w-full justify-start">
+                  Dashboard
                 </Button>
               </Link>
-              <Link href="/hire" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant="secondary" className="w-full">
-                  Hire Staff
-                </Button>
-              </Link>
-            </div>
+            ) : (
+              <>
+                <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="ghost" className="w-full">
+                    Sign In
+                  </Button>
+                </Link>
+                <Link href="/join" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="primary" className="w-full">
+                    Sign Up
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}

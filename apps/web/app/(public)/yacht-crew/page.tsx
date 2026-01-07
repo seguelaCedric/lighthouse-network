@@ -220,7 +220,7 @@ const faqs: FAQItem[] = [
   },
   {
     question: "Can you help with last-minute or emergency crew needs?",
-    answer: "Absolutely. We maintain a database of immediately available crew and can often provide candidates same-day for urgent needs. Contact us directly at +33 451 088 780 for emergency placements.",
+    answer: "Absolutely. We maintain a database of immediately available crew and can often provide candidates same-day for urgent needs. Contact us directly at +33 6 76 41 02 99 for emergency placements.",
   },
 ];
 
@@ -259,7 +259,7 @@ const organizationSchema = {
   foundingDate: "2020",
   contactPoint: {
     "@type": "ContactPoint",
-    telephone: "+33-451-088-780",
+    telephone: "+33-6-76-41-02-99",
     contactType: "sales",
     availableLanguage: ["English", "French"],
   },
@@ -663,13 +663,13 @@ export default function YachtCrewPage() {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <a href="tel:+33451088780">
+            <a href="tel:+33676410299">
               <Button
                 variant="secondary"
                 size="lg"
                 className="min-w-[220px] border-white/20 text-white hover:bg-white/10"
               >
-                Call +33 451 088 780
+                Call +33 6 76 41 02 99
               </Button>
             </a>
           </div>

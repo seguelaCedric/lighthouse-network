@@ -54,9 +54,7 @@ const positionOptions = [
 
 // Map availability filter values to API status
 const availabilityOptions = [
-  { value: "available", label: "Available Now", apiValue: "available" },
-  { value: "notice_period", label: "On Notice Period", apiValue: "notice_period" },
-  { value: "on_contract", label: "On Contract", apiValue: "on_contract" },
+  { value: "available", label: "Available", apiValue: "available" },
   { value: "not_looking", label: "Not Looking", apiValue: "not_looking" },
 ];
 

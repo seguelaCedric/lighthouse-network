@@ -23,6 +23,12 @@ export function PublicFooter() {
             <Link href="/contact" className="text-gray-500 hover:text-navy-800">
               Contact
             </Link>
+            <Link href="/mlc" className="text-gray-500 hover:text-navy-800">
+              MLC
+            </Link>
+            <Link href="/affiliates-pccp" className="text-gray-500 hover:text-navy-800">
+              Affiliates/PCCP
+            </Link>
             <Link href="/privacy" className="text-gray-500 hover:text-navy-800">
               Privacy
             </Link>

@@ -390,25 +390,10 @@ export const availabilityStatus = {
     bgColor: colors.success[50],
     label: "Available",
   },
-  looking: {
-    color: colors.gold[600],
-    bgColor: colors.gold[50],
-    label: "Looking",
-  },
-  notice_period: {
-    color: colors.warning[500],
-    bgColor: colors.warning[50],
-    label: "Notice Period",
-  },
-  employed: {
-    color: colors.navy[500],
-    bgColor: colors.navy[50],
-    label: "Employed",
-  },
-  unavailable: {
+  not_looking: {
     color: colors.gray[500],
     bgColor: colors.gray[100],
-    label: "Unavailable",
+    label: "Not Looking",
   },
 } as const;
 

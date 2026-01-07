@@ -1,14 +1,16 @@
 import { Suspense } from "react";
 import { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { JobBoardClient } from "./JobBoardClient";
+import { JobBoardMarketing } from "@/components/job-board/JobBoardMarketing";
 import { JobListJsonLd, JobListBreadcrumbJsonLd, JobBoardFaqJsonLd } from "@/components/seo/JobListJsonLd";
 import type { PublicJob } from "@/components/job-board/JobBoardCard";
 
 export const metadata: Metadata = {
-  title: "Luxury Staff Jobs | Yacht Crew & Private Household | Lighthouse Careers",
+  title: "Access Elite Yacht & Private Household Jobs | Lighthouse Careers",
   description:
-    "Browse elite positions in yachting and private households. Captain, Chef, Butler, Estate Manager, Nanny, Stewardess roles worldwide. Apply directly to top employers.",
+    "Sign up free to browse elite positions in yachting and private households. Captain, Chef, Butler, Estate Manager, Nanny, Stewardess roles worldwide. AI-powered matching, verified employers, direct application to top agencies.",
   keywords: [
     "yacht jobs",
     "yacht crew positions",
@@ -28,9 +30,9 @@ export const metadata: Metadata = {
     "UHNW household staff",
   ],
   openGraph: {
-    title: "Luxury Staff Jobs | Yacht Crew & Private Household | Lighthouse Careers",
+    title: "Access Elite Yacht & Private Household Jobs | Lighthouse Careers",
     description:
-      "Browse elite positions in yachting and private households. Captain, Chef, Butler, Estate Manager, Nanny - your next career awaits.",
+      "Sign up free to access elite positions in yachting and private households. Captain, Chef, Butler, Estate Manager, Nanny - your next career awaits. AI-powered matching, verified employers only.",
     type: "website",
     url: "https://lighthouse-careers.com/job-board",
     siteName: "Lighthouse Careers",
@@ -45,9 +47,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Luxury Staff Jobs | Lighthouse Careers",
+    title: "Access Elite Yacht & Private Household Jobs | Lighthouse Careers",
     description:
-      "Browse yacht crew and private household positions from top employers worldwide. Apply directly.",
+      "Sign up free to browse yacht crew and private household positions from top employers worldwide. AI-powered matching, verified employers only.",
     images: ["https://lighthouse-careers.com/og-jobs.jpg"],
   },
   alternates: {
@@ -71,22 +73,47 @@ interface FilterOptions {
   contractTypes: string[];
 }
 
-async function getPublicJobs(): Promise<{ jobs: PublicJob[]; filterOptions: FilterOptions }> {
+async function getPublicJobs(limit: number = 100): Promise<{ jobs: PublicJob[]; filterOptions: FilterOptions; totalCount: number; postedToday: number }> {
   const supabase = await createClient();
 
-  // Fetch jobs from public_jobs view
+  // First, get the total count of all public jobs
+  const { count: totalCount, error: countError } = await supabase
+    .from("public_jobs")
+    .select("*", { count: "exact", head: true });
+
+  if (countError) {
+    console.error("Error fetching job count:", countError);
+  }
+
+  // Get count of jobs posted today
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const todayStart = today.toISOString();
+
+  const { count: postedToday, error: todayError } = await supabase
+    .from("public_jobs")
+    .select("*", { count: "exact", head: true })
+    .gte("published_at", todayStart);
+
+  if (todayError) {
+    console.error("Error fetching today's job count:", todayError);
+  }
+
+  // Fetch limited jobs from public_jobs view for teaser
   const { data: jobs, error } = await supabase
     .from("public_jobs")
     .select("*")
     .order("is_urgent", { ascending: false })
     .order("published_at", { ascending: false })
-    .limit(100);
+    .limit(limit);
 
   if (error) {
     console.error("Error fetching jobs:", error);
     return {
       jobs: [],
       filterOptions: { positions: [], contractTypes: [] },
+      totalCount: 0,
+      postedToday: 0,
     };
   }
 
@@ -97,6 +124,8 @@ async function getPublicJobs(): Promise<{ jobs: PublicJob[]; filterOptions: Filt
   return {
     jobs: (jobs || []) as PublicJob[],
     filterOptions: { positions, contractTypes },
+    totalCount: totalCount || 0,
+    postedToday: postedToday || 0,
   };
 }
 
@@ -105,75 +134,29 @@ export default async function JobBoardPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  let dashboardHref = "/dashboard";
-  let appliedJobIds: string[] = [];
 
+  // If user is authenticated, redirect to crew jobs page
   if (user) {
-    const { data: userData } = await supabase
-      .from("users")
-      .select("id, user_type")
-      .eq("auth_id", user.id)
-      .maybeSingle();
-
-    if (userData?.user_type === "candidate") {
-      dashboardHref = "/crew/dashboard";
-    }
-    const userId = userData?.id || null;
-    let candidateId: string | null = null;
-    if (userId) {
-      const { data: candidateByUserId } = await supabase
-        .from("candidates")
-        .select("id")
-        .eq("user_id", userId)
-        .maybeSingle();
-      candidateId = candidateByUserId?.id || null;
-    }
-    if (!candidateId && user.email) {
-      const { data: candidateByEmail } = await supabase
-        .from("candidates")
-        .select("id")
-        .ilike("email", user.email)
-        .maybeSingle();
-      candidateId = candidateByEmail?.id || null;
-    }
-    if (!candidateId) {
-      const { data: candidateByAuthId } = await supabase
-        .from("candidates")
-        .select("id")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      candidateId = candidateByAuthId?.id || null;
-    }
-
-    if (candidateId) {
-      const { data: appliedJobs } = await supabase
-        .from("applications")
-        .select("job_id")
-        .eq("candidate_id", candidateId);
-      appliedJobIds = (appliedJobs || [])
-        .map((app) => app.job_id as string | null)
-        .filter((jobId): jobId is string => Boolean(jobId));
-    }
+    redirect("/crew/jobs");
   }
 
-  const { jobs, filterOptions } = await getPublicJobs();
+  // For non-authenticated users, fetch limited job data for teaser but get real total count
+  const { jobs, filterOptions, totalCount, postedToday } = await getPublicJobs(10);
 
   return (
     <>
       {/* SEO JSON-LD Structured Data */}
-      <JobListJsonLd jobs={jobs} totalCount={jobs.length} currentPage={1} />
+      <JobListJsonLd jobs={jobs} totalCount={totalCount} currentPage={1} />
       <JobListBreadcrumbJsonLd />
       <JobBoardFaqJsonLd />
 
-      {/* Client-side interactive component */}
+      {/* Marketing component for non-authenticated users */}
       <Suspense fallback={<JobBoardLoadingSkeleton />}>
-        <JobBoardClient
-          initialJobs={jobs}
+        <JobBoardMarketing
+          jobs={jobs}
           filterOptions={filterOptions}
-          totalCount={jobs.length}
-          isAuthenticated={!!user}
-          dashboardHref={dashboardHref}
-          appliedJobIds={appliedJobIds}
+          totalCount={totalCount}
+          postedToday={postedToday}
         />
       </Suspense>
     </>

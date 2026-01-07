@@ -397,6 +397,12 @@ export function CrewPortalLayout({
             </p>
             <div className="flex items-center gap-6">
               <Link
+                href="/mlc"
+                className="text-sm text-gray-500 hover:text-navy-600"
+              >
+                MLC
+              </Link>
+              <Link
                 href="/privacy"
                 className="text-sm text-gray-500 hover:text-navy-600"
               >

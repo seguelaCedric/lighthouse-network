@@ -218,7 +218,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
   const { candidate, profileCompleteness, profileActions, matchedJobs, applications, alerts, preferences, isIdentityVerified } = data;
 
   const [isAvailable, setIsAvailable] = React.useState(
-    candidate.availabilityStatus === "available" || candidate.availabilityStatus === "looking"
+    candidate.availabilityStatus === "available"
   );
   const [availableFrom, setAvailableFrom] = React.useState(
     candidate.availableFrom ? candidate.availableFrom.split("T")[0] : ""
@@ -233,7 +233,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
 
   const handleAvailabilityToggle = async () => {
     setIsUpdating(true);
-    const newStatus = isAvailable ? "unavailable" : "available";
+    const newStatus = isAvailable ? "not_looking" : "available";
     const result = await updateAvailability(newStatus as any, availableFrom);
     if (result.success) {
       setIsAvailable(!isAvailable);
@@ -245,7 +245,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
     const newDate = e.target.value;
     setAvailableFrom(newDate);
     setIsUpdating(true);
-    await updateAvailability(isAvailable ? "available" : "unavailable", newDate);
+    await updateAvailability(isAvailable ? "available" : "not_looking", newDate);
     setIsUpdating(false);
   };
 

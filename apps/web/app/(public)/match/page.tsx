@@ -12,7 +12,6 @@ import {
   CheckCircle,
   Globe,
   ArrowRight,
-  Mail,
   Phone,
   Sparkles,
   Award,
@@ -32,7 +31,7 @@ import {
   Star,
   Info,
 } from "lucide-react";
-import { MatchQualityBadge, getMatchTier, SearchQualityBanner } from "@/components/match";
+import { MatchQualityBadge, getMatchTier, SearchQualityBanner, LeadCaptureForm } from "@/components/match";
 
 // Sort options for results
 const SORT_OPTIONS = [
@@ -213,9 +212,6 @@ function MatchPageContent() {
 
   // Email capture state
   const [showEmailCapture, setShowEmailCapture] = useState(false);
-  const [email, setEmail] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
 
   // Auto-search if URL has params
   useEffect(() => {
@@ -254,6 +250,11 @@ function MatchPageContent() {
 
       const data = await response.json();
       setCandidates(data.candidates || []);
+      
+      // Store query in sessionStorage for thank you page
+      if (formData.query) {
+        sessionStorage.setItem("match_query", formData.query);
+      }
     } catch (err) {
       console.error("Brief match error:", err);
       setError("Something went wrong. Please try again.");
@@ -262,39 +263,6 @@ function MatchPageContent() {
     }
   };
 
-  const handleEmailSubmit = async () => {
-    if (!email || !email.includes("@")) {
-      setError("Please enter a valid email");
-      return;
-    }
-
-    setIsSubmitting(true);
-    setError(null);
-
-    try {
-      const response = await fetch("/api/inquiries/", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "brief_match",
-          email,
-          brief: formData,
-          matched_count: candidates.length,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Submission failed");
-      }
-
-      setSubmitted(true);
-    } catch (err) {
-      console.error("Email submit error:", err);
-      setError("Something went wrong. Please try again.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-gray-50">
@@ -466,10 +434,10 @@ function MatchPageContent() {
                         Speak directly with a recruitment consultant
                       </p>
                       <a
-                        href="tel:+33451088780"
+                        href="tel:+33676410299"
                         className="inline-flex items-center gap-2 text-gold-400 hover:text-gold-300 font-semibold text-sm group"
                       >
-                        +33 451 088 780
+                        +33 6 76 41 02 99
                         <ArrowRight className="h-4 w-4 group-hover:translate-x-0.5 transition-transform" />
                       </a>
                     </div>
@@ -1144,111 +1112,14 @@ function MatchPageContent() {
         </div>
       </section>
 
-      {/* Email Capture Modal */}
+      {/* Lead Capture Modal */}
       {showEmailCapture && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
-            {!submitted ? (
-              <>
-                <div className="bg-gradient-to-r from-navy-900 to-navy-800 px-6 py-5">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gold-500/20">
-                        <Mail className="h-5 w-5 text-gold-400" />
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold text-white">Get Full Profiles</h3>
-                        <p className="text-sm text-gray-300">We&apos;ll send detailed CVs within 24 hours</p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setShowEmailCapture(false)}
-                      className="text-gray-400 hover:text-white transition-colors"
-                    >
-                      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="p-6 space-y-5">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Your email address *
-                    </label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="you@company.com"
-                        className="w-full rounded-lg border border-gray-300 pl-10 pr-4 py-3 text-gray-900 focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 transition-colors"
-                      />
-                    </div>
-                  </div>
-
-                  {error && showEmailCapture && (
-                    <p className="text-sm text-red-600">{error}</p>
-                  )}
-
-                  <Button
-                    onClick={handleEmailSubmit}
-                    disabled={isSubmitting}
-                    className="w-full"
-                    size="lg"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        Submitting...
-                      </>
-                    ) : (
-                      <>
-                        Send Me Full Profiles
-                        <ArrowRight className="ml-2 h-5 w-5" />
-                      </>
-                    )}
-                  </Button>
-
-                  <p className="text-center text-xs text-gray-500">
-                    No spam, ever. Your information is kept confidential.
-                  </p>
-
-                  <div className="pt-4 border-t border-gray-200 text-center">
-                    <p className="text-sm text-gray-600 mb-2">
-                      Prefer to speak directly?
-                    </p>
-                    <a
-                      href="tel:+33451088780"
-                      className="inline-flex items-center gap-2 text-gold-600 hover:text-gold-700 font-medium"
-                    >
-                      <Phone className="h-4 w-4" />
-                      +33 451 088 780
-                    </a>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="p-8 text-center">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-                  <CheckCircle className="h-8 w-8 text-green-600" />
-                </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  Thank You!
-                </h3>
-                <p className="text-gray-600 mb-6">
-                  A consultant will review your requirements and send you detailed
-                  candidate profiles within 24 hours.
-                </p>
-                <Button onClick={() => setShowEmailCapture(false)} variant="secondary">
-                  Close
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
+        <LeadCaptureForm
+          initialQuery={formData.query}
+          matchedCount={candidates.length}
+          onClose={() => setShowEmailCapture(false)}
+          variant="modal"
+        />
       )}
 
       <PublicFooter />

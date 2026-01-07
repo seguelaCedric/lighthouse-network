@@ -263,16 +263,13 @@ export function mapVincereToCandidate(
 
   // Map candidate status to availability_status
   // Common Vincere statuses: "Active", "Placed", "Do Not Use", "Inactive", etc.
-  let availability_status_from_vincere: 'available' | 'notice_period' | 'not_looking' | 'on_contract' | null = null;
+  // Map to simplified availability: 'available' or 'not_looking'
+  let availability_status_from_vincere: 'available' | 'not_looking' | null = null;
   if (extendedData?.candidateStatus) {
     const statusName = extendedData.candidateStatus.name?.toLowerCase() ?? '';
-    if (statusName.includes('active') || statusName.includes('available')) {
+    if (statusName.includes('active') || statusName.includes('available') || statusName.includes('notice')) {
       availability_status_from_vincere = 'available';
-    } else if (statusName.includes('placed') || statusName.includes('contract')) {
-      availability_status_from_vincere = 'on_contract';
-    } else if (statusName.includes('notice')) {
-      availability_status_from_vincere = 'notice_period';
-    } else if (statusName.includes('inactive') || statusName.includes('not')) {
+    } else if (statusName.includes('placed') || statusName.includes('contract') || statusName.includes('inactive') || statusName.includes('not')) {
       availability_status_from_vincere = 'not_looking';
     }
   }
@@ -348,7 +345,7 @@ export function mapVincereToCandidate(
     verification_tier: 'unverified' as const,
 
     // Availability status - prefer Vincere status, then available_from date, else omit
-    // DB enum: 'available' | 'notice_period' | 'not_looking' | 'on_contract'
+    // DB enum: 'available' | 'not_looking'
     ...(availability_status_from_vincere
       ? { availability_status: availability_status_from_vincere }
       : available_from

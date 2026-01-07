@@ -11,9 +11,9 @@ import {
   MessageCircle,
   Facebook,
   Linkedin,
-  Twitter,
+  Instagram,
 } from "lucide-react";
-import { Logo } from "@/components/ui/Logo";
+import { EmergencyLineCard } from "@/components/public/EmergencyLineCard";
 
 export const metadata: Metadata = {
   title: "Contact Us | Lighthouse Careers",
@@ -32,23 +32,16 @@ const contactMethods = [
   {
     icon: Phone,
     title: "Call Us",
-    description: "Office hours: Mon-Fri 9am-6pm CET",
-    value: "+33 451 088 780",
-    href: "tel:+33451088780",
-  },
-  {
-    icon: Clock,
-    title: "Emergency Line",
-    description: "After hours for urgent matters",
-    value: "+33 6 52 92 83 60",
-    href: "tel:+33652928360",
+    description: "Office hours: Mon-Fri 9am-6pm CET (Paris time)",
+    value: "+33 6 76 41 02 99",
+    href: "tel:+33676410299",
   },
 ];
 
 const socialLinks = [
-  { icon: Facebook, href: "https://facebook.com/lighthousecareers", label: "Facebook" },
-  { icon: Linkedin, href: "https://linkedin.com/company/lighthouse-careers", label: "LinkedIn" },
-  { icon: Twitter, href: "https://twitter.com/lighthousecrew", label: "Twitter" },
+  { icon: Facebook, href: "https://www.facebook.com/lighthousejobboard/", label: "Facebook" },
+  { icon: Linkedin, href: "https://www.linkedin.com/company/debbieblazy", label: "LinkedIn" },
+  { icon: Instagram, href: "https://www.instagram.com/lighthousecareersjobs/?hl=en", label: "Instagram" },
 ];
 
 export default function ContactPage() {
@@ -111,7 +104,7 @@ export default function ContactPage() {
       {/* Contact Methods */}
       <section className="relative -mt-16 pb-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="grid gap-6 sm:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {contactMethods.map((method) => {
               const Icon = method.icon;
               return (
@@ -133,6 +126,7 @@ export default function ContactPage() {
                 </a>
               );
             })}
+            <EmergencyLineCard />
           </div>
         </div>
       </section>
@@ -248,9 +242,6 @@ export default function ContactPage() {
             <div className="space-y-8">
               {/* Office Info */}
               <div className="rounded-2xl bg-navy-900 p-8 text-white">
-                <div className="mb-4">
-                  <Logo size="lg" />
-                </div>
                 <p className="mb-6 text-gray-400">
                   Over 20 years of experience connecting exceptional talent with
                   discerning employers in the yacht and private household sectors.
@@ -271,7 +262,7 @@ export default function ContactPage() {
                     <div>
                       <p className="font-medium">Office Hours</p>
                       <p className="text-sm text-gray-400">
-                        Monday - Friday: 9:00 AM - 6:00 PM CET
+                        Monday - Friday: 9:00 AM - 6:00 PM CET (Paris time)
                       </p>
                     </div>
                   </div>

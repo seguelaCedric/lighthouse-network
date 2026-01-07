@@ -8,6 +8,7 @@ import {
   syncDocumentUpload,
   syncJobApplication,
 } from "@/lib/vincere/sync-service";
+import { mapPositionToDatabaseValue } from "@/lib/utils/position-mapping";
 
 export type CandidateAuthResult = {
   success: boolean;
@@ -126,9 +127,11 @@ export async function registerCandidate(
         whatsapp: data.phone,
         nationality: data.nationality || null,
         candidate_type: data.candidateType || null,
-        primary_position: data.primaryPosition,
+        primary_position: data.primaryPosition 
+          ? mapPositionToDatabaseValue(data.primaryPosition)
+          : null,
         years_experience: data.yearsExperience ? parseInt(data.yearsExperience) : null,
-        availability_status: "looking",
+        availability_status: "available",
         updated_at: new Date().toISOString(),
       })
       .eq("id", existingCandidate.id);
@@ -151,10 +154,12 @@ export async function registerCandidate(
         whatsapp: data.phone,
         nationality: data.nationality || null,
         candidate_type: data.candidateType || null,
-        primary_position: data.primaryPosition,
+        primary_position: data.primaryPosition 
+          ? mapPositionToDatabaseValue(data.primaryPosition)
+          : null,
         years_experience: data.yearsExperience ? parseInt(data.yearsExperience) : null,
         source: "self_registration",
-        availability_status: "looking",
+        availability_status: "available",
       })
       .select("id")
       .single();
@@ -403,7 +408,7 @@ export async function signOutCandidate(): Promise<void> {
   const supabase = await createClient();
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
-  redirect("/crew/auth/login");
+  redirect("/");
 }
 
 export async function getCurrentCandidate() {

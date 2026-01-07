@@ -218,7 +218,7 @@ async function performHybridSearch(
 
     const availabilityStatuses = availability
       ? [availability]
-      : ['available', 'notice_period', 'not_looking', 'on_contract', 'unknown'];
+      : ['available', 'not_looking'];
 
     // Vector similarity search (candidates WITH embeddings)
     const { data: vectorResults, error: vectorError } = await supabase.rpc(

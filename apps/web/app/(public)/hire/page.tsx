@@ -196,7 +196,7 @@ export default function HirePage() {
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
-                <a href="tel:+33451088780">
+                <a href="tel:+33676410299">
                   <Button
                     variant="secondary"
                     size="lg"
@@ -411,14 +411,14 @@ export default function HirePage() {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <a href="tel:+33451088780">
+            <a href="tel:+33676410299">
               <Button
                 variant="secondary"
                 size="lg"
                 className="border-white/20 text-white hover:bg-white/10"
               >
                 <Phone className="mr-2 h-5 w-5" />
-                +33 451 088 780
+                +33 6 76 41 02 99
               </Button>
             </a>
           </div>

@@ -159,7 +159,7 @@ export function HireLandingPage({ data }: Props) {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
                 <Button variant="secondary" size="lg" className="border-white/20 text-white hover:bg-white/10">
-                  Call us: +33 451 088 780
+                  Call us: +33 6 76 41 02 99
                 </Button>
               </div>
 

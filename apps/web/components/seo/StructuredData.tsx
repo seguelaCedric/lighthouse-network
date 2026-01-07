@@ -41,7 +41,7 @@ export function StructuredData({ data }: Props) {
       logo: "https://lighthouse-careers.com/logo.png",
       contactPoint: {
         "@type": "ContactPoint",
-        telephone: "+33-451-088-780",
+        telephone: "+33-6-76-41-02-99",
         contactType: "customer service",
         email: "admin@lighthouse-careers.com",
         availableLanguage: ["English", "French"],
@@ -107,7 +107,7 @@ export function StructuredData({ data }: Props) {
     contactPoint: [
       {
         "@type": "ContactPoint",
-        telephone: "+33-451-088-780",
+        telephone: "+33-6-76-41-02-99",
         contactType: "customer service",
         email: "admin@lighthouse-careers.com",
         availableLanguage: ["English", "French"],

@@ -91,7 +91,7 @@ const testimonials = [
     type: "client",
   },
   {
-    quote: "I've had the pleasure of knowing Milica, and using Milica's services as a crew agent for many years at two different agencies. Her attention to what I'm looking for in a crew member, fast response and flexibility and understanding of feedback has always impressed me, and I look forward to continuing working with her also now when branching out on her own.",
+    quote: "I've had the pleasure of knowing Milica, and using her recruitment services for many years. Her attention to what I'm looking for in a crew member, fast response and flexibility and understanding of feedback has always impressed me, and I look forward to continuing working with her and Lighthouse Careers.",
     name: "Carl Westerlund",
     role: "Captain 101m M/Y",
     image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Carl-Westerlund.png",
@@ -148,7 +148,7 @@ const testimonials = [
     type: "candidate",
   },
   {
-    quote: "During current times where communication has become more and more technology-centric, Lighthouse Careers approach to call and speak one-on-one made them stand out from other Agencies. Their genuine approach and time took to sincerely listen and understand both candidates' individual career goals, history and skillset, and the Employer's needs, requirements and onboard crew culture resulted in a very successful match on all fronts. After securing me a new Chief stewardess role, Lighthouse Careers attention and care for detail were further reflected in presenting only high calibre candidates that satisfied our search criteria.",
+    quote: "During current times where communication has become more and more technology-centric, Lighthouse Careers approach to call and speak one-on-one made them stand out from other recruitment services. Their genuine approach and time took to sincerely listen and understand both candidates' individual career goals, history and skillset, and the Employer's needs, requirements and onboard crew culture resulted in a very successful match on all fronts. After securing me a new Chief stewardess role, Lighthouse Careers attention and care for detail were further reflected in presenting only high calibre candidates that satisfied our search criteria.",
     name: "Brianna Stenhouse",
     role: "Chief Stewardess M/Y GLOBAL",
     image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Brianna.png",
@@ -294,7 +294,7 @@ export default function HomePage() {
             {/* Quick contact for urgency */}
             <p className="mt-6 text-sm text-gray-400">
               Need someone urgently?{" "}
-              <a href="tel:+33451088780" className="inline-flex items-center gap-1 text-gold-400 hover:text-gold-300">
+              <a href="tel:+33676410299" className="inline-flex items-center gap-1 text-gold-400 hover:text-gold-300">
                 <Phone className="h-3.5 w-3.5" />
                 Call us now
               </a>

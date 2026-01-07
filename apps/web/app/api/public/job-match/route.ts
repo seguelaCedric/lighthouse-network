@@ -174,7 +174,7 @@ function calculateMatchScore(candidate: CandidateProfile, job: PublicJob): { sco
   }
 
   // Availability bonus (+5 points for available candidates)
-  if (candidate.availability_status === "available" || candidate.availability_status === "looking") {
+  if (candidate.availability_status === "available") {
     score += 5;
   }
 

@@ -124,7 +124,7 @@ export function AudienceSplit() {
         <div className="mt-12 text-center">
           <p className="text-sm text-gray-500">
             Not sure what you need?{" "}
-            <a href="tel:+33451088780" className="font-medium text-gold-600 hover:text-gold-700">
+            <a href="tel:+33676410299" className="font-medium text-gold-600 hover:text-gold-700">
               Call us
             </a>{" "}
             or{" "}

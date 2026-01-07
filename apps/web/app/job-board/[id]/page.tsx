@@ -642,6 +642,9 @@ export default async function JobDetailPage({ params }: PageProps) {
                 &copy; {new Date().getFullYear()} Lighthouse Crew Network
               </p>
               <div className="flex items-center gap-6">
+                <Link href="/mlc" className="text-sm text-gray-500 hover:text-navy-600 transition-colors">
+                  MLC
+                </Link>
                 <Link href="/privacy" className="text-sm text-gray-500 hover:text-navy-600 transition-colors">
                   Privacy
                 </Link>
