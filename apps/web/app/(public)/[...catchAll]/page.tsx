@@ -136,7 +136,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     `${page.position} ${page.city || page.state || page.country}`,
     `${page.position} recruitment`,
     `${page.position} placement`,
-  ].filter(Boolean).join(', ');
+  ].filter(Boolean) as string[];
 
   return genMeta({
     title: page.meta_title,
