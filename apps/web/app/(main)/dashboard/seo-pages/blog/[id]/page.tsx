@@ -468,7 +468,7 @@ export default function BlogEditorPage({ params }: { params: Promise<{ id: strin
                     <Button
                       onClick={handlePublish}
                       disabled={publishing}
-                      variant="default"
+                      variant="primary"
                       className="w-full"
                     >
                       {publishing ? (
