@@ -1,0 +1,11 @@
+#!/bin/sh
+
+echo "🔍 Running TypeScript check before push..."
+pnpm --filter web exec tsc --noEmit
+
+if [ $? -ne 0 ]; then
+  echo "❌ TypeScript errors found. Push aborted."
+  exit 1
+fi
+
+echo "✅ TypeScript check passed!"
