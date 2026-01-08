@@ -25,7 +25,29 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const { data: seoPages } = await supabase
     .from("seo_landing_pages")
     .select("original_url_path, updated_at")
+    .eq("is_active", true)
     .limit(1000);
+
+  // Fetch published blog posts
+  const { data: blogPosts } = await supabase
+    .from("blog_posts")
+    .select("slug, published_at, updated_at")
+    .eq("status", "published")
+    .order("published_at", { ascending: false })
+    .limit(500);
+
+  // Get unique positions for hub pages
+  const { data: positions } = await supabase
+    .from("seo_landing_pages")
+    .select("position_slug")
+    .eq("is_active", true)
+    .not("position_slug", "is", null);
+
+  // Get unique locations for hub pages (city, state, country)
+  const { data: locations } = await supabase
+    .from("seo_landing_pages")
+    .select("city_slug, state_slug, country_slug")
+    .eq("is_active", true);
 
   // Static pages
   const staticPages: MetadataRoute.Sitemap = [
@@ -77,6 +99,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "yearly",
       priority: 0.3,
     },
+    {
+      url: `${baseUrl}/blog`,
+      lastModified: new Date(),
+      changeFrequency: "daily",
+      priority: 0.8,
+    },
   ];
 
   // Dynamic job pages
@@ -95,5 +123,53 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticPages, ...jobPages, ...landingPages];
+  // Blog posts
+  const blogPages: MetadataRoute.Sitemap = (blogPosts || []).map((post) => ({
+    url: `${baseUrl}/blog/${post.slug}`,
+    lastModified: post.updated_at
+      ? new Date(post.updated_at)
+      : post.published_at
+        ? new Date(post.published_at)
+        : new Date(),
+    changeFrequency: "weekly" as const,
+    priority: 0.7,
+  }));
+
+  // Position hub pages
+  const uniquePositions = new Set(
+    (positions || []).map((p) => p.position_slug).filter(Boolean)
+  );
+  const positionHubPages: MetadataRoute.Sitemap = Array.from(uniquePositions).map(
+    (positionSlug) => ({
+      url: `${baseUrl}/hire-a-${positionSlug}`,
+      lastModified: new Date(),
+      changeFrequency: "weekly" as const,
+      priority: 0.6,
+    })
+  );
+
+  // Location hub pages (from city, state, or country slugs)
+  const uniqueLocations = new Set<string>();
+  (locations || []).forEach((loc) => {
+    if (loc.city_slug) uniqueLocations.add(loc.city_slug);
+    if (loc.state_slug) uniqueLocations.add(loc.state_slug);
+    if (loc.country_slug) uniqueLocations.add(loc.country_slug);
+  });
+  const locationHubPages: MetadataRoute.Sitemap = Array.from(uniqueLocations).map(
+    (locationSlug) => ({
+      url: `${baseUrl}/hire-in-${locationSlug}`,
+      lastModified: new Date(),
+      changeFrequency: "weekly" as const,
+      priority: 0.6,
+    })
+  );
+
+  return [
+    ...staticPages,
+    ...jobPages,
+    ...landingPages,
+    ...blogPages,
+    ...positionHubPages,
+    ...locationHubPages,
+  ];
 }

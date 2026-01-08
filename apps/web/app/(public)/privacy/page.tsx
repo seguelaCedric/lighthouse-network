@@ -3,11 +3,19 @@ import { PublicHeader } from "@/components/pricing/PublicHeader";
 import { PublicFooter } from "@/components/pricing/PublicFooter";
 import { Shield, FileText, Lock, Eye, UserCheck, Mail } from "lucide-react";
 
-export const metadata: Metadata = {
+import { generateMetadata as genMeta } from "@/lib/seo/metadata";
+
+export const metadata: Metadata = genMeta({
   title: "Privacy Policy | Lighthouse Careers",
   description:
     "Privacy Policy for Lighthouse Careers. Learn how we collect, use, and protect your personal information in compliance with GDPR and French data protection laws.",
-};
+  keywords: ["privacy policy", "data protection", "GDPR", "privacy", "data security"],
+  canonical: "https://lighthouse-careers.com/privacy",
+  robots: {
+    index: true,
+    follow: true,
+  },
+});
 
 export default function PrivacyPage() {
   return (

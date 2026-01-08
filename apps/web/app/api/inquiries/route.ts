@@ -1,8 +1,9 @@
 import { createClient } from "@supabase/supabase-js";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 
 // Use service role for inserting inquiries (anon can't insert via API without RLS bypass)
-const supabase = createClient(
+const supabaseService = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
@@ -18,6 +19,72 @@ function validatePhoneNumber(phone: string): boolean {
 // Format phone number for storage (remove formatting, keep + and digits)
 function formatPhoneForStorage(phone: string): string {
   return phone.replace(/[^\d+]/g, "");
+}
+
+// GET - List inquiries with filtering
+export async function GET(request: NextRequest) {
+  try {
+    const supabase = await createServerClient();
+    const { searchParams } = new URL(request.url);
+
+    const status = searchParams.get('status');
+    const landingPageId = searchParams.get('landing_page_id');
+    const sourceUrl = searchParams.get('source_url');
+    const dateFrom = searchParams.get('date_from');
+    const dateTo = searchParams.get('date_to');
+    const search = searchParams.get('search');
+    const limit = parseInt(searchParams.get('limit') || '50');
+    const offset = parseInt(searchParams.get('offset') || '0');
+
+    let query = supabase
+      .from('seo_inquiries')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    if (status) {
+      query = query.eq('status', status);
+    }
+
+    if (landingPageId) {
+      query = query.eq('landing_page_id', landingPageId);
+    }
+
+    if (sourceUrl) {
+      query = query.eq('source_url', sourceUrl);
+    }
+
+    if (dateFrom) {
+      query = query.gte('created_at', dateFrom);
+    }
+
+    if (dateTo) {
+      query = query.lte('created_at', dateTo);
+    }
+
+    if (search) {
+      query = query.or(
+        `name.ilike.%${search}%,email.ilike.%${search}%,message.ilike.%${search}%`
+      );
+    }
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      console.error('Inquiries fetch error:', error);
+      return NextResponse.json({ error: 'Failed to fetch inquiries' }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      inquiries: data || [],
+      total: count || 0,
+      limit,
+      offset,
+    });
+  } catch (error) {
+    console.error('Inquiries GET error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
 }
 
 export async function POST(request: Request) {
@@ -150,7 +217,7 @@ export async function POST(request: Request) {
     const formattedPhone = phone ? formatPhoneForStorage(phone) : null;
 
     // Insert inquiry
-    const { data, error } = await supabase
+    const { data, error } = await supabaseService
       .from("seo_inquiries")
       .insert({
         name: name?.trim() || (type === 'brief_match' ? 'Brief Match Lead' : null),

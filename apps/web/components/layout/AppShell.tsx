@@ -18,6 +18,9 @@ import {
   LogOut,
   User,
   Shield,
+  Globe,
+  BookOpen,
+  Mail,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { cn } from "@/lib/utils";
@@ -40,6 +43,9 @@ const mainNavItems: NavItem[] = [
   { id: "jobs", label: "Jobs", icon: <Briefcase className="size-5" />, href: "/jobs" },
   { id: "candidates", label: "Candidates", icon: <Users className="size-5" />, href: "/candidates" },
   { id: "clients", label: "Clients", icon: <Building2 className="size-5" />, href: "/clients" },
+  { id: "seo-blog", label: "SEO & Blog", icon: <BookOpen className="size-5" />, href: "/dashboard/seo-pages/blog" },
+  { id: "seo-pages", label: "Landing Pages", icon: <Globe className="size-5" />, href: "/dashboard/seo-pages/landing-pages" },
+  { id: "inquiries", label: "Inquiries", icon: <Mail className="size-5" />, href: "/dashboard/seo-pages/inquiries" },
 ];
 
 const bottomNavItems: NavItem[] = [
@@ -66,6 +72,16 @@ export function AppShell({ children }: AppShellProps) {
     }
     if (href.startsWith("/admin")) {
       return pathname.startsWith("/admin");
+    }
+    // Special handling for SEO pages to highlight the correct section
+    if (href === "/dashboard/seo-pages/landing-pages") {
+      return pathname.startsWith("/dashboard/seo-pages/landing-pages");
+    }
+    if (href === "/dashboard/seo-pages/inquiries") {
+      return pathname.startsWith("/dashboard/seo-pages/inquiries");
+    }
+    if (href.startsWith("/dashboard/seo-pages")) {
+      return pathname.startsWith("/dashboard/seo-pages");
     }
     return pathname.startsWith(href);
   };

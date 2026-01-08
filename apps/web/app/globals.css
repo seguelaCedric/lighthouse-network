@@ -819,9 +819,9 @@ h2 {
     display: none !important;
   }
 
-  /* Page setup */
+  /* Page setup - landscape for better table display */
   @page {
-    size: A4;
+    size: A4 landscape;
     margin: 15mm 10mm;
   }
 
@@ -831,6 +831,64 @@ h2 {
     color: black !important;
     font-size: 12pt;
     line-height: 1.4;
+  }
+
+  /* CRITICAL: Fix dark backgrounds and white text for print */
+  section.bg-gradient-to-br,
+  section.bg-navy-900,
+  section.bg-navy-800,
+  section.bg-navy-700,
+  .bg-gradient-to-br,
+  .bg-navy-900,
+  .bg-navy-800,
+  .bg-navy-700 {
+    background: white !important;
+    background-color: white !important;
+    background-image: none !important;
+  }
+
+  /* CRITICAL: Fix ALL white text to be dark for print */
+  .text-white,
+  section.bg-gradient-to-br .text-white,
+  section.bg-navy-900 .text-white,
+  section.bg-navy-800 .text-white,
+  section.bg-navy-700 .text-white,
+  section.bg-gradient-to-br h1,
+  section.bg-navy-900 h1,
+  section.bg-navy-800 h1,
+  section.bg-navy-700 h1,
+  section.bg-gradient-to-br h2,
+  section.bg-navy-900 h2,
+  section.bg-navy-800 h2,
+  section.bg-navy-700 h2,
+  section.bg-gradient-to-br p,
+  section.bg-navy-900 p,
+  section.bg-navy-800 p,
+  section.bg-navy-700 p,
+  /* Also target h1 in white background sections */
+  section.bg-white h1,
+  section:first-of-type h1 {
+    color: #1A1816 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* Fix gray text in dark sections */
+  .text-gray-300,
+  section.bg-gradient-to-br .text-gray-300,
+  section.bg-navy-900 .text-gray-300 {
+    color: #4B5563 !important;
+  }
+
+  .text-gray-400 {
+    color: #6B7280 !important;
+  }
+
+  /* Remove decorative overlays */
+  .absolute.inset-0.opacity-20,
+  .absolute.inset-0.opacity-10 {
+    display: none !important;
   }
 
   /* Make links visible and styled for print */
@@ -854,9 +912,110 @@ h2 {
     margin: 4px !important;
   }
 
-  /* Prevent page breaks inside tables */
+  /* Prevent page breaks inside tables - CRITICAL */
   table {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    -webkit-region-break-inside: avoid !important;
+  }
+  
+  /* Keep entire table containers together */
+  div:has(table),
+  .rounded-lg:has(table),
+  section > div > div:has(table),
+  section > div > div.space-y-8 > div:has(table) {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    -webkit-region-break-inside: avoid !important;
+  }
+  
+  /* Keep table rows together - no splitting */
+  table tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    -webkit-region-break-inside: avoid !important;
+  }
+  
+  /* Keep table cells together */
+  table td,
+  table th {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  
+  /* Keep table headers visible on each page */
+  thead {
+    display: table-header-group !important;
+  }
+  
+  tfoot {
+    display: table-footer-group !important;
+  }
+  
+  /* Keep sections together - prevent breaking across pages */
+  section {
     page-break-inside: avoid;
+    break-inside: avoid;
+    page-break-after: auto;
+  }
+  
+  /* Keep section headers with their content */
+  section > h2,
+  section > h3,
+  section > div > h2,
+  section > div > h3,
+  section[id] > h2,
+  section[id] > h3 {
+    page-break-after: avoid;
+    break-after: avoid;
+    page-break-inside: avoid;
+  }
+  
+  /* Keep section intro text with first table */
+  section > div > div.text-center {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+  
+  /* Keep each table component together (space-y-8 containers) - CRITICAL */
+  section > div > div.space-y-8 > div,
+  section > div > div.space-y-8 > * {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    -webkit-region-break-inside: avoid !important;
+    page-break-after: auto;
+  }
+  
+  /* Keep table containers with their headers - target specific salary table containers */
+  .rounded-lg,
+  .rounded-2xl.border.border-gray-200,
+  .rounded-2xl.border.border-gray-200.bg-white,
+  div.rounded-2xl:has(table),
+  div.rounded-2xl.border:has(table) {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    -webkit-region-break-inside: avoid !important;
+  }
+  
+  /* Keep overflow containers with tables */
+  div.overflow-x-auto:has(table) {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    -webkit-region-break-inside: avoid !important;
+  }
+  
+  /* Allow breaks between major sections only */
+  section[id^="yacht-"],
+  section[id^="household-"] {
+    page-break-before: auto;
+    page-break-after: auto;
+  }
+  
+  /* Keep info boxes and notes with their sections */
+  .rounded-lg.bg-blue-50,
+  .rounded-2xl.bg-gold-50 {
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
 
   /* Ensure tables don't overflow */

@@ -402,7 +402,7 @@ export default function JobDetailPage() {
 
   if (!job) return null;
 
-  const status = statusConfig[job.status];
+  const status = (job.status && statusConfig[job.status]) || statusConfig.draft;
   const requirements = job.requirements || {};
 
   return (

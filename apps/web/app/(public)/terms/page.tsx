@@ -3,11 +3,19 @@ import { PublicHeader } from "@/components/pricing/PublicHeader";
 import { PublicFooter } from "@/components/pricing/PublicFooter";
 import { FileText, Scale, AlertCircle, CheckCircle, XCircle, Mail } from "lucide-react";
 
-export const metadata: Metadata = {
+import { generateMetadata as genMeta } from "@/lib/seo/metadata";
+
+export const metadata: Metadata = genMeta({
   title: "Terms of Service | Lighthouse Careers",
   description:
     "Terms of Service for Lighthouse Careers. Read our terms and conditions for using our recruitment platform and services.",
-};
+  keywords: ["terms of service", "terms and conditions", "user agreement", "legal"],
+  canonical: "https://lighthouse-careers.com/terms",
+  robots: {
+    index: true,
+    follow: true,
+  },
+});
 
 export default function TermsPage() {
   return (

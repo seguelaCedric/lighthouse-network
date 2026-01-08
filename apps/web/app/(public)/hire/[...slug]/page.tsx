@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import { Metadata } from 'next'
 import { HireLandingPage } from '@/components/seo/HireLandingPage'
+import { generateMetadata as genMeta } from '@/lib/seo/metadata'
 import { cache } from 'react'
 
 interface Props {
@@ -59,30 +60,37 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const page = await getPage(urlPath)
 
   if (!page) {
-    return {
+    return genMeta({
       title: 'Page Not Found | Lighthouse Careers',
-    }
+      noindex: true,
+    })
   }
 
-  return {
+  return genMeta({
     title: page.meta_title,
     description: page.meta_description,
-    alternates: {
-      canonical: page.canonical_url || `https://lighthouse-careers.com/hire/${urlPath}/`,
-    },
+    canonical: page.canonical_url || `https://lighthouse-careers.com/hire/${urlPath}/`,
     openGraph: {
       title: page.meta_title,
       description: page.meta_description,
       type: 'website',
       url: `https://lighthouse-careers.com/hire/${urlPath}/`,
-      siteName: 'Lighthouse Careers',
+      images: [
+        {
+          url: `https://lighthouse-careers.com/images/og-hire-${page.position_slug}.jpg`,
+          width: 1200,
+          height: 630,
+          alt: page.meta_title,
+        },
+      ],
     },
     twitter: {
       card: 'summary_large_image',
       title: page.meta_title,
       description: page.meta_description,
+      images: [`https://lighthouse-careers.com/images/og-hire-${page.position_slug}.jpg`],
     },
-  }
+  })
 }
 
 export default async function Page({ params }: Props) {

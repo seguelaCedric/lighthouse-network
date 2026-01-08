@@ -70,7 +70,7 @@ function getValidThrough(deadline: string | null): string {
 }
 
 export function JobPostingJsonLd({ job, baseUrl = "https://lighthouse-careers.com" }: JobPostingJsonLdProps) {
-  // Build the structured data object
+  // Build the structured data object - Enhanced for AI/LLM consumption
   const jobPostingSchema: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "JobPosting",
@@ -85,23 +85,39 @@ export function JobPostingJsonLd({ job, baseUrl = "https://lighthouse-careers.co
     validThrough: getValidThrough(job.apply_deadline),
     employmentType: mapContractType(job.contract_type),
 
-    // Hiring organization
+    // Hiring organization - Enhanced with more context
     hiringOrganization: {
       "@type": "Organization",
       name: job.agency_name || "Lighthouse Careers",
       sameAs: baseUrl,
       logo: `${baseUrl}/logo.png`,
+      description: job.agency_name
+        ? `${job.agency_name} - Verified recruitment agency partner of Lighthouse Careers`
+        : "Lighthouse Careers - Premium yacht crew and private household staffing agency",
     },
 
     // Industry-specific - handle both yacht and land-based positions
     industry: determineIndustry(job.position_category, job.vessel_type),
     occupationalCategory: job.position_category || "Luxury Hospitality",
+    workHours: job.contract_type === "rotational" ? "Rotational schedule" : "Full-time",
+    
+    // Additional context for AI/LLM
+    jobLocationType: job.vessel_type ? "On-site (Vessel)" : "On-site",
+    specialCommitments: job.is_urgent ? "Urgent hire - immediate start preferred" : undefined,
 
     // Direct Apply
     directApply: true,
 
     // Job URL
     url: `${baseUrl}/job-board/${job.id}`,
+    
+    // Application instructions
+    applicationContact: {
+      "@type": "ContactPoint",
+      contactType: "Application",
+      url: `${baseUrl}/job-board/${job.id}`,
+      email: "admin@lighthouse-careers.com",
+    },
   };
 
   // Add job location if available

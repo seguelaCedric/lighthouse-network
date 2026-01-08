@@ -24,11 +24,37 @@ import {
   Sparkles,
 } from "lucide-react";
 
-export const metadata: Metadata = {
+import { generateMetadata as genMeta } from "@/lib/seo/metadata";
+
+export const metadata: Metadata = genMeta({
   title: "About Us | Lighthouse Careers",
   description:
-    "Learn about Lighthouse Careers - 500+ satisfied clients in yacht crew and private household staff recruitment expertise. Meet our team of industry specialists.",
-};
+    "Learn about Lighthouse Careers - 500+ satisfied clients in yacht crew and private household staff recruitment expertise. Meet our team of industry specialists with real-world experience in yachting and luxury hospitality.",
+  keywords: [
+    "about lighthouse careers",
+    "yacht crew recruitment agency",
+    "private household staff agency",
+    "recruitment team",
+    "luxury staffing experts",
+    "yacht crew specialists",
+  ],
+  canonical: "https://lighthouse-careers.com/about",
+  openGraph: {
+    title: "About Us | Lighthouse Careers",
+    description:
+      "Learn about Lighthouse Careers - 500+ satisfied clients in yacht crew and private household staff recruitment expertise. Meet our team of industry specialists.",
+    type: "website",
+    url: "https://lighthouse-careers.com/about",
+    images: [
+      {
+        url: "https://lighthouse-careers.com/images/og-about.jpg",
+        width: 1200,
+        height: 630,
+        alt: "About Lighthouse Careers",
+      },
+    ],
+  },
+});
 
 const stats = [
   { value: "300+", label: "Placements/Year" },
@@ -263,8 +289,65 @@ export default async function AboutPage() {
       </section>
 
       {/* Why We're Different */}
-      <section className="bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 py-20 sm:py-28">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+      <section className="relative overflow-hidden bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 py-20 sm:py-28">
+        {/* Luxurious background pattern */}
+        <div className="absolute inset-0 opacity-30">
+          <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+            <defs>
+              <pattern id="luxury-damask" x="0" y="0" width="120" height="120" patternUnits="userSpaceOnUse">
+                {/* Central decorative element */}
+                <circle cx="60" cy="60" r="3" fill="#C3A578" opacity="0.6"/>
+                <circle cx="60" cy="60" r="8" fill="none" stroke="#C3A578" strokeWidth="0.8" opacity="0.4"/>
+                <circle cx="60" cy="60" r="15" fill="none" stroke="#C3A578" strokeWidth="0.6" opacity="0.3"/>
+                
+                {/* Corner decorative elements */}
+                <circle cx="20" cy="20" r="2" fill="#C3A578" opacity="0.5"/>
+                <circle cx="100" cy="20" r="2" fill="#C3A578" opacity="0.5"/>
+                <circle cx="20" cy="100" r="2" fill="#C3A578" opacity="0.5"/>
+                <circle cx="100" cy="100" r="2" fill="#C3A578" opacity="0.5"/>
+                
+                {/* Ornate decorative curves */}
+                <path d="M 60 20 Q 80 30 60 40 Q 40 30 60 20" fill="none" stroke="#C3A578" strokeWidth="1" opacity="0.4"/>
+                <path d="M 60 80 Q 80 90 60 100 Q 40 90 60 80" fill="none" stroke="#C3A578" strokeWidth="1" opacity="0.4"/>
+                <path d="M 20 60 Q 30 80 40 60 Q 30 40 20 60" fill="none" stroke="#C3A578" strokeWidth="1" opacity="0.4"/>
+                <path d="M 80 60 Q 90 80 100 60 Q 90 40 80 60" fill="none" stroke="#C3A578" strokeWidth="1" opacity="0.4"/>
+                
+                {/* Connecting lines for elegance */}
+                <line x1="60" y1="20" x2="60" y2="40" stroke="#C3A578" strokeWidth="0.5" opacity="0.3"/>
+                <line x1="60" y1="80" x2="60" y2="100" stroke="#C3A578" strokeWidth="0.5" opacity="0.3"/>
+                <line x1="20" y1="60" x2="40" y2="60" stroke="#C3A578" strokeWidth="0.5" opacity="0.3"/>
+                <line x1="80" y1="60" x2="100" y2="60" stroke="#C3A578" strokeWidth="0.5" opacity="0.3"/>
+              </pattern>
+              <radialGradient id="luxury-glow" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#C3A578" stopOpacity="0.2"/>
+                <stop offset="50%" stopColor="#C3A578" stopOpacity="0.08"/>
+                <stop offset="100%" stopColor="#C3A578" stopOpacity="0"/>
+              </radialGradient>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#luxury-damask)"/>
+            <rect width="100%" height="100%" fill="url(#luxury-glow)"/>
+          </svg>
+        </div>
+        
+        {/* Enhanced ambient lighting */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(195,165,120,0.15),transparent_70%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_80%_at_0%_50%,rgba(195,165,120,0.1),transparent_60%)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_80%_at_100%_50%,rgba(195,165,120,0.1),transparent_60%)]" />
+        
+        {/* Visible texture overlay */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="h-full w-full" style={{
+            backgroundImage: `repeating-linear-gradient(
+              45deg,
+              transparent,
+              transparent 8px,
+              rgba(195,165,120,0.15) 8px,
+              rgba(195,165,120,0.15) 16px
+            )`
+          }} />
+        </div>
+
+        <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
           <div className="mb-16 text-center">
             <h2 className="font-serif text-3xl font-semibold text-white sm:text-4xl">
               Why Clients Choose Us Over Other Agencies

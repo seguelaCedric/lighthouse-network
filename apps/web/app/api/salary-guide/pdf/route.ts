@@ -94,9 +94,10 @@ export async function GET(request: NextRequest) {
       // Wait a bit more for any animations or lazy-loaded content
       await new Promise(resolve => setTimeout(resolve, 1000));
 
-      // Generate PDF with optimized settings
+      // Generate PDF with optimized settings (landscape for better table display)
       pdfBuffer = Buffer.from(await page.pdf({
         format: "A4",
+        landscape: true, // Set to landscape mode for better table display
         printBackground: true,
         margin: {
           top: "20mm",

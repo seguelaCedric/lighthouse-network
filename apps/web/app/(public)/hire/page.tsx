@@ -20,11 +20,39 @@ import {
   RefreshCw,
 } from "lucide-react";
 
-export const metadata: Metadata = {
+import { generateMetadata as genMeta } from "@/lib/seo/metadata";
+
+export const metadata: Metadata = genMeta({
   title: "Hire Yacht Crew & Private Staff | Lighthouse Careers",
   description:
     "Find pre-screened yacht crew and private household staff. No upfront fees, same-day candidates, free replacement guarantee. 500+ satisfied clients, 300+ placements per year.",
-};
+  keywords: [
+    "hire yacht crew",
+    "hire private staff",
+    "yacht crew recruitment",
+    "private household staff",
+    "butler recruitment",
+    "estate manager recruitment",
+    "hire staff",
+    "luxury staffing",
+  ],
+  canonical: "https://lighthouse-careers.com/hire",
+  openGraph: {
+    title: "Hire Yacht Crew & Private Staff | Lighthouse Careers",
+    description:
+      "Find pre-screened yacht crew and private household staff. No upfront fees, same-day candidates, free replacement guarantee.",
+    type: "website",
+    url: "https://lighthouse-careers.com/hire",
+    images: [
+      {
+        url: "https://lighthouse-careers.com/images/og-hire.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Hire Yacht Crew & Private Staff",
+      },
+    ],
+  },
+});
 
 const benefits = [
   {

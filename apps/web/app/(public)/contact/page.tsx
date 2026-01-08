@@ -15,11 +15,37 @@ import {
 } from "lucide-react";
 import { EmergencyLineCard } from "@/components/public/EmergencyLineCard";
 
-export const metadata: Metadata = {
+import { generateMetadata as genMeta } from "@/lib/seo/metadata";
+
+export const metadata: Metadata = genMeta({
   title: "Contact Us | Lighthouse Careers",
   description:
-    "Get in touch with Lighthouse Careers. Contact our team for yacht crew recruitment, private household staffing, or general inquiries.",
-};
+    "Get in touch with Lighthouse Careers. Contact our team for yacht crew recruitment, private household staffing, or general inquiries. Phone: +33-6-76-41-02-99, Email: admin@lighthouse-careers.com",
+  keywords: [
+    "contact lighthouse careers",
+    "yacht crew recruitment contact",
+    "private staff recruitment contact",
+    "recruitment agency contact",
+    "hire yacht crew",
+    "find private staff",
+  ],
+  canonical: "https://lighthouse-careers.com/contact",
+  openGraph: {
+    title: "Contact Us | Lighthouse Careers",
+    description:
+      "Get in touch with Lighthouse Careers. Contact our team for yacht crew recruitment, private household staffing, or general inquiries.",
+    type: "website",
+    url: "https://lighthouse-careers.com/contact",
+    images: [
+      {
+        url: "https://lighthouse-careers.com/images/og-contact.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Contact Lighthouse Careers",
+      },
+    ],
+  },
+});
 
 const contactMethods = [
   {

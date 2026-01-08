@@ -567,3 +567,33 @@ export {
   type ProfileCompletenessResult,
   type JobIndustry,
 } from './matcher/candidate-job-matcher';
+
+// ----------------------------------------------------------------------------
+// BLOG GENERATION (AI-powered blog post generation for SEO)
+// ----------------------------------------------------------------------------
+export {
+  // Main generation function
+  generateBlogPost,
+  // URL mapping
+  mapBlogPostToLandingPages,
+  // Content idea generation
+  generateContentIdeas,
+  // Types
+  type BlogContentType,
+  type TargetAudience,
+  type BlogGenerationParams,
+  type GeneratedBlogPost,
+  type ContentIdea,
+  type IdeaGenerationParams,
+} from './blog-generation';
+
+// ----------------------------------------------------------------------------
+// LANDING PAGE CONTENT GENERATION (AI-powered SEO content for landing pages)
+// ----------------------------------------------------------------------------
+export {
+  // Main generation function
+  generateLandingPageContent,
+  // Types
+  type LandingPageContentParams,
+  type GeneratedLandingPageContent,
+} from './blog-generation/generate-landing-page-content';

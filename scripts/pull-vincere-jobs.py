@@ -550,6 +550,8 @@ def main():
     parser = argparse.ArgumentParser(description='Pull all jobs from Vincere with all custom fields')
     parser.add_argument('--compare-db', action='store_true', help='Compare with Supabase database')
     parser.add_argument('--output-dir', default='output', help='Output directory for results')
+    parser.add_argument('--resume', action='store_true', help='Resume from checkpoint if available')
+    parser.add_argument('--checkpoint-file', default='.vincere-checkpoint.json', help='Checkpoint file path')
     args = parser.parse_args()
     
     print("="*60)
@@ -573,13 +575,41 @@ def main():
         print("No jobs found")
         return
     
+    # Load checkpoint if resuming
+    checkpoint_file = os.path.join(args.output_dir, args.checkpoint_file)
+    processed_job_ids = set()
+    all_jobs_data = []
+    start_index = 0
+    
+    if args.resume and os.path.exists(checkpoint_file):
+        print(f"\nLoading checkpoint from {checkpoint_file}...")
+        try:
+            with open(checkpoint_file, 'r') as f:
+                checkpoint = json.load(f)
+                processed_job_ids = set(checkpoint.get('processed_job_ids', []))
+                start_index = checkpoint.get('last_index', 0)
+                all_jobs_data = checkpoint.get('jobs_data', [])
+                print(f"  ✓ Found checkpoint: {len(processed_job_ids)} jobs already processed")
+                print(f"  Resuming from job index {start_index}/{len(search_results)}")
+        except Exception as e:
+            print(f"  ⚠ Error loading checkpoint: {e}")
+            print(f"  Starting from beginning...")
+            processed_job_ids = set()
+            all_jobs_data = []
+            start_index = 0
+    
     # Fetch full details and custom fields for each job
     print(f"\nFetching full details and custom fields for {len(search_results)} jobs...")
-    all_jobs_data = []
     
-    for i, job_item in enumerate(search_results, 1):
+    for i, job_item in enumerate(search_results[start_index:], start_index + 1):
         job_id = job_item.get('id')
         if not job_id:
+            continue
+        
+        # Skip if already processed
+        if str(job_id) in processed_job_ids:
+            if i % 100 == 1:
+                print(f"  [{i}/{len(search_results)}] Skipping already processed job {job_id}...")
             continue
         
         # Print progress every 10 jobs or on first/last
@@ -589,6 +619,24 @@ def main():
         job_data = fetch_job_with_custom_fields(client, job_id)
         if job_data:
             all_jobs_data.append(job_data)
+            processed_job_ids.add(str(job_id))
+            
+            # Save checkpoint every 50 jobs
+            if len(all_jobs_data) % 50 == 0:
+                checkpoint = {
+                    'processed_job_ids': list(processed_job_ids),
+                    'last_index': i,
+                    'jobs_data': all_jobs_data,  # Save actual job data
+                    'total_jobs': len(search_results),
+                    'last_updated': datetime.now().isoformat()
+                }
+                os.makedirs(args.output_dir, exist_ok=True)
+                # Save to temp file first, then rename (atomic write)
+                temp_file = checkpoint_file + '.tmp'
+                with open(temp_file, 'w') as f:
+                    json.dump(checkpoint, f, indent=2, default=str)
+                os.rename(temp_file, checkpoint_file)
+                print(f"  💾 Checkpoint saved ({len(all_jobs_data)} jobs processed)")
         else:
             print(f"  ⚠ Failed to fetch job {job_id}")
     
@@ -610,6 +658,11 @@ def main():
     
     # Save results
     analysis = save_results(all_jobs_data, args.output_dir)
+    
+    # Remove checkpoint file on successful completion
+    if os.path.exists(checkpoint_file):
+        os.remove(checkpoint_file)
+        print(f"\n✓ Removed checkpoint file (completed successfully)")
     
     # Print summary
     print_summary(all_jobs_data, db_comparison, analysis)

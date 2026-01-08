@@ -27,6 +27,8 @@ const judgmentModel = anthropic('claude-sonnet-4-20250514');
 
 const briefMatchRequestSchema = z.object({
   query: z.string().min(1, 'Query is required'),
+  preview_mode: z.boolean().optional().default(false),
+  limit: z.number().int().min(1).max(10).optional(),
 });
 
 // ----------------------------------------------------------------------------
@@ -1956,10 +1958,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { query } = parseResult.data;
+    const { query, preview_mode = false, limit } = parseResult.data;
 
     // Use the query exactly as provided - no transformation, no reconstruction
     const searchQuery = query;
+    
+    // Determine result limit based on preview mode
+    const resultLimit = preview_mode && limit ? Math.min(limit, MAX_RESULTS) : MAX_RESULTS;
 
     // Create Supabase client with service role for anonymous access
     const supabase = createClient(
@@ -2382,8 +2387,13 @@ export async function POST(request: NextRequest) {
 
         // Third priority: combined score
         return b.similarity - a.similarity;
-      })
-      .slice(0, MAX_RESULTS);
+      });
+    
+    // Store total matches before limiting
+    const totalMatches = candidatesWithScores.length;
+    
+    // Apply limit based on preview mode
+    const limitedCandidates = candidatesWithScores.slice(0, resultLimit);
 
     // =========================================================================
     // PHASE 2.5: COHERE RERANKING
@@ -2393,10 +2403,10 @@ export async function POST(request: NextRequest) {
     // pure vector similarity because it uses cross-attention (query sees doc).
     // =========================================================================
 
-    let rerankedCandidates = candidatesWithScores;
+    let rerankedCandidates = limitedCandidates;
 
-    if (candidatesWithScores.length > 3 && process.env.COHERE_API_KEY) {
-      console.log(`[Brief Match] Stage 2.5: Reranking ${candidatesWithScores.length} candidates with Cohere...`);
+    if (limitedCandidates.length > 3 && process.env.COHERE_API_KEY) {
+      console.log(`[Brief Match] Stage 2.5: Reranking ${limitedCandidates.length} candidates with Cohere...`);
       const rerankStartTime = Date.now();
 
       try {
@@ -2409,7 +2419,7 @@ export async function POST(request: NextRequest) {
         ].filter(Boolean).join('\n');
 
         // Build documents for reranking
-        const documentsToRerank: RerankDocument[] = candidatesWithScores.map(c => ({
+        const documentsToRerank: RerankDocument[] = limitedCandidates.map(c => ({
           id: c.id,
           text: buildCandidateTextForRerank(c),
           metadata: { candidate: c },
@@ -2417,12 +2427,12 @@ export async function POST(request: NextRequest) {
 
         // Call Cohere rerank
         const reranked = await rerankDocuments(rerankQuery, documentsToRerank, {
-          topN: candidatesWithScores.length, // Keep all, just reorder
+          topN: limitedCandidates.length, // Keep all, just reorder
         });
 
         // Map back to candidates with Cohere scores
         rerankedCandidates = reranked.map(result => {
-          const candidate = (result.metadata?.candidate as typeof candidatesWithScores[0]);
+          const candidate = (result.metadata?.candidate as typeof limitedCandidates[0]);
           return {
             ...candidate,
             cohereScore: result.relevanceScore,
@@ -2597,8 +2607,8 @@ export async function POST(request: NextRequest) {
           })
           // Re-sort by blended score
           .sort((a, b) => b.similarity - a.similarity)
-          .slice(0, MAX_RESULTS)
-      : candidatesForAIJudgment;
+          .slice(0, resultLimit)
+      : candidatesForAIJudgment.slice(0, resultLimit);
 
     // Build search context for personalized matching explanations
     const searchContext = {
@@ -2818,6 +2828,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       candidates: anonymizedResults,
+      total_matches: totalMatches,
       total_found: candidatesWithScores.length,
       search_criteria: {
         query: searchQuery,  // Preserve the full original query

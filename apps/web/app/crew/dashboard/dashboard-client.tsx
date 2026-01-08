@@ -27,7 +27,9 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Toast } from "@/components/ui/toast";
 import { getPositionDisplayName } from "@/lib/utils/format-position";
 import { cn } from "@/lib/utils";
 import type {
@@ -216,6 +218,8 @@ function MatchBadge({ percentage }: { percentage?: number }) {
 // Main Component
 export function DashboardClient({ data }: { data: DashboardData }) {
   const { candidate, profileCompleteness, profileActions, matchedJobs, applications, alerts, preferences, isIdentityVerified } = data;
+  const searchParams = useSearchParams();
+  const [showRedirectToast, setShowRedirectToast] = React.useState(false);
 
   const [isAvailable, setIsAvailable] = React.useState(
     candidate.availabilityStatus === "available"
@@ -224,6 +228,17 @@ export function DashboardClient({ data }: { data: DashboardData }) {
     candidate.availableFrom ? candidate.availableFrom.split("T")[0] : ""
   );
   const [isUpdating, setIsUpdating] = React.useState(false);
+
+  // Check if user was redirected from agency dashboard
+  useEffect(() => {
+    if (searchParams.get("redirected") === "agency_access") {
+      setShowRedirectToast(true);
+      // Clean up URL without page reload
+      const url = new URL(window.location.href);
+      url.searchParams.delete("redirected");
+      window.history.replaceState({}, "", url.toString());
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!candidate.availableFrom) {
@@ -255,6 +270,16 @@ export function DashboardClient({ data }: { data: DashboardData }) {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Toast Notification for Redirect */}
+      {showRedirectToast && (
+        <Toast
+          message="This area is for agency staff only. You've been redirected to your candidate dashboard."
+          type="info"
+          onClose={() => setShowRedirectToast(false)}
+          duration={6000}
+        />
+      )}
+
       {/* Header */}
       <header className="bg-gray-50">
         <div className="mx-auto max-w-6xl px-4 py-4 sm:px-6 sm:py-6">

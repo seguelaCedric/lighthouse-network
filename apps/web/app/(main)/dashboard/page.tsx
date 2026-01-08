@@ -24,12 +24,17 @@ async function getDashboardData() {
     redirect("/login");
   }
 
-  // Get user's organization
+  // Get user's organization and user_type
   const { data: userData } = await supabase
     .from("users")
-    .select("id, organization_id, first_name")
+    .select("id, organization_id, first_name, user_type")
     .eq("auth_id", user.id)
     .single();
+
+  // Prevent candidates from accessing agency dashboard
+  if (userData?.user_type === "candidate") {
+    redirect("/crew/dashboard?redirected=agency_access");
+  }
 
   const agencyId = userData?.organization_id;
   const userName = userData?.first_name || "there";

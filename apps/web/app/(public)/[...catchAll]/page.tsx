@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import { Metadata } from 'next'
 import { HireLandingPage } from '@/components/seo/HireLandingPage'
+import { generateMetadata as genMeta } from '@/lib/seo/metadata'
 import { cache } from 'react'
 
 interface Props {
@@ -19,6 +20,70 @@ const getPage = cache(async (urlPath: string) => {
     .single()
 
   return data
+})
+
+// Fetch related pages for internal linking
+const getRelatedPages = cache(async (pageId: string) => {
+  const supabase = await createClient()
+  
+  // Get related positions (same location, different position)
+  const { data: relatedPositions } = await supabase
+    .from('seo_page_relationships')
+    .select(`
+      related_page:seo_landing_pages!seo_page_relationships_related_page_id_fkey (
+        id,
+        original_url_path,
+        position,
+        position_slug,
+        city,
+        state,
+        country,
+        hero_headline
+      )
+    `)
+    .eq('page_id', pageId)
+    .eq('relationship_type', 'related_position')
+    .order('priority', { ascending: false })
+    .limit(6)
+
+  // Get related locations (same position, different location)
+  const { data: relatedLocations } = await supabase
+    .from('seo_page_relationships')
+    .select(`
+      related_page:seo_landing_pages!seo_page_relationships_related_page_id_fkey (
+        id,
+        original_url_path,
+        position,
+        position_slug,
+        city,
+        state,
+        country,
+        hero_headline
+      )
+    `)
+    .eq('page_id', pageId)
+    .eq('relationship_type', 'same_position')
+    .order('priority', { ascending: false })
+    .limit(6)
+
+  return {
+    relatedPositions: relatedPositions?.map(r => r.related_page).filter(Boolean) || [],
+    relatedLocations: relatedLocations?.map(r => r.related_page).filter(Boolean) || [],
+  }
+})
+
+// Fetch content links
+const getContentLinks = cache(async (pageId: string) => {
+  const supabase = await createClient()
+  
+  const { data } = await supabase
+    .from('seo_content_links')
+    .select('*')
+    .eq('page_id', pageId)
+    .order('priority', { ascending: false })
+    .limit(12)
+
+  return data || []
 })
 
 // Build URL path from segments
@@ -42,35 +107,65 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   // Only handle hire-a-* URLs
   if (!catchAll[0] || !isHirePageUrl(catchAll[0])) {
-    return { title: 'Page Not Found | Lighthouse Careers' }
+    return genMeta({
+      title: 'Page Not Found | Lighthouse Careers',
+      noindex: true,
+    })
   }
 
   const urlPath = buildUrlPath(catchAll)
   const page = await getPage(urlPath)
 
   if (!page) {
-    return { title: 'Page Not Found | Lighthouse Careers' }
+    return genMeta({
+      title: 'Page Not Found | Lighthouse Careers',
+      noindex: true,
+    })
   }
 
-  return {
+  // Extract content snippet for enhanced description
+  const contentSnippet = page.about_position
+    ? page.about_position.replace(/<[^>]*>/g, '').substring(0, 200) + '...'
+    : page.meta_description;
+
+  // Build keywords meta
+  const keywords = [
+    ...(page.primary_keywords || []),
+    ...(page.secondary_keywords || []),
+    `hire ${page.position}`,
+    `${page.position} ${page.city || page.state || page.country}`,
+    `${page.position} recruitment`,
+    `${page.position} placement`,
+  ].filter(Boolean).join(', ');
+
+  return genMeta({
     title: page.meta_title,
     description: page.meta_description,
-    alternates: {
-      canonical: page.canonical_url || `https://lighthouse-careers.com/${urlPath}/`,
-    },
+    keywords: keywords,
+    canonical: page.canonical_url || `https://lighthouse-careers.com/${urlPath}/`,
     openGraph: {
       title: page.meta_title,
-      description: page.meta_description,
+      description: contentSnippet,
       type: 'website',
       url: `https://lighthouse-careers.com/${urlPath}/`,
+      images: [
+        {
+          url: `https://lighthouse-careers.com/images/og-hire-${page.position_slug}.jpg`,
+          width: 1200,
+          height: 630,
+          alt: page.meta_title,
+        },
+      ],
       siteName: 'Lighthouse Careers',
+      locale: 'en_US',
     },
     twitter: {
       card: 'summary_large_image',
       title: page.meta_title,
-      description: page.meta_description,
+      description: contentSnippet,
+      images: [`https://lighthouse-careers.com/images/og-hire-${page.position_slug}.jpg`],
     },
-  }
+  })
 }
 
 export default async function CatchAllPage({ params }: Props) {
@@ -88,5 +183,18 @@ export default async function CatchAllPage({ params }: Props) {
     notFound()
   }
 
-  return <HireLandingPage data={page} />
+  // Fetch related pages and content links in parallel
+  const [relatedPages, contentLinks] = await Promise.all([
+    getRelatedPages(page.id),
+    getContentLinks(page.id),
+  ])
+
+  return (
+    <HireLandingPage
+      data={page}
+      relatedPositions={relatedPages.relatedPositions}
+      relatedLocations={relatedPages.relatedLocations}
+      contentLinks={contentLinks}
+    />
+  )
 }

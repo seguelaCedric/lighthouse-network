@@ -17,6 +17,8 @@ import {
   CheckCircle2,
   UserCheck,
   Ship,
+  BookOpen,
+  Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/ui/stat-card";
@@ -462,6 +464,17 @@ export function DashboardClient({
                     <Link href="/jobs/match" className="block">
                       <Button variant="ghost" className="w-full justify-start" leftIcon={<Users className="size-4" />}>
                         AI Matching
+                      </Button>
+                    </Link>
+                    <div className="my-2 border-t border-gray-200" />
+                    <Link href="/dashboard/seo-pages/blog" className="block">
+                      <Button variant="ghost" className="w-full justify-start" leftIcon={<BookOpen className="size-4" />}>
+                        Blog Posts
+                      </Button>
+                    </Link>
+                    <Link href="/dashboard/seo-pages/blog/new" className="block">
+                      <Button variant="ghost" className="w-full justify-start" leftIcon={<Sparkles className="size-4" />}>
+                        Generate Blog Post
                       </Button>
                     </Link>
                   </div>

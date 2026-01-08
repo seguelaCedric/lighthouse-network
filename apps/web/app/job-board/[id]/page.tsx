@@ -65,14 +65,17 @@ async function getSimilarJobs(job: PublicJob): Promise<PublicJob[]> {
   return (similarJobs || []) as PublicJob[];
 }
 
+import { generateMetadata as genMeta } from "@/lib/seo/metadata";
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
   const job = await getJob(id);
 
   if (!job) {
-    return {
+    return genMeta({
       title: "Job Not Found | Lighthouse Careers",
-    };
+      noindex: true,
+    });
   }
 
   const title = `${job.title} | Luxury Staff Jobs | Lighthouse Careers`;
@@ -80,25 +83,42 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     ? job.description.slice(0, 160)
     : `${job.title} position available. ${job.primary_region ? `Location: ${job.primary_region}.` : ""} Apply now through Lighthouse Careers.`;
 
-  return {
+  const keywords = [
+    job.title.toLowerCase(),
+    job.position_category || "",
+    job.contract_type || "",
+    job.primary_region || "",
+    "yacht jobs",
+    "luxury staff jobs",
+    "private household jobs",
+  ].filter(Boolean);
+
+  return genMeta({
     title,
     description,
+    keywords,
+    canonical: `https://lighthouse-careers.com/job-board/${id}`,
     openGraph: {
       title: job.title,
       description,
       type: "website",
       url: `https://lighthouse-careers.com/job-board/${id}`,
-      siteName: "Lighthouse Careers",
+      images: [
+        {
+          url: `https://lighthouse-careers.com/images/og-job-${id}.jpg`,
+          width: 1200,
+          height: 630,
+          alt: job.title,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title: job.title,
       description,
+      images: [`https://lighthouse-careers.com/images/og-job-${id}.jpg`],
     },
-    alternates: {
-      canonical: `https://lighthouse-careers.com/job-board/${id}`,
-    },
-  };
+  });
 }
 
 // Format position category for display

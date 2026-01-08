@@ -853,23 +853,57 @@ export default function SalaryGuidePage({ searchParams }: SalaryGuidePageProps) 
       {!isPrintView && <PublicHeader />}
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900">
-        <div className="absolute inset-0 opacity-20">
-          <div className="absolute left-1/4 top-0 h-96 w-96 rounded-full bg-gold-500/20 blur-3xl" />
-          <div className="absolute bottom-0 right-1/4 h-64 w-64 rounded-full bg-blue-500/20 blur-3xl" />
-        </div>
+      <section className={`relative overflow-hidden ${isPrintView ? 'bg-white' : 'min-h-[70vh]'}`}>
+        {!isPrintView && (
+          <>
+            {/* Rich navy gradient */}
+            <div className="absolute inset-0 bg-gradient-to-b from-navy-800 via-navy-900 to-[#0c1525]" />
 
-        <div className="relative mx-auto max-w-6xl px-4 py-20 text-center sm:px-6">
-          <div className="mb-6 inline-flex items-center rounded-full border border-gold-500/30 bg-gold-500/10 px-5 py-2 text-sm font-medium text-gold-300">
+            {/* Warm champagne ambient light from top */}
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(195,165,120,0.15),transparent_60%)]" />
+
+            {/* Subtle side accents for depth */}
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_80%_at_0%_50%,rgba(195,165,120,0.06),transparent_50%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_80%_at_100%_50%,rgba(195,165,120,0.06),transparent_50%)]" />
+
+            {/* Art Deco sunburst pattern */}
+            <div className="absolute inset-0 opacity-[0.15]">
+              <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+                <defs>
+                  <radialGradient id="sunburst-fade" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="#C3A578" stopOpacity="1"/>
+                    <stop offset="100%" stopColor="#C3A578" stopOpacity="0.3"/>
+                  </radialGradient>
+                </defs>
+                <g stroke="url(#sunburst-fade)" strokeWidth="0.5" fill="none">
+                  {/* Radiating lines from center */}
+                  {[...Array(36)].map((_, i) => {
+                    const angle = (i * 10) * (Math.PI / 180);
+                    const x2 = Math.round((50 + 70 * Math.cos(angle)) * 100) / 100;
+                    const y2 = Math.round((50 + 70 * Math.sin(angle)) * 100) / 100;
+                    return <line key={i} x1="50%" y1="50%" x2={`${x2}%`} y2={`${y2}%`} />;
+                  })}
+                </g>
+                {/* Concentric arcs */}
+                <circle cx="50%" cy="50%" r="15%" fill="none" stroke="#C3A578" strokeWidth="0.3" opacity="0.5"/>
+                <circle cx="50%" cy="50%" r="30%" fill="none" stroke="#C3A578" strokeWidth="0.3" opacity="0.4"/>
+                <circle cx="50%" cy="50%" r="45%" fill="none" stroke="#C3A578" strokeWidth="0.3" opacity="0.3"/>
+              </svg>
+            </div>
+          </>
+        )}
+
+        <div className={`relative mx-auto ${isPrintView ? 'max-w-6xl px-4 py-20 text-center sm:px-6' : 'flex min-h-[70vh] max-w-6xl flex-col items-center justify-center px-4 py-20 text-center sm:px-6'}`}>
+          <div className={`mb-6 inline-flex items-center rounded-full border ${isPrintView ? 'border-gold-600 bg-gold-100 text-gold-800' : 'border-gold-500/30 bg-gold-500/10 text-gold-300 backdrop-blur-sm'} px-5 py-2 text-sm font-medium`}>
             <DollarSign className="mr-2 h-4 w-4" />
             Free 2026 Salary Guide
           </div>
 
-          <h1 className="font-serif text-4xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">
+          <h1 className={`font-serif text-4xl font-semibold leading-tight sm:text-5xl lg:text-6xl ${isPrintView ? 'text-navy-900' : 'text-white'}`}>
             Free 2026 Salary Guide: Yacht Crew & Private Household Salaries
           </h1>
 
-          <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-300 sm:text-xl">
+          <p className={`mx-auto mt-6 max-w-2xl text-lg sm:text-xl ${isPrintView ? '!text-gray-700' : 'text-gray-300'}`}>
             Know your worth. Get comprehensive industry-standard salary ranges for yacht crew positions (by yacht size) and private household staff (by property type). Based on 300+ real placements from Lighthouse Careers.
           </p>
 
@@ -880,17 +914,21 @@ export default function SalaryGuidePage({ searchParams }: SalaryGuidePageProps) 
                 Yacht Crew Salaries
               </Button>
             </a>
-            <a href="#household-salaries">
-              <Button
-                variant="secondary"
-                size="lg"
-                className="min-w-[200px] border-white/20 text-white hover:bg-white/10"
-              >
-                <Users className="mr-2 h-5 w-5" />
-                Household Salaries
-              </Button>
-            </a>
-            <SalaryGuidePDFDownload />
+            {!isPrintView && (
+              <>
+                <a href="#household-salaries">
+                  <Button
+                    variant="secondary"
+                    size="lg"
+                    className="min-w-[200px] border-white/20 text-white hover:bg-white/10"
+                  >
+                    <Users className="mr-2 h-5 w-5" />
+                    Household Salaries
+                  </Button>
+                </a>
+                <SalaryGuidePDFDownload />
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -1057,40 +1095,40 @@ export default function SalaryGuidePage({ searchParams }: SalaryGuidePageProps) 
       <LeadCapture variant="salary-guide" />
 
       {/* Call-to-Action Section for PDF */}
-      <section className="bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 py-16 print:py-12 print:break-inside-avoid">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6">
-          <div className="rounded-2xl border border-gold-500/30 bg-gradient-to-br from-gold-500/10 to-gold-500/5 p-8 print:border-2 print:border-gold-600 print:bg-white">
-            <div className="text-center">
-              <h2 className="font-serif text-3xl font-semibold text-white print:text-navy-900 sm:text-4xl">
+      <section className="bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 py-16 print:bg-white print:py-12 print:break-inside-avoid">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6">
+          <div className="rounded-3xl border-2 border-gold-500/30 bg-gradient-to-br from-gold-500/10 to-gold-500/5 p-10 print:border-2 print:border-gold-600 print:bg-white print:shadow-xl print:p-12">
+            <div className="text-center print:mb-10">
+              <h2 className="font-serif text-4xl font-semibold text-white print:text-4xl print:text-navy-900 sm:text-5xl">
                 Ready to Take the Next Step?
               </h2>
-              <p className="mx-auto mt-4 max-w-2xl text-lg text-gray-300 print:text-gray-700">
+              <p className="mx-auto mt-6 max-w-2xl text-xl text-gray-300 print:text-lg print:text-gray-700">
                 Whether you're looking for your next role or need to hire exceptional talent, Lighthouse Careers is here to help.
               </p>
             </div>
 
-            <div className="mt-8 grid gap-6 sm:grid-cols-2 print:grid-cols-2">
+            <div className="mt-10 grid gap-8 sm:grid-cols-2 print:grid-cols-2 print:gap-8">
               {/* For Candidates */}
-              <div className="rounded-xl border border-white/20 bg-white/5 p-6 print:border-gray-300 print:bg-gray-50">
-                <div className="mb-4 flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gold-500/20 print:bg-gold-100">
-                    <Users className="h-6 w-6 text-gold-300 print:text-gold-600" />
+              <div className="flex flex-col rounded-2xl border-2 border-white/20 bg-white/5 p-8 print:border-2 print:border-gray-200 print:bg-white print:shadow-lg print:p-8">
+                <div className="mb-6 flex items-center gap-4 print:mb-6">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gold-500/20 print:bg-gold-100 print:h-16 print:w-16">
+                    <Users className="h-7 w-7 text-gold-300 print:text-gold-600 print:h-8 print:w-8" />
                   </div>
-                  <h3 className="font-semibold text-white print:text-navy-900">For Candidates</h3>
+                  <h3 className="text-xl font-semibold text-white print:text-xl print:text-navy-900">For Candidates</h3>
                 </div>
-                <p className="mb-4 text-sm text-gray-300 print:text-gray-700">
+                <p className="mb-6 flex-grow text-base leading-relaxed text-gray-300 print:text-base print:text-gray-700">
                   Create your profile and get matched with opportunities that fit your experience and salary expectations.
                 </p>
-                <div className="space-y-2">
+                <div className="space-y-3 print:space-y-3">
                   <a
                     href="https://lighthouse-careers.com/join"
-                    className="block rounded-lg bg-gold-500 px-4 py-2.5 text-center text-sm font-semibold text-navy-900 transition-colors hover:bg-gold-400 print:border-2 print:border-gold-600 print:bg-white print:text-gold-700 print:hover:bg-gold-50"
+                    className="block rounded-lg bg-gold-500 px-6 py-3.5 text-center text-base font-semibold text-navy-900 transition-colors hover:bg-gold-400 print:border-2 print:border-gold-600 print:bg-white print:py-3 print:text-gold-700 print:hover:bg-gold-50"
                   >
                     Create Your Profile →
                   </a>
                   <a
                     href="https://lighthouse-careers.com/job-board"
-                    className="block rounded-lg border border-white/30 bg-white/10 px-4 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-white/20 print:border-gray-300 print:bg-white print:text-navy-900 print:hover:bg-gray-50"
+                    className="block rounded-lg border-2 border-white/30 bg-white/10 px-6 py-3.5 text-center text-base font-semibold text-white transition-colors hover:bg-white/20 print:border-2 print:border-gray-300 print:bg-white print:text-navy-900 print:hover:bg-gray-50"
                   >
                     Browse Open Positions →
                   </a>
@@ -1098,26 +1136,26 @@ export default function SalaryGuidePage({ searchParams }: SalaryGuidePageProps) 
               </div>
 
               {/* For Employers */}
-              <div className="rounded-xl border border-white/20 bg-white/5 p-6 print:border-gray-300 print:bg-gray-50">
-                <div className="mb-4 flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-500/20 print:bg-blue-100">
-                    <Briefcase className="h-6 w-6 text-blue-300 print:text-blue-600" />
+              <div className="flex flex-col rounded-2xl border-2 border-white/20 bg-white/5 p-8 print:border-2 print:border-gray-200 print:bg-white print:shadow-lg print:p-8">
+                <div className="mb-6 flex items-center gap-4 print:mb-6">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gold-500/20 print:bg-gold-100 print:h-16 print:w-16">
+                    <Briefcase className="h-7 w-7 text-gold-300 print:text-gold-600 print:h-8 print:w-8" />
                   </div>
-                  <h3 className="font-semibold text-white print:text-navy-900">For Employers</h3>
+                  <h3 className="text-xl font-semibold text-white print:text-xl print:text-navy-900">For Employers</h3>
                 </div>
-                <p className="mb-4 text-sm text-gray-300 print:text-gray-700">
+                <p className="mb-6 flex-grow text-base leading-relaxed text-gray-300 print:text-base print:text-gray-700">
                   Looking to hire yacht crew or private household staff? Get in touch with our team.
                 </p>
-                <div className="space-y-2">
+                <div className="space-y-3 print:space-y-3">
                   <a
                     href="https://lighthouse-careers.com/contact"
-                    className="block rounded-lg bg-blue-500 px-4 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-blue-400 print:border-2 print:border-blue-600 print:bg-white print:text-blue-700 print:hover:bg-blue-50"
+                    className="block rounded-lg bg-gold-500 px-6 py-3.5 text-center text-base font-semibold text-navy-900 transition-colors hover:bg-gold-400 print:border-2 print:border-gold-600 print:bg-white print:py-3 print:text-gold-700 print:hover:bg-gold-50"
                   >
                     Contact Us →
                   </a>
                   <a
                     href="https://lighthouse-careers.com/employer/register"
-                    className="block rounded-lg border border-white/30 bg-white/10 px-4 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-white/20 print:border-gray-300 print:bg-white print:text-navy-900 print:hover:bg-gray-50"
+                    className="block rounded-lg border-2 border-white/30 bg-white/10 px-6 py-3.5 text-center text-base font-semibold text-white transition-colors hover:bg-white/20 print:border-2 print:border-gray-300 print:bg-white print:text-navy-900 print:hover:bg-gray-50"
                   >
                     Register as Employer →
                   </a>
@@ -1125,22 +1163,16 @@ export default function SalaryGuidePage({ searchParams }: SalaryGuidePageProps) 
               </div>
             </div>
 
-            <div className="mt-6 text-center">
-              <p className="text-sm text-gray-400 print:text-gray-600">
+            <div className="mt-10 text-center print:mt-8">
+              <p className="text-base text-gray-400 print:text-base print:text-gray-700">
                 Visit us at{" "}
-                <a
-                  href="https://lighthouse-careers.com"
-                  className="font-semibold text-gold-300 underline print:text-gold-600 hover:text-gold-200 print:hover:text-gold-700"
-                >
+                <span className="inline-block rounded-lg border-2 border-white/20 bg-white/5 px-4 py-2 font-semibold text-gold-300 print:border-gray-300 print:bg-white print:text-gold-600">
                   lighthouse-careers.com
-                </a>
+                </span>
                 {" "}or email{" "}
-                <a
-                  href="mailto:info@lighthouse-careers.com"
-                  className="font-semibold text-gold-300 underline print:text-gold-600 hover:text-gold-200 print:hover:text-gold-700"
-                >
+                <span className="inline-block rounded-lg border-2 border-white/20 bg-white/5 px-4 py-2 font-semibold text-gold-300 print:border-gray-300 print:bg-white print:text-gold-600">
                   info@lighthouse-careers.com
-                </a>
+                </span>
               </p>
             </div>
           </div>
