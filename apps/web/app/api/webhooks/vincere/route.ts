@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/server";
 import {
   getVincereClient,
   getJobWithCustomFields,
@@ -35,6 +35,21 @@ interface VincereWebhookEvent {
  */
 export async function POST(request: NextRequest) {
   try {
+    // Verify webhook secret token (prevents unauthorized access)
+    const webhookSecret = process.env.VINCERE_WEBHOOK_SECRET;
+    if (webhookSecret) {
+      const authHeader = request.headers.get("x-webhook-secret");
+      const urlSecret = request.nextUrl.searchParams.get("secret");
+
+      if (authHeader !== webhookSecret && urlSecret !== webhookSecret) {
+        console.error("[VincereWebhook] Invalid or missing webhook secret");
+        return NextResponse.json(
+          { error: "Unauthorized" },
+          { status: 401 }
+        );
+      }
+    }
+
     // Check if Vincere is configured
     if (
       !process.env.VINCERE_API_URL ||
@@ -61,8 +76,8 @@ export async function POST(request: NextRequest) {
 
     console.log(`[VincereWebhook] Received event: ${event.entity_type}.${event.action_type} for ID ${event.data.id}`);
 
-    // Get Supabase client (service role for webhook processing)
-    const supabase = await createClient();
+    // Get Supabase client (service role for webhook processing - no auth context needed)
+    const supabase = createServiceRoleClient();
 
     // Process based on entity type and action type
     if (event.entity_type === "JOB") {
@@ -106,7 +121,7 @@ export async function POST(request: NextRequest) {
  */
 async function handleJobCreatedOrUpdated(
   vincereJobId: number,
-  supabase: Awaited<ReturnType<typeof createClient>>
+  supabase: ReturnType<typeof createServiceRoleClient>
 ) {
   try {
     const vincere = getVincereClient();
@@ -225,7 +240,7 @@ async function handleJobCreatedOrUpdated(
  */
 async function handleJobDeleted(
   vincereJobId: number,
-  supabase: Awaited<ReturnType<typeof createClient>>
+  supabase: ReturnType<typeof createServiceRoleClient>
 ) {
   try {
     // Find job by external_id
