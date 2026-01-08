@@ -8,7 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { signIn, signInWithGoogle } from "@/lib/auth/actions";
+import { signIn, signInWithGoogle, signInWithMagicLink } from "@/lib/auth/actions";
 import { loginSchema, type LoginFormData } from "@/lib/auth/validation";
 import {
   Eye,
@@ -18,6 +18,8 @@ import {
   ArrowRight,
   X,
   Smartphone,
+  Sparkles,
+  CheckCircle2,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 
@@ -184,6 +186,10 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [show2FA, setShow2FA] = useState(false);
+  const [loginMode, setLoginMode] = useState<"password" | "magic-link">("password");
+  const [magicLinkEmail, setMagicLinkEmail] = useState("");
+  const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [isSendingMagicLink, setIsSendingMagicLink] = useState(false);
   const redirectParam = searchParams.get("redirect");
   const redirectTo =
     redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")
@@ -196,6 +202,10 @@ function LoginForm() {
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
   });
 
   const onSubmit = async (data: LoginFormData) => {
@@ -209,6 +219,25 @@ function LoginForm() {
     toast.success("Signed in successfully");
     router.push(redirectTo || result.redirectTo || "/dashboard");
     router.refresh();
+  };
+
+  const handleMagicLinkSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!magicLinkEmail) {
+      toast.error("Please enter your email address");
+      return;
+    }
+
+    setIsSendingMagicLink(true);
+    const result = await signInWithMagicLink(magicLinkEmail, redirectTo || undefined);
+    setIsSendingMagicLink(false);
+
+    if (!result.success) {
+      toast.error(result.error || "Failed to send magic link");
+      return;
+    }
+
+    setMagicLinkSent(true);
   };
 
   const handleGoogleSignIn = async () => {
@@ -226,6 +255,81 @@ function LoginForm() {
     setShow2FA(false);
     router.push(redirectTo || "/dashboard");
   };
+
+  // Magic link sent success screen
+  if (magicLinkSent) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute -left-40 -top-40 size-80 rounded-full bg-gold-200/30 blur-3xl" />
+          <div className="absolute -bottom-40 -right-40 size-80 rounded-full bg-navy-200/30 blur-3xl" />
+        </div>
+
+        <div className="relative w-full max-w-md">
+          <div className="mb-8 text-center">
+            <Link href="/" className="inline-flex justify-center">
+              <Logo size="xl" />
+            </Link>
+          </div>
+
+          <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-xl">
+            <div className="text-center">
+              <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-success-100">
+                <CheckCircle2 className="size-8 text-success-600" />
+              </div>
+              <h1 className="mb-2 font-serif text-2xl font-semibold text-navy-900">
+                Check Your Email
+              </h1>
+              <p className="mb-6 text-gray-600">
+                We've sent a login link to{" "}
+                <span className="font-medium text-navy-900">{magicLinkEmail}</span>
+              </p>
+
+              <div className="rounded-lg bg-navy-50 p-4 text-left">
+                <h3 className="mb-2 font-medium text-navy-900">What's next?</h3>
+                <ol className="space-y-2 text-sm text-navy-700">
+                  <li className="flex items-start gap-2">
+                    <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-navy-200 text-xs font-semibold">
+                      1
+                    </span>
+                    Open the email from Lighthouse
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-navy-200 text-xs font-semibold">
+                      2
+                    </span>
+                    Click the secure login link
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-navy-200 text-xs font-semibold">
+                      3
+                    </span>
+                    You'll be signed in automatically
+                  </li>
+                </ol>
+              </div>
+
+              <p className="mt-6 text-sm text-gray-500">
+                Didn't receive the email?{" "}
+                <button
+                  onClick={() => {
+                    setMagicLinkSent(false);
+                  }}
+                  className="font-medium text-gold-600 hover:text-gold-700"
+                >
+                  Try again
+                </button>
+              </p>
+            </div>
+          </div>
+
+          <p className="mt-6 text-center text-sm text-gray-400">
+            The login link will expire in 1 hour
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100 p-4">
@@ -259,132 +363,232 @@ function LoginForm() {
               </p>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              {/* Email Input */}
-              <div>
-                <label
-                  htmlFor="email"
-                  className="mb-1.5 block text-sm font-medium text-navy-900"
-                >
-                  Email Address
-                </label>
-                <div className="relative">
-                  <Mail className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
-                  <input
-                    id="email"
-                    type="email"
-                    {...register("email")}
-                    placeholder="you@example.com"
-                    className={cn(
-                      "w-full rounded-lg border bg-white py-2.5 pl-10 pr-4 text-navy-900 placeholder:text-gray-400 focus:outline-none focus:ring-2",
-                      errors.email
-                        ? "border-burgundy-300 focus:border-burgundy-500 focus:ring-burgundy-500/20"
-                        : "border-gray-200 focus:border-gold-500 focus:ring-gold-500/20"
-                    )}
-                  />
-                </div>
-                {errors.email && (
-                  <p className="mt-1 text-xs text-burgundy-600">
-                    {errors.email.message}
-                  </p>
+            {/* Login Mode Toggle */}
+            <div className="mb-6 flex rounded-lg bg-gray-100 p-1">
+              <button
+                type="button"
+                onClick={() => setLoginMode("password")}
+                className={cn(
+                  "flex flex-1 items-center justify-center gap-2 rounded-md py-2 text-sm font-medium transition-all",
+                  loginMode === "password"
+                    ? "bg-white text-navy-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
                 )}
-              </div>
-
-              {/* Password Input */}
-              <div>
-                <label
-                  htmlFor="password"
-                  className="mb-1.5 block text-sm font-medium text-navy-900"
-                >
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
-                  <input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    {...register("password")}
-                    placeholder="Enter your password"
-                    className={cn(
-                      "w-full rounded-lg border bg-white py-2.5 pl-10 pr-12 text-navy-900 placeholder:text-gray-400 focus:outline-none focus:ring-2",
-                      errors.password
-                        ? "border-burgundy-300 focus:border-burgundy-500 focus:ring-burgundy-500/20"
-                        : "border-gray-200 focus:border-gold-500 focus:ring-gold-500/20"
-                    )}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="size-5" />
-                    ) : (
-                      <Eye className="size-5" />
-                    )}
-                  </button>
-                </div>
-                {errors.password && (
-                  <p className="mt-1 text-xs text-burgundy-600">
-                    {errors.password.message}
-                  </p>
-                )}
-              </div>
-
-              {/* Remember Me & Forgot Password */}
-              <div className="flex items-center justify-between">
-                <label className="flex cursor-pointer items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    className="size-4 rounded border-gray-300 text-gold-600 focus:ring-gold-500"
-                  />
-                  <span className="text-sm text-gray-600">Remember me</span>
-                </label>
-                <Link
-                  href="/auth/forgot-password"
-                  className="text-sm font-medium text-gold-600 hover:text-gold-700"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-
-              {/* Sign In Button */}
-              <Button
-                type="submit"
-                variant="primary"
-                className="w-full"
-                disabled={isSubmitting}
               >
-                {isSubmitting ? (
-                  <span className="flex items-center gap-2">
-                    <svg className="size-4 animate-spin" viewBox="0 0 24 24">
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                        fill="none"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                      />
-                    </svg>
-                    Signing in...
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    Sign In
-                    <ArrowRight className="size-4" />
-                  </span>
+                <Lock className="size-4" />
+                Password
+              </button>
+              <button
+                type="button"
+                onClick={() => setLoginMode("magic-link")}
+                className={cn(
+                  "flex flex-1 items-center justify-center gap-2 rounded-md py-2 text-sm font-medium transition-all",
+                  loginMode === "magic-link"
+                    ? "bg-white text-navy-900 shadow-sm"
+                    : "text-gray-500 hover:text-gray-700"
                 )}
-              </Button>
-            </form>
+              >
+                <Sparkles className="size-4" />
+                Magic Link
+              </button>
+            </div>
+
+            {loginMode === "password" ? (
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                {/* Email Input */}
+                <div>
+                  <label
+                    htmlFor="email"
+                    className="mb-1.5 block text-sm font-medium text-navy-900"
+                  >
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
+                    <input
+                      id="email"
+                      type="email"
+                      {...register("email")}
+                      placeholder="you@example.com"
+                      className={cn(
+                        "w-full rounded-lg border bg-white py-2.5 pl-10 pr-4 text-navy-900 placeholder:text-gray-400 focus:outline-none focus:ring-2",
+                        errors.email
+                          ? "border-burgundy-300 focus:border-burgundy-500 focus:ring-burgundy-500/20"
+                          : "border-gray-200 focus:border-gold-500 focus:ring-gold-500/20"
+                      )}
+                    />
+                  </div>
+                  {errors.email && (
+                    <p className="mt-1 text-xs text-burgundy-600">
+                      {errors.email.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Password Input */}
+                <div>
+                  <label
+                    htmlFor="password"
+                    className="mb-1.5 block text-sm font-medium text-navy-900"
+                  >
+                    Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
+                    <input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      {...register("password")}
+                      placeholder="Enter your password"
+                      className={cn(
+                        "w-full rounded-lg border bg-white py-2.5 pl-10 pr-12 text-navy-900 placeholder:text-gray-400 focus:outline-none focus:ring-2",
+                        errors.password
+                          ? "border-burgundy-300 focus:border-burgundy-500 focus:ring-burgundy-500/20"
+                          : "border-gray-200 focus:border-gold-500 focus:ring-gold-500/20"
+                      )}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="size-5" />
+                      ) : (
+                        <Eye className="size-5" />
+                      )}
+                    </button>
+                  </div>
+                  {errors.password && (
+                    <p className="mt-1 text-xs text-burgundy-600">
+                      {errors.password.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Remember Me & Forgot Password */}
+                <div className="flex items-center justify-between">
+                  <label className="flex cursor-pointer items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      className="size-4 rounded border-gray-300 text-gold-600 focus:ring-gold-500"
+                    />
+                    <span className="text-sm text-gray-600">Remember me</span>
+                  </label>
+                  <Link
+                    href="/auth/forgot-password"
+                    className="text-sm font-medium text-gold-600 hover:text-gold-700"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
+
+                {/* Sign In Button */}
+                <Button
+                  type="submit"
+                  variant="primary"
+                  className="w-full"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    <span className="flex items-center gap-2">
+                      <svg className="size-4 animate-spin" viewBox="0 0 24 24">
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                          fill="none"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                        />
+                      </svg>
+                      Signing in...
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      Sign In
+                      <ArrowRight className="size-4" />
+                    </span>
+                  )}
+                </Button>
+              </form>
+            ) : (
+              <form onSubmit={handleMagicLinkSubmit} className="space-y-4">
+                {/* Magic Link Email Input */}
+                <div>
+                  <label
+                    htmlFor="magic-link-email"
+                    className="mb-1.5 block text-sm font-medium text-navy-900"
+                  >
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
+                    <input
+                      id="magic-link-email"
+                      type="email"
+                      value={magicLinkEmail}
+                      onChange={(e) => setMagicLinkEmail(e.target.value)}
+                      placeholder="you@example.com"
+                      className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-navy-900 placeholder:text-gray-400 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/20"
+                    />
+                  </div>
+                </div>
+
+                {/* Info Box */}
+                <div className="rounded-lg bg-gold-50 p-3">
+                  <div className="flex items-start gap-2">
+                    <Sparkles className="mt-0.5 size-4 shrink-0 text-gold-600" />
+                    <p className="text-xs text-gold-800">
+                      We'll send you a secure link to sign in instantly. No password needed.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Send Magic Link Button */}
+                <Button
+                  type="submit"
+                  variant="primary"
+                  className="w-full"
+                  disabled={isSendingMagicLink || !magicLinkEmail}
+                >
+                  {isSendingMagicLink ? (
+                    <span className="flex items-center gap-2">
+                      <svg className="size-4 animate-spin" viewBox="0 0 24 24">
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                          fill="none"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                        />
+                      </svg>
+                      Sending link...
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-2">
+                      Send Magic Link
+                      <ArrowRight className="size-4" />
+                    </span>
+                  )}
+                </Button>
+              </form>
+            )}
 
             {/* Divider */}
             <div className="my-6 flex items-center gap-3">
@@ -433,19 +637,6 @@ function LoginForm() {
               </Link>
             </p>
           </div>
-        </div>
-
-        {/* Employer Link */}
-        <div className="mt-4 text-center">
-          <p className="text-sm text-gray-500">
-            Looking to hire?{" "}
-            <Link
-              href="/employer/login"
-              className="font-medium text-navy-600 hover:text-navy-700"
-            >
-              Employer Portal
-            </Link>
-          </p>
         </div>
 
         {/* Trust badges */}

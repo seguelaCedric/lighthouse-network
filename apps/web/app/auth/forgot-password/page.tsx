@@ -2,32 +2,43 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Mail, ArrowLeft, CheckCircle2, ArrowRight, Send } from "lucide-react";
+import { Mail, ArrowLeft, CheckCircle2, Send } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
+import { resetPassword } from "@/lib/auth/actions";
+import { toast } from "sonner";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
-      setIsSuccess(true);
-    }, 1500);
+    const result = await resetPassword(email);
+    setIsLoading(false);
+
+    if (!result.success) {
+      toast.error(result.error || "Failed to send reset link");
+      return;
+    }
+
+    setIsSuccess(true);
   };
 
-  const handleResend = () => {
+  const handleResend = async () => {
     setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1500);
+    const result = await resetPassword(email);
+    setIsLoading(false);
+
+    if (!result.success) {
+      toast.error(result.error || "Failed to send reset link");
+      return;
+    }
+
+    toast.success("Reset link sent again");
   };
 
   return (

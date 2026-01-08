@@ -1,9 +1,11 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { mapPositionToDatabaseValue } from "@/lib/utils/position-mapping";
+import { syncCandidateCreation } from "@/lib/vincere/sync-service";
+import { sendEmail, welcomeCandidateEmail } from "@/lib/email";
 
 export type AuthResult = {
   success: boolean;
@@ -102,11 +104,16 @@ export async function signUp(
 
   // If this is a candidate registration, create user and candidate records
   if (isCandidate && authData.user && metadata) {
-    // Use the actual Lighthouse Careers org ID where recruiters belong
-    const DEFAULT_LIGHTHOUSE_ORG_ID = "c4e1e6ff-b71a-4fbd-bb31-dd282d981436";
+    // Use the actual Lighthouse Careers org ID
+    const DEFAULT_LIGHTHOUSE_ORG_ID = "00000000-0000-0000-0000-000000000001";
+
+    // Use service role client to bypass RLS for initial record creation
+    // This is necessary because the user hasn't verified their email yet,
+    // so auth.uid() is not available and RLS policies would block the insert
+    const serviceClient = createServiceRoleClient();
 
     // Create or update user record with user_type = 'candidate'
-    const { error: userError } = await supabase.from("users").upsert(
+    const { error: userError } = await serviceClient.from("users").upsert(
       {
         auth_id: authData.user.id,
         email: email.toLowerCase(),
@@ -128,14 +135,14 @@ export async function signUp(
     }
 
     // Get the user record to link to candidate
-    const { data: userRecord } = await supabase
+    const { data: userRecord } = await serviceClient
       .from("users")
       .select("id")
       .eq("auth_id", authData.user.id)
       .single();
 
     // Check if candidate already exists (by email)
-    const { data: existingCandidate } = await supabase
+    const { data: existingCandidate } = await serviceClient
       .from("candidates")
       .select("id, user_id, first_name, last_name, phone, nationality, candidate_type, primary_position, years_experience")
       .eq("email", email.toLowerCase())
@@ -147,7 +154,7 @@ export async function signUp(
       candidateId = existingCandidate.id;
       // Link existing candidate to user account if not already linked
       if (!existingCandidate.user_id && userRecord?.id) {
-        const { error: updateError } = await supabase
+        const { error: updateError } = await serviceClient
           .from("candidates")
           .update({
             user_id: userRecord.id,
@@ -174,7 +181,7 @@ export async function signUp(
       }
     } else {
       // Create new candidate record
-      const { data: newCandidate, error: candidateError } = await supabase
+      const { data: newCandidate, error: candidateError } = await serviceClient
         .from("candidates")
         .insert({
           user_id: userRecord?.id || null,
@@ -192,7 +199,7 @@ export async function signUp(
             ? parseInt(metadata.years_experience)
             : null,
           source: "self_registration",
-          availability_status: "looking",
+          availability_status: "available",
         })
         .select("id")
         .single();
@@ -208,7 +215,7 @@ export async function signUp(
     // Create candidate-agency relationship so Lighthouse Careers can see the candidate
     if (candidateId) {
       // Check if relationship already exists
-      const { data: existingRelationship } = await supabase
+      const { data: existingRelationship } = await serviceClient
         .from("candidate_agency_relationships")
         .select("id")
         .eq("candidate_id", candidateId)
@@ -216,7 +223,7 @@ export async function signUp(
         .maybeSingle();
 
       if (!existingRelationship) {
-        const { error: relationshipError } = await supabase
+        const { error: relationshipError } = await serviceClient
           .from("candidate_agency_relationships")
           .insert({
             candidate_id: candidateId,
@@ -230,7 +237,42 @@ export async function signUp(
           // Don't fail the registration, but log the error
         }
       }
+
+      // Sync candidate to Vincere (fire-and-forget)
+      syncCandidateCreation(candidateId).catch((err) =>
+        console.error("Vincere sync failed for candidate creation:", err)
+      );
+
+      // Send welcome email (fire-and-forget)
+      const welcomeEmail = welcomeCandidateEmail({
+        candidateName: metadata.first_name || "there",
+        position: metadata.primary_position || undefined,
+        candidateType: metadata.candidate_type as "yacht_crew" | "private_staff" | undefined,
+        dashboardLink: `${process.env.NEXT_PUBLIC_SITE_URL || "https://lighthouse-careers.com"}/crew/dashboard`,
+      });
+      sendEmail({
+        to: email,
+        subject: welcomeEmail.subject,
+        html: welcomeEmail.html,
+        text: welcomeEmail.text,
+      }).catch((err) =>
+        console.error("Failed to send welcome email:", err)
+      );
     }
+
+    // For candidates, sign them in directly (skip email verification)
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (signInError) {
+      console.error("Failed to auto-sign-in candidate:", signInError);
+      // Don't fail registration, but they'll need to log in manually
+    }
+
+    revalidatePath("/", "layout");
+    return { success: true, redirectTo: "/crew/dashboard" };
   }
 
   revalidatePath("/", "layout");
@@ -304,4 +346,35 @@ export async function signInWithGoogle(redirectTo?: string): Promise<void> {
   if (data.url) {
     redirect(data.url);
   }
+}
+
+export async function signInWithMagicLink(
+  email: string,
+  redirectTo?: string
+): Promise<AuthResult> {
+  const supabase = await createClient();
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const safeRedirect =
+    redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
+      ? redirectTo
+      : null;
+  const emailRedirectTo = safeRedirect
+    ? `${baseUrl}/auth/callback?next=${encodeURIComponent(safeRedirect)}`
+    : `${baseUrl}/auth/callback`;
+
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      emailRedirectTo,
+    },
+  });
+
+  if (error) {
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
+
+  return { success: true };
 }

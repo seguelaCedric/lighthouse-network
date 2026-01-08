@@ -6,7 +6,7 @@ export function baseTemplate(content: string): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lighthouse Crew</title>
+  <title>Lighthouse Careers</title>
   <style>
     body {
       margin: 0;
@@ -169,28 +169,24 @@ export function baseTemplate(content: string): string {
 <body>
   <div class="container">
     <div class="email-wrapper">
-      <div class="header">
-        <div class="logo">
-          <div class="logo-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2L4 6V12C4 16.41 7.39 20.69 12 22C16.61 20.69 20 16.41 20 12V6L12 2Z" fill="#1a2b4a"/>
-            </svg>
-          </div>
-          <span class="logo-text">Lighthouse Crew</span>
-        </div>
+      <div style="padding: 30px; text-align: center;">
+        <img src="https://lighthouse-network-web.vercel.app/logo.svg" alt="Lighthouse Careers" style="height: 48px; width: auto;" />
       </div>
       <div class="content">
         ${content}
       </div>
       <div class="footer">
-        <p><strong>Lighthouse Crew Network</strong></p>
-        <p>Your trusted partner in yacht crew recruitment</p>
+        <p><strong>Lighthouse Careers</strong></p>
+        <p>Your trusted partner in luxury recruitment</p>
         <p style="margin-top: 15px;">
-          <a href="https://lighthouse.crew">Website</a> ·
-          <a href="mailto:hello@lighthouse.crew">Contact Us</a>
+          <a href="https://lighthouse-careers.com">Website</a> ·
+          <a href="mailto:hello@lighthouse-careers.com">Contact Us</a>
         </p>
         <p style="margin-top: 15px; font-size: 12px;">
-          © ${new Date().getFullYear()} Lighthouse Crew. All rights reserved.
+          © ${new Date().getFullYear()} Lighthouse Careers. All rights reserved.
+        </p>
+        <p style="font-size: 11px; color: #9ca3af;">
+          The Lighthouse Careers Team
         </p>
       </div>
     </div>
@@ -217,5 +213,5 @@ export function generatePlainText(content: string): string {
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 
-  return `${text}\n\n---\nLighthouse Crew Network\nYour trusted partner in yacht crew recruitment\nhttps://lighthouse.crew`;
+  return `${text}\n\n---\nLighthouse Careers\nYour trusted partner in luxury recruitment\nhttps://lighthouse-careers.com`;
 }

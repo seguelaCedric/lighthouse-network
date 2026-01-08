@@ -26,7 +26,7 @@ export function isResendConfigured(): boolean {
 
 // Default from address
 export function getDefaultFromAddress(): string {
-  return process.env.EMAIL_FROM_ADDRESS || "Lighthouse Crew <hello@lighthouse.crew>";
+  return process.env.EMAIL_FROM_ADDRESS || "Lighthouse Careers <hello@lighthouse-careers.com>";
 }
 
 // Email sending result

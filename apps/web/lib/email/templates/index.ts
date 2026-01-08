@@ -19,7 +19,8 @@ export type EmailTemplate =
   | "employer_magic_link"
   | "employer_brief_received"
   | "employer_enquiry_submitted"
-  | "employer_enquiry_admin_notification";
+  | "employer_enquiry_admin_notification"
+  | "job_alert";
 
 // Template data types
 export interface BriefReceivedData {
@@ -86,6 +87,8 @@ export interface WelcomeClientData {
 export interface WelcomeCandidateData {
   candidateName: string;
   position?: string;
+  candidateType?: "yacht_crew" | "private_staff";
+  dashboardLink?: string;
 }
 
 export interface ClientPortalInviteData {
@@ -441,27 +444,51 @@ export function welcomeClientEmail(data: WelcomeClientData) {
 }
 
 export function welcomeCandidateEmail(data: WelcomeCandidateData) {
+  const dashboardLink = data.dashboardLink || "https://lighthouse-careers.com/crew/dashboard";
+  const industryText = data.candidateType === "private_staff"
+    ? "private household staff"
+    : data.candidateType === "yacht_crew"
+      ? "yacht crew"
+      : "luxury industry";
+
   const content = `
-    <h1>Welcome to Lighthouse Crew!</h1>
+    <h1>Welcome to Lighthouse Careers!</h1>
     <p>Hi ${data.candidateName},</p>
-    <p>Welcome to the Lighthouse Crew network! We're excited to have you on board.</p>
+    <p>Congratulations on joining the Lighthouse Careers network! We're thrilled to have you as part of our community of exceptional ${industryText} professionals.</p>
 
-    <p>Here's how to make the most of your profile:</p>
+    <p style="text-align:center;">
+      <a href="${dashboardLink}" class="button">Go to Your Dashboard</a>
+    </p>
 
+    <div class="info-box">
+      <p style="margin:0 0 15px; font-weight:600; color:#1a2b4a;">Get started in 3 simple steps:</p>
+      <ul style="margin:0;">
+        <li><strong>Complete your profile</strong> — Add your experience, certifications, and a professional photo</li>
+        <li><strong>Upload your documents</strong> — CV, certificates, and references help you stand out</li>
+        <li><strong>Set your preferences</strong> — Tell us what you're looking for so we can match you perfectly</li>
+      </ul>
+    </div>
+
+    <h2>Why Lighthouse Careers?</h2>
     <ul>
-      <li><strong>Complete your profile:</strong> The more complete your profile, the better we can match you</li>
-      <li><strong>Upload documents:</strong> Add your CV, certifications, and references</li>
-      <li><strong>Keep your availability updated:</strong> Let us know when you're looking for work</li>
-      <li><strong>Respond quickly:</strong> When opportunities arise, fast responses make a difference</li>
+      <li><span class="highlight">AI-powered matching</span> connects you with opportunities that fit your skills${data.position ? ` as a ${data.position}` : ""}</li>
+      <li><strong>Exclusive positions</strong> from leading yachts and private households worldwide</li>
+      <li><strong>Dedicated support</strong> from recruiters who understand the industry</li>
+      <li><strong>Career resources</strong> including salary guides and professional development</li>
     </ul>
 
-    <p>Our team will be in touch when we have opportunities that match your skills${data.position ? ` as a ${data.position}` : ""}.</p>
+    <div class="divider"></div>
 
-    <p>Best of luck with your career,<br>The Lighthouse Crew Team</p>
+    <p><strong>What happens next?</strong></p>
+    <p>Our team is already reviewing your profile. When opportunities match your skills and preferences, we'll be in touch. In the meantime, make sure your profile is complete — candidates with complete profiles are <strong>3x more likely</strong> to be shortlisted.</p>
+
+    <p>Questions? Simply reply to this email — we're here to help you succeed.</p>
+
+    <p>Welcome aboard,<br>The Lighthouse Careers Team</p>
   `;
 
   return {
-    subject: "Welcome to Lighthouse Crew!",
+    subject: "Welcome to Lighthouse Careers!",
     html: baseTemplate(content),
     text: generatePlainText(content),
   };
@@ -818,6 +845,132 @@ export function employerEnquiryAdminNotificationEmail(data: EmployerEnquiryAdmin
 
   return {
     subject: `New Employer Lead: ${data.companyName} (Referred by ${data.referrerName})`,
+    html: baseTemplate(content),
+    text: generatePlainText(content),
+  };
+}
+
+// ============================================
+// Job Alert Email Templates
+// ============================================
+
+export interface JobAlertData {
+  candidateName: string;
+  jobTitle: string;
+  jobId: string;
+  vesselName?: string;
+  vesselType?: string;
+  vesselSize?: number;
+  contractType?: string;
+  primaryRegion?: string;
+  salaryMin?: number;
+  salaryMax?: number;
+  salaryCurrency?: string;
+  salaryPeriod?: string;
+  startDate?: string;
+  benefits?: string;
+  matchedPosition: string;
+  dashboardLink: string;
+}
+
+export function jobAlertEmail(data: JobAlertData) {
+  // Format salary display
+  const formatSalary = () => {
+    if (!data.salaryMin && !data.salaryMax) return null;
+    const currency = data.salaryCurrency || "EUR";
+    const period = data.salaryPeriod || "month";
+    const currencySymbol = currency === "EUR" ? "€" : currency === "GBP" ? "£" : currency === "USD" ? "$" : currency;
+
+    if (data.salaryMin && data.salaryMax) {
+      return `${currencySymbol}${data.salaryMin.toLocaleString()} - ${currencySymbol}${data.salaryMax.toLocaleString()} per ${period}`;
+    }
+    if (data.salaryMin) {
+      return `From ${currencySymbol}${data.salaryMin.toLocaleString()} per ${period}`;
+    }
+    return `Up to ${currencySymbol}${data.salaryMax?.toLocaleString()} per ${period}`;
+  };
+
+  const salary = formatSalary();
+
+  // Format vessel info
+  const vesselInfo = [
+    data.vesselName,
+    data.vesselType,
+    data.vesselSize ? `${data.vesselSize}m` : null,
+  ].filter(Boolean).join(" • ");
+
+  // Format start date
+  const formattedStartDate = data.startDate
+    ? new Date(data.startDate).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
+    : null;
+
+  const content = `
+    <h1>New Job Matching Your Profile!</h1>
+    <p>Hi ${data.candidateName},</p>
+    <p>Great news! A new <strong>${data.jobTitle}</strong> position has been posted that matches your job preferences as a <strong class="highlight">${data.matchedPosition}</strong>.</p>
+
+    <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 12px; padding: 25px; margin: 25px 0; border-left: 4px solid #c9a962;">
+      <h2 style="margin: 0 0 20px; color: #1a2b4a; font-size: 20px;">${data.jobTitle}</h2>
+
+      ${vesselInfo ? `
+      <div style="display: flex; align-items: center; margin-bottom: 12px;">
+        <span style="color: #6b7280; min-width: 24px; margin-right: 10px;">⛵</span>
+        <span style="color: #374151; font-weight: 500;">${vesselInfo}</span>
+      </div>
+      ` : ""}
+
+      ${data.primaryRegion ? `
+      <div style="display: flex; align-items: center; margin-bottom: 12px;">
+        <span style="color: #6b7280; min-width: 24px; margin-right: 10px;">📍</span>
+        <span style="color: #374151;">${data.primaryRegion}</span>
+      </div>
+      ` : ""}
+
+      ${data.contractType ? `
+      <div style="display: flex; align-items: center; margin-bottom: 12px;">
+        <span style="color: #6b7280; min-width: 24px; margin-right: 10px;">📋</span>
+        <span style="color: #374151;">${data.contractType.charAt(0).toUpperCase() + data.contractType.slice(1)} Contract</span>
+      </div>
+      ` : ""}
+
+      ${formattedStartDate ? `
+      <div style="display: flex; align-items: center; margin-bottom: 12px;">
+        <span style="color: #6b7280; min-width: 24px; margin-right: 10px;">📅</span>
+        <span style="color: #374151;">Start: ${formattedStartDate}</span>
+      </div>
+      ` : ""}
+
+      ${salary ? `
+      <div style="display: flex; align-items: center; margin-bottom: 12px;">
+        <span style="color: #6b7280; min-width: 24px; margin-right: 10px;">💰</span>
+        <span style="color: #374151; font-weight: 600;">${salary}</span>
+      </div>
+      ` : ""}
+
+      ${data.benefits ? `
+      <div style="display: flex; align-items: flex-start; margin-bottom: 12px;">
+        <span style="color: #6b7280; min-width: 24px; margin-right: 10px;">✨</span>
+        <span style="color: #374151; font-size: 14px;">${data.benefits}</span>
+      </div>
+      ` : ""}
+    </div>
+
+    <p style="text-align: center;">
+      <a href="${data.dashboardLink}" class="button">View Job & Apply</a>
+    </p>
+
+    <div class="divider"></div>
+
+    <p style="font-size: 14px; color: #6b7280;">
+      <strong>Why did I receive this?</strong><br>
+      This job matches your ${data.matchedPosition} position preference. You can update your job preferences or disable job alerts in your <a href="${data.dashboardLink.replace(/\/jobs\/.*$/, "/preferences")}" style="color: #c9a962;">candidate dashboard</a>.
+    </p>
+
+    <p>Good luck with your application!<br>The Lighthouse Crew Team</p>
+  `;
+
+  return {
+    subject: `New ${data.jobTitle} Position${data.vesselName ? ` on ${data.vesselName}` : ""} - Matches Your Profile!`,
     html: baseTemplate(content),
     text: generatePlainText(content),
   };
