@@ -156,7 +156,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           alt: page.meta_title,
         },
       ],
-      siteName: 'Lighthouse Careers',
       locale: 'en_US',
     },
     twitter: {
