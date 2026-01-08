@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/server";
 import {
   getVincereClient,
   getCandidateWithCustomFields,
@@ -60,8 +60,8 @@ export async function POST(request: NextRequest) {
       `[VincereCandidateWebhook] Received event: ${event.entity_type}.${event.action_type} for candidate ${event.data.id}`
     );
 
-    // Get Supabase client (service role for webhook processing)
-    const supabase = await createClient();
+    // Get Supabase client (service role for webhook processing - no auth context needed)
+    const supabase = createServiceRoleClient();
 
     // Process based on entity type and action type
     if (event.entity_type === "CANDIDATE") {
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
  */
 async function handleCandidateCreatedOrUpdated(
   vincereCandidateId: number,
-  supabase: Awaited<ReturnType<typeof createClient>>
+  supabase: ReturnType<typeof createServiceRoleClient>
 ) {
   try {
     const vincere = getVincereClient();
@@ -273,7 +273,7 @@ async function handleCandidateCreatedOrUpdated(
  */
 async function handleCandidateArchived(
   vincereCandidateId: number,
-  supabase: Awaited<ReturnType<typeof createClient>>
+  supabase: ReturnType<typeof createServiceRoleClient>
 ) {
   try {
     // Find candidate by vincere_id
@@ -322,7 +322,7 @@ async function handleCandidateArchived(
  */
 async function handleCandidateDeleted(
   vincereCandidateId: number,
-  supabase: Awaited<ReturnType<typeof createClient>>
+  supabase: ReturnType<typeof createServiceRoleClient>
 ) {
   try {
     // Find candidate by vincere_id
