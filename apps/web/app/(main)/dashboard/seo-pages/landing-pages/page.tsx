@@ -59,8 +59,8 @@ export default function SeoLandingPagesPage() {
       const data = await response.json();
       const allPages = data.pages || [];
 
-      const positions = [...new Set(allPages.map((p: SeoLandingPage) => p.position))].sort();
-      const countries = [...new Set(allPages.map((p: SeoLandingPage) => p.country))].sort();
+      const positions = [...new Set(allPages.map((p: SeoLandingPage) => p.position))].sort() as string[];
+      const countries = [...new Set(allPages.map((p: SeoLandingPage) => p.country))].sort() as string[];
 
       setUniquePositions(positions);
       setUniqueCountries(countries);
