@@ -32,6 +32,21 @@ interface VincereCandidateWebhookEvent {
  */
 export async function POST(request: NextRequest) {
   try {
+    // Verify webhook secret token (prevents unauthorized access)
+    const webhookSecret = process.env.VINCERE_WEBHOOK_SECRET;
+    if (webhookSecret) {
+      const authHeader = request.headers.get("x-webhook-secret");
+      const urlSecret = request.nextUrl.searchParams.get("secret");
+
+      if (authHeader !== webhookSecret && urlSecret !== webhookSecret) {
+        console.error("[VincereCandidateWebhook] Invalid or missing webhook secret");
+        return NextResponse.json(
+          { error: "Unauthorized" },
+          { status: 401 }
+        );
+      }
+    }
+
     // Check if Vincere is configured
     if (
       !process.env.VINCERE_API_URL ||
