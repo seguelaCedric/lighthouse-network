@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { syncCandidateUpdate } from "@/lib/vincere/sync-service";
+import { syncCandidateUpdate, syncDocumentUpload } from "@/lib/vincere/sync-service";
 import type { Candidate } from "../../../../../packages/database/types";
 
 /**
@@ -1131,6 +1131,11 @@ export async function updateProfilePhoto(formData: FormData): Promise<{
     await supabase.storage.from("avatars").remove([filePath]);
     return { success: false, error: "Failed to update profile photo" };
   }
+
+  // Sync photo to Vincere (fire-and-forget)
+  syncDocumentUpload(candidateId, photoUrl, file.name, file.type, "photo").catch((err) =>
+    console.error("Vincere sync failed for profile photo upload:", err)
+  );
 
   // Revalidate all paths where avatar appears
   revalidatePath("/crew/profile/edit");
