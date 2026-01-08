@@ -333,10 +333,38 @@ export async function uploadCandidateCertificate(
 }
 
 /**
- * Upload a photo to a candidate in Vincere
- * Photos are typically images that appear on the candidate profile
+ * Upload a photo to a candidate in Vincere via URL reference
+ *
+ * Vincere's photo endpoint accepts a URL and file_name, not file upload.
+ * Max file size: 800KB (819,200 bytes)
+ *
+ * @param vincereId - Candidate's Vincere ID
+ * @param photoUrl - Public URL to the photo (Vincere will fetch it)
+ * @param fileName - Name of the photo file
+ * @param client - Optional VincereClient instance
  */
 export async function uploadCandidatePhoto(
+  vincereId: number,
+  photoUrl: string,
+  fileName: string,
+  client?: VincereClient
+): Promise<VincereUploadResponse> {
+  const vincere = client ?? getVincereClient();
+
+  // Vincere photo endpoint accepts URL reference, not file data
+  const result = await vincere.post<VincereUploadResponse>(
+    `/candidate/${vincereId}/photo`,
+    { url: photoUrl, file_name: fileName }
+  );
+
+  return result;
+}
+
+/**
+ * @deprecated Use uploadCandidatePhoto with URL instead
+ * Legacy function signature for backward compatibility
+ */
+export async function uploadCandidatePhotoBuffer(
   vincereId: number,
   file: ArrayBuffer | Buffer,
   fileName: string,

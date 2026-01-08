@@ -467,11 +467,13 @@ export async function syncDocumentUpload(
       await uploadCandidateCertificate(vincereId, fileBuffer, fileName, mimeType, 1, vincere);
       console.log(`[VincereSync] Uploaded certificate for candidate ${vincereId}`);
     } else if (documentType === 'photo') {
-      await uploadCandidatePhoto(vincereId, fileBuffer, fileName, mimeType, vincere);
+      // Vincere photo endpoint uses URL reference, not file upload
+      // Max size: 800KB - if photo is larger, Vincere will reject it
+      await uploadCandidatePhoto(vincereId, documentUrl, fileName, vincere);
       console.log(`[VincereSync] Uploaded photo for candidate ${vincereId}`);
     } else {
-      // Generic document upload
-      await uploadCandidatePhoto(vincereId, fileBuffer, fileName, mimeType, vincere);
+      // Generic document upload - use certificate endpoint with generic type
+      await uploadCandidateCertificate(vincereId, fileBuffer, fileName, mimeType, 1, vincere);
       console.log(`[VincereSync] Uploaded document for candidate ${vincereId}`);
     }
 

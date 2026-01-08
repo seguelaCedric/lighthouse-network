@@ -10,6 +10,75 @@ import { Button } from "@/components/ui/button";
 import { genderOptions, nationalityOptions } from "./constants";
 import { updateProfilePhoto } from "@/app/crew/profile/actions";
 
+// Vincere has a max photo size of 800KB
+const MAX_PHOTO_SIZE_BYTES = 800 * 1024;
+const MAX_DIMENSION = 800; // Max width/height for resized photo
+
+/**
+ * Compress an image file to fit within size limits
+ * Uses canvas to resize and compress the image
+ */
+async function compressImage(file: File): Promise<File> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    img.onload = () => {
+      // Calculate new dimensions maintaining aspect ratio
+      let { width, height } = img;
+      if (width > MAX_DIMENSION || height > MAX_DIMENSION) {
+        if (width > height) {
+          height = (height / width) * MAX_DIMENSION;
+          width = MAX_DIMENSION;
+        } else {
+          width = (width / height) * MAX_DIMENSION;
+          height = MAX_DIMENSION;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
+      // Draw and compress
+      ctx?.drawImage(img, 0, 0, width, height);
+
+      // Try different quality levels until we're under the limit
+      let quality = 0.9;
+      const tryCompress = () => {
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              reject(new Error("Failed to compress image"));
+              return;
+            }
+
+            if (blob.size <= MAX_PHOTO_SIZE_BYTES || quality <= 0.3) {
+              // Success or minimum quality reached
+              const compressedFile = new File([blob], file.name, {
+                type: "image/jpeg",
+                lastModified: Date.now(),
+              });
+              resolve(compressedFile);
+            } else {
+              // Try lower quality
+              quality -= 0.1;
+              tryCompress();
+            }
+          },
+          "image/jpeg",
+          quality
+        );
+      };
+
+      tryCompress();
+    };
+
+    img.onerror = () => reject(new Error("Failed to load image"));
+    img.src = URL.createObjectURL(file);
+  });
+}
+
 interface PersonalInfoFormProps {
   // Profile photo
   profilePhotoUrl?: string;
@@ -89,8 +158,16 @@ export function PersonalInfoForm({
     setUploadError(null);
 
     try {
+      // Compress the image to fit Vincere's 800KB limit
+      let processedFile = file;
+      if (file.size > MAX_PHOTO_SIZE_BYTES) {
+        console.log(`Compressing image from ${(file.size / 1024).toFixed(0)}KB...`);
+        processedFile = await compressImage(file);
+        console.log(`Compressed to ${(processedFile.size / 1024).toFixed(0)}KB`);
+      }
+
       const formData = new FormData();
-      formData.append("photo", file);
+      formData.append("photo", processedFile);
 
       const result = await updateProfilePhoto(formData);
 
