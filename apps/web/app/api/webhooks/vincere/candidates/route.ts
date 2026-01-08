@@ -215,7 +215,7 @@ async function handleCandidateCreatedOrUpdated(
       has_stcw: mappedCandidate.has_stcw,
       has_eng1: mappedCandidate.has_eng1,
       highest_license: mappedCandidate.highest_license,
-      second_license: mappedCandidate.second_license,
+      // Note: second_license column doesn't exist in DB, data stored in Vincere only
 
       // Personal
       is_smoker: mappedCandidate.is_smoker,
