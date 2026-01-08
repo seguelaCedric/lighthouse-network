@@ -171,20 +171,67 @@ async function handleCandidateCreatedOrUpdated(
     // Prepare candidate data for database
     // Note: Candidates are NOT directly linked to organizations via organization_id
     // They are linked via candidate_agency_relationships table
+    // Include ALL fields from the mapping to ensure complete sync
     const candidateInsert = {
+      // Core identity
       vincere_id: mappedCandidate.vincere_id,
       first_name: mappedCandidate.first_name,
       last_name: mappedCandidate.last_name,
       email: mappedCandidate.email,
       phone: mappedCandidate.phone,
       whatsapp: mappedCandidate.whatsapp,
+
+      // Demographics
       date_of_birth: mappedCandidate.date_of_birth,
       gender: mappedCandidate.gender,
       nationality: mappedCandidate.nationality,
+      second_nationality: mappedCandidate.second_nationality,
       current_location: mappedCandidate.current_location,
+
+      // Professional
       primary_position: mappedCandidate.primary_position,
       position_category: mappedCandidate.position_category,
       profile_summary: mappedCandidate.profile_summary,
+
+      // Preferences
+      preferred_yacht_types: mappedCandidate.preferred_yacht_types,
+      preferred_yacht_size_min: mappedCandidate.preferred_yacht_size_min,
+      preferred_yacht_size_max: mappedCandidate.preferred_yacht_size_max,
+      preferred_contract_types: mappedCandidate.preferred_contract_types,
+      preferred_regions: mappedCandidate.preferred_regions,
+
+      // Availability & Compensation
+      available_from: mappedCandidate.available_from,
+      availability_status: mappedCandidate.availability_status,
+      desired_salary_min: mappedCandidate.desired_salary_min,
+      desired_salary_max: mappedCandidate.desired_salary_max,
+      salary_currency: mappedCandidate.salary_currency,
+
+      // Visas
+      has_schengen: mappedCandidate.has_schengen,
+      has_b1b2: mappedCandidate.has_b1b2,
+
+      // Certifications
+      has_stcw: mappedCandidate.has_stcw,
+      has_eng1: mappedCandidate.has_eng1,
+      highest_license: mappedCandidate.highest_license,
+      second_license: mappedCandidate.second_license,
+
+      // Personal
+      is_smoker: mappedCandidate.is_smoker,
+      has_visible_tattoos: mappedCandidate.has_visible_tattoos,
+      tattoo_description: mappedCandidate.tattoo_description,
+      marital_status: mappedCandidate.marital_status,
+
+      // Couple info
+      is_couple: mappedCandidate.is_couple,
+      partner_name: mappedCandidate.partner_name,
+      partner_position: mappedCandidate.partner_position,
+      couple_position: mappedCandidate.couple_position,
+
+      // Sync metadata
+      verification_tier: mappedCandidate.verification_tier,
+      last_synced_at: mappedCandidate.last_synced_at,
     };
 
     if (existingCandidate) {
