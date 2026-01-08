@@ -22,10 +22,22 @@ const getPage = cache(async (urlPath: string) => {
   return data
 })
 
+// Related page type
+interface RelatedPage {
+  id: string;
+  original_url_path: string;
+  position: string;
+  position_slug: string;
+  city: string | null;
+  state: string | null;
+  country: string;
+  hero_headline: string;
+}
+
 // Fetch related pages for internal linking
 const getRelatedPages = cache(async (pageId: string) => {
   const supabase = await createClient()
-  
+
   // Get related positions (same location, different position)
   const { data: relatedPositions } = await supabase
     .from('seo_page_relationships')
@@ -66,9 +78,21 @@ const getRelatedPages = cache(async (pageId: string) => {
     .order('priority', { ascending: false })
     .limit(6)
 
+  // Extract and flatten the related_page objects
+  // Handle both array and object cases from Supabase joins
+  const extractedPositions: RelatedPage[] = (relatedPositions || [])
+    .map(r => r.related_page)
+    .flat()
+    .filter((p): p is RelatedPage => p !== null && typeof p === 'object' && 'id' in p)
+
+  const extractedLocations: RelatedPage[] = (relatedLocations || [])
+    .map(r => r.related_page)
+    .flat()
+    .filter((p): p is RelatedPage => p !== null && typeof p === 'object' && 'id' in p)
+
   return {
-    relatedPositions: relatedPositions?.map(r => r.related_page).filter(Boolean) || [],
-    relatedLocations: relatedLocations?.map(r => r.related_page).filter(Boolean) || [],
+    relatedPositions: extractedPositions,
+    relatedLocations: extractedLocations,
   }
 })
 
