@@ -54,7 +54,8 @@ export default async function PositionHubPage({ params }: Props) {
     .join(' ');
 
   // Group pages by location
-  const pagesByLocation = pages.reduce((acc, page) => {
+  type PageType = (typeof pages)[number];
+  const pagesByLocation = pages.reduce<Record<string, PageType[]>>((acc, page) => {
     const locationKey = [page.city, page.state, page.country]
       .filter(Boolean)
       .join(', ');
@@ -63,7 +64,7 @@ export default async function PositionHubPage({ params }: Props) {
     }
     acc[locationKey].push(page);
     return acc;
-  }, {} as Record<string, typeof pages>);
+  }, {});
 
   // Get related blog posts
   const { data: blogPosts } = await supabase
@@ -94,7 +95,7 @@ export default async function PositionHubPage({ params }: Props) {
             Available Locations
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {Object.entries(pagesByLocation).map(([location, locationPages]) => {
+            {Object.entries(pagesByLocation).map(([location, locationPages]: [string, PageType[]]) => {
               const primaryPage = locationPages[0];
               return (
                 <Link
