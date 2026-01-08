@@ -22,8 +22,10 @@ import {
   VINCERE_MARITAL_STATUS_MAP,
   VINCERE_CONTRACT_TYPE_MAP,
   VINCERE_YACHT_TYPE_MAP,
+  VINCERE_LICENSE_MAP,
   NATIONALITY_TO_VINCERE_ID,
   POSITION_MAPPING,
+  getVincereLicenseId,
 } from './constants';
 
 /**
@@ -324,8 +326,19 @@ export function mapVincereToCandidate(
     // Certifications
     has_stcw: getBoolField('stcw') ?? false,
     has_eng1: getBoolField('eng1') ?? false,
-    highest_license: getField('highestLicence') as string | null,
-    second_license: getField('secondLicence') as string | null,
+    // License fields are dropdowns - convert numeric ID to string value
+    highest_license: (() => {
+      const val = getField('highestLicence');
+      if (typeof val === 'number') return VINCERE_LICENSE_MAP[val] ?? null;
+      if (typeof val === 'string') return val; // Fallback for legacy string values
+      return null;
+    })(),
+    second_license: (() => {
+      const val = getField('secondLicence');
+      if (typeof val === 'number') return VINCERE_LICENSE_MAP[val] ?? null;
+      if (typeof val === 'string') return val; // Fallback for legacy string values
+      return null;
+    })(),
 
     // Personal
     is_smoker,
@@ -500,18 +513,25 @@ export function mapCandidateToVincere(
     });
   }
 
+  // License fields use dropdown IDs, not string values
   if (candidate.highest_license) {
-    customFields.push({
-      fieldKey: VINCERE_FIELD_KEYS.highestLicence,
-      fieldValue: candidate.highest_license,
-    });
+    const licenseId = getVincereLicenseId(candidate.highest_license);
+    if (licenseId) {
+      customFields.push({
+        fieldKey: VINCERE_FIELD_KEYS.highestLicence,
+        fieldValues: [licenseId],
+      });
+    }
   }
 
   if (candidate.second_license) {
-    customFields.push({
-      fieldKey: VINCERE_FIELD_KEYS.secondLicence,
-      fieldValue: candidate.second_license,
-    });
+    const licenseId = getVincereLicenseId(candidate.second_license);
+    if (licenseId) {
+      customFields.push({
+        fieldKey: VINCERE_FIELD_KEYS.secondLicence,
+        fieldValues: [licenseId],
+      });
+    }
   }
 
   // Date fields

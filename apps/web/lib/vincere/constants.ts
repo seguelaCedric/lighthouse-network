@@ -437,6 +437,66 @@ export function getVincereFunctionalExpertiseId(position: string | null | undefi
 }
 
 /**
+ * Vincere License Field IDs
+ *
+ * Maps our app license values to Vincere dropdown IDs for highestLicence field.
+ * Field key: 83f3f9dc58b5fc1d0b7d591fd82f001b
+ *
+ * These are used with `field_values: [id]` for dropdown custom fields.
+ *
+ * Last updated: 2026-01-08
+ */
+export const VINCERE_LICENSE_IDS: Record<string, number> = {
+  // Deck/Bridge licenses
+  'master_unlimited': 1,
+  'master_3000gt': 2,
+  'master_500gt': 3,
+  'master_200gt': 8,
+  'mca_chief_mate': 4,      // Chief Mate Unlimited
+  'chief_mate_3000': 5,     // Chief Mate 3000
+  'mca_oow': 6,             // OOW Unlimited
+  'oow_3000': 7,            // OOW 3000
+  'rya_yachtmaster_ocean': 9,
+  'rya_yachtmaster_offshore': 10,
+  'yacht_rating': 11,
+  'coastal_skipper': 12,
+  'day_skipper': 13,
+  'powerboat_level_2': 14,
+
+  // Engineering licenses
+  'chief_engineer_unlimited': 15,
+  'second_engineer_unlimited': 16,
+  'eoow': 17,
+  'y1_engineer': 18,
+  'y2_engineer': 19,
+  'y3_engineer': 20,
+  'y4_engineer': 21,
+  'meol': 22,
+  'aec': 23,
+  'chief_engineer_3000kw': 24,
+  'sv_2nd_engineer': 25,
+  'sv_chief_engineer_3000kw': 26,
+  'sv_chief_engineer_9000kw': 27,
+};
+
+/**
+ * Reverse mapping: Vincere license ID to our value
+ */
+export const VINCERE_LICENSE_MAP: Record<number, string> = Object.fromEntries(
+  Object.entries(VINCERE_LICENSE_IDS).map(([k, v]) => [v, k])
+);
+
+/**
+ * Get Vincere license ID for an app license value
+ * @param license - License value from our app
+ * @returns Vincere license ID or undefined if not found
+ */
+export function getVincereLicenseId(license: string | null | undefined): number | undefined {
+  if (!license) return undefined;
+  return VINCERE_LICENSE_IDS[license.toLowerCase()];
+}
+
+/**
  * Job custom field keys
  */
 export const VINCERE_JOB_FIELD_KEYS = {
