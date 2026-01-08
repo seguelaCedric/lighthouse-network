@@ -12,6 +12,7 @@ import {
   Facebook,
   Linkedin,
   Instagram,
+  HelpCircle,
 } from "lucide-react";
 import { EmergencyLineCard } from "@/components/public/EmergencyLineCard";
 
@@ -365,16 +366,18 @@ export default function ContactPage() {
       </section>
 
       {/* FAQ Preview */}
-      <section className="py-20 sm:py-28">
-        <div className="mx-auto max-w-4xl px-4 text-center sm:px-6">
-          <h2 className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl">
-            Frequently Asked Questions
-          </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-gray-600">
-            Find quick answers to common questions about our services.
-          </p>
+      <section className="py-20 sm:py-28 bg-white" aria-labelledby="faq-heading">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+          <div className="mb-12 text-center">
+            <h2 id="faq-heading" className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl">
+              Frequently Asked Questions
+            </h2>
+            <p className="mt-4 text-lg text-gray-600">
+              Find quick answers to common questions about our services.
+            </p>
+          </div>
 
-          <div className="mt-12 space-y-4 text-left">
+          <div className="space-y-4">
             {[
               {
                 q: "How much does your recruitment service cost?",
@@ -393,13 +396,18 @@ export default function ContactPage() {
                 a: "We place candidates worldwide, with particular expertise in Europe, the Mediterranean, Caribbean, and Asia-Pacific regions.",
               },
             ].map((faq, index) => (
-              <div
+              <details
                 key={index}
-                className="rounded-xl border border-gray-200 bg-white p-6"
+                className="group rounded-2xl border border-gray-200 bg-white p-6 transition-all hover:shadow-lg"
               >
-                <h3 className="mb-2 font-semibold text-navy-900">{faq.q}</h3>
-                <p className="text-gray-600">{faq.a}</p>
-              </div>
+                <summary className="flex cursor-pointer items-center justify-between font-semibold text-navy-900 text-lg list-none">
+                  <span className="pr-4">{faq.q}</span>
+                  <HelpCircle className="h-5 w-5 flex-shrink-0 text-gold-600 transition-transform group-open:rotate-180" />
+                </summary>
+                <div className="mt-4 prose prose-sm max-w-none text-gray-700">
+                  {faq.a}
+                </div>
+              </details>
             ))}
           </div>
         </div>

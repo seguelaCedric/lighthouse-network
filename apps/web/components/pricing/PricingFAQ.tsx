@@ -1,8 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { ChevronDown } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { HelpCircle } from "lucide-react";
 
 interface FAQItem {
   question: string;
@@ -52,42 +50,22 @@ const faqItems: FAQItem[] = [
   },
 ];
 
-function FAQAccordionItem({ item }: { item: FAQItem }) {
-  const [isOpen, setIsOpen] = useState(false);
-
-  return (
-    <div className="border-b border-gray-200 last:border-0">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex w-full items-center justify-between py-5 text-left"
-      >
-        <span className="text-base font-medium text-navy-800">{item.question}</span>
-        <ChevronDown
-          className={cn(
-            "size-5 shrink-0 text-gray-400 transition-transform duration-200",
-            isOpen && "rotate-180"
-          )}
-        />
-      </button>
-      <div
-        className={cn(
-          "grid transition-all duration-200",
-          isOpen ? "grid-rows-[1fr] pb-5" : "grid-rows-[0fr]"
-        )}
-      >
-        <div className="overflow-hidden">
-          <p className="text-sm leading-relaxed text-gray-600">{item.answer}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function PricingFAQ() {
   return (
-    <div className="mx-auto max-w-3xl divide-y divide-gray-200 rounded-xl border border-gray-200 bg-white px-6">
+    <div className="mx-auto max-w-4xl space-y-4">
       {faqItems.map((item, index) => (
-        <FAQAccordionItem key={index} item={item} />
+        <details
+          key={index}
+          className="group rounded-2xl border border-gray-200 bg-white p-6 transition-all hover:shadow-lg"
+        >
+          <summary className="flex cursor-pointer items-center justify-between font-semibold text-navy-900 text-lg list-none">
+            <span className="pr-4">{item.question}</span>
+            <HelpCircle className="h-5 w-5 flex-shrink-0 text-gold-600 transition-transform group-open:rotate-180" />
+          </summary>
+          <div className="mt-4 prose prose-sm max-w-none text-gray-700">
+            {item.answer}
+          </div>
+        </details>
       ))}
     </div>
   );

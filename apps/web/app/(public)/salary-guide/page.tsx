@@ -25,6 +25,7 @@ import {
   ArrowRight,
   Info,
   Shield,
+  HelpCircle,
 } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -1180,22 +1181,30 @@ export default function SalaryGuidePage({ searchParams }: SalaryGuidePageProps) 
       </section>
 
       {/* FAQ Section for SEO */}
-      <section className="py-20 sm:py-28 bg-white">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6">
+      <section className="py-20 sm:py-28 bg-white" aria-labelledby="faq-heading">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           <div className="mb-12 text-center">
-            <h2 className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl">
+            <h2 id="faq-heading" className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl">
               Frequently Asked Questions About 2026 Salaries
             </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-gray-600">
+            <p className="mt-4 text-lg text-gray-600">
               Common questions about yacht crew and private household salary ranges.
             </p>
           </div>
-          <div className="space-y-6">
+          <div className="space-y-4">
             {faqSchema.mainEntity.map((faq, index) => (
-              <div key={index} className="rounded-lg border border-gray-200 bg-white p-6">
-                <h3 className="mb-3 font-semibold text-lg text-navy-900">{faq.name}</h3>
-                <p className="text-gray-700 leading-relaxed">{faq.acceptedAnswer.text}</p>
-              </div>
+              <details
+                key={index}
+                className="group rounded-2xl border border-gray-200 bg-white p-6 transition-all hover:shadow-lg"
+              >
+                <summary className="flex cursor-pointer items-center justify-between font-semibold text-navy-900 text-lg list-none">
+                  <span className="pr-4">{faq.name}</span>
+                  <HelpCircle className="h-5 w-5 flex-shrink-0 text-gold-600 transition-transform group-open:rotate-180" />
+                </summary>
+                <div className="mt-4 prose prose-sm max-w-none text-gray-700">
+                  {faq.acceptedAnswer.text}
+                </div>
+              </details>
             ))}
           </div>
         </div>
