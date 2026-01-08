@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { jobQuerySchema, createJobSchema } from "@/lib/validations/job";
+import { processJobAlerts } from "@/lib/services/job-alert-service";
 import type { Job, PaginatedResponse } from "@lighthouse/database";
 
 export async function GET(request: NextRequest) {
@@ -187,6 +188,15 @@ export async function POST(request: NextRequest) {
         { error: "Failed to create job" },
         { status: 500 }
       );
+    }
+
+    // Trigger job alerts if job is created with "open" status
+    // This sends notifications to candidates whose positions match the job title
+    if (data && jobData.status === "open") {
+      // Process job alerts in the background (don't wait for it)
+      processJobAlerts(data.id).catch((err) => {
+        console.error("Error processing job alerts:", err);
+      });
     }
 
     return NextResponse.json({ data }, { status: 201 });

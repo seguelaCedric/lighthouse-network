@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
  */
 export interface CrewNotification {
   id: string;
-  type: "certification" | "application" | "message" | "system";
+  type: "certification" | "application" | "message" | "system" | "job_alert";
   title: string;
   description: string;
   date: string;
@@ -20,6 +20,9 @@ export interface CrewNotification {
     expiryDate?: string;
     jobTitle?: string;
     applicationId?: string;
+    jobId?: string;
+    vesselName?: string;
+    matchedPosition?: string;
   };
 }
 
@@ -258,6 +261,37 @@ export async function getNotificationsData(): Promise<NotificationsData | null> 
     }
   }
 
+  // Get job alert notifications from the database (from the last 30 days)
+  const { data: jobAlertNotifications } = await supabase
+    .from("candidate_notifications")
+    .select("*")
+    .eq("candidate_id", candidate.id)
+    .eq("type", "job_alert")
+    .gte("created_at", thirtyDaysAgo.toISOString())
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  for (const notification of jobAlertNotifications || []) {
+    const metadata = notification.metadata as Record<string, unknown> || {};
+    notifications.push({
+      id: notification.id,
+      type: "job_alert",
+      title: notification.title,
+      description: notification.description,
+      date: notification.created_at,
+      urgent: false,
+      isRead: notification.is_read || false,
+      actionLabel: notification.action_label || "View Job",
+      actionHref: notification.action_url || `/crew/jobs/${notification.entity_id}`,
+      metadata: {
+        jobTitle: metadata.job_title as string,
+        jobId: notification.entity_id,
+        vesselName: metadata.vessel_name as string,
+        matchedPosition: metadata.matched_position as string,
+      },
+    });
+  }
+
   // Sort notifications: urgent first, then by date (newest first)
   notifications.sort((a, b) => {
     if (a.urgent !== b.urgent) return a.urgent ? -1 : 1;
@@ -268,4 +302,92 @@ export async function getNotificationsData(): Promise<NotificationsData | null> 
     notifications,
     unreadCount: notifications.filter((n) => !n.isRead).length,
   };
+}
+
+/**
+ * Mark a notification as read
+ */
+export async function markNotificationAsRead(notificationId: string): Promise<boolean> {
+  const supabase = await createClient();
+
+  // Only mark database notifications (job alerts) as read
+  // Certification and application notifications are generated on-the-fly
+  if (!notificationId.startsWith("stcw-") &&
+      !notificationId.startsWith("eng1-") &&
+      !notificationId.startsWith("cert-") &&
+      !notificationId.startsWith("app-")) {
+    const { error } = await supabase
+      .from("candidate_notifications")
+      .update({
+        is_read: true,
+        read_at: new Date().toISOString()
+      })
+      .eq("id", notificationId);
+
+    if (error) {
+      console.error("Error marking notification as read:", error);
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Mark all notifications as read for a candidate
+ */
+export async function markAllNotificationsAsRead(): Promise<boolean> {
+  const supabase = await createClient();
+
+  // Get authenticated user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return false;
+
+  // Get user record
+  const { data: userData } = await supabase
+    .from("users")
+    .select("id")
+    .eq("auth_id", user.id)
+    .maybeSingle();
+
+  let candidate = null;
+
+  if (userData) {
+    const { data: candidateByUserId } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("user_id", userData.id)
+      .maybeSingle();
+    candidate = candidateByUserId;
+  }
+
+  if (!candidate && user.email) {
+    const { data: candidateByEmail } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("email", user.email)
+      .maybeSingle();
+    candidate = candidateByEmail;
+  }
+
+  if (!candidate) return false;
+
+  const { error } = await supabase
+    .from("candidate_notifications")
+    .update({
+      is_read: true,
+      read_at: new Date().toISOString()
+    })
+    .eq("candidate_id", candidate.id)
+    .eq("is_read", false);
+
+  if (error) {
+    console.error("Error marking all notifications as read:", error);
+    return false;
+  }
+
+  return true;
 }

@@ -64,6 +64,8 @@ interface ProfileStatus {
   completeness: number;
   canQuickApply: boolean;
   missingFields: string[];
+  hasCV: boolean;
+  candidateId: string;
 }
 
 export default function PreferencesClient({ candidateId, initialData }: PreferencesClientProps) {
@@ -193,6 +195,8 @@ export default function PreferencesClient({ candidateId, initialData }: Preferen
           completeness: 0,
           canQuickApply: false,
           missingFields: ["candidate_profile"],
+          hasCV: false,
+          candidateId: candidateId,
         });
         setLoadingMatches(false);
         return;
@@ -234,14 +238,23 @@ export default function PreferencesClient({ candidateId, initialData }: Preferen
               : match
           )
         );
+      } else if (result.error === "cv_required") {
+        // Update profile status to show CV is missing
+        setProfileStatus((prev) => prev ? {
+          ...prev,
+          hasCV: false,
+          canQuickApply: false,
+        } : null);
       } else if (result.error === "profile_incomplete") {
         // Update profile status if returned
         if (result.completeness !== undefined) {
-          setProfileStatus({
+          setProfileStatus((prev) => ({
             completeness: result.completeness,
             canQuickApply: false,
             missingFields: result.missingFields || [],
-          });
+            hasCV: prev?.hasCV ?? true,
+            candidateId: prev?.candidateId ?? candidateId,
+          }));
         }
       }
       // For already_applied, the UI will update on next refresh
@@ -250,7 +263,23 @@ export default function PreferencesClient({ candidateId, initialData }: Preferen
     } finally {
       setApplyingJobId(null);
     }
-  }, []);
+  }, [candidateId]);
+
+  // Handle CV upload success - refresh the hasCV state
+  const handleCVUploadSuccess = React.useCallback(() => {
+    setProfileStatus((prev) => prev ? {
+      ...prev,
+      hasCV: true,
+      canQuickApply: prev.completeness >= 70,
+    } : null);
+    // Also update all matched jobs to reflect the new CV status
+    setMatchedJobs((prev) =>
+      prev.map((match) => ({
+        ...match,
+        canQuickApply: !match.hasApplied && (profileStatus?.completeness ?? 0) >= 70,
+      }))
+    );
+  }, [profileStatus?.completeness]);
 
   // View job handler - navigate to job details
   const handleViewJob = React.useCallback((jobId: string) => {
@@ -377,8 +406,28 @@ export default function PreferencesClient({ candidateId, initialData }: Preferen
           </div>
         </div>
 
-        {/* Profile Status Banner */}
-        {profileStatus && !profileStatus.canQuickApply && (
+        {/* Profile Status Banner - CV Required */}
+        {profileStatus && !profileStatus.hasCV && (
+          <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="size-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="font-semibold text-amber-800">CV Required for Quick Apply</h3>
+                <p className="mt-1 text-sm text-amber-700">
+                  You need to upload your CV before you can apply to jobs. Click &quot;Upload CV to Apply&quot; on any job card below.
+                </p>
+                <Link href="/crew/documents" className="mt-3 inline-block">
+                  <Button size="sm" variant="secondary">
+                    Go to Documents
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Profile Status Banner - Profile Incomplete */}
+        {profileStatus && profileStatus.hasCV && !profileStatus.canQuickApply && profileStatus.completeness < 70 && (
           <div className="mt-6 rounded-xl border border-warning-200 bg-warning-50 p-4">
             <div className="flex items-start gap-3">
               <AlertCircle className="size-5 text-warning-600 shrink-0 mt-0.5" />
@@ -462,6 +511,9 @@ export default function PreferencesClient({ candidateId, initialData }: Preferen
                   match={match}
                   onQuickApply={handleQuickApply}
                   onViewJob={handleViewJob}
+                  hasCV={profileStatus?.hasCV}
+                  candidateId={profileStatus?.candidateId ?? candidateId}
+                  onCVUploadSuccess={handleCVUploadSuccess}
                 />
               ))}
             </div>

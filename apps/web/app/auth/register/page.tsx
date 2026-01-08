@@ -21,10 +21,11 @@ import {
   CheckCircle2,
   Check,
   ChevronDown,
-  Sparkles,
   Gift,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
+import { SearchableSelect } from "@/components/ui/SearchableSelect";
+import { nationalityOptions } from "@/components/profile/constants";
 
 // Step indicator component
 function StepIndicator({
@@ -36,7 +37,6 @@ function StepIndicator({
     { number: 1, label: "Account" },
     { number: 2, label: "Personal" },
     { number: 3, label: "Professional" },
-    { number: 4, label: "Verify" },
   ];
 
   return (
@@ -250,18 +250,8 @@ function Step2({
   onChange: (field: string, value: string) => void;
   errors: Record<string, string>;
 }) {
-  const nationalities = [
-    "Australian",
-    "British",
-    "Canadian",
-    "French",
-    "German",
-    "Italian",
-    "South African",
-    "Spanish",
-    "American",
-    "Other",
-  ];
+  // Filter out the empty "Select nationality..." option for the registration form
+  const selectableNationalities = nationalityOptions.filter(opt => opt.value !== "");
 
   return (
     <div className="space-y-4">
@@ -340,22 +330,14 @@ function Step2({
         <label htmlFor="nationality" className="mb-1.5 block text-sm font-medium text-navy-900">
           Nationality
         </label>
-        <div className="relative">
-          <select
-            id="nationality"
-            value={data.nationality}
-            onChange={(e) => onChange("nationality", e.target.value)}
-            className="w-full appearance-none rounded-lg border border-gray-200 bg-white py-2.5 px-4 pr-10 text-navy-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/20"
-          >
-            <option value="">Select nationality</option>
-            {nationalities.map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
-        </div>
+        <SearchableSelect
+          value={data.nationality}
+          onChange={(value) => onChange("nationality", value)}
+          options={selectableNationalities}
+          placeholder="Select nationality"
+          searchPlaceholder="Search nationalities..."
+          className="rounded-lg border-gray-200 focus:border-gold-500 focus:ring-gold-500/20"
+        />
       </div>
     </div>
   );
@@ -622,48 +604,6 @@ function Step3({
   );
 }
 
-// Step 4: Success/Email Verification
-function Step4({ email }: { email: string }) {
-  return (
-    <div className="space-y-4">
-      <div className="mb-6 text-center">
-        <div className="mx-auto mb-4 flex size-16 items-center justify-center rounded-full bg-success-100">
-          <CheckCircle2 className="size-8 text-success-600" />
-        </div>
-        <h2 className="font-serif text-2xl font-medium text-navy-800">Check Your Email</h2>
-        <p className="text-sm text-gray-500">
-          We've sent a confirmation link to{" "}
-          <span className="font-medium text-navy-900">{email || "your email"}</span>
-        </p>
-      </div>
-
-      {/* Info box */}
-      <div className="rounded-lg bg-navy-50 p-4">
-        <div className="flex gap-3">
-          <Sparkles className="size-5 shrink-0 text-navy-600" />
-          <div>
-            <p className="text-sm font-medium text-navy-900">Almost there!</p>
-            <p className="text-xs text-navy-700">
-              Click the link in your email to verify your account. Once verified, you'll be able to
-              complete your profile and start browsing exclusive positions matched to
-              your experience.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="text-center">
-        <p className="text-sm text-gray-500">
-          Didn't receive the email?{" "}
-          <button className="font-medium text-gold-600 hover:text-gold-700">
-            Resend confirmation
-          </button>
-        </p>
-      </div>
-    </div>
-  );
-}
-
 // Main registration page
 function RegisterContent() {
   const router = useRouter();
@@ -857,12 +797,20 @@ function RegisterContent() {
         return;
       }
 
-      toast.success("Account created! Please check your email to verify.");
-      setCurrentStep(4);
+      toast.success("Account created! Welcome to Lighthouse Network.");
+
+      // Redirect to dashboard (user is now signed in)
+      if (result.redirectTo) {
+        router.push(result.redirectTo);
+      } else if (redirectTo) {
+        router.push(redirectTo);
+      } else {
+        router.push("/crew/dashboard");
+      }
       return;
     }
 
-    if (currentStep < 4) {
+    if (currentStep < 3) {
       setCurrentStep((prev) => prev + 1);
     }
   };
@@ -871,10 +819,6 @@ function RegisterContent() {
     if (currentStep > 1) {
       setCurrentStep((prev) => prev - 1);
     }
-  };
-
-  const handleGoToLogin = () => {
-    router.push(redirectTo ? `/auth/login?redirect=${encodeURIComponent(redirectTo)}` : "/auth/login");
   };
 
   return (
@@ -921,11 +865,10 @@ function RegisterContent() {
             {currentStep === 3 && (
               <Step3 data={step3Data} onChange={handleStep3Change} errors={errors} />
             )}
-            {currentStep === 4 && <Step4 email={step1Data.email} />}
 
             {/* Navigation */}
             <div className="mt-6 flex items-center justify-between">
-              {currentStep > 1 && currentStep < 4 ? (
+              {currentStep > 1 ? (
                 <button
                   onClick={handleBack}
                   className="flex items-center gap-1 text-sm font-medium text-gray-600 hover:text-gray-900"
@@ -937,52 +880,39 @@ function RegisterContent() {
                 <div />
               )}
 
-              {currentStep < 4 ? (
-                <Button
-                  variant="primary"
-                  onClick={handleNext}
-                  disabled={isLoading}
-                  className="min-w-[120px]"
-                >
-                  {isLoading ? (
-                    <span className="flex items-center gap-2">
-                      <svg className="size-4 animate-spin" viewBox="0 0 24 24">
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                          fill="none"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                        />
-                      </svg>
-                      {currentStep === 3 ? "Creating account..." : ""}
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1">
-                      {currentStep === 3 ? "Complete Registration" : "Continue"}
-                      <ArrowRight className="size-4" />
-                    </span>
-                  )}
-                </Button>
-              ) : (
-                <Button
-                  variant="primary"
-                  onClick={handleGoToLogin}
-                  className="min-w-[160px]"
-                >
+              <Button
+                variant="primary"
+                onClick={handleNext}
+                disabled={isLoading}
+                className="min-w-[120px]"
+              >
+                {isLoading ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="size-4 animate-spin" viewBox="0 0 24 24">
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                        fill="none"
+                      />
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                      />
+                    </svg>
+                    {currentStep === 3 ? "Creating account..." : ""}
+                  </span>
+                ) : (
                   <span className="flex items-center gap-1">
-                    Go to Sign In
+                    {currentStep === 3 ? "Complete Registration" : "Continue"}
                     <ArrowRight className="size-4" />
                   </span>
-                </Button>
-              )}
+                )}
+              </Button>
             </div>
           </div>
 
@@ -1003,8 +933,8 @@ function RegisterContent() {
         {/* Help text */}
         <p className="mt-4 text-center text-xs text-gray-400">
           Need help? Contact{" "}
-          <a href="mailto:support@lighthousenetwork.com" className="text-navy-600 hover:underline">
-            support@lighthousenetwork.com
+          <a href="mailto:admin@lighthouse-careers.com" className="text-navy-600 hover:underline">
+            admin@lighthouse-careers.com
           </a>
         </p>
       </div>

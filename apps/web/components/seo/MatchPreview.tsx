@@ -108,14 +108,14 @@ export function MatchPreview({
     // Navigate to match page with pre-filled query
     const params = new URLSearchParams();
     params.set("query", matchQuery);
+    params.set("from", `landing-${positionSlug}-${locationSlug}`);
     router.push(`/match?${params.toString()}`);
   };
 
   const handleGetFullProfiles = () => {
-    // Track event
-    analytics.trackMatchPreviewGetProfiles(position, location);
-    analytics.trackConversionStarted('match_preview_get_profiles', position, location, 'lead_capture');
-    setShowLeadCapture(true);
+    // Instead of showing lead capture, redirect to match page
+    // This lets users see all candidates before requesting profiles
+    handleViewMore();
   };
 
   const handleCandidateClick = (candidateId: string) => {
@@ -147,14 +147,14 @@ export function MatchPreview({
           <Users className="h-8 w-8 text-gold-600" />
         </div>
         <h3 className="mb-2 text-lg font-semibold text-navy-900">
-          Find Your Perfect {position}
+          Search Our Full Candidate Database
         </h3>
         <p className="mb-6 text-sm text-gray-600">
-          Our team specializes in finding exceptional candidates for unique
-          requirements. Get in touch to see matching professionals.
+          We have 300+ placements per year across yacht crew and private staff.
+          Let our AI match you with qualified {position} professionals.
         </p>
-        <Button onClick={handleGetFullProfiles} size="lg">
-          Get Candidate Shortlist
+        <Button onClick={handleViewMore} size="lg">
+          Search All Candidates
           <ArrowRight className="ml-2 h-5 w-5" />
         </Button>
       </div>
@@ -300,34 +300,22 @@ export function MatchPreview({
         </div>
 
         {/* CTA Footer */}
-        <div className="border-t border-gray-200 bg-gray-50 px-6 py-5">
+        <div className="border-t border-gray-200 bg-gradient-to-r from-gold-50 to-gold-100 px-6 py-5">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-center sm:text-left">
-              <p className="text-sm font-medium text-navy-900">
+              <p className="text-sm font-semibold text-navy-900">
                 {totalMatches !== null && totalMatches > candidates.length
-                  ? `View ${totalMatches - candidates.length} more candidates`
-                  : "Get full candidate profiles"}
+                  ? `${totalMatches} total candidates match your requirements`
+                  : `${candidates.length} candidates available`}
               </p>
               <p className="text-xs text-gray-600 mt-1">
-                Full CVs, references, and contact details available
+                See full profiles, experience, and availability
               </p>
             </div>
-            <div className="flex gap-3">
-              {totalMatches !== null && totalMatches > candidates.length && (
-                <Button
-                  variant="secondary"
-                  onClick={handleViewMore}
-                  className="whitespace-nowrap"
-                >
-                  View All Matches
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              )}
-              <Button onClick={handleGetFullProfiles} size="lg">
-                Get Full Profiles
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </div>
+            <Button onClick={handleViewMore} size="lg" className="shadow-lg">
+              See All {totalMatches || candidates.length} Matches
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
           </div>
         </div>
       </div>

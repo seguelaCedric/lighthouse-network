@@ -8,6 +8,7 @@ import {
   type JobIndustry,
   type JobMatchResult,
 } from "@lighthouse/ai/matcher";
+import { candidateHasCV } from "@/lib/utils/candidate-cv";
 
 export interface JobPreferencesData {
   industryPreference: "yacht" | "household" | "both" | null;
@@ -180,6 +181,8 @@ export interface ProfileStatus {
   completeness: number;
   canQuickApply: boolean;
   missingFields: string[];
+  hasCV: boolean;
+  candidateId: string;
 }
 
 export interface JobMatchesOptions {
@@ -343,6 +346,9 @@ export async function loadJobMatches(
   // Check profile completeness
   const profileStatus = checkProfileCompleteness(candidate);
 
+  // Check if candidate has CV uploaded
+  const hasCV = await candidateHasCV(supabase, candidate.id);
+
   // Run the AI matcher
   const { matches, metadata } = await matchJobsForCandidate(supabase, {
     candidateId,
@@ -352,10 +358,13 @@ export async function loadJobMatches(
     includeAISummary,
   });
 
+  // Quick apply requires both profile completeness AND CV
+  const canQuickApply = profileStatus.canQuickApply && hasCV;
+
   // Add quick apply eligibility to each match
   const matchesWithQuickApply = matches.map((match) => ({
     ...match,
-    canQuickApply: profileStatus.canQuickApply && !match.hasApplied,
+    canQuickApply: canQuickApply && !match.hasApplied,
   }));
 
   return {
@@ -363,8 +372,10 @@ export async function loadJobMatches(
     matches: matchesWithQuickApply,
     profile: {
       completeness: profileStatus.completeness,
-      canQuickApply: profileStatus.canQuickApply,
+      canQuickApply,
       missingFields: profileStatus.missingFields,
+      hasCV,
+      candidateId: candidate.id,
     },
     metadata: {
       ...metadata,

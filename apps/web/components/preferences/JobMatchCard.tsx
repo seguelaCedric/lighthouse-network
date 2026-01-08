@@ -15,10 +15,12 @@ import {
   Briefcase,
   Clock,
   Check,
+  Upload,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScoreBreakdown, type ScoreSegment } from "@/components/ui/score-breakdown";
+import { InlineCVUpload } from "@/components/documents/InlineCVUpload";
 import type { JobMatchResult, MatchScoreBreakdown } from "@lighthouse/ai/matcher";
 
 // ----------------------------------------------------------------------------
@@ -30,6 +32,12 @@ export interface JobMatchCardProps {
   onQuickApply?: (jobId: string) => Promise<void>;
   onViewJob?: (jobId: string) => void;
   className?: string;
+  /** Whether the candidate has a CV uploaded */
+  hasCV?: boolean;
+  /** Candidate ID for CV upload */
+  candidateId?: string;
+  /** Callback when CV is successfully uploaded */
+  onCVUploadSuccess?: () => void;
 }
 
 // ----------------------------------------------------------------------------
@@ -130,11 +138,15 @@ const breakdownToSegments = (breakdown: MatchScoreBreakdown): ScoreSegment[] => 
 // ----------------------------------------------------------------------------
 
 export const JobMatchCard = React.forwardRef<HTMLDivElement, JobMatchCardProps>(
-  ({ match, onQuickApply, onViewJob, className }, ref) => {
+  ({ match, onQuickApply, onViewJob, className, hasCV, candidateId, onCVUploadSuccess }, ref) => {
     const [expanded, setExpanded] = React.useState(false);
     const [isApplying, setIsApplying] = React.useState(false);
+    const [showCVUpload, setShowCVUpload] = React.useState(false);
 
     const { job, matchScore, breakdown, strengths, concerns, aiSummary, canQuickApply, hasApplied, industry } = match;
+
+    // Determine if we should show the CV upload button (no CV and not yet applied)
+    const needsCV = hasCV === false && !hasApplied;
 
     const isYacht = industry === "yacht";
     const segments = breakdownToSegments(breakdown);
@@ -255,6 +267,15 @@ export const JobMatchCard = React.forwardRef<HTMLDivElement, JobMatchCardProps>(
                 <Check className="size-4" />
                 <span className="text-sm font-medium">Applied</span>
               </div>
+            ) : needsCV ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowCVUpload(true)}
+                leftIcon={<Upload className="size-4" />}
+              >
+                Upload CV to Apply
+              </Button>
             ) : canQuickApply ? (
               <Button
                 onClick={handleQuickApply}
@@ -283,6 +304,29 @@ export const JobMatchCard = React.forwardRef<HTMLDivElement, JobMatchCardProps>(
               {expanded ? "Less" : "Details"}
             </Button>
           </div>
+
+          {/* Inline CV Upload Section */}
+          {showCVUpload && candidateId && (
+            <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+              <h4 className="text-sm font-semibold text-amber-900 mb-3 flex items-center gap-2">
+                <Upload className="size-4" />
+                Upload Your CV to Apply
+              </h4>
+              <p className="text-xs text-amber-700 mb-3">
+                A CV is required to apply for jobs. Upload your CV below to continue.
+              </p>
+              <InlineCVUpload
+                candidateId={candidateId}
+                onUploadSuccess={() => {
+                  setShowCVUpload(false);
+                  onCVUploadSuccess?.();
+                }}
+                onUploadError={(error) => {
+                  console.error("CV upload error:", error);
+                }}
+              />
+            </div>
+          )}
         </div>
 
         {/* Expanded Details */}

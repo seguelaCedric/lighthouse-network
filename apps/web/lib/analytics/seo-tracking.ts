@@ -4,9 +4,11 @@
 // Tracks match preview interactions, conversion paths, and internal link clicks
 // ============================================================================
 
-export type ConversionPath = 'match_preview_view_more' | 'match_preview_get_profiles' | 'form_submit' | 'direct_form';
+export type ConversionPath = 'match_preview_view_more' | 'match_preview_get_profiles' | 'form_submit' | 'direct_form' | 'landing_to_match' | 'hero_cta';
 
 export type InternalLinkType = 'related_position' | 'related_location' | 'content_hub' | 'position_hub' | 'location_hub';
+
+export type ScrollDepthMilestone = 25 | 50 | 75 | 100;
 
 export interface MatchPreviewEvent {
   type: 'match_preview_viewed' | 'match_preview_candidate_clicked' | 'match_preview_view_more' | 'match_preview_get_profiles';
@@ -14,6 +16,23 @@ export interface MatchPreviewEvent {
   location: string;
   candidateCount?: number;
   candidateId?: string;
+}
+
+export interface FormTrackingEvent {
+  type: 'form_start' | 'form_complete' | 'form_abandon';
+  formId: string;
+  formName: string;
+  position?: string;
+  location?: string;
+  fieldsCompleted?: number;
+  totalFields?: number;
+  abandonedField?: string;
+}
+
+export interface ScrollDepthEvent {
+  type: 'scroll_depth';
+  milestone: ScrollDepthMilestone;
+  pageUrl: string;
 }
 
 export interface InternalLinkEvent {
@@ -33,7 +52,7 @@ export interface ConversionEvent {
 }
 
 // Track event to analytics provider
-export function trackEvent(event: MatchPreviewEvent | InternalLinkEvent | ConversionEvent) {
+export function trackEvent(event: MatchPreviewEvent | InternalLinkEvent | ConversionEvent | FormTrackingEvent | ScrollDepthEvent) {
   // Check if we're in browser
   if (typeof window === 'undefined') return;
 
@@ -135,7 +154,110 @@ export const analytics = {
       formType,
     });
   },
+
+  trackLandingPageToMatch: (landingPageId: string, position: string, location: string, source: 'hero' | 'preview' | 'cta') => {
+    trackEvent({
+      type: 'conversion_started',
+      path: 'landing_to_match',
+      position,
+      location,
+    });
+    // Also track as gtag event for better GA4 reporting
+    if (typeof window !== 'undefined' && typeof window.gtag !== 'undefined') {
+      window.gtag('event', 'landing_to_match_redirect', {
+        landing_page_id: landingPageId,
+        position,
+        location,
+        source,
+        event_category: 'conversion_funnel',
+      });
+    }
+  },
+
+  // Form tracking helpers
+  trackFormStart: (formId: string, formName: string, position?: string, location?: string) => {
+    trackEvent({
+      type: 'form_start',
+      formId,
+      formName,
+      position,
+      location,
+    });
+  },
+
+  trackFormComplete: (formId: string, formName: string, fieldsCompleted: number, totalFields: number, position?: string, location?: string) => {
+    trackEvent({
+      type: 'form_complete',
+      formId,
+      formName,
+      fieldsCompleted,
+      totalFields,
+      position,
+      location,
+    });
+  },
+
+  trackFormAbandon: (formId: string, formName: string, abandonedField: string, fieldsCompleted: number, totalFields: number, position?: string, location?: string) => {
+    trackEvent({
+      type: 'form_abandon',
+      formId,
+      formName,
+      abandonedField,
+      fieldsCompleted,
+      totalFields,
+      position,
+      location,
+    });
+  },
+
+  // Scroll depth tracking
+  trackScrollDepth: (milestone: ScrollDepthMilestone) => {
+    trackEvent({
+      type: 'scroll_depth',
+      milestone,
+      pageUrl: typeof window !== 'undefined' ? window.location.pathname : '',
+    });
+  },
 };
+
+// Scroll depth tracking utility - call this to initialize scroll tracking
+export function initScrollDepthTracking() {
+  if (typeof window === 'undefined') return;
+
+  const milestones: ScrollDepthMilestone[] = [25, 50, 75, 100];
+  const trackedMilestones = new Set<ScrollDepthMilestone>();
+
+  const handleScroll = () => {
+    const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const scrollPercent = Math.round((window.scrollY / scrollHeight) * 100);
+
+    for (const milestone of milestones) {
+      if (scrollPercent >= milestone && !trackedMilestones.has(milestone)) {
+        trackedMilestones.add(milestone);
+        analytics.trackScrollDepth(milestone);
+      }
+    }
+  };
+
+  // Throttle scroll handler
+  let ticking = false;
+  const throttledHandleScroll = () => {
+    if (!ticking) {
+      window.requestAnimationFrame(() => {
+        handleScroll();
+        ticking = false;
+      });
+      ticking = true;
+    }
+  };
+
+  window.addEventListener('scroll', throttledHandleScroll, { passive: true });
+
+  // Return cleanup function
+  return () => {
+    window.removeEventListener('scroll', throttledHandleScroll);
+  };
+}
 
 // Extend Window interface for gtag
 declare global {

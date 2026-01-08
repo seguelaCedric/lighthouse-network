@@ -100,6 +100,8 @@ export async function PATCH(
     const supabase = await createClient();
     const body = await request.json();
 
+    console.log('PATCH /api/seo-pages - Received body keys:', Object.keys(body));
+
     const validated = updatePageSchema.parse(body);
 
     // Convert arrays and JSONB fields
@@ -126,6 +128,8 @@ export async function PATCH(
       updateData.secondary_keywords = validated.secondary_keywords;
     }
 
+    console.log('PATCH /api/seo-pages - Update data keys:', Object.keys(updateData));
+
     const { data, error } = await supabase
       .from('seo_landing_pages')
       .update(updateData)
@@ -135,15 +139,24 @@ export async function PATCH(
 
     if (error) {
       console.error('SEO page update error:', error);
-      return NextResponse.json({ error: 'Failed to update SEO page' }, { status: 500 });
+      console.error('SEO page update error details:', JSON.stringify(error, null, 2));
+      return NextResponse.json({
+        error: 'Failed to update SEO page',
+        details: error.message,
+        code: error.code
+      }, { status: 500 });
     }
 
     return NextResponse.json(data);
   } catch (error) {
     if (error instanceof z.ZodError) {
+      console.error('Zod validation error:', JSON.stringify(error.errors, null, 2));
       return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 });
     }
     console.error('SEO page PATCH error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }

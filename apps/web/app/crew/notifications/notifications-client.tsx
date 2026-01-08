@@ -3,7 +3,6 @@
 import * as React from "react";
 import Link from "next/link";
 import {
-  Bell,
   AlertCircle,
   Briefcase,
   MessageSquare,
@@ -12,6 +11,7 @@ import {
   Shield,
   Calendar,
   CheckCircle,
+  BellRing,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { NotificationsData, CrewNotification } from "./actions";
@@ -48,6 +48,13 @@ const notificationConfig = {
     bgColor: "bg-gray-100",
     urgentBgColor: "bg-gray-100",
     urgentColor: "text-gray-600",
+  },
+  job_alert: {
+    icon: BellRing,
+    color: "text-emerald-600",
+    bgColor: "bg-emerald-100",
+    urgentBgColor: "bg-emerald-100",
+    urgentColor: "text-emerald-600",
   },
 };
 
@@ -179,6 +186,28 @@ export function NotificationsClient({ data }: NotificationsClientProps) {
         </div>
       )}
 
+      {/* Job Alert Info Card */}
+      {notifications.some((n) => n.type === "job_alert") && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+          <div className="flex items-start gap-3">
+            <BellRing className="size-5 shrink-0 text-emerald-600" />
+            <div>
+              <h3 className="font-medium text-emerald-800">
+                Job Alerts
+              </h3>
+              <p className="mt-1 text-sm text-emerald-700">
+                We notify you when new jobs are posted that match your position
+                preferences. Update your preferences in{" "}
+                <Link href="/crew/preferences" className="underline hover:text-emerald-800">
+                  Job Preferences
+                </Link>{" "}
+                to get relevant alerts.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Certificate Expiry Info Card */}
       {notifications.some((n) => n.type === "certification") && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
@@ -211,7 +240,7 @@ export function NotificationsClient({ data }: NotificationsClientProps) {
             </div>
             <h3 className="font-medium text-gray-900">No notifications</h3>
             <p className="mt-1 text-sm text-gray-500">
-              You'll see certificate expiry alerts and application updates here
+              You'll see job alerts, certificate expiry reminders, and application updates here
             </p>
           </div>
         ) : (
@@ -261,6 +290,32 @@ export function NotificationsClient({ data }: NotificationsClientProps) {
               </p>
               <p className="text-xs text-gray-500">
                 Keep your availability status current for best job matches
+              </p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-100">
+              <BellRing className="size-4 text-emerald-600" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-navy-800">
+                Set Job Preferences
+              </p>
+              <p className="text-xs text-gray-500">
+                Define your preferred positions to receive relevant job alerts
+              </p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gold-100">
+              <Briefcase className="size-4 text-gold-600" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-navy-800">
+                Apply Quickly
+              </p>
+              <p className="text-xs text-gray-500">
+                Respond to job alerts fast for the best chance of placement
               </p>
             </div>
           </div>

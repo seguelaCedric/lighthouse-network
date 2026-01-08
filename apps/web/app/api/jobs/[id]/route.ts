@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { updateJobSchema } from "@/lib/validations/job";
+import { processJobAlerts } from "@/lib/services/job-alert-service";
 import type { JobWithStats, ApplicationStage } from "@lighthouse/database";
 
 interface RouteParams {
@@ -145,10 +146,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     const updateData = parseResult.data;
 
-    // Check if job exists and not deleted
+    // Check if job exists and not deleted, and get current status
     const { data: existing, error: existsError } = await supabase
       .from("jobs")
-      .select("id")
+      .select("id, status")
       .eq("id", id)
       .is("deleted_at", null)
       .single();
@@ -156,6 +157,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     if (existsError || !existing) {
       return NextResponse.json({ error: "Job not found" }, { status: 404 });
     }
+
+    const previousStatus = existing.status;
 
     // Update job
     const { data, error } = await supabase
@@ -174,6 +177,15 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         { error: "Failed to update job" },
         { status: 500 }
       );
+    }
+
+    // Trigger job alerts if job status changed to "open"
+    // This sends notifications to candidates whose positions match the job title
+    if (updateData.status === "open" && previousStatus !== "open") {
+      // Process job alerts in the background (don't wait for it)
+      processJobAlerts(id).catch((err) => {
+        console.error("Error processing job alerts:", err);
+      });
     }
 
     return NextResponse.json({ data });

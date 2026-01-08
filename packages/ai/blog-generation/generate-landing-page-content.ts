@@ -107,10 +107,10 @@ async function generateAboutPosition(
   });
 
   try {
-    const { object } = await generateObject({
+    const result = await generateObject({
       model: contentModel,
       schema,
-      prompt: `Write a comprehensive 300-500 word description about ${position} positions. 
+      prompt: `Write a comprehensive 300-500 word description about ${position} positions.
 
 Requirements:
 - Use proper HTML formatting (h2, h3, p, ul, li tags)
@@ -124,15 +124,29 @@ Requirements:
 Format the response as HTML. Do not include a title/heading at the top - start with content.`,
     });
 
-    if (!object || !object.content) {
-      throw new Error('Failed to generate about position: invalid response');
+    if (!result?.object?.content) {
+      console.error('generateAboutPosition: Invalid response from AI');
+      return generateDefaultAboutPosition(position, location);
     }
 
-    return object.content;
+    return result.object.content;
   } catch (error) {
     console.error('Error generating about position:', error);
-    throw error;
+    return generateDefaultAboutPosition(position, location);
   }
+}
+
+function generateDefaultAboutPosition(position: string, location: string): string {
+  return `<p>A professional ${position} plays a vital role in maintaining the highest standards of service and household management. In ${location}, qualified ${position} professionals are in high demand among discerning clients seeking exceptional domestic service.</p>
+<h3>Key Responsibilities</h3>
+<ul>
+<li>Overseeing daily household operations and staff management</li>
+<li>Ensuring impeccable service standards and guest satisfaction</li>
+<li>Managing household budgets and vendor relationships</li>
+<li>Coordinating events and maintaining property presentation</li>
+</ul>
+<h3>Qualifications</h3>
+<p>The ideal ${position} candidate brings years of experience in luxury hospitality or private service, excellent communication skills, discretion, and a genuine commitment to service excellence.</p>`;
 }
 
 /**
@@ -147,7 +161,7 @@ async function generateLocationInfo(
   });
 
   try {
-    const { object } = await generateObject({
+    const result = await generateObject({
       model: contentModel,
       schema,
       prompt: `Write a 200-300 word location-specific information section about ${position} positions in ${location}.
@@ -164,15 +178,30 @@ Requirements:
 Format the response as HTML. Do not include a title/heading at the top - start with content.`,
     });
 
-    if (!object || !object.content) {
-      throw new Error('Failed to generate location info: invalid response');
+    if (!result?.object?.content) {
+      console.error('generateLocationInfo: Invalid response from AI');
+      return generateDefaultLocationInfo(position, location);
     }
 
-    return object.content;
+    return result.object.content;
   } catch (error) {
     console.error('Error generating location info:', error);
-    throw error;
+    return generateDefaultLocationInfo(position, location);
   }
+}
+
+function generateDefaultLocationInfo(position: string, location: string): string {
+  const city = location.split(',')[0]?.trim() || location;
+  return `<p>The market for ${position} professionals in ${location} continues to grow as high-net-worth individuals and families seek exceptional domestic staff. ${city} offers a robust job market with competitive compensation packages.</p>
+<h3>Market Overview</h3>
+<p>Employers in ${location} typically offer competitive salaries along with benefits such as accommodation, travel opportunities, and professional development. The demand for qualified ${position} candidates consistently exceeds supply in this region.</p>
+<h3>What to Expect</h3>
+<ul>
+<li>Competitive salary packages based on experience</li>
+<li>Opportunity to work with prestigious households</li>
+<li>Professional growth and development</li>
+<li>Excellent working conditions</li>
+</ul>`;
 }
 
 /**
@@ -187,7 +216,7 @@ async function generateServiceDescription(
   });
 
   try {
-    const { object } = await generateObject({
+    const result = await generateObject({
       model: contentModel,
       schema,
       prompt: `Write a 200-300 word service description for ${position} placement services in ${location}.
@@ -205,15 +234,30 @@ Requirements:
 Format the response as HTML. Do not include a title/heading at the top - start with content.`,
     });
 
-    if (!object || !object.content) {
-      throw new Error('Failed to generate service description: invalid response');
+    if (!result?.object?.content) {
+      console.error('generateServiceDescription: Invalid response from AI');
+      return generateDefaultServiceDescription(position, location);
     }
 
-    return object.content;
+    return result.object.content;
   } catch (error) {
     console.error('Error generating service description:', error);
-    throw error;
+    return generateDefaultServiceDescription(position, location);
   }
+}
+
+function generateDefaultServiceDescription(position: string, location: string): string {
+  return `<p>Lighthouse Careers provides comprehensive ${position} placement services in ${location}. Our success-fee model means you only pay when you find the perfect candidate.</p>
+<h3>Our Service Includes</h3>
+<ul>
+<li>Thorough candidate screening and vetting</li>
+<li>Background checks and reference verification</li>
+<li>Skills assessment and personality matching</li>
+<li>Dedicated consultant support throughout the process</li>
+</ul>
+<h3>Our Guarantee</h3>
+<p>We stand behind our placements with a replacement guarantee. If your new ${position} doesn't work out within the guarantee period, we'll find a replacement at no additional cost.</p>
+<p><strong>No upfront fees. No risk. Just exceptional talent.</strong></p>`;
 }
 
 /**
@@ -228,7 +272,7 @@ async function generateProcessDetails(
   });
 
   try {
-    const { object } = await generateObject({
+    const result = await generateObject({
       model: contentModel,
       schema,
       prompt: `Write a 200-300 word detailed explanation of the hiring process for ${position} positions in ${location}.
@@ -245,15 +289,30 @@ Requirements:
 Format the response as HTML. Do not include a title/heading at the top - start with content.`,
     });
 
-    if (!object || !object.content) {
-      throw new Error('Failed to generate process details: invalid response');
+    if (!result?.object?.content) {
+      console.error('generateProcessDetails: Invalid response from AI');
+      return generateDefaultProcessDetails(position, location);
     }
 
-    return object.content;
+    return result.object.content;
   } catch (error) {
     console.error('Error generating process details:', error);
-    throw error;
+    return generateDefaultProcessDetails(position, location);
   }
+}
+
+function generateDefaultProcessDetails(position: string, location: string): string {
+  return `<p>Our streamlined hiring process for ${position} positions in ${location} is designed to find you the perfect candidate quickly and efficiently.</p>
+<h3>The Process</h3>
+<ol>
+<li><strong>Initial Consultation</strong> - Share your requirements, household culture, and expectations with our dedicated consultant.</li>
+<li><strong>Candidate Search</strong> - We search our extensive network of pre-vetted ${position} professionals to find matches.</li>
+<li><strong>Shortlist Delivery</strong> - Within 48 hours, receive a curated shortlist of qualified candidates with detailed profiles.</li>
+<li><strong>Interviews</strong> - We coordinate interviews and provide guidance throughout the selection process.</li>
+<li><strong>Placement</strong> - Once you've made your choice, we handle references and assist with onboarding.</li>
+</ol>
+<h3>Timeline</h3>
+<p>Most placements are completed within 1-2 weeks, though this can vary based on your specific requirements and candidate availability.</p>`;
 }
 
 /**
@@ -276,7 +335,7 @@ async function generateFAQContent(
   });
 
   try {
-    const { object } = await generateObject({
+    const result = await generateObject({
       model: contentModel,
       schema,
       prompt: `Generate 8-12 frequently asked questions about hiring a ${position} in ${location}.
@@ -292,15 +351,53 @@ Requirements:
 Return as an array of question/answer pairs.`,
     });
 
-    if (!object || !object.faqs) {
-      throw new Error('Failed to generate FAQ content: invalid response');
+    if (!result?.object?.faqs) {
+      console.error('generateFAQContent: Invalid response from AI');
+      return generateDefaultFAQContent(position, location);
     }
 
-    return object.faqs;
+    return result.object.faqs;
   } catch (error) {
     console.error('Error generating FAQ content:', error);
-    throw error;
+    return generateDefaultFAQContent(position, location);
   }
+}
+
+function generateDefaultFAQContent(position: string, location: string): Array<{ question: string; answer: string }> {
+  return [
+    {
+      question: `How much does it cost to hire a ${position} through Lighthouse Careers?`,
+      answer: `<p>We operate on a success-fee model, meaning you only pay when you successfully hire a candidate. There are no upfront fees or retainer costs. Our fee is a percentage of the candidate's annual salary, which we'll discuss during your initial consultation.</p>`,
+    },
+    {
+      question: `How long does the ${position} hiring process take?`,
+      answer: `<p>Most placements are completed within 1-2 weeks. You'll receive your first shortlist of qualified candidates within 48 hours of sharing your requirements with us.</p>`,
+    },
+    {
+      question: `What qualifications should a ${position} have?`,
+      answer: `<p>Ideal candidates typically have relevant experience in luxury hospitality or private service, excellent references, strong communication skills, and often hold relevant certifications. We thoroughly vet all candidates before presenting them to you.</p>`,
+    },
+    {
+      question: `How do you vet ${position} candidates?`,
+      answer: `<p>Our comprehensive vetting process includes background checks, reference verification, skills assessments, and personal interviews. We only present candidates who meet our rigorous standards.</p>`,
+    },
+    {
+      question: `Do you offer a guarantee on placements?`,
+      answer: `<p>Yes! We stand behind our placements with a replacement guarantee. If your new ${position} doesn't work out within the guarantee period, we'll find a replacement at no additional cost.</p>`,
+    },
+    {
+      question: `Can you help with ${position} positions in ${location}?`,
+      answer: `<p>Absolutely! We have extensive experience placing ${position} professionals in ${location} and understand the local market, expectations, and requirements specific to this region.</p>`,
+    },
+    {
+      question: `What's included in your ${position} recruitment service?`,
+      answer: `<p>Our service includes requirement consultation, candidate sourcing, comprehensive vetting, shortlist preparation, interview coordination, reference checks, and placement support. We're with you every step of the way.</p>`,
+    },
+    {
+      question: `How do I get started with hiring a ${position}?`,
+      answer: `<p>Simply use our AI matching tool to see available candidates, or contact us directly. We'll schedule a consultation to understand your requirements and begin the search immediately.</p>`,
+    },
+  ];
 }
 
 /**
@@ -324,7 +421,7 @@ async function generateKeywords(
   });
 
   try {
-    const { object } = await generateObject({
+    const result = await generateObject({
       model: contentModel,
       schema,
       prompt: `Generate SEO keywords for a landing page about hiring a ${position} in ${location}.
@@ -339,9 +436,27 @@ Requirements:
 Return primary and secondary keyword arrays.`,
     });
 
-    if (!object) {
-      throw new Error('Failed to generate keywords: no object returned');
+    // Check if result exists and has object property
+    if (!result || !result.object) {
+      console.error('generateKeywords: No result or object returned from generateObject');
+      // Return default keywords as fallback
+      return {
+        primary: [
+          `hire ${position.toLowerCase()} ${location.split(',')[0]}`.trim(),
+          `${position.toLowerCase()} recruitment ${location.split(',').pop()?.trim()}`,
+          `${position.toLowerCase()} agency`,
+        ],
+        secondary: [
+          `${position.toLowerCase()} placement services`,
+          `professional ${position.toLowerCase()}`,
+          `${position.toLowerCase()} staffing`,
+          `find ${position.toLowerCase()}`,
+          `${position.toLowerCase()} jobs`,
+        ],
+      };
     }
+
+    const object = result.object;
 
     return {
       primary: object.primary_keywords || [],
@@ -349,6 +464,20 @@ Return primary and secondary keyword arrays.`,
     };
   } catch (error) {
     console.error('Error generating keywords:', error);
-    throw error;
+    // Return default keywords as fallback instead of throwing
+    return {
+      primary: [
+        `hire ${position.toLowerCase()} ${location.split(',')[0]}`.trim(),
+        `${position.toLowerCase()} recruitment`,
+        `${position.toLowerCase()} agency`,
+      ],
+      secondary: [
+        `${position.toLowerCase()} placement`,
+        `professional ${position.toLowerCase()}`,
+        `${position.toLowerCase()} staffing`,
+        `find ${position.toLowerCase()}`,
+        `${position.toLowerCase()} services`,
+      ],
+    };
   }
 }
