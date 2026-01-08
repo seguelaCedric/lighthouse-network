@@ -372,6 +372,20 @@ export async function syncCandidateUpdate(
       await updateCustomFields(vincereId, customFields, vincere);
     }
 
+    // Update functional expertise if primary_position changed
+    if (fieldsToSync.primary_position) {
+      const expertiseId = getVincereFunctionalExpertiseId(fieldsToSync.primary_position);
+      if (expertiseId) {
+        try {
+          await setFunctionalExpertises(vincereId, [expertiseId], vincere);
+          console.log(`[VincereSync] Updated functional expertise ${expertiseId} for candidate ${vincereId} (position: ${fieldsToSync.primary_position})`);
+        } catch (err) {
+          // Log but don't fail the whole sync for functional expertise errors
+          console.error(`[VincereSync] Failed to update functional expertise for candidate ${vincereId}:`, err);
+        }
+      }
+    }
+
     // Update last_synced_at
     await supabase
       .from('candidates')

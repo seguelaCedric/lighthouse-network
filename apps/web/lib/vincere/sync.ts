@@ -399,7 +399,12 @@ export function mapCandidateToVincere(
   if (candidate.email) basicData.primary_email = candidate.email;
   if (candidate.phone) basicData.phone = candidate.phone;
   if (candidate.whatsapp) basicData.mobile = candidate.whatsapp;
-  if (candidate.date_of_birth) basicData.date_of_birth = candidate.date_of_birth;
+  if (candidate.date_of_birth) {
+    // Vincere requires full ISO timestamp, not just date
+    // Convert "1990-05-15" to "1990-05-15T00:00:00.000Z"
+    const dob = candidate.date_of_birth;
+    basicData.date_of_birth = dob.includes('T') ? dob : new Date(dob).toISOString();
+  }
   if (candidate.gender) basicData.gender = candidate.gender;
   if (candidate.nationality) basicData.nationality = candidate.nationality;
   if (candidate.current_location) basicData.current_location = candidate.current_location;

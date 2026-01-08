@@ -267,6 +267,9 @@ export async function createCandidate(
 
 /**
  * Update an existing candidate in Vincere
+ *
+ * Note: Vincere PUT API requires certain fields (registration_date, candidate_source_id, email)
+ * to be present. We fetch the current candidate data and merge updates with required fields.
  */
 export async function updateCandidate(
   vincereId: number,
@@ -287,11 +290,32 @@ export async function updateCandidate(
 ): Promise<void> {
   const vincere = client ?? getVincereClient();
 
-  // Build update payload with only provided fields
-  const payload: Record<string, unknown> = {};
-  if (data.firstName !== undefined) payload.first_name = data.firstName;
-  if (data.lastName !== undefined) payload.last_name = data.lastName;
-  if (data.email !== undefined) payload.primary_email = data.email;
+  // First, fetch current candidate data to get required fields
+  const currentCandidate = await vincere.get<{
+    email: string;
+    registration_date: string;
+    candidate_source_id: number;
+    first_name?: string;
+    last_name?: string;
+  }>(`/candidate/${vincereId}`);
+
+  if (!currentCandidate) {
+    throw new Error(`Candidate ${vincereId} not found in Vincere`);
+  }
+
+  // Build update payload with required fields from current data
+  // Vincere PUT requires: email, registration_date, candidate_source_id, first_name, last_name
+  const payload: Record<string, unknown> = {
+    // Required fields - always include from current data
+    email: data.email ?? currentCandidate.email,
+    registration_date: currentCandidate.registration_date,
+    candidate_source_id: currentCandidate.candidate_source_id,
+    // Names are also required - use provided or current
+    first_name: data.firstName ?? currentCandidate.first_name,
+    last_name: data.lastName ?? currentCandidate.last_name,
+  };
+
+  // Add optional fields only if provided (don't overwrite names again)
   if (data.phone !== undefined) payload.phone = data.phone;
   if (data.mobile !== undefined) payload.mobile = data.mobile;
   if (data.dateOfBirth !== undefined) payload.date_of_birth = data.dateOfBirth;
@@ -301,10 +325,7 @@ export async function updateCandidate(
   if (data.jobTitle !== undefined) payload.job_title = data.jobTitle;
   if (data.summary !== undefined) payload.summary = data.summary;
 
-  // Only make request if there are fields to update
-  if (Object.keys(payload).length > 0) {
-    await vincere.put(`/candidate/${vincereId}`, payload);
-  }
+  await vincere.put(`/candidate/${vincereId}`, payload);
 }
 
 /**
