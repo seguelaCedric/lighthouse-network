@@ -534,12 +534,12 @@ export default function HomePage() {
               {/* Background image */}
               <div className="absolute inset-0">
                 <Image
-                  src="https://www.lighthouse-careers.com/wp-content/uploads/2023/08/Superyacht-Charter-Experience-5_480x480-1.webp"
+                  src="https://www.lighthouse-careers.com/wp-content/uploads/2023/08/shutterstock_1994929460-scaled.jpg"
                   alt="Luxury interior service"
                   fill
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-navy-900 via-navy-900/70 to-navy-900/30" />
+                <div className="absolute inset-0 bg-gradient-to-t from-navy-900/60 via-navy-900/40 to-navy-900/15" />
               </div>
               <div className="relative p-8 pt-40">
                 <Home className="mb-4 h-10 w-10 text-gold-400" />
