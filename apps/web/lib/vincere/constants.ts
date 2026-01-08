@@ -310,123 +310,100 @@ export const POSITION_MAPPING: Record<string, { standard: string; category: stri
  * Maps standardized position names to Vincere functional expertise IDs.
  * These IDs are specific to the Lighthouse Vincere tenant.
  *
- * To find these IDs:
- * 1. Go to Vincere Admin > Settings > Functional Expertises
- * 2. Or use the API: GET /functionalexpertise
- *
- * Note: The n8n workflow used 3013 for Stewardess positions.
+ * Fetched from Vincere API: GET /functionalexpertises
+ * Last updated: 2026-01-08
  */
 export const VINCERE_FUNCTIONAL_EXPERTISE_IDS: Record<string, number> = {
-  // Deck Department
-  'Captain': 3001,
-  'Chief Officer': 3002,
-  'Second Officer': 3003,
-  'Third Officer': 3004,
-  'Bosun': 3005,
-  'Lead Deckhand': 3006,
-  'Senior Deckhand': 3007,
-  'Deckhand': 3008,
-  'Junior Deckhand': 3009,
+  // === Deck Department ===
+  'Captain': 2987,
+  'Chief Officer': 2988,
+  'Second Officer': 2989,
+  'Third Officer': 2990,
+  'OOW': 2991, // Officer of the Watch
+  'Bosun': 2992,
+  'Lead Deckhand': 2993,
+  'Experienced Deckhand': 2994,
+  'Deckhand': 2994, // Alias for Experienced Deckhand
+  'Junior Deckhand': 2995,
+  'Carpenter': 2996,
 
-  // Interior Department
-  'Chief Stewardess': 3010,
-  'Purser': 3011,
-  'Second Stewardess': 3012,
-  'Stewardess': 3013, // Confirmed from n8n workflow
-  'Third Stewardess': 3014,
-  'Junior Stewardess': 3015,
-  'Sole Stewardess': 3016,
-  'Laundry Stewardess': 3017,
-  'Housekeeping': 3018,
+  // === Water Sports ===
+  'Dive Instructor': 2997,
+  'Dive Master': 2998,
+  'PWC Instructor': 2999,
 
-  // Engineering Department
-  'Chief Engineer': 3020,
-  'Second Engineer': 3021,
-  'Third Engineer': 3022,
-  'ETO': 3023,
-  'Engineer': 3024,
-  'Junior Engineer': 3025,
+  // === Engineering Department ===
+  'Chief Engineer': 3001,
+  'Second Engineer': 3002,
+  'Third Engineer': 3003,
+  'Junior Engineer': 3004,
+  'ETO': 3000,
 
-  // Galley Department
-  'Head Chef': 3030,
-  'Chef': 3031,
-  'Sole Chef': 3032,
-  'Sous Chef': 3033,
-  'Crew Chef': 3034,
-  'Cook': 3035,
+  // === Interior Department ===
+  'Purser': 3005,
+  'Interior Manager': 3006,
+  'Chief Stew': 3007,
+  'Chief Stewardess': 3007, // Alias
+  'Head of Service': 3008,
+  'Head of House': 3009,
+  'Second Stew': 3010,
+  'Second Stewardess': 3010, // Alias
+  'Sole Stew': 3011,
+  'Sole Stewardess': 3011, // Alias
+  'Cook/Stew': 3012,
+  'Junior Stew': 3013,
+  'Junior Stewardess': 3013, // Alias
+  'Stewardess': 3013, // Map generic stewardess to Junior Stew
+  'Masseuse': 3014,
+  'Beautician': 3015,
+  'Hairdresser': 3018,
+  'Laundry Stew': 3037,
+  'Laundry Stewardess': 3037, // Alias
+  'Experienced Stew': 3036,
 
-  // Childcare
-  'Nanny': 3040,
-  'Governess': 3041,
-  'Au Pair': 3042,
-  'Tutor': 3043,
+  // === Medical ===
+  'Nurse': 3016,
+  'Paramedic': 3017,
 
-  // Medical
-  'Nurse': 3050,
-  'Medic': 3051,
-  'Paramedic': 3052,
+  // === Fitness & Wellness ===
+  'Yoga Instructor': 3019,
+  'Personal Trainer': 3020,
+  'SPA Manager': 3045,
 
-  // Security
-  'Security Officer': 3060,
-  'CPO': 3061,
+  // === Childcare ===
+  'Nanny': 3021,
+  'Governess': 3030,
 
-  // Management
-  'Yacht Manager': 3070,
-  'PA': 3071,
-  'Executive Assistant': 3072,
-  'Chief of Staff': 3073,
+  // === Galley Department ===
+  'Head Chef': 3022,
+  'Chef': 3022, // Alias for Head Chef
+  'Second Chef': 3023,
+  'Sous Chef': 3039,
+  'Crew Chef': 3024,
+  'Sole Chef': 3035,
+  'Cook': 3035, // Alias for Sole Chef
+  'Galley Hand': 3038,
 
-  // Villa/Estate - Management
-  'Estate Manager': 3080,
-  'House Manager': 3081,
-  'Villa Manager': 3082,
-  'Chalet Manager': 3083,
+  // === Estate/Villa Staff ===
+  'Estate Manager': 3026,
+  'House Manager': 3027,
+  'Butler': 3028,
+  'Housekeeper': 3029,
+  'Gardener': 3031,
+  'Handyman': 3032,
+  'Chauffeur': 3033,
+  'Personal Assistant': 3025,
+  'PA': 3025, // Alias
 
-  // Villa/Estate - Service Staff
-  'Butler': 3090,
-  'Head Butler': 3091,
-  'Senior Butler': 3092,
-  'Junior Butler': 3093,
-  'Footman': 3094,
-  'Valet': 3095,
-  "Lady's Maid": 3096,
+  // === Security ===
+  'Security': 3034,
+  'Security Officer': 3034, // Alias
 
-  // Villa/Estate - Housekeeping
-  'Head Housekeeper': 3100,
-  'Housekeeper': 3101,
-  'Executive Housekeeper': 3102,
-  'Housemaid': 3103,
-  'Laundress': 3104,
+  // === Couples ===
+  'Couple': 3040,
 
-  // Villa/Estate - Kitchen
-  'Private Chef': 3110,
-  'Kitchen Assistant': 3111,
-
-  // Villa/Estate - Outdoor & Maintenance
-  'Chauffeur': 3120,
-  'Head Gardener': 3121,
-  'Gardener': 3122,
-  'Groundskeeper': 3123,
-  'Maintenance Manager': 3124,
-  'Handyman': 3125,
-  'Pool Technician': 3126,
-  'Caretaker': 3127,
-
-  // Villa/Estate - Service Couples
-  'Couple': 3130,
-  'House Couple': 3131,
-  'Estate Couple': 3132,
-  'Caretaker Couple': 3133,
-
-  // Other/Specialist
-  'Massage Therapist': 3140,
-  'Yoga Instructor': 3141,
-  'Fitness Trainer': 3142,
-  'Personal Trainer': 3143,
-  'Dive Instructor': 3144,
-  'Water Sports Instructor': 3145,
-  'Florist': 3146,
-  'Sommelier': 3147,
+  // === Technical ===
+  'AV/IT Engineer': 3046,
 };
 
 /**

@@ -12,11 +12,17 @@
  * - VINCERE_REFRESH_TOKEN
  */
 
-import { getVincereClient } from '../lib/vincere/client';
+import { config } from 'dotenv';
+import { resolve } from 'path';
+
+// Load env from apps/web/.env.local
+config({ path: resolve(process.cwd(), 'apps/web/.env.local') });
 
 interface FunctionalExpertise {
-  id: number;
-  name: string;
+  id?: number;
+  name?: string;
+  value?: string;
+  description?: string;
   parent_id?: number;
   parent_name?: string;
 }
@@ -24,6 +30,7 @@ interface FunctionalExpertise {
 async function main() {
   console.log('Fetching Vincere functional expertises...\n');
 
+  const { getVincereClient } = await import('../lib/vincere/client');
   const client = getVincereClient();
 
   // Authenticate
@@ -55,45 +62,30 @@ async function main() {
 
   console.log(`Found ${expertises.length} functional expertises:\n`);
 
-  // Group by parent
-  const grouped = new Map<string, FunctionalExpertise[]>();
-  const topLevel: FunctionalExpertise[] = [];
+  // Debug: show first few raw entries
+  console.log('=== RAW DATA (first 5) ===');
+  console.log(JSON.stringify(expertises.slice(0, 5), null, 2));
+  console.log();
 
-  for (const exp of expertises) {
-    if (!exp.parent_id) {
-      topLevel.push(exp);
-    } else {
-      const parentKey = exp.parent_name || `Parent ${exp.parent_id}`;
-      if (!grouped.has(parentKey)) {
-        grouped.set(parentKey, []);
-      }
-      grouped.get(parentKey)!.push(exp);
-    }
-  }
+  // Normalize entries - API returns {value, description} not {id, name}
+  const normalized = expertises.map(e => ({
+    id: e.id ?? parseInt(e.value || '0', 10),
+    name: e.name ?? e.description ?? '',
+  })).filter(e => e.name && e.id);
 
-  // Print top-level first
-  if (topLevel.length > 0) {
-    console.log('Top-Level Expertises:');
-    for (const exp of topLevel.sort((a, b) => a.name.localeCompare(b.name))) {
-      console.log(`  ${exp.id}: '${exp.name}'`);
-    }
-    console.log();
-  }
-
-  // Print grouped
-  for (const [parent, items] of Array.from(grouped.entries()).sort()) {
-    console.log(`${parent}:`);
-    for (const exp of items.sort((a, b) => a.name.localeCompare(b.name))) {
-      console.log(`  ${exp.id}: '${exp.name}'`);
-    }
-    console.log();
+  // Output as simple list first
+  console.log('=== ALL EXPERTISES (ID: Name) ===');
+  for (const exp of normalized.sort((a, b) => a.name.localeCompare(b.name))) {
+    console.log(`  ${exp.id}: '${exp.name}'`);
   }
 
   // Output as TypeScript constant format
-  console.log('\n// TypeScript constant format:');
+  console.log('\n\n// TypeScript constant format:');
   console.log('export const VINCERE_FUNCTIONAL_EXPERTISE_IDS: Record<string, number> = {');
-  for (const exp of expertises.sort((a, b) => a.name.localeCompare(b.name))) {
-    console.log(`  '${exp.name}': ${exp.id},`);
+  for (const exp of normalized.sort((a, b) => a.name.localeCompare(b.name))) {
+    // Escape single quotes in name and trim whitespace
+    const safeName = exp.name.trim().replace(/'/g, "\\'");
+    console.log(`  '${safeName}': ${exp.id},`);
   }
   console.log('};');
 }
