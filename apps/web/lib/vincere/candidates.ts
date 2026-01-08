@@ -5,7 +5,7 @@
  */
 
 import { getVincereClient, VincereClient } from './client';
-import { VINCERE_FIELD_KEYS, VINCERE_INDUSTRY_IDS } from './constants';
+import { VINCERE_FIELD_KEYS, VINCERE_INDUSTRY_IDS, VINCERE_SYSTEM_IDS } from './constants';
 
 /**
  * Vincere candidate from API
@@ -204,13 +204,26 @@ export async function updateCustomFields(
 ): Promise<void> {
   const vincere = client ?? getVincereClient();
 
-  const data = fields.map(({ fieldKey, fieldValue, fieldValues, dateValue }) => ({
-    element_value_groups: null,
-    field_key: fieldKey,
-    ...(fieldValue !== undefined && { field_value: fieldValue }),
-    ...(fieldValues !== undefined && { field_values: fieldValues }),
-    ...(dateValue !== undefined && { date_value: dateValue }),
-  }));
+  // Format custom fields exactly as the Vincere API expects
+  // Note: Only include fields that have values, don't include element_value_groups
+  const data = fields.map(({ fieldKey, fieldValue, fieldValues, dateValue }) => {
+    const field: Record<string, unknown> = {
+      field_key: fieldKey,
+    };
+
+    // Only add value fields if they have actual values
+    if (fieldValue !== undefined && fieldValue !== null && fieldValue !== '') {
+      field.field_value = fieldValue;
+    }
+    if (fieldValues !== undefined && fieldValues !== null && fieldValues.length > 0) {
+      field.field_values = fieldValues;
+    }
+    if (dateValue !== undefined && dateValue !== null && dateValue !== '') {
+      field.date_value = dateValue;
+    }
+
+    return field;
+  });
 
   await vincere.patch(`/candidate/${vincereId}/customfields`, { data });
 }
@@ -236,18 +249,17 @@ export async function createCandidate(
 ): Promise<{ id: number }> {
   const vincere = client ?? getVincereClient();
 
+  // Note: nationality and job_title must be set separately via update/custom fields
+  // as the create endpoint has strict validation that rejects free-text values
   const result = await vincere.post<{ id: number }>('/candidate', {
     first_name: data.firstName,
     last_name: data.lastName,
+    email: data.email, // Required by Vincere API
     primary_email: data.email,
     phone: data.phone,
     mobile: data.mobile,
-    date_of_birth: data.dateOfBirth,
-    gender: data.gender,
-    nationality: data.nationality,
-    current_location: data.currentLocation,
-    job_title: data.jobTitle,
-    summary: data.summary,
+    candidate_source_id: VINCERE_SYSTEM_IDS.candidateSourceNetwork, // Required: 29105
+    registration_date: new Date().toISOString(), // ISO 8601 format: 2025-03-05T15:35:00.000Z
   });
 
   return result;
@@ -389,6 +401,26 @@ export async function getFunctionalExpertises(
     }
     throw error;
   }
+}
+
+/**
+ * Set functional expertises for a candidate
+ * Endpoint: PUT /candidate/{id}/functionalexpertises
+ * @param vincereId - Vincere candidate ID
+ * @param expertiseIds - Array of functional expertise IDs to set
+ */
+export async function setFunctionalExpertises(
+  vincereId: number,
+  expertiseIds: number[],
+  client?: VincereClient
+): Promise<void> {
+  const vincere = client ?? getVincereClient();
+
+  // Vincere API expects an array of expertise IDs directly
+  await vincere.put(
+    `/candidate/${vincereId}/functionalexpertises`,
+    expertiseIds
+  );
 }
 
 /**

@@ -12,11 +12,12 @@ import {
   createCandidate,
   updateCandidate,
   updateCustomFields,
+  setFunctionalExpertises,
 } from './candidates';
 import { uploadCandidateCV, uploadCandidateCertificate, uploadCandidatePhoto } from './files';
 import { addCandidateToJob, VINCERE_APPLICATION_STAGES } from './jobs';
 import { mapCandidateToVincere } from './sync';
-import { VINCERE_FIELD_KEYS } from './constants';
+import { VINCERE_FIELD_KEYS, getVincereFunctionalExpertiseId } from './constants';
 import type { Candidate } from '../../../../packages/database/types';
 
 // ============================================================================
@@ -237,17 +238,41 @@ export async function syncCandidateCreation(
 
       vincereId = result.id;
       console.log(`[VincereSync] Created Vincere candidate ${vincereId} for ${candidate.email}`);
-      
+
       // After creation, update custom fields if any are available
       // This ensures all custom field data is synced during registration
       const { basicData: _, customFields } = mapCandidateToVincere(candidate);
+      console.log(`[VincereSync] Candidate data keys with values:`,
+        Object.entries(candidate)
+          .filter(([, v]) => v !== null && v !== undefined)
+          .map(([k]) => k)
+      );
+      console.log(`[VincereSync] Custom fields to sync:`,
+        customFields.map(cf => ({
+          fieldKey: cf.fieldKey.substring(0, 8) + '...',
+          hasFieldValue: cf.fieldValue !== undefined,
+          hasFieldValues: cf.fieldValues !== undefined,
+          hasDateValue: cf.dateValue !== undefined,
+        }))
+      );
       if (customFields.length > 0) {
         await updateCustomFields(vincereId, customFields, vincere);
         console.log(`[VincereSync] Updated ${customFields.length} custom fields for new candidate ${vincereId}`);
+      } else {
+        console.log(`[VincereSync] No custom fields to sync for candidate ${vincereId}`);
       }
-      
-      // TODO: Set candidate_source_id to VINCERE_SYSTEM_IDS.candidateSourceBubble (29105) or create Network source ID
-      // This may require a separate API call or custom field update
+
+      // Set functional expertise based on position
+      const expertiseId = getVincereFunctionalExpertiseId(candidate.primary_position);
+      if (expertiseId) {
+        try {
+          await setFunctionalExpertises(vincereId, [expertiseId], vincere);
+          console.log(`[VincereSync] Set functional expertise ${expertiseId} for candidate ${vincereId} (position: ${candidate.primary_position})`);
+        } catch (err) {
+          // Log but don't fail the whole sync for functional expertise errors
+          console.error(`[VincereSync] Failed to set functional expertise for candidate ${vincereId}:`, err);
+        }
+      }
     }
 
     // Update our database with vincere_id

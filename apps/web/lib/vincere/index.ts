@@ -41,6 +41,8 @@ export {
   NATIONALITY_TO_VINCERE_ID,
   POSITION_MAPPING,
   VINCERE_JOB_FIELD_KEYS,
+  VINCERE_FUNCTIONAL_EXPERTISE_IDS,
+  getVincereFunctionalExpertiseId,
 } from './constants';
 
 // Candidates API
@@ -56,6 +58,7 @@ export {
   getBooleanFieldValue,
   // Additional endpoints
   getFunctionalExpertises,
+  setFunctionalExpertises,
   getCurrentLocation,
   getCandidateStatus,
   getFullCandidateData,

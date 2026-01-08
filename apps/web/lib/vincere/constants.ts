@@ -44,7 +44,7 @@ export const VINCERE_INDUSTRY_IDS = {
  * Vincere system IDs
  */
 export const VINCERE_SYSTEM_IDS = {
-  candidateSourceBubble: 29105, // Source ID for Bubble portal registrations
+  candidateSourceNetwork: 29105, // Source ID for Network portal self-registrations
   defaultCreatorId: 28959, // Default recruiter/creator ID
 } as const;
 
@@ -303,6 +303,161 @@ export const POSITION_MAPPING: Record<string, { standard: string; category: stri
   'florist': { standard: 'Florist', category: 'other' },
   'sommelier': { standard: 'Sommelier', category: 'other' },
 };
+
+/**
+ * Vincere Functional Expertise IDs
+ *
+ * Maps standardized position names to Vincere functional expertise IDs.
+ * These IDs are specific to the Lighthouse Vincere tenant.
+ *
+ * To find these IDs:
+ * 1. Go to Vincere Admin > Settings > Functional Expertises
+ * 2. Or use the API: GET /functionalexpertise
+ *
+ * Note: The n8n workflow used 3013 for Stewardess positions.
+ */
+export const VINCERE_FUNCTIONAL_EXPERTISE_IDS: Record<string, number> = {
+  // Deck Department
+  'Captain': 3001,
+  'Chief Officer': 3002,
+  'Second Officer': 3003,
+  'Third Officer': 3004,
+  'Bosun': 3005,
+  'Lead Deckhand': 3006,
+  'Senior Deckhand': 3007,
+  'Deckhand': 3008,
+  'Junior Deckhand': 3009,
+
+  // Interior Department
+  'Chief Stewardess': 3010,
+  'Purser': 3011,
+  'Second Stewardess': 3012,
+  'Stewardess': 3013, // Confirmed from n8n workflow
+  'Third Stewardess': 3014,
+  'Junior Stewardess': 3015,
+  'Sole Stewardess': 3016,
+  'Laundry Stewardess': 3017,
+  'Housekeeping': 3018,
+
+  // Engineering Department
+  'Chief Engineer': 3020,
+  'Second Engineer': 3021,
+  'Third Engineer': 3022,
+  'ETO': 3023,
+  'Engineer': 3024,
+  'Junior Engineer': 3025,
+
+  // Galley Department
+  'Head Chef': 3030,
+  'Chef': 3031,
+  'Sole Chef': 3032,
+  'Sous Chef': 3033,
+  'Crew Chef': 3034,
+  'Cook': 3035,
+
+  // Childcare
+  'Nanny': 3040,
+  'Governess': 3041,
+  'Au Pair': 3042,
+  'Tutor': 3043,
+
+  // Medical
+  'Nurse': 3050,
+  'Medic': 3051,
+  'Paramedic': 3052,
+
+  // Security
+  'Security Officer': 3060,
+  'CPO': 3061,
+
+  // Management
+  'Yacht Manager': 3070,
+  'PA': 3071,
+  'Executive Assistant': 3072,
+  'Chief of Staff': 3073,
+
+  // Villa/Estate - Management
+  'Estate Manager': 3080,
+  'House Manager': 3081,
+  'Villa Manager': 3082,
+  'Chalet Manager': 3083,
+
+  // Villa/Estate - Service Staff
+  'Butler': 3090,
+  'Head Butler': 3091,
+  'Senior Butler': 3092,
+  'Junior Butler': 3093,
+  'Footman': 3094,
+  'Valet': 3095,
+  "Lady's Maid": 3096,
+
+  // Villa/Estate - Housekeeping
+  'Head Housekeeper': 3100,
+  'Housekeeper': 3101,
+  'Executive Housekeeper': 3102,
+  'Housemaid': 3103,
+  'Laundress': 3104,
+
+  // Villa/Estate - Kitchen
+  'Private Chef': 3110,
+  'Kitchen Assistant': 3111,
+
+  // Villa/Estate - Outdoor & Maintenance
+  'Chauffeur': 3120,
+  'Head Gardener': 3121,
+  'Gardener': 3122,
+  'Groundskeeper': 3123,
+  'Maintenance Manager': 3124,
+  'Handyman': 3125,
+  'Pool Technician': 3126,
+  'Caretaker': 3127,
+
+  // Villa/Estate - Service Couples
+  'Couple': 3130,
+  'House Couple': 3131,
+  'Estate Couple': 3132,
+  'Caretaker Couple': 3133,
+
+  // Other/Specialist
+  'Massage Therapist': 3140,
+  'Yoga Instructor': 3141,
+  'Fitness Trainer': 3142,
+  'Personal Trainer': 3143,
+  'Dive Instructor': 3144,
+  'Water Sports Instructor': 3145,
+  'Florist': 3146,
+  'Sommelier': 3147,
+};
+
+/**
+ * Get Vincere functional expertise ID for a position
+ * @param position - Position name (will be standardized)
+ * @returns Vincere functional expertise ID or undefined if not found
+ */
+export function getVincereFunctionalExpertiseId(position: string | null | undefined): number | undefined {
+  if (!position) return undefined;
+
+  // First try direct match with standardized position name
+  const directMatch = VINCERE_FUNCTIONAL_EXPERTISE_IDS[position];
+  if (directMatch) return directMatch;
+
+  // Try to find via position mapping (converts aliases to standard names)
+  const normalized = position.toLowerCase().trim();
+  const mapping = POSITION_MAPPING[normalized];
+  if (mapping) {
+    return VINCERE_FUNCTIONAL_EXPERTISE_IDS[mapping.standard];
+  }
+
+  // Try case-insensitive match on expertise IDs
+  const lowerPosition = position.toLowerCase();
+  for (const [key, id] of Object.entries(VINCERE_FUNCTIONAL_EXPERTISE_IDS)) {
+    if (key.toLowerCase() === lowerPosition) {
+      return id;
+    }
+  }
+
+  return undefined;
+}
 
 /**
  * Job custom field keys

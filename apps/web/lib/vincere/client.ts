@@ -167,7 +167,7 @@ export class VincereClient {
   /**
    * PUT request helper
    */
-  async put<T = unknown>(endpoint: string, data?: Record<string, unknown>): Promise<T> {
+  async put<T = unknown>(endpoint: string, data?: Record<string, unknown> | unknown[]): Promise<T> {
     return this.request<T>('PUT', endpoint, data);
   }
 
