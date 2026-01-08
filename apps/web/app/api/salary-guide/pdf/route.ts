@@ -135,7 +135,7 @@ export async function GET(request: NextRequest) {
     if (uploadError) {
       console.error("Error uploading PDF to storage:", uploadError);
       // Fallback: return PDF directly if upload fails
-      return new NextResponse(pdfBuffer, {
+      return new NextResponse(new Uint8Array(pdfBuffer), {
         headers: {
           "Content-Type": "application/pdf",
           "Content-Disposition": `attachment; filename="${PDF_FILENAME}"`,

@@ -1093,7 +1093,7 @@ export default function SalaryGuidePage({ searchParams }: SalaryGuidePageProps) 
       </section>
 
       {/* Lead Capture Section */}
-      <LeadCapture variant="salary-guide" />
+      <LeadCapture />
 
       {/* Call-to-Action Section for PDF */}
       <section className="bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 py-16 print:bg-white print:py-12 print:break-inside-avoid">

@@ -854,7 +854,7 @@ export function HireLandingPage({
             <div className="sm:hidden flex-1">
               <Button
                 onClick={() => handleSeeMatches('cta')}
-                size="default"
+                size="md"
                 className="w-full shadow-lg shadow-gold-500/20"
               >
                 <Sparkles className="mr-2 h-4 w-4" />

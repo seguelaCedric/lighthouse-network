@@ -150,8 +150,8 @@ export async function PATCH(
     return NextResponse.json(data);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      console.error('Zod validation error:', JSON.stringify(error.errors, null, 2));
-      return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 });
+      console.error('Zod validation error:', JSON.stringify(error.issues, null, 2));
+      return NextResponse.json({ error: 'Validation error', details: error.issues }, { status: 400 });
     }
     console.error('SEO page PATCH error:', error);
     return NextResponse.json({

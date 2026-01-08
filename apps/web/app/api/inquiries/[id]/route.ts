@@ -75,7 +75,7 @@ export async function PATCH(
     return NextResponse.json(data);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Validation error', details: error.errors }, { status: 400 });
+      return NextResponse.json({ error: 'Validation error', details: error.issues }, { status: 400 });
     }
     console.error('Inquiry PATCH error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

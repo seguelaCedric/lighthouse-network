@@ -57,13 +57,14 @@ export default async function LocationHubPage({ params }: Props) {
     .join(' ');
 
   // Group pages by position
-  const pagesByPosition = pages.reduce((acc, page) => {
+  type PageType = (typeof pages)[number];
+  const pagesByPosition = pages.reduce<Record<string, PageType[]>>((acc, page) => {
     if (!acc[page.position]) {
       acc[page.position] = [];
     }
     acc[page.position].push(page);
     return acc;
-  }, {} as Record<string, typeof pages>);
+  }, {});
 
   // Get related blog posts
   const { data: blogPosts } = await supabase
@@ -95,7 +96,7 @@ export default async function LocationHubPage({ params }: Props) {
             Available Positions
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {Object.entries(pagesByPosition).map(([position, positionPages]) => {
+            {(Object.entries(pagesByPosition) as [string, PageType[]][]).map(([position, positionPages]) => {
               const primaryPage = positionPages[0];
               return (
                 <Link

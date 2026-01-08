@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import Image from "next/image";
 import { PublicHeader } from "@/components/pricing/PublicHeader";
@@ -10,6 +8,8 @@ import { UrgencyBanner } from "@/components/marketing/UrgencyBanner";
 import { ProblemAgitate } from "@/components/marketing/ProblemAgitate";
 import { ExitIntent } from "@/components/marketing/ExitIntent";
 import { StickyCTA } from "@/components/marketing/StickyCTA";
+import { HomeVideoHero } from "@/components/marketing/HomeVideoHero";
+import { HomePageStructuredData } from "@/components/seo/HomePageStructuredData";
 import { Button } from "@/components/ui/button";
 import {
   Anchor,
@@ -35,10 +35,10 @@ import {
 } from "lucide-react";
 
 const stats = [
-  { value: "500+", label: "Satisfied Clients" },
-  { value: "300+", label: "Placements/Year" },
-  { value: "50+", label: "Countries" },
-  { value: "20+", label: "Years of Trust" },
+  { value: "500+", label: "Satisfied Clients", description: "Over 500 yacht owners, captains, and private clients trust us" },
+  { value: "300+", label: "Placements/Year", description: "Successfully placing over 300 candidates annually" },
+  { value: "50+", label: "Countries", description: "Operating in over 50 countries worldwide" },
+  { value: "20+", label: "Years of Trust", description: "Established in 2002, serving the industry for over 20 years" },
 ];
 
 const benefits = [
@@ -195,590 +195,631 @@ const testimonials = [
     name: "Mathieu Barbe",
     role: "Interior Manager, Project ENZO",
     image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Mathieu-Barbe.png",
-    type: "candidate",
+    type: "candidate" as const,
   },
-];
+] as const;
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-white">
+      <HomePageStructuredData testimonials={testimonials} />
       <ExitIntent />
       <UrgencyBanner showJobCount={false} />
       <PublicHeader />
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 py-20 sm:py-32">
-        {/* Background Video */}
-        <div className="absolute inset-0">
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            className="absolute inset-0 h-full w-full object-cover opacity-40"
-            poster="https://www.lighthouse-careers.com/wp-content/uploads/2023/09/CARIBBEAN-YACHT-CHARTER-1600x1210-1.jpg"
-          >
-            <source
-              src="/videos/hero-bg.mp4"
-              type="video/mp4"
-            />
-          </video>
-          <div className="absolute inset-0 bg-gradient-to-b from-navy-900/70 via-navy-900/50 to-navy-900/90" />
-        </div>
+      <main id="main-content">
+        {/* Hero Section */}
+        <section
+          className="relative overflow-hidden bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 py-20 sm:py-32"
+          aria-labelledby="hero-heading"
+        >
+          {/* Background Video */}
+          <HomeVideoHero
+            posterUrl="https://www.lighthouse-careers.com/wp-content/uploads/2023/09/CARIBBEAN-YACHT-CHARTER-1600x1210-1.jpg"
+            videoUrl="/videos/hero-bg.mp4"
+          />
 
-        {/* Decorative elements */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute left-1/4 top-1/4 h-96 w-96 rounded-full bg-gold-400 blur-3xl" />
-          <div className="absolute bottom-1/4 right-1/4 h-64 w-64 rounded-full bg-gold-500 blur-3xl" />
-        </div>
-
-        <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="text-center">
-            {/* Trust badge - above fold social proof */}
-            <div className="mb-6 inline-flex items-center gap-3 rounded-full border border-gold-500/30 bg-gold-500/10 px-4 py-2 text-sm font-medium text-gold-300">
-              <div className="flex items-center gap-2">
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gold-500 text-xs font-bold text-navy-900">4.9</div>
-                <div className="flex">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-gold-400 text-gold-400" />
-                  ))}
-                </div>
-              </div>
-              <span className="hidden sm:inline">Trusted by 500+ Clients Worldwide</span>
-              <span className="sm:hidden">500+ Clients trust us</span>
-            </div>
-
-            <h1 className="font-serif text-4xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">
-              Your Next Yacht Job or Perfect Hire
-              <br />
-              <span className="text-gold-400">Is One Call Away.</span>
-            </h1>
-
-            <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-300 sm:text-xl">
-              Stop competing with 500 applicants. Get matched to positions on superyachts,
-              in private villas, or luxury estates - or find pre-screened staff that actually show up.
-              500+ satisfied clients placing top talent worldwide.
-            </p>
-
-            {/* Trust indicators - risk reversal */}
-            <div className="mx-auto mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-gray-400">
-              <div className="flex items-center gap-1.5">
-                <Check className="h-4 w-4 text-gold-400" />
-                <span>No upfront fees</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Check className="h-4 w-4 text-gold-400" />
-                <span>Same-day candidates</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Check className="h-4 w-4 text-gold-400" />
-                <span>Free replacement guarantee</span>
-              </div>
-            </div>
-
-            {/* Dual CTAs - specific benefits */}
-            <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link href="/job-board">
-                <Button size="lg" className="w-full min-w-[220px] sm:w-auto">
-                  <Ship className="mr-2 h-5 w-5" />
-                  See Open Positions
-                </Button>
-              </Link>
-              <Link href="/contact">
-                <Button variant="secondary" size="lg" className="w-full min-w-[220px] border-white/20 text-white hover:bg-white/10 sm:w-auto">
-                  <Zap className="mr-2 h-5 w-5" />
-                  Get Staff Today
-                </Button>
-              </Link>
-            </div>
-
-            {/* Quick contact for urgency */}
-            <p className="mt-6 text-sm text-gray-400">
-              Need someone urgently?{" "}
-              <a href="tel:+33676410299" className="inline-flex items-center gap-1 text-gold-400 hover:text-gold-300">
-                <Phone className="h-3.5 w-3.5" />
-                Call us now
-              </a>
-            </p>
+          {/* Decorative elements */}
+          <div className="absolute inset-0 opacity-10" aria-hidden="true">
+            <div className="absolute left-1/4 top-1/4 h-96 w-96 rounded-full bg-gold-400 blur-3xl" />
+            <div className="absolute bottom-1/4 right-1/4 h-64 w-64 rounded-full bg-gold-500 blur-3xl" />
           </div>
 
-          {/* 3-Step Process Cards */}
-          <div className="mt-20 grid gap-6 sm:grid-cols-3">
-            {steps.map((step, index) => {
-              const Icon = step.icon;
-              return (
-                <div
-                  key={step.title}
-                  className="relative rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm"
-                >
-                  <div className="absolute -top-3 left-6 flex h-8 w-8 items-center justify-center rounded-full bg-gold-gradient text-sm font-bold text-navy-900">
-                    {index + 1}
+          <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
+            <div className="text-center">
+              {/* Trust badge - above fold social proof */}
+              <div className="mb-6 inline-flex items-center gap-3 rounded-full border border-gold-500/30 bg-gold-500/10 px-4 py-2 text-sm font-medium text-gold-300">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gold-500 text-xs font-bold text-navy-900">4.9</div>
+                  <div className="flex" aria-label="4.9 out of 5 stars">
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="h-4 w-4 fill-gold-400 text-gold-400" aria-hidden="true" />
+                    ))}
                   </div>
-                  <div className="mb-4 mt-2 flex h-12 w-12 items-center justify-center rounded-lg bg-gold-500/20">
-                    <Icon className="h-6 w-6 text-gold-400" />
-                  </div>
-                  <h3 className="mb-2 font-semibold text-white">{step.title}</h3>
-                  <p className="text-sm text-gray-400">{step.description}</p>
                 </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="border-b border-gray-100 bg-gray-50 py-16">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {stats.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <div className="font-serif text-4xl font-bold text-gold-600 sm:text-5xl">
-                  {stat.value}
-                </div>
-                <div className="mt-2 text-gray-600">{stat.label}</div>
+                <span className="hidden sm:inline">Trusted by 500+ Clients Worldwide</span>
+                <span className="sm:hidden">500+ Clients trust us</span>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* Audience Split - Path Selection */}
-      <AudienceSplit />
-
-      {/* Problem-Agitate Section */}
-      <ProblemAgitate />
-
-      {/* About Section */}
-      <section className="py-20 sm:py-28">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="grid items-center gap-12 lg:grid-cols-2">
-            <div>
-              <h2 className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl">
-                We Help Great Talents
+              <h1 id="hero-heading" className="font-serif text-4xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl">
+                Your Next Yacht Job or Perfect Hire
                 <br />
-                <span className="text-gold-600">Find Their Dream Job</span>
-              </h2>
-              <p className="mt-6 text-lg text-gray-600">
-                Lighthouse Careers provides bespoke yacht crew recruitment and private
-                household staff placement services worldwide. We focus on making the
-                recruitment process smooth and seamless for both clients and candidates.
-              </p>
-              <p className="mt-4 text-gray-600">
-                With 500+ satisfied clients, we understand what it takes to match
-                exceptional talent with discerning employers. Our team of industry
-                specialists has real-world experience in the sectors we recruit for.
+                <span className="text-gold-400">Is One Call Away.</span>
+              </h1>
+
+              <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-300 sm:text-xl">
+                Stop competing with 500 applicants. Get matched to positions on superyachts,
+                in private villas, or luxury estates - or find pre-screened staff that actually show up.
+                500+ satisfied clients placing top talent worldwide.
               </p>
 
-              {/* Feature list */}
-              <div className="mt-8 grid grid-cols-2 gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gold-100">
-                    <Ship className="h-5 w-5 text-gold-600" />
-                  </div>
-                  <span className="text-sm font-medium text-navy-900">Yacht Crew</span>
+              {/* Trust indicators - risk reversal */}
+              <div className="mx-auto mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-gray-400">
+                <div className="flex items-center gap-1.5">
+                  <Check className="h-4 w-4 text-gold-400" aria-hidden="true" />
+                  <span>No upfront fees</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gold-100">
-                    <Home className="h-5 w-5 text-gold-600" />
-                  </div>
-                  <span className="text-sm font-medium text-navy-900">Private Staff</span>
+                <div className="flex items-center gap-1.5">
+                  <Check className="h-4 w-4 text-gold-400" aria-hidden="true" />
+                  <span>Same-day candidates</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gold-100">
-                    <Award className="h-5 w-5 text-gold-600" />
-                  </div>
-                  <span className="text-sm font-medium text-navy-900">Vetted Talent</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gold-100">
-                    <Users className="h-5 w-5 text-gold-600" />
-                  </div>
-                  <span className="text-sm font-medium text-navy-900">Global Network</span>
+                <div className="flex items-center gap-1.5">
+                  <Check className="h-4 w-4 text-gold-400" aria-hidden="true" />
+                  <span>Free replacement guarantee</span>
                 </div>
               </div>
 
-              <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-                <Link href="/about">
-                  <Button variant="primary">
-                    Why 500+ Clients Trust Us
-                    <ArrowRight className="ml-2 h-4 w-4" />
+              {/* Dual CTAs - specific benefits */}
+              <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
+                <Link href="/job-board">
+                  <Button size="lg" className="w-full min-w-[220px] sm:w-auto">
+                    <Ship className="mr-2 h-5 w-5" aria-hidden="true" />
+                    See Open Positions
                   </Button>
                 </Link>
                 <Link href="/contact">
-                  <Button variant="secondary">Brief Us Now</Button>
+                  <Button variant="secondary" size="lg" className="w-full min-w-[220px] border-white/20 text-white hover:bg-white/10 sm:w-auto">
+                    <Zap className="mr-2 h-5 w-5" aria-hidden="true" />
+                    Get Staff Today
+                  </Button>
                 </Link>
               </div>
+
+              {/* Quick contact for urgency */}
+              <p className="mt-6 text-sm text-gray-400">
+                Need someone urgently?{" "}
+                <a href="tel:+33676410299" className="inline-flex items-center gap-1 text-gold-400 hover:text-gold-300">
+                  <Phone className="h-3.5 w-3.5" aria-hidden="true" />
+                  Call us now
+                </a>
+              </p>
             </div>
 
-            {/* Image collage */}
-            <div className="relative">
-              <div className="grid grid-cols-2 gap-4">
-                {/* Main large image */}
-                <div className="relative col-span-2 aspect-[16/10] overflow-hidden rounded-2xl">
-                  <Image
-                    src="https://www.lighthouse-careers.com/wp-content/uploads/2024/02/superyacht-2.jpg"
-                    alt="Luxury superyacht"
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                {/* Two smaller images */}
-                <div className="relative aspect-square overflow-hidden rounded-xl">
-                  <Image
-                    src="https://www.lighthouse-careers.com/wp-content/uploads/2023/08/shutterstock_156742031-1024x683.jpg"
-                    alt="Yacht deck crew"
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <div className="relative aspect-square overflow-hidden rounded-xl">
-                  <Image
-                    src="https://www.lighthouse-careers.com/wp-content/uploads/2023/08/shutterstock_1932897413-1024x683.jpg"
-                    alt="Yacht chef"
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-              </div>
-              {/* Floating badge */}
-              <div className="absolute -bottom-4 -left-4 rounded-xl bg-navy-900 px-6 py-4 text-white shadow-xl">
-                <div className="text-2xl font-bold text-gold-400">500+</div>
-                <div className="text-sm text-gray-300">Satisfied Clients</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Benefits Section */}
-      <section className="bg-gray-50 py-20 sm:py-28">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="mb-16 text-center">
-            <h2 className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl">
-              Why Choose Lighthouse Careers
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-lg text-gray-600">
-              We&apos;ve built our reputation on trust, expertise, and results.
-            </p>
-          </div>
-
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {benefits.map((benefit) => {
-              const Icon = benefit.icon;
-              return (
-                <div
-                  key={benefit.title}
-                  className="rounded-xl border border-gray-200 bg-white p-6 transition-shadow hover:shadow-lg"
-                >
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gold-100">
-                    <Icon className="h-6 w-6 text-gold-600" />
+            {/* 3-Step Process Cards */}
+            <div className="mt-20 grid gap-6 sm:grid-cols-3" role="list" aria-label="How it works">
+              {steps.map((step, index) => {
+                const Icon = step.icon;
+                return (
+                  <div
+                    key={step.title}
+                    className="relative rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm"
+                    role="listitem"
+                  >
+                    <div className="absolute -top-3 left-6 flex h-8 w-8 items-center justify-center rounded-full bg-gold-gradient text-sm font-bold text-navy-900" aria-hidden="true">
+                      {index + 1}
+                    </div>
+                    <div className="mb-4 mt-2 flex h-12 w-12 items-center justify-center rounded-lg bg-gold-500/20">
+                      <Icon className="h-6 w-6 text-gold-400" aria-hidden="true" />
+                    </div>
+                    <h3 className="mb-2 font-semibold text-white">{step.title}</h3>
+                    <p className="text-sm text-gray-400">{step.description}</p>
                   </div>
-                  <h3 className="mb-2 text-lg font-semibold text-navy-900">
-                    {benefit.title}
-                  </h3>
-                  <p className="text-gray-600">{benefit.description}</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Services Section */}
-      <section className="py-20 sm:py-28">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="mb-16 text-center">
-            <h2 className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl">
-              Our Services
-            </h2>
-          </div>
-
-          <div className="grid gap-8 lg:grid-cols-2">
-            {/* Yacht Crew */}
-            <Link
-              href="/yacht-crew"
-              className="group relative overflow-hidden rounded-2xl transition-transform hover:-translate-y-1"
-            >
-              {/* Background image */}
-              <div className="absolute inset-0">
-                <Image
-                  src="https://www.lighthouse-careers.com/wp-content/uploads/2023/08/376.jpg"
-                  alt="Yacht crew on deck"
-                  fill
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-navy-900 via-navy-900/80 to-navy-900/40" />
-              </div>
-              <div className="relative p-8 pt-40">
-                <Ship className="mb-4 h-10 w-10 text-gold-400" />
-                <h3 className="mb-3 font-serif text-2xl font-semibold text-white">
-                  Looking for Yacht Crew
-                </h3>
-                <p className="mb-6 text-gray-300">
-                  From Captains to Deckhands, we cover all departments. Our team of
-                  specialists with real yacht experience understands exactly what
-                  you need.
-                </p>
-                <div className="flex items-center font-medium text-gold-400 group-hover:text-gold-300">
-                  Get Crew Today
-                  <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-                </div>
-              </div>
-            </Link>
-
-            {/* Private Staff */}
-            <Link
-              href="/private-staff"
-              className="group relative overflow-hidden rounded-2xl transition-transform hover:-translate-y-1"
-            >
-              {/* Background image */}
-              <div className="absolute inset-0">
-                <Image
-                  src="https://www.lighthouse-careers.com/wp-content/uploads/2023/08/shutterstock_1994929460-scaled.jpg"
-                  alt="Luxury interior service"
-                  fill
-                  className="object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-navy-900/60 via-navy-900/40 to-navy-900/15" />
-              </div>
-              <div className="relative p-8 pt-40">
-                <Home className="mb-4 h-10 w-10 text-gold-400" />
-                <h3 className="mb-3 font-serif text-2xl font-semibold text-white">
-                  Looking for Private Staff
-                </h3>
-                <p className="mb-6 text-gray-300">
-                  Butlers, Estate Managers, Nannies and more. We find rare talents
-                  trained to luxury standards for your private household.
-                </p>
-                <div className="flex items-center font-medium text-gold-400 group-hover:text-gold-300">
-                  Get Staff Today
-                  <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-                </div>
-              </div>
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials Section - Luxurious navy background with elegant pattern */}
-      <section className="relative py-20 sm:py-28 overflow-hidden">
-        {/* Rich navy gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-navy-900 via-navy-800 to-[#0c1525]" />
-
-        {/* Warm glow from top */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_120%_40%_at_50%_0%,rgba(195,165,120,0.08),transparent_60%)]" />
-
-        {/* Elegant geometric pattern - visible and refined */}
-        <div className="absolute inset-0">
-          <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern id="luxury-pattern-home" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
-                {/* Elegant diamond */}
-                <path d="M40 4 L76 40 L40 76 L4 40 Z" fill="none" stroke="#C3A578" strokeWidth="0.6" opacity="0.12"/>
-                {/* Inner diamond accent */}
-                <path d="M40 16 L64 40 L40 64 L16 40 Z" fill="none" stroke="#C3A578" strokeWidth="0.4" opacity="0.08"/>
-                {/* Center dot */}
-                <circle cx="40" cy="40" r="2" fill="#C3A578" opacity="0.15"/>
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#luxury-pattern-home)" />
-          </svg>
-        </div>
-
-        {/* Subtle vignette for depth */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_50%,transparent_40%,rgba(0,0,0,0.1))]" />
-
-        <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="mb-16 text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-gold-500/40 bg-gold-500/10 px-5 py-2 text-sm font-medium text-gold-400 backdrop-blur-sm mb-6">
-              <Star className="h-4 w-4 fill-gold-400" />
-              Client Success Stories
+                );
+              })}
             </div>
-            <h2 className="font-serif text-3xl font-semibold text-white sm:text-4xl">
-              Trusted by Industry Professionals
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-gray-300">
-              See what our clients and candidates say about working with us.
-            </p>
           </div>
+        </section>
 
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            {testimonials.map((testimonial, index) => (
-              <div
-                key={index}
-                className="group relative bg-white/[0.03] backdrop-blur-sm rounded-2xl border border-white/10 p-8 hover:bg-white/[0.06] hover:border-gold-500/30 transition-all duration-300"
-              >
-                {/* Quote Icon */}
-                <div className="absolute -top-4 left-8">
-                  <div className="h-8 w-8 rounded-full bg-gold-500 flex items-center justify-center">
-                    <Quote className="h-4 w-4 text-navy-900" />
+        {/* Stats Section */}
+        <section
+          className="border-b border-gray-100 bg-gray-50 py-16"
+          aria-labelledby="stats-heading"
+        >
+          <h2 id="stats-heading" className="sr-only">Our Track Record</h2>
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <div
+              className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4"
+              itemScope
+              itemType="https://schema.org/Organization"
+            >
+              {stats.map((stat) => (
+                <div key={stat.label} className="text-center">
+                  <div className="font-serif text-4xl font-bold text-gold-600 sm:text-5xl">
+                    {stat.value}
+                  </div>
+                  <div className="mt-2 text-gray-600">{stat.label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Audience Split - Path Selection */}
+        <AudienceSplit />
+
+        {/* Problem-Agitate Section */}
+        <ProblemAgitate />
+
+        {/* About Section */}
+        <section
+          className="py-20 sm:py-28"
+          aria-labelledby="about-heading"
+        >
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <div className="grid items-center gap-12 lg:grid-cols-2">
+              <div>
+                <h2 id="about-heading" className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl">
+                  We Help Great Talents
+                  <br />
+                  <span className="text-gold-600">Find Their Dream Job</span>
+                </h2>
+                <p className="mt-6 text-lg text-gray-600">
+                  Lighthouse Careers provides bespoke yacht crew recruitment and private
+                  household staff placement services worldwide. We focus on making the
+                  recruitment process smooth and seamless for both clients and candidates.
+                </p>
+                <p className="mt-4 text-gray-600">
+                  With 500+ satisfied clients, we understand what it takes to match
+                  exceptional talent with discerning employers. Our team of industry
+                  specialists has real-world experience in the sectors we recruit for.
+                </p>
+
+                {/* Feature list */}
+                <div className="mt-8 grid grid-cols-2 gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gold-100">
+                      <Ship className="h-5 w-5 text-gold-600" aria-hidden="true" />
+                    </div>
+                    <span className="text-sm font-medium text-navy-900">Yacht Crew</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gold-100">
+                      <Home className="h-5 w-5 text-gold-600" aria-hidden="true" />
+                    </div>
+                    <span className="text-sm font-medium text-navy-900">Private Staff</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gold-100">
+                      <Award className="h-5 w-5 text-gold-600" aria-hidden="true" />
+                    </div>
+                    <span className="text-sm font-medium text-navy-900">Vetted Talent</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gold-100">
+                      <Users className="h-5 w-5 text-gold-600" aria-hidden="true" />
+                    </div>
+                    <span className="text-sm font-medium text-navy-900">Global Network</span>
                   </div>
                 </div>
 
-                {/* Rating */}
-                <div className="flex gap-1 mb-4 pt-2">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-gold-400 text-gold-400" />
-                  ))}
+                <div className="mt-8 flex flex-col gap-4 sm:flex-row">
+                  <Link href="/about">
+                    <Button variant="primary">
+                      Why 500+ Clients Trust Us
+                      <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
+                    </Button>
+                  </Link>
+                  <Link href="/contact">
+                    <Button variant="secondary">Brief Us Now</Button>
+                  </Link>
                 </div>
+              </div>
 
-                {/* Quote */}
-                <blockquote className="text-gray-300 leading-relaxed mb-6 line-clamp-4">
-                  &ldquo;{testimonial.quote}&rdquo;
-                </blockquote>
-
-                {/* Author */}
-                <div className="flex items-center gap-4">
-                  <div className="relative h-12 w-12 rounded-full overflow-hidden border-2 border-gold-500/40">
+              {/* Image collage */}
+              <div className="relative">
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Main large image */}
+                  <div className="relative col-span-2 aspect-[16/10] overflow-hidden rounded-2xl">
                     <Image
-                      src={testimonial.image}
-                      alt={testimonial.name}
+                      src="https://www.lighthouse-careers.com/wp-content/uploads/2024/02/superyacht-2.jpg"
+                      alt="Luxury superyacht anchored in crystal blue Mediterranean waters"
+                      fill
+                      className="object-cover"
+                      priority
+                    />
+                  </div>
+                  {/* Two smaller images */}
+                  <div className="relative aspect-square overflow-hidden rounded-xl">
+                    <Image
+                      src="https://www.lighthouse-careers.com/wp-content/uploads/2023/08/shutterstock_156742031-1024x683.jpg"
+                      alt="Professional yacht deck crew in uniform on duty"
                       fill
                       className="object-cover"
                     />
                   </div>
-                  <div>
-                    <div className="font-semibold text-white">{testimonial.name}</div>
-                    <div className="text-sm text-gray-400">{testimonial.role}</div>
+                  <div className="relative aspect-square overflow-hidden rounded-xl">
+                    <Image
+                      src="https://www.lighthouse-careers.com/wp-content/uploads/2023/08/shutterstock_1932897413-1024x683.jpg"
+                      alt="Private yacht chef preparing gourmet cuisine"
+                      fill
+                      className="object-cover"
+                    />
                   </div>
                 </div>
-
-                {/* Type Badge */}
-                <div className="absolute top-6 right-6">
-                  <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                    testimonial.type === 'client'
-                      ? 'bg-white/10 text-gray-300'
-                      : 'bg-gold-500/20 text-gold-400'
-                  }`}>
-                    {testimonial.type === 'client' ? 'Employer' : 'Placed Candidate'}
-                  </span>
+                {/* Floating badge */}
+                <div className="absolute -bottom-4 -left-4 rounded-xl bg-navy-900 px-6 py-4 text-white shadow-xl">
+                  <div className="text-2xl font-bold text-gold-400">500+</div>
+                  <div className="text-sm text-gray-300">Satisfied Clients</div>
                 </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Bottom Stats */}
-          <div className="mt-16 text-center">
-            <div className="inline-flex flex-wrap items-center justify-center gap-8 sm:gap-12 bg-white/[0.03] backdrop-blur-sm border border-white/10 rounded-2xl px-8 py-6">
-              <div className="text-center">
-                <div className="font-serif text-3xl font-bold text-gold-400">500+</div>
-                <div className="text-sm text-gray-400">Happy Clients</div>
-              </div>
-              <div className="hidden sm:block h-12 w-px bg-white/10" />
-              <div className="text-center">
-                <div className="font-serif text-3xl font-bold text-gold-400">4.9/5</div>
-                <div className="text-sm text-gray-400">Average Rating</div>
-              </div>
-              <div className="hidden sm:block h-12 w-px bg-white/10" />
-              <div className="text-center">
-                <div className="font-serif text-3xl font-bold text-gold-400">20+</div>
-                <div className="text-sm text-gray-400">Years of Trust</div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Lead Capture Section */}
-      <LeadCapture />
-
-      {/* CTA Section - Clean white design */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-gray-50 to-white py-20 sm:py-28">
-        {/* Subtle decorative elements */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-24 -right-24 h-96 w-96 rounded-full bg-gold-500/5 blur-3xl" />
-          <div className="absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-navy-900/5 blur-3xl" />
-        </div>
-
-        <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="grid gap-12 lg:grid-cols-2 lg:gap-16 items-center">
-            {/* Left side - Content */}
-            <div className="text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 rounded-full border border-gold-500/30 bg-gold-500/10 px-4 py-1.5 text-sm font-medium text-gold-600 mb-6">
-                <Sparkles className="h-4 w-4" />
-                Start Today
-              </div>
-              <h2 className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl lg:text-5xl">
-                Ready to Start Your Journey?
+        {/* Benefits Section */}
+        <section
+          className="bg-gray-50 py-20 sm:py-28"
+          aria-labelledby="benefits-heading"
+        >
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <div className="mb-16 text-center">
+              <h2 id="benefits-heading" className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl">
+                Why Choose Lighthouse Careers
               </h2>
-              <p className="mt-4 text-lg text-gray-600 max-w-xl mx-auto lg:mx-0">
-                Whether you&apos;re looking for your next position or your perfect hire,
-                we&apos;re here to help you succeed.
+              <p className="mx-auto mt-4 max-w-2xl text-lg text-gray-600">
+                We&apos;ve built our reputation on trust, expertise, and results.
               </p>
+            </div>
 
-              {/* Trust indicators */}
-              <div className="mt-8 flex flex-wrap items-center justify-center lg:justify-start gap-6 text-sm text-gray-500">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span>No upfront fees</span>
+            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+              {benefits.map((benefit) => {
+                const Icon = benefit.icon;
+                return (
+                  <div
+                    key={benefit.title}
+                    className="rounded-xl border border-gray-200 bg-white p-6 transition-shadow hover:shadow-lg"
+                  >
+                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-gold-100">
+                      <Icon className="h-6 w-6 text-gold-600" aria-hidden="true" />
+                    </div>
+                    <h3 className="mb-2 text-lg font-semibold text-navy-900">
+                      {benefit.title}
+                    </h3>
+                    <p className="text-gray-600">{benefit.description}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        {/* Services Section */}
+        <section
+          className="py-20 sm:py-28"
+          aria-labelledby="services-heading"
+        >
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <div className="mb-16 text-center">
+              <h2 id="services-heading" className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl">
+                Our Services
+              </h2>
+            </div>
+
+            <div className="grid gap-8 lg:grid-cols-2">
+              {/* Yacht Crew */}
+              <Link
+                href="/yacht-crew"
+                className="group relative overflow-hidden rounded-2xl transition-transform hover:-translate-y-1"
+              >
+                {/* Background image */}
+                <div className="absolute inset-0">
+                  <Image
+                    src="https://www.lighthouse-careers.com/wp-content/uploads/2023/08/376.jpg"
+                    alt="Yacht crew on deck"
+                    fill
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-navy-900 via-navy-900/80 to-navy-900/40" />
                 </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span>500+ clients</span>
+                <div className="relative p-8 pt-40">
+                  <Ship className="mb-4 h-10 w-10 text-gold-400" aria-hidden="true" />
+                  <h3 className="mb-3 font-serif text-2xl font-semibold text-white">
+                    Looking for Yacht Crew
+                  </h3>
+                  <p className="mb-6 text-gray-300">
+                    From Captains to Deckhands, we cover all departments. Our team of
+                    specialists with real yacht experience understands exactly what
+                    you need.
+                  </p>
+                  <div className="flex items-center font-medium text-gold-400 group-hover:text-gold-300">
+                    Get Crew Today
+                    <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span>Same-day response</span>
+              </Link>
+
+              {/* Private Staff */}
+              <Link
+                href="/private-staff"
+                className="group relative overflow-hidden rounded-2xl transition-transform hover:-translate-y-1"
+              >
+                {/* Background image */}
+                <div className="absolute inset-0">
+                  <Image
+                    src="https://www.lighthouse-careers.com/wp-content/uploads/2023/08/shutterstock_1994929460-scaled.jpg"
+                    alt="Luxury interior service"
+                    fill
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-navy-900/60 via-navy-900/40 to-navy-900/15" />
+                </div>
+                <div className="relative p-8 pt-40">
+                  <Home className="mb-4 h-10 w-10 text-gold-400" aria-hidden="true" />
+                  <h3 className="mb-3 font-serif text-2xl font-semibold text-white">
+                    Looking for Private Staff
+                  </h3>
+                  <p className="mb-6 text-gray-300">
+                    Butlers, Estate Managers, Nannies and more. We find rare talents
+                    trained to luxury standards for your private household.
+                  </p>
+                  <div className="flex items-center font-medium text-gold-400 group-hover:text-gold-300">
+                    Get Staff Today
+                    <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+                  </div>
+                </div>
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {/* Testimonials Section - Luxurious navy background with elegant pattern */}
+        <section
+          className="relative py-20 sm:py-28 overflow-hidden"
+          aria-labelledby="testimonials-heading"
+        >
+          {/* Navy gradient background */}
+          <div className="absolute inset-0 bg-gradient-to-br from-navy-900 via-navy-800 to-[#0c1525]" aria-hidden="true" />
+
+          {/* Warm champagne/gold glow from top */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_120%_40%_at_50%_0%,rgba(195,165,120,0.08),transparent_60%)]" aria-hidden="true" />
+
+          {/* Geometric diamond pattern - matching hire page */}
+          <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+            <svg className="absolute inset-0 h-full w-full" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <pattern id="home-diamond-pattern" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
+                  <path
+                    d="M30 0L60 30L30 60L0 30Z"
+                    fill="none"
+                    stroke="rgba(195, 165, 120, 0.06)"
+                    strokeWidth="0.5"
+                  />
+                  <circle cx="30" cy="30" r="1" fill="rgba(195, 165, 120, 0.08)" />
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#home-diamond-pattern)" />
+            </svg>
+          </div>
+
+          {/* Subtle vignette */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(10,20,35,0.4)_100%)]" aria-hidden="true" />
+
+          <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
+            <div className="mb-16 text-center">
+              <div className="inline-flex items-center gap-2 rounded-full border border-gold-500/40 bg-gold-500/10 px-5 py-2 text-sm font-medium text-gold-400 backdrop-blur-sm mb-6">
+                <Star className="h-4 w-4 fill-gold-400" aria-hidden="true" />
+                Client Success Stories
+              </div>
+              <h2 id="testimonials-heading" className="font-serif text-3xl font-semibold text-white sm:text-4xl">
+                Trusted by Industry Professionals
+              </h2>
+              <p className="mx-auto mt-4 max-w-2xl text-gray-300">
+                See what our clients and candidates say about working with us.
+              </p>
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {/* Show first 6 testimonials - mix of clients and candidates */}
+              {testimonials.slice(0, 6).map((testimonial, index) => (
+                <article
+                  key={index}
+                  className="group relative bg-white/[0.03] backdrop-blur-sm rounded-2xl border border-white/10 p-8 hover:bg-white/[0.06] hover:border-gold-500/30 transition-all duration-300"
+                  itemScope
+                  itemType="https://schema.org/Review"
+                >
+                  {/* Quote Icon */}
+                  <div className="absolute -top-4 left-8">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gold-500 shadow-lg shadow-gold-500/20">
+                      <Quote className="h-4 w-4 text-navy-900" aria-hidden="true" />
+                    </div>
+                  </div>
+
+                  {/* Rating */}
+                  <div
+                    className="flex mb-4 mt-2"
+                    itemProp="reviewRating"
+                    itemScope
+                    itemType="https://schema.org/Rating"
+                  >
+                    <meta itemProp="ratingValue" content="5" />
+                    <meta itemProp="bestRating" content="5" />
+                    {[...Array(5)].map((_, i) => (
+                      <Star key={i} className="h-4 w-4 fill-gold-400 text-gold-400" aria-hidden="true" />
+                    ))}
+                  </div>
+
+                  {/* Quote */}
+                  <blockquote
+                    className="text-gray-300 leading-relaxed mb-6 line-clamp-4"
+                    itemProp="reviewBody"
+                  >
+                    &ldquo;{testimonial.quote}&rdquo;
+                  </blockquote>
+
+                  {/* Author */}
+                  <div
+                    className="flex items-center gap-3"
+                    itemProp="author"
+                    itemScope
+                    itemType="https://schema.org/Person"
+                  >
+                    <div className="relative h-12 w-12 overflow-hidden rounded-full ring-2 ring-white/10">
+                      <Image
+                        src={testimonial.image}
+                        alt={testimonial.name}
+                        fill
+                        className="object-cover"
+                        itemProp="image"
+                      />
+                    </div>
+                    <div>
+                      <div className="font-medium text-white" itemProp="name">{testimonial.name}</div>
+                      <div className="text-sm text-gray-400" itemProp="jobTitle">{testimonial.role}</div>
+                    </div>
+                  </div>
+
+                  {/* Type Badge */}
+                  <div className="absolute top-6 right-6">
+                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                      testimonial.type === 'client'
+                        ? 'bg-white/10 text-gray-300'
+                        : 'bg-gold-500/20 text-gold-400'
+                    }`}>
+                      {testimonial.type === 'client' ? 'Employer' : 'Placed Candidate'}
+                    </span>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            {/* Bottom stats bar */}
+            <div className="mt-16 rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-sm">
+              <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
+                <div className="text-center">
+                  <div className="font-serif text-2xl font-bold text-gold-400 sm:text-3xl">4.9★</div>
+                  <div className="mt-1 text-sm text-gray-400">Client Rating</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-serif text-2xl font-bold text-white sm:text-3xl">500+</div>
+                  <div className="mt-1 text-sm text-gray-400">Satisfied Clients</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-serif text-2xl font-bold text-white sm:text-3xl">300+</div>
+                  <div className="mt-1 text-sm text-gray-400">Placements/Year</div>
+                </div>
+                <div className="text-center">
+                  <div className="font-serif text-2xl font-bold text-white sm:text-3xl">20+</div>
+                  <div className="mt-1 text-sm text-gray-400">Years Experience</div>
                 </div>
               </div>
             </div>
+          </div>
+        </section>
 
-            {/* Right side - CTA Cards */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-              {/* For Candidates */}
-              <Link href="/join" className="group">
-                <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-gold-500/50 hover:-translate-y-1">
-                  <div className="absolute top-0 right-0 h-24 w-24 translate-x-8 -translate-y-8 rounded-full bg-gold-500/10 transition-transform group-hover:scale-150" />
-                  <div className="relative">
-                    <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gold-500/10">
-                      <Briefcase className="h-6 w-6 text-gold-600" />
-                    </div>
-                    <h3 className="font-serif text-xl font-semibold text-navy-900 mb-2">Find Work</h3>
-                    <p className="text-gray-600 text-sm mb-4">Browse yacht crew and private staff positions worldwide.</p>
-                    <div className="flex items-center text-gold-600 font-medium text-sm group-hover:gap-2 transition-all">
-                      <span>See positions</span>
-                      <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </div>
+        {/* Lead Capture Section */}
+        <LeadCapture />
+
+        {/* CTA Section - Clean white design */}
+        <section
+          className="relative overflow-hidden bg-gradient-to-b from-gray-50 to-white py-20 sm:py-28"
+          aria-labelledby="cta-heading"
+        >
+          {/* Subtle decorative elements */}
+          <div className="absolute inset-0 overflow-hidden" aria-hidden="true">
+            <div className="absolute -top-24 -right-24 h-96 w-96 rounded-full bg-gold-500/5 blur-3xl" />
+            <div className="absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-navy-900/5 blur-3xl" />
+          </div>
+
+          <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
+            <div className="grid gap-12 lg:grid-cols-2 lg:gap-16 items-center">
+              {/* Left side - Content */}
+              <div className="text-center lg:text-left">
+                <div className="inline-flex items-center gap-2 rounded-full border border-gold-500/30 bg-gold-500/10 px-4 py-1.5 text-sm font-medium text-gold-600 mb-6">
+                  <Sparkles className="h-4 w-4" aria-hidden="true" />
+                  Start Today
+                </div>
+                <h2 id="cta-heading" className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl lg:text-5xl">
+                  Ready to Start Your Journey?
+                </h2>
+                <p className="mt-4 text-lg text-gray-600 max-w-xl mx-auto lg:mx-0">
+                  Whether you&apos;re looking for your next position or your perfect hire,
+                  we&apos;re here to help you succeed.
+                </p>
+
+                {/* Trust indicators */}
+                <div className="mt-8 flex flex-wrap items-center justify-center lg:justify-start gap-6 text-sm text-gray-500">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-green-500" aria-hidden="true" />
+                    <span>No upfront fees</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-green-500" aria-hidden="true" />
+                    <span>500+ clients</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-green-500" aria-hidden="true" />
+                    <span>Same-day response</span>
                   </div>
                 </div>
-              </Link>
+              </div>
 
-              {/* For Employers */}
-              <Link href="/hire" className="group">
-                <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-navy-500/50 hover:-translate-y-1">
-                  <div className="absolute top-0 right-0 h-24 w-24 translate-x-8 -translate-y-8 rounded-full bg-navy-500/10 transition-transform group-hover:scale-150" />
-                  <div className="relative">
-                    <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-navy-500/10">
-                      <Users className="h-6 w-6 text-navy-600" />
-                    </div>
-                    <h3 className="font-serif text-xl font-semibold text-navy-900 mb-2">Hire Staff</h3>
-                    <p className="text-gray-600 text-sm mb-4">Get pre-vetted candidates delivered same day.</p>
-                    <div className="flex items-center text-navy-600 font-medium text-sm group-hover:gap-2 transition-all">
-                      <span>Submit a brief</span>
-                      <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
+              {/* Right side - CTA Cards */}
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                {/* For Candidates */}
+                <Link href="/join" className="group">
+                  <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-gold-500/50 hover:-translate-y-1">
+                    <div className="absolute top-0 right-0 h-24 w-24 translate-x-8 -translate-y-8 rounded-full bg-gold-500/10 transition-transform group-hover:scale-150" aria-hidden="true" />
+                    <div className="relative">
+                      <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gold-500/10">
+                        <Briefcase className="h-6 w-6 text-gold-600" aria-hidden="true" />
+                      </div>
+                      <h3 className="font-serif text-xl font-semibold text-navy-900 mb-2">Find Work</h3>
+                      <p className="text-gray-600 text-sm mb-4">Browse yacht crew and private staff positions worldwide.</p>
+                      <div className="flex items-center text-gold-600 font-medium text-sm group-hover:gap-2 transition-all">
+                        <span>See positions</span>
+                        <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Link>
+                </Link>
+
+                {/* For Employers */}
+                <Link href="/hire" className="group">
+                  <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-navy-500/50 hover:-translate-y-1">
+                    <div className="absolute top-0 right-0 h-24 w-24 translate-x-8 -translate-y-8 rounded-full bg-navy-500/10 transition-transform group-hover:scale-150" aria-hidden="true" />
+                    <div className="relative">
+                      <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-navy-500/10">
+                        <Users className="h-6 w-6 text-navy-600" aria-hidden="true" />
+                      </div>
+                      <h3 className="font-serif text-xl font-semibold text-navy-900 mb-2">Hire Staff</h3>
+                      <p className="text-gray-600 text-sm mb-4">Get pre-vetted candidates delivered same day.</p>
+                      <div className="flex items-center text-navy-600 font-medium text-sm group-hover:gap-2 transition-all">
+                        <span>Submit a brief</span>
+                        <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              </div>
+            </div>
+
+            {/* Bottom contact prompt */}
+            <div className="mt-12 text-center">
+              <p className="text-gray-500">
+                Need help?{" "}
+                <a href="tel:+33676410299" className="font-medium text-navy-600 hover:text-navy-700 underline-offset-2 hover:underline">
+                  Call us
+                </a>
+                {" "}or{" "}
+                <Link href="/contact" className="font-medium text-navy-600 hover:text-navy-700 underline-offset-2 hover:underline">
+                  send a message
+                </Link>
+                {" "}- we respond within 2 hours.
+              </p>
             </div>
           </div>
-
-          {/* Bottom contact prompt */}
-          <div className="mt-12 text-center">
-            <p className="text-gray-500">
-              Need help?{" "}
-              <a href="tel:+33676410299" className="font-medium text-navy-600 hover:text-navy-700 underline-offset-2 hover:underline">
-                Call us
-              </a>
-              {" "}or{" "}
-              <Link href="/contact" className="font-medium text-navy-600 hover:text-navy-700 underline-offset-2 hover:underline">
-                send a message
-              </Link>
-              {" "}- we respond within 2 hours.
-            </p>
-          </div>
-        </div>
-      </section>
+        </section>
+      </main>
 
       <PublicFooter />
       <StickyCTA />
