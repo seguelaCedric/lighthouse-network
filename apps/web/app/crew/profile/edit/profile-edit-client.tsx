@@ -369,6 +369,42 @@ export function ProfileEditClient({
   const saveTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const lastSavedDataRef = React.useRef<string>("");
 
+  // Refs to hold current form values for auto-save (avoids recreating callback on every state change)
+  const formValuesRef = React.useRef({
+    firstName: candidate.firstName,
+    lastName: candidate.lastName,
+    email: candidate.email || "",
+    phone: candidate.phone || "",
+    whatsapp: candidate.whatsapp || "",
+    dateOfBirth: candidate.dateOfBirth || "",
+    gender: candidate.gender || "",
+    nationality: candidate.nationality || "",
+    secondNationality: candidate.secondNationality || "",
+    currentLocation: candidate.currentLocation ? parseLocationString(candidate.currentLocation) : null as LocationData | null,
+    candidateType: initialCandidateType as CandidateType,
+    primaryPosition: candidate.primaryPosition || "",
+    secondaryPositions: candidate.secondaryPositions || [] as string[],
+    jobSearchNotes: candidate.jobSearchNotes || "",
+    highestLicense: candidate.highestLicense || "",
+    secondaryLicense: candidate.secondaryLicense || "",
+    hasSTCW: candidate.hasStcw === true ? "yes" : candidate.hasStcw === false ? "no" : "",
+    stcwExpiry: candidate.stcwExpiry || "",
+    hasENG1: candidate.hasEng1 === true ? "yes" : candidate.hasEng1 === false ? "no" : "",
+    eng1Expiry: candidate.eng1Expiry || "",
+    hasSchengen: candidate.hasSchengen === true ? "yes" : candidate.hasSchengen === false ? "no" : "",
+    schengenExpiry: candidate.schengenExpiry || "",
+    hasB1B2: candidate.hasB1B2 === true ? "yes" : candidate.hasB1B2 === false ? "no" : "",
+    b1b2Expiry: candidate.b1b2Expiry || "",
+    certificationChecklist: [] as Array<{ type: string; hasIt: boolean; expiryDate?: string; customName?: string }>,
+    smoker: candidate.isSmoker === true ? "yes" : candidate.isSmoker === false ? "no" : "",
+    hasTattoos: candidate.hasTattoos === true ? "yes" : candidate.hasTattoos === false ? "no" : "",
+    tattooLocation: candidate.tattooDescription || "",
+    maritalStatus: candidate.maritalStatus || "",
+    couplePosition: candidate.isCouplePosition === true ? "yes" : candidate.isCouplePosition === false ? "no" : "",
+    partnerName: candidate.partnerName || "",
+    partnerPosition: candidate.partnerPosition || "",
+  });
+
   // Profile photo state (separate from form to allow instant UI update)
   const [profilePhotoUrl, setProfilePhotoUrl] = React.useState(candidate.profilePhotoUrl || "");
 
@@ -627,92 +663,9 @@ export function ProfileEditClient({
     loadCertifications();
   }, []); // Run once on mount
 
-  // Auto-save function
-  const autoSave = React.useCallback(
-    async (sectionToSave: string) => {
-      setSaveStatus("saving");
-
-      try {
-        let result: { success: boolean; error?: string };
-
-        switch (sectionToSave) {
-          case "personal":
-            console.log("[autoSave] Calling updatePersonalInfo with phone:", phone, "type:", typeof phone);
-            result = await updatePersonalInfo({
-              firstName,
-              lastName,
-              email: email || undefined,
-              phone,
-              whatsapp: whatsapp || undefined,
-              dateOfBirth: dateOfBirth || undefined,
-              gender: gender || undefined,
-              nationality: nationality || undefined,
-              secondNationality: secondNationality || undefined,
-              currentLocation: currentLocation || undefined,
-            });
-            break;
-
-          case "professional":
-            result = await updateProfessionalDetails({
-              candidateType: candidateType || undefined,
-              primaryPosition: primaryPosition || undefined,
-              secondaryPositions: secondaryPositions.length > 0 ? secondaryPositions : undefined,
-              highestLicense: highestLicense || undefined,
-              secondaryLicense: secondaryLicense || undefined,
-              jobSearchNotes: jobSearchNotes || undefined,
-            });
-            break;
-
-          case "certifications":
-            // Save STCW and visas to candidates table (convert strings to booleans)
-            result = await updateCertificationStatus({
-              hasStcw: hasSTCW === "yes" ? true : hasSTCW === "no" ? false : undefined,
-              stcwExpiry: stcwExpiry || undefined,
-              hasEng1: hasENG1 === "yes" ? true : hasENG1 === "no" ? false : undefined,
-              eng1Expiry: eng1Expiry || undefined,
-              hasSchengen: hasSchengen === "yes" ? true : hasSchengen === "no" ? false : undefined,
-              schengenExpiry: schengenExpiry || undefined,
-              hasB1B2: hasB1B2 === "yes" ? true : hasB1B2 === "no" ? false : undefined,
-              b1b2Expiry: b1b2Expiry || undefined,
-            });
-
-            // Save certification checklist to candidate_certifications table
-            if (result.success && certificationChecklist.length > 0) {
-              result = await updateCertificationChecklist({
-                certifications: certificationChecklist,
-              });
-            }
-            break;
-
-          case "details":
-            result = await updateSpecialCircumstances({
-              isSmoker: smoker === "yes" ? true : smoker === "no" ? false : undefined,
-              hasTattoos: hasTattoos === "yes" ? true : hasTattoos === "no" ? false : undefined,
-              tattooDescription: tattooLocation || undefined,
-              maritalStatus: maritalStatus || undefined,
-              isCouplePosition:
-                couplePosition === "yes" ? true : couplePosition === "no" ? false : undefined,
-              partnerName: partnerName || undefined,
-              partnerPosition: partnerPosition || undefined,
-            });
-            break;
-
-          default:
-            result = { success: true };
-        }
-
-        if (result.success) {
-          setSaveStatus("saved");
-          setLastSaved(new Date());
-        } else {
-          setSaveStatus("error");
-        }
-      } catch (error) {
-        console.error("Auto-save error:", error);
-        setSaveStatus("error");
-      }
-    },
-    [
+  // Keep formValuesRef in sync with state
+  React.useEffect(() => {
+    formValuesRef.current = {
       firstName,
       lastName,
       email,
@@ -734,7 +687,10 @@ export function ProfileEditClient({
       hasENG1,
       eng1Expiry,
       hasSchengen,
+      schengenExpiry,
       hasB1B2,
+      b1b2Expiry,
+      certificationChecklist,
       smoker,
       hasTattoos,
       tattooLocation,
@@ -742,7 +698,97 @@ export function ProfileEditClient({
       couplePosition,
       partnerName,
       partnerPosition,
-    ]
+    };
+  });
+
+  // Auto-save function - uses ref to avoid recreating on every state change
+  const autoSave = React.useCallback(
+    async (sectionToSave: string) => {
+      const vals = formValuesRef.current;
+      setSaveStatus("saving");
+
+      try {
+        let result: { success: boolean; error?: string };
+
+        switch (sectionToSave) {
+          case "personal":
+            console.log(`[autoSave] Calling updatePersonalInfo with phone: ${vals.phone} type: ${typeof vals.phone}`);
+            result = await updatePersonalInfo({
+              firstName: vals.firstName,
+              lastName: vals.lastName,
+              email: vals.email || undefined,
+              phone: vals.phone,
+              whatsapp: vals.whatsapp || undefined,
+              dateOfBirth: vals.dateOfBirth || undefined,
+              gender: vals.gender || undefined,
+              nationality: vals.nationality || undefined,
+              secondNationality: vals.secondNationality || undefined,
+              currentLocation: vals.currentLocation || undefined,
+            });
+            console.log(`[autoSave] updatePersonalInfo result:`, result);
+            break;
+
+          case "professional":
+            result = await updateProfessionalDetails({
+              candidateType: vals.candidateType || undefined,
+              primaryPosition: vals.primaryPosition || undefined,
+              secondaryPositions: vals.secondaryPositions.length > 0 ? vals.secondaryPositions : undefined,
+              highestLicense: vals.highestLicense || undefined,
+              secondaryLicense: vals.secondaryLicense || undefined,
+              jobSearchNotes: vals.jobSearchNotes || undefined,
+            });
+            break;
+
+          case "certifications":
+            // Save STCW and visas to candidates table (convert strings to booleans)
+            result = await updateCertificationStatus({
+              hasStcw: vals.hasSTCW === "yes" ? true : vals.hasSTCW === "no" ? false : undefined,
+              stcwExpiry: vals.stcwExpiry || undefined,
+              hasEng1: vals.hasENG1 === "yes" ? true : vals.hasENG1 === "no" ? false : undefined,
+              eng1Expiry: vals.eng1Expiry || undefined,
+              hasSchengen: vals.hasSchengen === "yes" ? true : vals.hasSchengen === "no" ? false : undefined,
+              schengenExpiry: vals.schengenExpiry || undefined,
+              hasB1B2: vals.hasB1B2 === "yes" ? true : vals.hasB1B2 === "no" ? false : undefined,
+              b1b2Expiry: vals.b1b2Expiry || undefined,
+            });
+
+            // Save certification checklist to candidate_certifications table
+            if (result.success && vals.certificationChecklist.length > 0) {
+              result = await updateCertificationChecklist({
+                certifications: vals.certificationChecklist,
+              });
+            }
+            break;
+
+          case "details":
+            result = await updateSpecialCircumstances({
+              isSmoker: vals.smoker === "yes" ? true : vals.smoker === "no" ? false : undefined,
+              hasTattoos: vals.hasTattoos === "yes" ? true : vals.hasTattoos === "no" ? false : undefined,
+              tattooDescription: vals.tattooLocation || undefined,
+              maritalStatus: vals.maritalStatus || undefined,
+              isCouplePosition:
+                vals.couplePosition === "yes" ? true : vals.couplePosition === "no" ? false : undefined,
+              partnerName: vals.partnerName || undefined,
+              partnerPosition: vals.partnerPosition || undefined,
+            });
+            break;
+
+          default:
+            result = { success: true };
+        }
+
+        if (result.success) {
+          setSaveStatus("saved");
+          setLastSaved(new Date());
+        } else {
+          setSaveStatus("error");
+        }
+      } catch (error) {
+        console.error("Auto-save error:", error);
+        setSaveStatus("error");
+      }
+    },
+    [] // No dependencies - uses ref for current values
   );
 
   // Consolidated auto-save with 1.5s debounce
@@ -847,7 +893,7 @@ export function ProfileEditClient({
     couplePosition,
     partnerName,
     partnerPosition,
-    autoSave,
+    // Note: autoSave removed - it uses refs internally so doesn't need to be a dependency
   ]);
 
   // Save before navigate - called when user clicks a wizard step
@@ -904,19 +950,8 @@ export function ProfileEditClient({
           autoSave("details"),
         ]);
 
-        // Update last saved snapshot
-        const currentDataString = JSON.stringify({
-          firstName, lastName, email, phone, whatsapp, dateOfBirth, gender,
-          nationality, secondNationality, currentLocation,
-          candidateType,
-          primaryPosition, secondaryPositions, jobSearchNotes,
-          highestLicense, secondaryLicense,
-          hasSTCW, stcwExpiry, hasENG1, eng1Expiry,
-          hasSchengen, schengenExpiry, hasB1B2, b1b2Expiry,
-          smoker, hasTattoos, tattooLocation, maritalStatus, couplePosition,
-          partnerName, partnerPosition,
-        });
-        lastSavedDataRef.current = currentDataString;
+        // Update last saved snapshot using current ref values
+        lastSavedDataRef.current = JSON.stringify(formValuesRef.current);
 
         setSaveStatus("saved");
         setLastSaved(new Date());
@@ -936,59 +971,56 @@ export function ProfileEditClient({
     [
       autoSave,
       currentStep,
-      firstName, lastName, email, phone, whatsapp, dateOfBirth, gender,
-      nationality, secondNationality, currentLocation,
-      candidateType,
-      primaryPosition, secondaryPositions, jobSearchNotes,
-      highestLicense, secondaryLicense,
-      hasSTCW, stcwExpiry, hasENG1, eng1Expiry,
-      hasSchengen, schengenExpiry, hasB1B2, b1b2Expiry,
-      smoker, hasTattoos, tattooLocation, maritalStatus, couplePosition,
-      partnerName, partnerPosition,
       validateStep,
+      // Note: form values are accessed via formValuesRef in autoSave, so they don't need to be dependencies
+      // We only need currentStep for navigation logic and validateStep for validation
     ]
   );
 
+  // Clear personal errors when validation passes
+  // Using functional update to avoid stepErrors in dependency array (prevents infinite loop)
   React.useEffect(() => {
-    if (Object.keys(stepErrors.personal).length === 0) return;
     const validation = validateStep("personal");
     if (validation.isValid) {
-      setStepErrors((prev) => ({ ...prev, personal: {} }));
+      setStepErrors((prev) => {
+        if (Object.keys(prev.personal).length === 0) return prev; // No change needed
+        return { ...prev, personal: {} };
+      });
     }
-  }, [
-    firstName,
-    lastName,
-    dateOfBirth,
-    nationality,
-    phone,
-    email,
-    stepErrors.personal,
-    validateStep,
-  ]);
+  }, [firstName, lastName, dateOfBirth, nationality, phone, email, validateStep]);
 
+  // Clear professional errors when validation passes
   React.useEffect(() => {
-    if (Object.keys(stepErrors.professional).length === 0) return;
     const validation = validateStep("professional");
     if (validation.isValid) {
-      setStepErrors((prev) => ({ ...prev, professional: {} }));
+      setStepErrors((prev) => {
+        if (Object.keys(prev.professional).length === 0) return prev; // No change needed
+        return { ...prev, professional: {} };
+      });
     }
-  }, [candidateType, primaryPosition, jobSearchNotes, stepErrors.professional, validateStep]);
+  }, [candidateType, primaryPosition, jobSearchNotes, validateStep]);
 
+  // Clear certifications errors when validation passes
   React.useEffect(() => {
-    if (!stepErrors.certifications) return;
     const validation = validateStep("certifications");
     if (validation.isValid) {
-      setStepErrors((prev) => ({ ...prev, certifications: "" }));
+      setStepErrors((prev) => {
+        if (!prev.certifications) return prev; // No change needed
+        return { ...prev, certifications: "" };
+      });
     }
-  }, [candidateType, hasSTCW, hasENG1, hasSchengen, hasB1B2, stepErrors.certifications, validateStep]);
+  }, [candidateType, hasSTCW, hasENG1, hasSchengen, hasB1B2, validateStep]);
 
+  // Clear details errors when validation passes
   React.useEffect(() => {
-    if (!stepErrors.details) return;
     const validation = validateStep("details");
     if (validation.isValid) {
-      setStepErrors((prev) => ({ ...prev, details: "" }));
+      setStepErrors((prev) => {
+        if (!prev.details) return prev; // No change needed
+        return { ...prev, details: "" };
+      });
     }
-  }, [smoker, hasTattoos, maritalStatus, stepErrors.details, validateStep]);
+  }, [smoker, hasTattoos, maritalStatus, validateStep]);
 
   const profileCompletion = React.useMemo(() => {
     return calculateProfileCompletion({
