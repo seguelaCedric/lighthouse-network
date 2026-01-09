@@ -634,6 +634,13 @@ export async function syncJobApplication(
     return { success: true, vincereId: candidateVincereId };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    // If application already exists in Vincere, treat it as success
+    if (errorMessage.includes('APPLICATION_ALREADY_EXIST')) {
+      console.log(`[VincereSync] Application already exists for candidate ${candidateId} on job ${jobId}`);
+      return { success: true };
+    }
+
     logSyncError('application', candidateId, error, { jobId });
 
     if (isRetryableError(error)) {
