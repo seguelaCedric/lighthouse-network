@@ -367,7 +367,8 @@ export function ProfileEditClient({
   const [saveStatus, setSaveStatus] = React.useState<"saved" | "saving" | "error">("saved");
   const [lastSaved, setLastSaved] = React.useState<Date>(new Date());
   const saveTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-  const lastSavedDataRef = React.useRef<string>("");
+  // Initialize with a marker to skip first save on mount
+  const lastSavedDataRef = React.useRef<string>("__INITIAL_MOUNT__");
 
   // Refs to hold current form values for auto-save (avoids recreating callback on every state change)
   const formValuesRef = React.useRef({
@@ -831,6 +832,12 @@ export function ProfileEditClient({
       partnerName,
       partnerPosition,
     });
+
+    // Skip save on initial mount - set the initial snapshot without saving
+    if (lastSavedDataRef.current === "__INITIAL_MOUNT__") {
+      lastSavedDataRef.current = currentDataString;
+      return;
+    }
 
     // Skip save if data hasn't changed
     if (currentDataString === lastSavedDataRef.current) return;
