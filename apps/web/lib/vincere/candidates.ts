@@ -270,8 +270,13 @@ export async function createCandidate(
 /**
  * Update an existing candidate in Vincere
  *
- * Note: Vincere PUT API requires certain fields (registration_date, candidate_source_id, email)
- * to be present. We fetch the current candidate data and merge updates with required fields.
+ * Uses PATCH for partial updates - only sends fields that are provided.
+ * This preserves all other candidate data (interview notes, internal fields, etc.)
+ * that we don't track in our system.
+ *
+ * NOTE: The following fields are NOT valid for Vincere PATCH and are ignored:
+ * - currentLocation: Use /candidate/{id}/currentlocation endpoint instead
+ * - jobTitle: Use functional expertise endpoint instead
  */
 export async function updateCandidate(
   vincereId: number,
@@ -284,50 +289,53 @@ export async function updateCandidate(
     dateOfBirth?: string;
     gender?: string;
     nationality?: string;
-    currentLocation?: string;
-    jobTitle?: string;
+    currentLocation?: string; // Ignored - not valid for PATCH
+    jobTitle?: string; // Ignored - not valid for PATCH
     summary?: string;
   },
   client?: VincereClient
 ): Promise<void> {
   const vincere = client ?? getVincereClient();
 
-  // First, fetch current candidate data to get required fields
-  const currentCandidate = await vincere.get<{
-    email: string;
-    registration_date: string;
-    candidate_source_id: number;
-    first_name?: string;
-    last_name?: string;
-  }>(`/candidate/${vincereId}`);
+  // Build payload with only the fields that have values
+  // PATCH only updates the fields we send, preserving everything else
+  const payload: Record<string, unknown> = {};
 
-  if (!currentCandidate) {
-    throw new Error(`Candidate ${vincereId} not found in Vincere`);
+  if (data.firstName !== undefined) {
+    payload.first_name = data.firstName;
+  }
+  if (data.lastName !== undefined) {
+    payload.last_name = data.lastName;
+  }
+  if (data.email !== undefined) {
+    payload.email = data.email;
+  }
+  if (data.phone !== undefined) {
+    payload.phone = data.phone;
+  }
+  if (data.mobile !== undefined) {
+    payload.mobile = data.mobile;
+  }
+  if (data.dateOfBirth !== undefined) {
+    payload.date_of_birth = data.dateOfBirth;
+  }
+  if (data.gender !== undefined) {
+    payload.gender = data.gender;
+  }
+  if (data.nationality !== undefined) {
+    payload.nationality = data.nationality;
+  }
+  // NOTE: currentLocation and jobTitle are NOT valid for Vincere PATCH API
+  // currentLocation must use PUT /candidate/{id}/currentlocation
+  // jobTitle should use functional expertise instead
+  if (data.summary !== undefined) {
+    payload.summary = data.summary;
   }
 
-  // Build update payload with required fields from current data
-  // Vincere PUT requires: email, registration_date, candidate_source_id, first_name, last_name
-  const payload: Record<string, unknown> = {
-    // Required fields - always include from current data
-    email: data.email ?? currentCandidate.email,
-    registration_date: currentCandidate.registration_date,
-    candidate_source_id: currentCandidate.candidate_source_id,
-    // Names are also required - use provided or current
-    first_name: data.firstName ?? currentCandidate.first_name,
-    last_name: data.lastName ?? currentCandidate.last_name,
-  };
-
-  // Add optional fields only if provided (don't overwrite names again)
-  if (data.phone !== undefined) payload.phone = data.phone;
-  if (data.mobile !== undefined) payload.mobile = data.mobile;
-  if (data.dateOfBirth !== undefined) payload.date_of_birth = data.dateOfBirth;
-  if (data.gender !== undefined) payload.gender = data.gender;
-  if (data.nationality !== undefined) payload.nationality = data.nationality;
-  if (data.currentLocation !== undefined) payload.current_location = data.currentLocation;
-  if (data.jobTitle !== undefined) payload.job_title = data.jobTitle;
-  if (data.summary !== undefined) payload.summary = data.summary;
-
-  await vincere.put(`/candidate/${vincereId}`, payload);
+  // Only make the API call if there's something to update
+  if (Object.keys(payload).length > 0) {
+    await vincere.patch(`/candidate/${vincereId}`, payload);
+  }
 }
 
 /**
@@ -492,6 +500,28 @@ export async function getCandidateStatus(
     }
     throw error;
   }
+}
+
+/**
+ * Set current location for a candidate
+ * Endpoint: PUT /candidate/{id}/currentlocation
+ *
+ * @param vincereId - Vincere candidate ID
+ * @param location - Location string (used for location_name, city, and address)
+ */
+export async function setCurrentLocation(
+  vincereId: number,
+  location: string,
+  client?: VincereClient
+): Promise<void> {
+  const vincere = client ?? getVincereClient();
+
+  // Vincere expects location_name, city, and address fields
+  await vincere.put(`/candidate/${vincereId}/currentlocation`, {
+    location_name: location,
+    city: location,
+    address: location,
+  });
 }
 
 /**

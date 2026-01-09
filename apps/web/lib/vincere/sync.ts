@@ -428,8 +428,9 @@ export function mapCandidateToVincere(
     // Convert nationality to ISO country code (Vincere expects "FR" not "French")
     basicData.nationality = toISOCountryCode(candidate.nationality);
   }
-  if (candidate.current_location) basicData.current_location = candidate.current_location;
-  if (candidate.primary_position) basicData.job_title = candidate.primary_position;
+  // NOTE: current_location and job_title are NOT valid for Vincere PATCH API
+  // - current_location must use PUT /candidate/{id}/currentlocation endpoint
+  // - job_title/primary_position uses functional expertise via setFunctionalExpertises()
   
   // Build comprehensive summary including all relevant fields
   const summaryParts: string[] = [];

@@ -13,6 +13,7 @@ import {
   updateCandidate,
   updateCustomFields,
   setFunctionalExpertises,
+  setCurrentLocation,
 } from './candidates';
 import { uploadCandidateCV, uploadCandidateCertificate, uploadCandidatePhoto } from './files';
 import { addCandidateToJob, VINCERE_APPLICATION_STAGES } from './jobs';
@@ -383,6 +384,17 @@ export async function syncCandidateUpdate(
           // Log but don't fail the whole sync for functional expertise errors
           console.error(`[VincereSync] Failed to update functional expertise for candidate ${vincereId}:`, err);
         }
+      }
+    }
+
+    // Update current location if changed (uses separate endpoint)
+    if (fieldsToSync.current_location) {
+      try {
+        await setCurrentLocation(vincereId, fieldsToSync.current_location, vincere);
+        console.log(`[VincereSync] Updated current location for candidate ${vincereId}: ${fieldsToSync.current_location}`);
+      } catch (err) {
+        // Log but don't fail the whole sync for location errors
+        console.error(`[VincereSync] Failed to update current location for candidate ${vincereId}:`, err);
       }
     }
 
