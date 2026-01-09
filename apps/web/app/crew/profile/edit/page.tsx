@@ -5,10 +5,11 @@ import { ProfileEditClient } from "./profile-edit-client";
 export default async function ProfileEditPage({
   searchParams,
 }: {
-  searchParams?: { redirect?: string };
+  searchParams?: Promise<{ redirect?: string }>;
 }) {
   const profileData = await getProfileData();
-  const redirectTo = searchParams?.redirect;
+  const resolvedParams = await searchParams;
+  const redirectTo = resolvedParams?.redirect;
 
   if (!profileData) {
     // Not authenticated or no candidate profile
