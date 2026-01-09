@@ -362,27 +362,27 @@ export async function syncCandidateUpdate(
 
     // Use provided changed fields or the full candidate
     const fieldsToSync = changedFields || candidate;
-    console.log("[syncCandidateUpdate] fieldsToSync.phone:", fieldsToSync.phone);
 
     // Map to Vincere format
     const { basicData, customFields } = mapCandidateToVincere(fieldsToSync);
-    console.log("[syncCandidateUpdate] basicData.phone:", basicData.phone);
 
     // Update basic data if any
     if (Object.keys(basicData).length > 0) {
-      await updateCandidate(vincereId, {
-        firstName: basicData.first_name as string | undefined,
-        lastName: basicData.last_name as string | undefined,
-        email: basicData.primary_email as string | undefined,
-        phone: basicData.phone as string | null | undefined,
-        mobile: basicData.mobile as string | null | undefined,
-        dateOfBirth: basicData.date_of_birth as string | undefined,
-        gender: basicData.gender as string | undefined,
-        nationality: basicData.nationality as string | undefined,
-        currentLocation: basicData.current_location as string | undefined,
-        jobTitle: basicData.job_title as string | undefined,
-        summary: basicData.summary as string | undefined,
-      }, vincere);
+      const patchData: Parameters<typeof updateCandidate>[1] = {};
+
+      // Core fields
+      if (basicData.first_name) patchData.firstName = basicData.first_name as string;
+      if (basicData.last_name) patchData.lastName = basicData.last_name as string;
+      if (basicData.primary_email) patchData.email = basicData.primary_email as string;
+      if (basicData.phone !== undefined) patchData.phone = basicData.phone as string | null;
+      if (basicData.summary) patchData.summary = basicData.summary as string;
+
+      // Additional fields - ISO formats
+      if (basicData.date_of_birth) patchData.dateOfBirth = basicData.date_of_birth as string;
+      if (basicData.gender) patchData.gender = basicData.gender as string;
+      if (basicData.nationality) patchData.nationality = basicData.nationality as string; // ISO code (e.g., "GB")
+
+      await updateCandidate(vincereId, patchData, vincere);
     }
 
     // Update custom fields if any

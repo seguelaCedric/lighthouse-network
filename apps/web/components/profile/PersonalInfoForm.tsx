@@ -102,8 +102,6 @@ interface PersonalInfoFormProps {
   // Contact information
   phone: string;
   setPhone: (value: string) => void;
-  whatsapp: string;
-  setWhatsapp: (value: string) => void;
   email: string;
   setEmail: (value: string) => void;
   currentLocation: LocationData | null;
@@ -135,8 +133,6 @@ export function PersonalInfoForm({
   setSecondNationality,
   phone,
   setPhone,
-  whatsapp,
-  setWhatsapp,
   email,
   setEmail,
   currentLocation,
@@ -328,14 +324,6 @@ export function PersonalInfoForm({
             placeholder="+1 234 567 8900"
             prefix={<Phone className="size-4 text-gray-400" />}
             className={errors?.phone ? "border-red-500 focus:border-red-500 focus:ring-red-500" : undefined}
-          />
-        </FormField>
-
-        <FormField label="WhatsApp Number">
-          <TextInput
-            value={whatsapp}
-            onChange={setWhatsapp}
-            placeholder="+1 234 567 8900"
           />
         </FormField>
 

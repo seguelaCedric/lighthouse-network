@@ -376,7 +376,6 @@ export function ProfileEditClient({
     lastName: candidate.lastName,
     email: candidate.email || "",
     phone: candidate.phone || "",
-    whatsapp: candidate.whatsapp || "",
     dateOfBirth: candidate.dateOfBirth || "",
     gender: candidate.gender || "",
     nationality: candidate.nationality || "",
@@ -417,7 +416,6 @@ export function ProfileEditClient({
   const [secondNationality, setSecondNationality] = React.useState(candidate.secondNationality || "");
   const [gender, setGender] = React.useState(candidate.gender || "");
   const [phone, setPhone] = React.useState(candidate.phone || "");
-  const [whatsapp, setWhatsapp] = React.useState(candidate.whatsapp || "");
   const [email, setEmail] = React.useState(candidate.email || "");
   const [currentLocation, setCurrentLocation] = React.useState<LocationData | null>(
     candidate.currentLocation ? parseLocationString(candidate.currentLocation) : null
@@ -671,7 +669,6 @@ export function ProfileEditClient({
       lastName,
       email,
       phone,
-      whatsapp,
       dateOfBirth,
       gender,
       nationality,
@@ -719,7 +716,6 @@ export function ProfileEditClient({
               lastName: vals.lastName,
               email: vals.email || undefined,
               phone: vals.phone,
-              whatsapp: vals.whatsapp || undefined,
               dateOfBirth: vals.dateOfBirth || undefined,
               gender: vals.gender || undefined,
               nationality: vals.nationality || undefined,
@@ -800,7 +796,6 @@ export function ProfileEditClient({
       lastName,
       email,
       phone,
-      whatsapp,
       dateOfBirth,
       gender,
       nationality,
@@ -869,7 +864,6 @@ export function ProfileEditClient({
     lastName,
     email,
     phone,
-    whatsapp,
     dateOfBirth,
     gender,
     nationality,
@@ -1093,7 +1087,6 @@ export function ProfileEditClient({
     nationality,
     secondNationality,
     phone,
-    whatsapp,
     email,
     currentLocation: currentLocation?.displayName || "",
     candidateType,
@@ -1252,8 +1245,6 @@ export function ProfileEditClient({
                   setSecondNationality={setSecondNationality}
                   phone={phone}
                   setPhone={setPhone}
-                  whatsapp={whatsapp}
-                  setWhatsapp={setWhatsapp}
                   email={email}
                   setEmail={setEmail}
                   currentLocation={currentLocation}
