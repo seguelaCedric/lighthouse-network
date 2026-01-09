@@ -31,6 +31,26 @@ import {
 } from './constants';
 
 /**
+ * Format a position value (snake_case) to human-readable format.
+ * Uses POSITION_MAPPING for standard names, falls back to Title Case conversion.
+ * Examples: "first_officer" → "First Officer", "chief_stewardess" → "Chief Stewardess"
+ */
+function formatPositionForVincere(position: string): string {
+  // First check if there's a mapping to a standard name
+  const normalized = position.toLowerCase().replace(/_/g, ' ').trim();
+  const mapping = POSITION_MAPPING[normalized];
+  if (mapping) {
+    return mapping.standard;
+  }
+
+  // Fallback: convert snake_case to Title Case
+  return position
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
+/**
  * Parse salary string like "€5000-€7000" or "5k-7k"
  */
 export function parseSalaryRange(salaryString: string | null | undefined): {
@@ -518,7 +538,7 @@ export function mapCandidateToVincere(
   if (candidate.partner_position) {
     customFields.push({
       fieldKey: VINCERE_FIELD_KEYS.partnerPosition,
-      fieldValue: candidate.partner_position,
+      fieldValue: formatPositionForVincere(candidate.partner_position),
     });
   }
 
