@@ -6,8 +6,9 @@ const CONCURRENCY = 5; // Process 5 pages in parallel
 
 export async function GET(request: NextRequest) {
   try {
-    // Vercel crons are already protected - they only run from Vercel's infrastructure
-    // No additional auth check needed
+    // Note: Vercel crons are protected by infrastructure - only Vercel can call them
+    // CRON_SECRET auth is optional extra security but was causing 401s
+    console.log('SEO content generation cron started');
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
