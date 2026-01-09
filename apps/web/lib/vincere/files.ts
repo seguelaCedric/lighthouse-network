@@ -243,6 +243,16 @@ export function isImage(file: VincereFile): boolean {
 // ============================================================================
 
 /**
+ * Vincere document type IDs
+ * These map to document types in Vincere's reference data
+ */
+export const VINCERE_DOCUMENT_TYPES = {
+  CV: 3, // CV/Resume - matches n8n workflow
+  CERTIFICATE: 1, // Generic certificate
+  OTHER: 1, // Other documents
+} as const;
+
+/**
  * Upload options for candidate documents
  */
 export interface UploadDocumentOptions {
@@ -262,7 +272,49 @@ export interface VincereUploadResponse {
 }
 
 /**
- * Upload a document to a candidate in Vincere
+ * Upload a document to a candidate in Vincere via URL reference
+ *
+ * Uses the /file endpoint (singular) with JSON body containing URL.
+ * Vincere will fetch the file from the provided URL.
+ * This matches the n8n workflow approach.
+ *
+ * @param vincereId - Candidate's Vincere ID
+ * @param documentUrl - Public URL to the document (Vincere will fetch it)
+ * @param fileName - Original filename
+ * @param options - Upload options (isOriginalCV, documentTypeId)
+ * @param client - Optional VincereClient instance
+ */
+export async function uploadCandidateDocumentByUrl(
+  vincereId: number,
+  documentUrl: string,
+  fileName: string,
+  options?: UploadDocumentOptions,
+  client?: VincereClient
+): Promise<VincereUploadResponse> {
+  const vincere = client ?? getVincereClient();
+
+  // Build request body matching n8n workflow format
+  // Note: Vincere expects url to be the full HTTPS URL, or they will try to fetch from it
+  const body: Record<string, unknown> = {
+    file_name: fileName,
+    url: documentUrl,
+    original_cv: options?.isOriginalCV ? 'true' : 'false',
+    document_type_id: options?.documentTypeId ?? VINCERE_DOCUMENT_TYPES.OTHER,
+  };
+
+  // Use the /file endpoint (singular) with JSON body - matches n8n workflow
+  const result = await vincere.post<VincereUploadResponse>(
+    `/candidate/${vincereId}/file`,
+    body
+  );
+
+  return result;
+}
+
+/**
+ * Upload a document to a candidate in Vincere via multipart form-data
+ *
+ * @deprecated Use uploadCandidateDocumentByUrl instead for URL-based uploads
  *
  * @param vincereId - Candidate's Vincere ID
  * @param file - File data as ArrayBuffer or Buffer
@@ -305,7 +357,46 @@ export async function uploadCandidateDocument(
 }
 
 /**
- * Upload a CV to a candidate in Vincere
+ * Upload a CV to a candidate in Vincere via URL
+ * Uses document_type_id: 3 (CV) and original_cv: true
+ */
+export async function uploadCandidateCVByUrl(
+  vincereId: number,
+  documentUrl: string,
+  fileName: string,
+  client?: VincereClient
+): Promise<VincereUploadResponse> {
+  return uploadCandidateDocumentByUrl(
+    vincereId,
+    documentUrl,
+    fileName,
+    { isOriginalCV: true, documentTypeId: VINCERE_DOCUMENT_TYPES.CV },
+    client
+  );
+}
+
+/**
+ * Upload a certificate to a candidate in Vincere via URL
+ */
+export async function uploadCandidateCertificateByUrl(
+  vincereId: number,
+  documentUrl: string,
+  fileName: string,
+  documentTypeId?: number,
+  client?: VincereClient
+): Promise<VincereUploadResponse> {
+  return uploadCandidateDocumentByUrl(
+    vincereId,
+    documentUrl,
+    fileName,
+    { documentTypeId: documentTypeId ?? VINCERE_DOCUMENT_TYPES.CERTIFICATE },
+    client
+  );
+}
+
+/**
+ * @deprecated Use uploadCandidateCVByUrl for URL-based uploads
+ * Upload a CV to a candidate in Vincere via file buffer
  * Convenience wrapper that sets isOriginalCV: true
  */
 export async function uploadCandidateCV(
@@ -319,6 +410,7 @@ export async function uploadCandidateCV(
 }
 
 /**
+ * @deprecated Use uploadCandidateCertificateByUrl for URL-based uploads
  * Upload a certificate/compliance document to a candidate in Vincere
  */
 export async function uploadCandidateCertificate(

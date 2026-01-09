@@ -16,7 +16,13 @@ import {
   setCurrentLocation,
   type LocationData,
 } from './candidates';
-import { uploadCandidateCV, uploadCandidateCertificate, uploadCandidatePhoto } from './files';
+import {
+  uploadCandidateCVByUrl,
+  uploadCandidateCertificateByUrl,
+  uploadCandidateDocumentByUrl,
+  uploadCandidatePhoto,
+  VINCERE_DOCUMENT_TYPES,
+} from './files';
 import { addCandidateToJob, VINCERE_APPLICATION_STAGES } from './jobs';
 import { mapCandidateToVincere } from './sync';
 import { VINCERE_FIELD_KEYS, getVincereFunctionalExpertiseId } from './constants';
@@ -440,14 +446,14 @@ export async function syncCandidateUpdate(
  * @param documentUrl - URL to download the document from (Supabase storage)
  * @param fileName - Original filename
  * @param mimeType - MIME type of the document
- * @param documentType - Type of document: 'cv', 'certificate', 'photo', 'other'
+ * @param documentType - Type of document from our system
  */
 export async function syncDocumentUpload(
   candidateId: string,
   documentUrl: string,
   fileName: string,
   mimeType: string,
-  documentType: 'cv' | 'certificate' | 'photo' | 'other'
+  documentType: string
 ): Promise<SyncResult> {
   if (!isVincereConfigured()) {
     console.log('[VincereSync] Skipping sync - Vincere not configured');
@@ -491,30 +497,48 @@ export async function syncDocumentUpload(
     const vincereId = parseInt(candidate.vincere_id);
     const vincere = getVincereClient();
 
-    // Download the document from URL
-    const response = await fetch(documentUrl);
-    if (!response.ok) {
-      throw new Error(`Failed to download document: ${response.status}`);
-    }
-    const fileBuffer = await response.arrayBuffer();
+    // Generate a signed URL for Vincere to access the document
+    // The documents bucket is private, so we need a signed URL
+    // Extract the file path from the public URL format:
+    // https://xxx.supabase.co/storage/v1/object/public/documents/candidate/xxx/file.pdf
+    // -> candidate/xxx/file.pdf
+    const urlMatch = documentUrl.match(/\/storage\/v1\/object\/public\/documents\/(.+)$/);
+    let signedUrl = documentUrl;
 
-    // Upload to Vincere based on document type
+    if (urlMatch) {
+      const filePath = urlMatch[1];
+      const { data: signedData, error: signError } = await supabase.storage
+        .from('documents')
+        .createSignedUrl(filePath, 3600); // 1 hour expiry - enough time for Vincere to fetch
+
+      if (signError) {
+        console.error('[VincereSync] Failed to create signed URL:', signError);
+        throw new Error(`Failed to create signed URL: ${signError.message}`);
+      }
+
+      if (signedData?.signedUrl) {
+        signedUrl = signedData.signedUrl;
+        console.log(`[VincereSync] Generated signed URL for ${filePath}`);
+      }
+    }
+
+    // Upload to Vincere based on document type using URL-based upload
+    // Vincere will fetch the file from the provided signed URL
     if (documentType === 'cv') {
-      await uploadCandidateCV(vincereId, fileBuffer, fileName, mimeType, vincere);
-      console.log(`[VincereSync] Uploaded CV for candidate ${vincereId}`);
-    } else if (documentType === 'certificate') {
-      // Certificate type ID 1 is generic - could be enhanced with specific types
-      await uploadCandidateCertificate(vincereId, fileBuffer, fileName, mimeType, 1, vincere);
-      console.log(`[VincereSync] Uploaded certificate for candidate ${vincereId}`);
+      await uploadCandidateCVByUrl(vincereId, signedUrl, fileName, vincere);
+      console.log(`[VincereSync] Uploaded CV for candidate ${vincereId} via URL`);
+    } else if (documentType === 'certificate' || documentType === 'certification') {
+      await uploadCandidateCertificateByUrl(vincereId, signedUrl, fileName, VINCERE_DOCUMENT_TYPES.CERTIFICATE, vincere);
+      console.log(`[VincereSync] Uploaded certificate for candidate ${vincereId} via URL`);
     } else if (documentType === 'photo') {
-      // Vincere photo endpoint uses URL reference, not file upload
+      // Vincere photo endpoint uses URL reference
       // Max size: 800KB - if photo is larger, Vincere will reject it
-      await uploadCandidatePhoto(vincereId, documentUrl, fileName, vincere);
+      await uploadCandidatePhoto(vincereId, signedUrl, fileName, vincere);
       console.log(`[VincereSync] Uploaded photo for candidate ${vincereId}`);
     } else {
-      // Generic document upload - use certificate endpoint with generic type
-      await uploadCandidateCertificate(vincereId, fileBuffer, fileName, mimeType, 1, vincere);
-      console.log(`[VincereSync] Uploaded document for candidate ${vincereId}`);
+      // Generic document upload - use document_type_id: 3 (same as CV for other docs)
+      await uploadCandidateDocumentByUrl(vincereId, signedUrl, fileName, { documentTypeId: VINCERE_DOCUMENT_TYPES.CV }, vincere);
+      console.log(`[VincereSync] Uploaded document for candidate ${vincereId} via URL`);
     }
 
     return { success: true, vincereId };

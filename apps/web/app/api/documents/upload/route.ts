@@ -374,8 +374,7 @@ export async function POST(request: NextRequest) {
 
     // Sync document to Vincere for candidate uploads (fire-and-forget)
     if (entityType === "candidate") {
-      const syncDocType = documentType as "cv" | "certificate" | "photo" | "other";
-      syncDocumentUpload(entityId, publicUrl, file.name, file.type, syncDocType).catch((err) =>
+      syncDocumentUpload(entityId, publicUrl, file.name, file.type, documentType).catch((err) =>
         console.error("Vincere sync failed for document upload:", err)
       );
     }
