@@ -28,6 +28,7 @@ export interface CandidateProfile {
   yearsExperience: number | null;
   experienceSummary: string | null; // Maps to profile_summary in DB
   highestLicense: string | null;
+  secondaryLicense: string | null;
   // Preferences
   preferredYachtTypes: string[] | null;
   preferredYachtSizeMin: number | null;
@@ -140,6 +141,7 @@ export async function getProfileData(): Promise<ProfileData | null> {
     years_experience,
     profile_summary,
     highest_license,
+    second_license,
     preferred_yacht_types,
     preferred_yacht_size_min,
     preferred_yacht_size_max,
@@ -268,6 +270,7 @@ export async function getProfileData(): Promise<ProfileData | null> {
       yearsExperience: candidate.years_experience,
       experienceSummary: candidate.profile_summary,
       highestLicense: candidate.highest_license,
+      secondaryLicense: candidate.second_license,
       preferredYachtTypes: candidate.preferred_yacht_types,
       preferredYachtSizeMin: candidate.preferred_yacht_size_min,
       preferredYachtSizeMax: candidate.preferred_yacht_size_max,

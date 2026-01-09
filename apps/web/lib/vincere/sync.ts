@@ -26,6 +26,7 @@ import {
   NATIONALITY_TO_VINCERE_ID,
   POSITION_MAPPING,
   getVincereLicenseId,
+  getVincereSecondLicenseId,
   toISOCountryCode,
 } from './constants';
 
@@ -419,7 +420,10 @@ export function mapCandidateToVincere(
     const dob = candidate.date_of_birth;
     basicData.date_of_birth = dob.includes('T') ? dob : new Date(dob).toISOString();
   }
-  if (candidate.gender) basicData.gender = candidate.gender;
+  if (candidate.gender) {
+    // Vincere expects uppercase gender values: MALE, FEMALE, OTHER
+    basicData.gender = candidate.gender.toUpperCase();
+  }
   if (candidate.nationality) {
     // Convert nationality to ISO country code (Vincere expects "FR" not "French")
     basicData.nationality = toISOCountryCode(candidate.nationality);
@@ -519,7 +523,9 @@ export function mapCandidateToVincere(
 
   // License fields use dropdown IDs, not string values
   if (candidate.highest_license) {
+    console.log(`[VincereSync] highest_license value: "${candidate.highest_license}"`);
     const licenseId = getVincereLicenseId(candidate.highest_license);
+    console.log(`[VincereSync] highest_license mapped to ID: ${licenseId}`);
     if (licenseId) {
       customFields.push({
         fieldKey: VINCERE_FIELD_KEYS.highestLicence,
@@ -529,7 +535,10 @@ export function mapCandidateToVincere(
   }
 
   if (candidate.second_license) {
-    const licenseId = getVincereLicenseId(candidate.second_license);
+    console.log(`[VincereSync] second_license value: "${candidate.second_license}"`);
+    // secondLicence field uses different option IDs (1-23) than highestLicence (33-60)
+    const licenseId = getVincereSecondLicenseId(candidate.second_license);
+    console.log(`[VincereSync] second_license mapped to ID: ${licenseId}`);
     if (licenseId) {
       customFields.push({
         fieldKey: VINCERE_FIELD_KEYS.secondLicence,

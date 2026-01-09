@@ -391,7 +391,7 @@ export function ProfileEditClient({
   );
   const [jobSearchNotes, setJobSearchNotes] = React.useState(candidate.jobSearchNotes || "");
   const [highestLicense, setHighestLicense] = React.useState(candidate.highestLicense || "");
-  const [secondaryLicense, setSecondaryLicense] = React.useState(""); // TODO: Add to database schema in Phase 3
+  const [secondaryLicense, setSecondaryLicense] = React.useState(candidate.secondaryLicense || "");
 
   const currentPositionOptions = React.useMemo(
     () => positionOptionsByType[candidateType],
@@ -654,6 +654,7 @@ export function ProfileEditClient({
               primaryPosition: primaryPosition || undefined,
               secondaryPositions: secondaryPositions.length > 0 ? secondaryPositions : undefined,
               highestLicense: highestLicense || undefined,
+              secondaryLicense: secondaryLicense || undefined,
               jobSearchNotes: jobSearchNotes || undefined,
             });
             break;
@@ -723,6 +724,7 @@ export function ProfileEditClient({
       secondaryPositions,
       jobSearchNotes,
       highestLicense,
+      secondaryLicense,
       hasSTCW,
       stcwExpiry,
       hasENG1,
@@ -759,6 +761,7 @@ export function ProfileEditClient({
       secondaryPositions,
       jobSearchNotes,
       highestLicense,
+      secondaryLicense,
       // Certifications fields
       hasSTCW,
       stcwExpiry,
@@ -821,6 +824,7 @@ export function ProfileEditClient({
     secondaryPositions,
     jobSearchNotes,
     highestLicense,
+    secondaryLicense,
     // Certifications fields
     hasSTCW,
     stcwExpiry,
@@ -902,7 +906,7 @@ export function ProfileEditClient({
           nationality, secondNationality, currentLocation,
           candidateType,
           primaryPosition, secondaryPositions, jobSearchNotes,
-          highestLicense,
+          highestLicense, secondaryLicense,
           hasSTCW, stcwExpiry, hasENG1, eng1Expiry,
           hasSchengen, schengenExpiry, hasB1B2, b1b2Expiry,
           smoker, hasTattoos, tattooLocation, maritalStatus, couplePosition,
@@ -932,7 +936,7 @@ export function ProfileEditClient({
       nationality, secondNationality, currentLocation,
       candidateType,
       primaryPosition, secondaryPositions, jobSearchNotes,
-      highestLicense,
+      highestLicense, secondaryLicense,
       hasSTCW, stcwExpiry, hasENG1, eng1Expiry,
       hasSchengen, schengenExpiry, hasB1B2, b1b2Expiry,
       smoker, hasTattoos, tattooLocation, maritalStatus, couplePosition,

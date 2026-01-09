@@ -225,7 +225,9 @@ export async function updateCustomFields(
     return field;
   });
 
+  console.log(`[VincereSync] Updating custom fields for candidate ${vincereId}:`, JSON.stringify(data, null, 2));
   await vincere.patch(`/candidate/${vincereId}/customfields`, { data });
+  console.log(`[VincereSync] Custom fields update completed for candidate ${vincereId}`);
 }
 
 /**

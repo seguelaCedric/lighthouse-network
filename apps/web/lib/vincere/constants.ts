@@ -746,61 +746,163 @@ export function getVincereFunctionalExpertiseId(position: string | null | undefi
 export const VINCERE_LICENSE_IDS: Record<string, number> = {
   // Deck/Bridge licenses (positions 1-14 = options 33-46)
   'master_unlimited': 33,        // Position 1: Master Unlimited
+  'master unlimited': 33,        // Alias with space
   'master_3000gt': 34,           // Position 2: Master 3000
   'master_3000': 34,             // Alias
+  'master 3000': 34,             // Alias with space
+  'master 3000gt': 34,           // Alias with space (from dropdown)
   'master_500gt': 35,            // Position 3: Master 500
   'master_500': 35,              // Alias
+  'master 500': 35,              // Alias with space
   'chief_mate_unlimited': 36,    // Position 4: Chief Mate Unlimited
+  'chief mate unlimited': 36,    // Alias with space
   'mca_chief_mate': 36,          // Alias
   'chief_mate_3000': 37,         // Position 5: Chief Mate 3000
   'oow_unlimited': 38,           // Position 6: OOW Unlimited
+  'oow unlimited': 38,           // Alias with space
+  'oow / unlimited': 38,         // Alias from DB
   'mca_oow': 38,                 // Alias
   'ow_unlimited': 38,            // Alias (from DB)
   'oow_3000': 39,                // Position 7: OOW 3000
   'master_200gt': 40,            // Position 8: Master 200
   'master_200': 40,              // Alias
+  'master 200': 40,              // Alias with space
   'rya_yachtmaster_ocean': 41,   // Position 9: RYA Yachtmaster Ocean
+  'rya yachtmaster ocean': 41,   // Alias with space
   'rya_yachtmaster_offshore': 42, // Position 10: RYA Yachtmaster Offshore
+  'rya yachtmaster offshore': 42, // Alias with space
+  'rya yacht master offshore': 42, // Alias from DB (with extra space)
   'yacht_rating': 43,            // Position 11: Yacht Rating
+  'yacht rating': 43,            // Alias with space
   'coastal_skipper': 44,         // Position 12: Coastal Skipper
+  'coastal skipper': 44,         // Alias with space
   'day_skipper': 45,             // Position 13: Day Skipper
+  'day skipper': 45,             // Alias with space
   'powerboat_level_2': 46,       // Position 14: Powerboat Level 2
+  'powerboat level 2': 46,       // Alias with space
 
   // Engineering licenses (positions 15-27 = options 47-58, 60)
   'chief_engineer_unlimited': 47, // Position 15: Chief Engineer Unlimited
+  'chief engineer unlimited': 47, // Alias with space
   'second_engineer_unlimited': 48, // Position 16: Second Engineer Unlimited
+  'second engineer unlimited': 48, // Alias with space
   'eoow': 49,                    // Position 17: EOOW
   'y1_engineer': 50,             // Position 18: Y1 Engineer
+  'y1 engineer': 50,             // Alias with space
   'y1': 50,                      // Alias
   'y2_engineer': 51,             // Position 19: Y2 Engineer
+  'y2 engineer': 51,             // Alias with space
   'y2': 51,                      // Alias
   'y3_engineer': 52,             // Position 20: Y3 Engineer
+  'y3 engineer': 52,             // Alias with space
   'y3': 52,                      // Alias
   'y4_engineer': 53,             // Position 21: Y4 Engineer
+  'y4 engineer': 53,             // Alias with space
   'y4': 53,                      // Alias
   'meol': 54,                    // Position 22: MEOL
   'aec': 55,                     // Position 23: AEC
   'chief_engineer_3000kw': 56,   // Position 24: Chief Engineer 3000kW
+  'chief engineer 3000kw': 56,   // Alias with space
   'sv_2nd_engineer': 57,         // Position 25: SV 2nd Engineer
+  'sv 2nd engineer': 57,         // Alias with space
   'sv_chief_engineer_3000kw': 58, // Position 26: SV Chief Engineer 3000kW
+  'sv chief engineer 3000kw': 58, // Alias with space
   'sv_chief_engineer_9000kw': 60, // Position 27: SV Chief Engineer 9000kW (note: skips 59)
+  'sv chief engineer 9000kw': 60, // Alias with space
 };
 
 /**
- * Reverse mapping: Vincere license ID to our value
+ * Vincere Secondary License Field IDs
+ *
+ * The secondLicence field (80429528339faa3362600dedfcb72d9d) uses DIFFERENT option IDs
+ * than the highestLicence field. Options start at 1 instead of 33.
+ *
+ * This is a separate mapping for the secondLicence dropdown.
+ */
+export const VINCERE_SECOND_LICENSE_IDS: Record<string, number> = {
+  // Deck/Bridge licenses (positions 1-14 = options 1-14)
+  'master_unlimited': 1,
+  'master unlimited': 1,
+  'master_3000gt': 2,
+  'master_3000': 2,
+  'master 3000': 2,
+  'master 3000gt': 2,
+  'master_500gt': 3,
+  'master_500': 3,
+  'master 500': 3,
+  'chief_mate_unlimited': 4,
+  'chief mate unlimited': 4,
+  'mca_chief_mate': 4,
+  'chief_mate_3000': 5,
+  'oow_unlimited': 6,
+  'oow unlimited': 6,
+  'oow / unlimited': 6,
+  'mca_oow': 6,
+  'ow_unlimited': 6,
+  'oow_3000': 7,
+  'master_200gt': 8,
+  'master_200': 8,
+  'master 200': 8,
+  'rya_yachtmaster_ocean': 9,
+  'rya yachtmaster ocean': 9,
+  'rya_yachtmaster_offshore': 10,
+  'rya yachtmaster offshore': 10,
+  'rya yacht master offshore': 10,
+  'yacht_rating': 11,
+  'yacht rating': 11,
+  'coastal_skipper': 12,
+  'coastal skipper': 12,
+  'day_skipper': 13,
+  'day skipper': 13,
+  'powerboat_level_2': 14,
+  'powerboat level 2': 14,
+  // Engineering licenses (positions 15-23)
+  'chief_engineer_unlimited': 15,
+  'chief engineer unlimited': 15,
+  'second_engineer_unlimited': 16,
+  'second engineer unlimited': 16,
+  'eoow': 17,
+  'y1_engineer': 18,
+  'y1 engineer': 18,
+  'y1': 18,
+  'y2_engineer': 19,
+  'y2 engineer': 19,
+  'y2': 19,
+  'y3_engineer': 20,
+  'y3 engineer': 20,
+  'y3': 20,
+  'y4_engineer': 21,
+  'y4 engineer': 21,
+  'y4': 21,
+  'meol': 22,
+  'aec': 23,
+};
+
+/**
+ * Reverse mapping: Vincere license ID to our value (for highestLicence)
  */
 export const VINCERE_LICENSE_MAP: Record<number, string> = Object.fromEntries(
   Object.entries(VINCERE_LICENSE_IDS).map(([k, v]) => [v, k])
 );
 
 /**
- * Get Vincere license ID for an app license value
+ * Get Vincere license ID for highestLicence field
  * @param license - License value from our app
  * @returns Vincere license ID or undefined if not found
  */
 export function getVincereLicenseId(license: string | null | undefined): number | undefined {
   if (!license) return undefined;
   return VINCERE_LICENSE_IDS[license.toLowerCase()];
+}
+
+/**
+ * Get Vincere license ID for secondLicence field
+ * @param license - License value from our app
+ * @returns Vincere license ID or undefined if not found
+ */
+export function getVincereSecondLicenseId(license: string | null | undefined): number | undefined {
+  if (!license) return undefined;
+  return VINCERE_SECOND_LICENSE_IDS[license.toLowerCase()];
 }
 
 /**
