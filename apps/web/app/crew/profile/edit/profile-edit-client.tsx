@@ -637,11 +637,12 @@ export function ProfileEditClient({
 
         switch (sectionToSave) {
           case "personal":
+            console.log("[autoSave] Calling updatePersonalInfo with phone:", phone, "type:", typeof phone);
             result = await updatePersonalInfo({
               firstName,
               lastName,
               email: email || undefined,
-              phone: phone || undefined,
+              phone,
               whatsapp: whatsapp || undefined,
               dateOfBirth: dateOfBirth || undefined,
               gender: gender || undefined,

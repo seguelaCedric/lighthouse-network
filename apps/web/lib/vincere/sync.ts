@@ -428,12 +428,13 @@ export function mapCandidateToVincere(
     dateValue?: string;
   }> = [];
 
-  // Basic fields
+  // Basic fields - use explicit undefined checks to allow empty strings to clear values
   if (candidate.first_name) basicData.first_name = candidate.first_name;
   if (candidate.last_name) basicData.last_name = candidate.last_name;
   if (candidate.email) basicData.primary_email = candidate.email;
-  if (candidate.phone) basicData.phone = candidate.phone;
-  if (candidate.whatsapp) basicData.mobile = candidate.whatsapp;
+  // Phone: include if defined (even empty string to clear), skip only if undefined
+  if (candidate.phone !== undefined) basicData.phone = candidate.phone || null;
+  if (candidate.whatsapp !== undefined) basicData.mobile = candidate.whatsapp || null;
   if (candidate.date_of_birth) {
     // Vincere requires full ISO timestamp, not just date
     // Convert "1990-05-15" to "1990-05-15T00:00:00.000Z"

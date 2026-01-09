@@ -284,8 +284,8 @@ export async function updateCandidate(
     firstName?: string;
     lastName?: string;
     email?: string;
-    phone?: string;
-    mobile?: string;
+    phone?: string | null;
+    mobile?: string | null;
     dateOfBirth?: string;
     gender?: string;
     nationality?: string;

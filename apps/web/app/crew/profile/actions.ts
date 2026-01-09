@@ -431,21 +431,23 @@ export async function updatePersonalInfo(data: {
   }
 
   // Sync to Vincere (fire-and-forget)
-  // Pass structured location data for proper Vincere formatting
+  // Only include fields that are explicitly set (not undefined) to avoid clearing existing data
   const syncPayload: Parameters<typeof syncCandidateUpdate>[1] = {
     first_name: data.firstName,
     last_name: data.lastName,
-    email: data.email,
-    phone: data.phone,
-    whatsapp: data.whatsapp,
-    date_of_birth: data.dateOfBirth,
-    gender: data.gender,
-    nationality: data.nationality,
-    second_nationality: data.secondNationality,
   };
+  // Only add optional fields if they are defined (including empty strings to allow clearing)
+  if (data.email !== undefined) syncPayload.email = data.email;
+  if (data.phone !== undefined) syncPayload.phone = data.phone;
+  if (data.whatsapp !== undefined) syncPayload.whatsapp = data.whatsapp;
+  if (data.dateOfBirth !== undefined) syncPayload.date_of_birth = data.dateOfBirth;
+  if (data.gender !== undefined) syncPayload.gender = data.gender;
+  if (data.nationality !== undefined) syncPayload.nationality = data.nationality;
+  if (data.secondNationality !== undefined) syncPayload.second_nationality = data.secondNationality;
   if (data.currentLocation) {
     syncPayload.current_location = data.currentLocation;
   }
+  console.log("[updatePersonalInfo] Syncing to Vincere with phone:", data.phone, "syncPayload.phone:", syncPayload.phone);
   syncCandidateUpdate(candidate.id, syncPayload)
     .catch((err) => console.error("Vincere sync failed for personal info update:", err));
 
