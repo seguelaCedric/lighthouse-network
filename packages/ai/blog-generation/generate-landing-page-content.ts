@@ -9,8 +9,8 @@ import { generateObject } from 'ai';
 import { anthropic } from '@ai-sdk/anthropic';
 import { z } from 'zod';
 
-// Use Claude Sonnet 4 for high-quality content
-const contentModel = anthropic('claude-sonnet-4-20250514');
+// Use Claude Sonnet 4.5 for high-quality content
+const contentModel = anthropic('claude-sonnet-4-5-20250929');
 
 // ============================================================================
 // TYPES
