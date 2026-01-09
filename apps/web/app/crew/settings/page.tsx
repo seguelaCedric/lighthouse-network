@@ -19,39 +19,25 @@ export default async function CrewSettingsPage() {
     redirect("/auth/login?redirect=/crew/settings");
   }
 
-  // Get user record (auth_id -> user_id mapping)
-  const { data: userData } = await supabase
-    .from("users")
-    .select("id")
-    .eq("auth_id", user.id)
-    .maybeSingle();
+  // PERFORMANCE: Run user and candidate-by-email lookups in parallel
+  const [userResult, candidateByEmailResult] = await Promise.all([
+    supabase.from("users").select("id").eq("auth_id", user.id).maybeSingle(),
+    user.email
+      ? supabase.from("candidates").select("id").eq("email", user.email).maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
 
-  let candidate = null;
+  let candidate = candidateByEmailResult.data;
 
-  // Try to find candidate by user_id if user record exists
-  if (userData) {
+  // If we have a user record but no candidate yet, try by user_id
+  if (userResult.data && !candidate) {
     const { data: candidateByUserId } = await supabase
       .from("candidates")
       .select("id")
-      .eq("user_id", userData.id)
+      .eq("user_id", userResult.data.id)
       .maybeSingle();
 
-    if (candidateByUserId) {
-      candidate = candidateByUserId;
-    }
-  }
-
-  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
-  if (!candidate && user.email) {
-    const { data: candidateByEmail } = await supabase
-      .from("candidates")
-      .select("id")
-      .eq("email", user.email)
-      .maybeSingle();
-
-    if (candidateByEmail) {
-      candidate = candidateByEmail;
-    }
+    candidate = candidateByUserId;
   }
 
   if (!candidate) {

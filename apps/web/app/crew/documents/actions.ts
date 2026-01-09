@@ -82,81 +82,76 @@ export async function getDocumentsData(): Promise<DocumentsPageData | null> {
 
   if (!user) return null;
 
-  // Get user record (auth_id -> user_id mapping)
-  const { data: userData } = await supabase
-    .from("users")
-    .select("id")
-    .eq("auth_id", user.id)
-    .maybeSingle();
+  const candidateFields = "id, cv_url, cv_status, cv_document_id";
 
-  let candidate = null;
+  // PERFORMANCE: Run user and candidate-by-email lookups in parallel
+  const [userResult, candidateByEmailResult] = await Promise.all([
+    supabase.from("users").select("id").eq("auth_id", user.id).maybeSingle(),
+    user.email
+      ? supabase
+          .from("candidates")
+          .select(candidateFields)
+          .eq("email", user.email)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
 
-  // Try to find candidate by user_id if user record exists
-  if (userData) {
+  let candidate = candidateByEmailResult.data;
+
+  // If we have a user record but no candidate yet, try by user_id
+  if (userResult.data && !candidate) {
     const { data: candidateByUserId } = await supabase
       .from("candidates")
-      .select("id, cv_url, cv_status, cv_document_id")
-      .eq("user_id", userData.id)
+      .select(candidateFields)
+      .eq("user_id", userResult.data.id)
       .maybeSingle();
 
-    if (candidateByUserId) {
-      candidate = candidateByUserId;
-    }
-  }
-
-  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
-  if (!candidate && user.email) {
-    const { data: candidateByEmail } = await supabase
-      .from("candidates")
-      .select("id, cv_url, cv_status, cv_document_id")
-      .eq("email", user.email)
-      .maybeSingle();
-
-    if (candidateByEmail) {
-      candidate = candidateByEmail;
-    }
+    candidate = candidateByUserId;
   }
 
   if (!candidate) return null;
 
-  // Get all documents for this candidate
-  const { data: documents } = await supabase
-    .from("documents")
-    .select(`
-      id,
-      name,
-      type,
-      file_url,
-      file_path,
-      file_size,
-      mime_type,
-      status,
-      version,
-      expiry_date,
-      description,
-      created_at,
-      rejection_reason,
-      is_latest_version
-    `)
-    .eq("entity_id", candidate.id)
-    .eq("entity_type", "candidate")
-    .is("deleted_at", null)
-    .eq("is_latest_version", true)
-    .order("created_at", { ascending: false });
+  // PERFORMANCE: Run documents and certifications queries in parallel
+  const [documentsResult, certificationsResult] = await Promise.all([
+    supabase
+      .from("documents")
+      .select(`
+        id,
+        name,
+        type,
+        file_url,
+        file_path,
+        file_size,
+        mime_type,
+        status,
+        version,
+        expiry_date,
+        description,
+        created_at,
+        rejection_reason,
+        is_latest_version
+      `)
+      .eq("entity_id", candidate.id)
+      .eq("entity_type", "candidate")
+      .is("deleted_at", null)
+      .eq("is_latest_version", true)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("candidate_certifications")
+      .select(`
+        id,
+        certification_type,
+        custom_name,
+        expiry_date,
+        has_certification
+      `)
+      .eq("candidate_id", candidate.id)
+      .eq("has_certification", true)
+      .order("expiry_date", { ascending: true }),
+  ]);
 
-  // Get certifications with their document status
-  const { data: certifications } = await supabase
-    .from("candidate_certifications")
-    .select(`
-      id,
-      certification_type,
-      custom_name,
-      expiry_date,
-      has_certification
-    `)
-    .eq("candidate_id", candidate.id)
-    .eq("has_certification", true)
-    .order("expiry_date", { ascending: true });
+  const documents = documentsResult.data;
+  const certifications = certificationsResult.data;
 
   // Find CV document
   const cvDoc = (documents || []).find(
@@ -342,39 +337,25 @@ export async function deleteDocument(
     return { success: false, error: "Not authenticated" };
   }
 
-  // Get user record (auth_id -> user_id mapping)
-  const { data: userData } = await supabase
-    .from("users")
-    .select("id")
-    .eq("auth_id", user.id)
-    .maybeSingle();
+  // PERFORMANCE: Run user and candidate-by-email lookups in parallel
+  const [userResult, candidateByEmailResult] = await Promise.all([
+    supabase.from("users").select("id").eq("auth_id", user.id).maybeSingle(),
+    user.email
+      ? supabase.from("candidates").select("id").eq("email", user.email).maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
 
-  let candidate = null;
+  let candidate = candidateByEmailResult.data;
 
-  // Try to find candidate by user_id if user record exists
-  if (userData) {
+  // If we have a user record but no candidate yet, try by user_id
+  if (userResult.data && !candidate) {
     const { data: candidateByUserId } = await supabase
       .from("candidates")
       .select("id")
-      .eq("user_id", userData.id)
+      .eq("user_id", userResult.data.id)
       .maybeSingle();
 
-    if (candidateByUserId) {
-      candidate = candidateByUserId;
-    }
-  }
-
-  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
-  if (!candidate && user.email) {
-    const { data: candidateByEmail } = await supabase
-      .from("candidates")
-      .select("id")
-      .eq("email", user.email)
-      .maybeSingle();
-
-    if (candidateByEmail) {
-      candidate = candidateByEmail;
-    }
+    candidate = candidateByUserId;
   }
 
   if (!candidate) {
@@ -484,39 +465,25 @@ export async function uploadCertificationDocument(
     return { success: false, error: "Not authenticated" };
   }
 
-  // Get user record (auth_id -> user_id mapping)
-  const { data: userData } = await supabase
-    .from("users")
-    .select("id")
-    .eq("auth_id", user.id)
-    .maybeSingle();
+  // PERFORMANCE: Run user and candidate-by-email lookups in parallel
+  const [userResult, candidateByEmailResult] = await Promise.all([
+    supabase.from("users").select("id").eq("auth_id", user.id).maybeSingle(),
+    user.email
+      ? supabase.from("candidates").select("id").eq("email", user.email).maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
 
-  let candidate = null;
+  let candidate = candidateByEmailResult.data;
 
-  // Try to find candidate by user_id if user record exists
-  if (userData) {
+  // If we have a user record but no candidate yet, try by user_id
+  if (userResult.data && !candidate) {
     const { data: candidateByUserId } = await supabase
       .from("candidates")
       .select("id")
-      .eq("user_id", userData.id)
+      .eq("user_id", userResult.data.id)
       .maybeSingle();
 
-    if (candidateByUserId) {
-      candidate = candidateByUserId;
-    }
-  }
-
-  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
-  if (!candidate && user.email) {
-    const { data: candidateByEmail } = await supabase
-      .from("candidates")
-      .select("id")
-      .eq("email", user.email)
-      .maybeSingle();
-
-    if (candidateByEmail) {
-      candidate = candidateByEmail;
-    }
+    candidate = candidateByUserId;
   }
 
   if (!candidate) {

@@ -1,0 +1,162 @@
+[
+  {
+    "row": 1560,
+    "email": "jakesnook3@gmail.com",
+    "error": "{'message': 'JSON could not be generated', 'code': 502, 'hint': 'Refer to full message for details', 'details': 'b\\'\"gateway error: Error: Network connection lost.\"\\''}"
+  },
+  {
+    "row": 5600,
+    "email": "lucamantarro@live.it",
+    "error": "<ConnectionTerminated error_code:ErrorCodes.NO_ERROR, last_stream_id:19999, additional_data:None>"
+  },
+  {
+    "row": 10585,
+    "email": "parleysavvy01@gmail.com",
+    "error": "{'message': 'value \"33766751439\" is out of range for type integer', 'code': '22003', 'hint': None, 'details': None}"
+  },
+  {
+    "row": 10600,
+    "email": "filippo.massolo@gmail.com",
+    "error": "<ConnectionTerminated error_code:ErrorCodes.NO_ERROR, last_stream_id:19999, additional_data:None>"
+  },
+  {
+    "row": 15600,
+    "email": "nikitabillson30@gmail.com",
+    "error": "<ConnectionTerminated error_code:ErrorCodes.NO_ERROR, last_stream_id:19999, additional_data:None>"
+  },
+  {
+    "row": 18062,
+    "email": "dave-w-lee@hotmail.com",
+    "error": "[Errno 54] Connection reset by peer"
+  },
+  {
+    "row": 19121,
+    "email": "rochelleirle@gmail.com",
+    "error": "{'message': 'JSON could not be generated', 'code': 502, 'hint': 'Refer to full message for details', 'details': 'b\\'\"gateway error: Error: Network connection lost.\"\\''}"
+  },
+  {
+    "row": 23063,
+    "email": "simbapuig@yahoo.com",
+    "error": "<ConnectionTerminated error_code:ErrorCodes.NO_ERROR, last_stream_id:19999, additional_data:None>"
+  },
+  {
+    "row": 26751,
+    "email": "seguelac123456@gmail.com",
+    "error": "{'message': 'duplicate key value violates unique constraint \"candidates_vincere_id_unique_idx\"', 'code': '23505', 'hint': None, 'details': 'Key (vincere_id)=(92272) already exists.'}"
+  },
+  {
+    "row": 28063,
+    "email": "akr@gmail.com",
+    "error": "<ConnectionTerminated error_code:ErrorCodes.NO_ERROR, last_stream_id:19999, additional_data:None>"
+  },
+  {
+    "row": 33063,
+    "email": "curtis_sharpe@hotmail.co.uk",
+    "error": "<ConnectionTerminated error_code:ErrorCodes.NO_ERROR, last_stream_id:19999, additional_data:None>"
+  },
+  {
+    "row": 33882,
+    "email": "freyayachtie@gmail.com",
+    "error": "{'message': 'JSON could not be generated', 'code': 502, 'hint': 'Refer to full message for details', 'details': 'b\\'\"gateway error: Error: Network connection lost.\"\\''}"
+  },
+  {
+    "row": 34290,
+    "email": "mujahidshah3624@gmail.com",
+    "error": "{'message': 'value \"30000000000\" is out of range for type integer', 'code': '22003', 'hint': None, 'details': None}"
+  },
+  {
+    "row": 38064,
+    "email": "tobekamjali@yahoo.com",
+    "error": "<ConnectionTerminated error_code:ErrorCodes.NO_ERROR, last_stream_id:19999, additional_data:None>"
+  },
+  {
+    "row": 39259,
+    "email": "asadullah@gmail.com",
+    "error": "{'message': 'value \"4000000000\" is out of range for type integer', 'code': '22003', 'hint': None, 'details': None}"
+  },
+  {
+    "row": 39293,
+    "email": "tore1985@icloud.com",
+    "error": "[Errno 54] Connection reset by peer"
+  },
+  {
+    "row": 39475,
+    "email": "hannahlambert46@gmail.com",
+    "error": "[Errno 54] Connection reset by peer"
+  },
+  {
+    "row": 39727,
+    "email": "dileepkumar.d1r@gmail.com",
+    "error": "{'message': 'value \"3000000000000\" is out of range for type integer', 'code': '22003', 'hint': None, 'details': None}"
+  },
+  {
+    "row": 40396,
+    "email": "kumarvermaanand8@gmail.com",
+    "error": "{'message': 'value \"3000000000000000000\" is out of range for type integer', 'code': '22003', 'hint': None, 'details': None}"
+  },
+  {
+    "row": 41335,
+    "email": "wajidmanzoor307@gmail.com",
+    "error": "{'message': 'value \"300000000000\" is out of range for type integer', 'code': '22003', 'hint': None, 'details': None}"
+  },
+  {
+    "row": 41787,
+    "email": "mustafajatt169@gmail.com",
+    "error": "{'message': 'value \"2700000000\" is out of range for type integer', 'code': '22003', 'hint': None, 'details': None}"
+  },
+  {
+    "row": 42143,
+    "email": "nv98254@gmail.com",
+    "error": "{'message': 'value \"3000000000\" is out of range for type integer', 'code': '22003', 'hint': None, 'details': None}"
+  },
+  {
+    "row": 42577,
+    "email": "royu11698@gmail.com",
+    "error": "{'message': 'value \"8000000000\" is out of range for type integer', 'code': '22003', 'hint': None, 'details': None}"
+  },
+  {
+    "row": 42973,
+    "email": "pubgmobile55ppp@gmail.com",
+    "error": "{'message': 'value \"900000000000000\" is out of range for type integer', 'code': '22003', 'hint': None, 'details': None}"
+  },
+  {
+    "row": 43452,
+    "email": "parvazaslm2525140063@gmail.com",
+    "error": "{'message': 'value \"100000000000\" is out of range for type integer', 'code': '22003', 'hint': None, 'details': None}"
+  },
+  {
+    "row": 44326,
+    "email": "alexandrucristian86@yahoo.com",
+    "error": "The read operation timed out"
+  },
+  {
+    "row": 44373,
+    "email": "javedahmedm720@gmail.com",
+    "error": "{'message': 'value \"3480871158\" is out of range for type integer', 'code': '22003', 'hint': None, 'details': None}"
+  },
+  {
+    "row": 44727,
+    "email": "rizwankarimyes@gmail.com",
+    "error": "{'message': 'value \"3000000000000\" is out of range for type integer', 'code': '22003', 'hint': None, 'details': None}"
+  },
+  {
+    "row": 44794,
+    "email": "mukhiya784w@gmail.com",
+    "error": "{'message': 'value \"30000000000\" is out of range for type integer', 'code': '22003', 'hint': None, 'details': None}"
+  },
+  {
+    "row": 44849,
+    "email": "mranwaar5@gmail.com",
+    "error": "{'message': 'value \"3200000000\" is out of range for type integer', 'code': '22003', 'hint': None, 'details': None}"
+  },
+  {
+    "row": 45014,
+    "email": "hh5441790@gmail.com",
+    "error": "{'message': 'value \"3000000000\" is out of range for type integer', 'code': '22003', 'hint': None, 'details': None}"
+  },
+  {
+    "row": 45432,
+    "email": "meharilyas644@gmail.com",
+    "error": "{'message': 'value \"3200000000\" is out of range for type integer', 'code': '22003', 'hint': None, 'details': None}"
+  }
+]

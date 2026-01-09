@@ -1,0 +1,14 @@
+{
+  "startedAt": "2026-01-09T09:17:16.275Z",
+  "csvPath": "scripts/data/bubble-candidates.csv",
+  "totalRows": 45521,
+  "vincereMapComplete": false,
+  "vincereTotalCandidates": 0,
+  "lastProcessedRow": 0,
+  "importedCount": 0,
+  "updatedCount": 0,
+  "skippedCount": 0,
+  "errorCount": 0,
+  "documentsProcessed": 0,
+  "errors": []
+}
