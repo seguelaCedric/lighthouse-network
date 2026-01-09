@@ -29,6 +29,11 @@ const yachtPositions = [
   { value: "chef", label: "Chef" },
 ];
 
+const yachtTypes = [
+  { value: "motor", label: "Motor Yacht" },
+  { value: "sailing", label: "Sailing Yacht" },
+];
+
 const contractTypes = [
   { value: "permanent", label: "Permanent" },
   { value: "rotational", label: "Rotational" },
@@ -55,6 +60,7 @@ interface YachtPreferencesFormProps {
     secondaryPositions: string[];
     yachtSizeMin: number | null;
     yachtSizeMax: number | null;
+    yachtTypes: string[];
     contractTypes: string[];
     regions: string[];
     leavePackage: string | null;
@@ -77,6 +83,18 @@ export function YachtPreferencesForm({ data, onChange }: YachtPreferencesFormPro
       );
     } else {
       onChange("secondaryPositions", [...current, value]);
+    }
+  };
+
+  const toggleYachtType = (value: string) => {
+    const current = data.yachtTypes || [];
+    if (current.includes(value)) {
+      onChange(
+        "yachtTypes",
+        current.filter((p) => p !== value)
+      );
+    } else {
+      onChange("yachtTypes", [...current, value]);
     }
   };
 
@@ -185,6 +203,35 @@ export function YachtPreferencesForm({ data, onChange }: YachtPreferencesFormPro
           </div>
         </div>
         <p className="text-xs text-gray-500">Leave blank if you&apos;re open to any size</p>
+      </div>
+
+      {/* Yacht Types */}
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-gray-700">
+          <Ship className="mr-1 inline size-4" />
+          Yacht Type
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {yachtTypes.map((type) => {
+            const isSelected = data.yachtTypes?.includes(type.value);
+            return (
+              <button
+                key={type.value}
+                type="button"
+                onClick={() => toggleYachtType(type.value)}
+                className={cn(
+                  "rounded-full px-4 py-2 text-sm transition-colors",
+                  isSelected
+                    ? "bg-navy-100 text-navy-700 ring-1 ring-navy-300"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                )}
+              >
+                {type.label}
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-xs text-gray-500">Select the types of yachts you prefer to work on</p>
       </div>
 
       {/* Contract Types */}

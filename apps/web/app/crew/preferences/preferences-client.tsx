@@ -38,6 +38,7 @@ interface PreferencesClientProps {
     yachtSecondaryPositions: string[];
     yachtSizeMin: number | null;
     yachtSizeMax: number | null;
+    yachtTypes: string[];
     contractTypes: string[];
     regions: string[];
     leavePackage: string | null;
@@ -78,6 +79,7 @@ export default function PreferencesClient({ candidateId, initialData }: Preferen
     yachtSecondaryPositions: initialData.yachtSecondaryPositions,
     yachtSizeMin: initialData.yachtSizeMin,
     yachtSizeMax: initialData.yachtSizeMax,
+    yachtTypes: initialData.yachtTypes,
     contractTypes: initialData.contractTypes,
     regions: initialData.regions,
     leavePackage: initialData.leavePackage,
@@ -642,6 +644,7 @@ export default function PreferencesClient({ candidateId, initialData }: Preferen
               secondaryPositions: formData.yachtSecondaryPositions,
               yachtSizeMin: formData.yachtSizeMin,
               yachtSizeMax: formData.yachtSizeMax,
+              yachtTypes: formData.yachtTypes,
               contractTypes: formData.contractTypes,
               regions: formData.regions,
               leavePackage: formData.leavePackage,
@@ -657,6 +660,7 @@ export default function PreferencesClient({ candidateId, initialData }: Preferen
                 updateField("yachtSecondaryPositions", value as string[]);
               else if (field === "yachtSizeMin") updateField("yachtSizeMin", value as number | null);
               else if (field === "yachtSizeMax") updateField("yachtSizeMax", value as number | null);
+              else if (field === "yachtTypes") updateField("yachtTypes", value as string[]);
               else updateField(field as keyof JobPreferencesData, value as JobPreferencesData[keyof JobPreferencesData]);
             }}
           />

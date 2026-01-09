@@ -9,6 +9,7 @@ import {
   type JobMatchResult,
 } from "@lighthouse/ai/matcher";
 import { candidateHasCV } from "@/lib/utils/candidate-cv";
+import { syncCandidateUpdate } from "@/lib/vincere/sync-service";
 
 export interface JobPreferencesData {
   industryPreference: "yacht" | "household" | "both" | null;
@@ -17,6 +18,7 @@ export interface JobPreferencesData {
   yachtSecondaryPositions: string[];
   yachtSizeMin: number | null;
   yachtSizeMax: number | null;
+  yachtTypes: string[]; // "motor" | "sailing"
   contractTypes: string[];
   regions: string[];
   leavePackage: string | null;
@@ -72,6 +74,9 @@ export async function updateJobPreferences(
   }
   if (data.yachtSizeMax !== undefined) {
     updateData.preferred_yacht_size_max = data.yachtSizeMax;
+  }
+  if (data.yachtTypes !== undefined) {
+    updateData.preferred_yacht_types = data.yachtTypes;
   }
   if (data.contractTypes !== undefined) {
     updateData.preferred_contract_types = data.contractTypes;
@@ -134,6 +139,33 @@ export async function updateJobPreferences(
     console.error("[updateJobPreferences] Error:", error);
     return { success: false, error: error.message };
   }
+
+  // Fire-and-forget sync to Vincere for job preference fields
+  // Maps to Vincere custom fields: desiredSalary, yachtSize, yachtType, contractType, startDate, desiredLocation
+  syncCandidateUpdate(candidateId, {
+    // Salary preferences → Vincere "Desired Monthly Salary" custom field
+    desired_salary_min: data.salaryMin ?? undefined,
+    desired_salary_max: data.salaryMax ?? undefined,
+    salary_currency: data.salaryCurrency ?? undefined,
+    // Yacht size preferences → Vincere "Preferred Yacht Size" custom field
+    preferred_yacht_size_min: data.yachtSizeMin ?? undefined,
+    preferred_yacht_size_max: data.yachtSizeMax ?? undefined,
+    // Yacht type preferences → Vincere "Yacht Type" custom field
+    preferred_yacht_types: data.yachtTypes ?? undefined,
+    // Contract type preferences → Vincere "Contract Type" custom field
+    preferred_contract_types: data.contractTypes as ("permanent" | "rotational" | "seasonal" | "freelance")[] | undefined,
+    // Availability → Vincere "Start Date" custom field
+    available_from: data.availableFrom ?? undefined,
+    // Preferred regions → Vincere "Desired Location" custom field
+    preferred_regions: data.regions ?? undefined,
+    // Couple info → Vincere couple custom fields
+    is_couple: data.isCouple ?? undefined,
+    partner_name: data.partnerName ?? undefined,
+    partner_position: data.partnerPosition ?? undefined,
+  }).catch((err) => {
+    // Log but don't fail the local update
+    console.error("[updateJobPreferences] Vincere sync error:", err);
+  });
 
   revalidatePath("/crew/preferences");
   revalidatePath("/crew/dashboard");
