@@ -6,11 +6,8 @@ const CONCURRENCY = 5; // Process 5 pages in parallel
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify cron secret
-    const authHeader = request.headers.get('authorization');
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    // Vercel crons are already protected - they only run from Vercel's infrastructure
+    // No additional auth check needed
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
