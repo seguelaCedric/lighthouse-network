@@ -26,6 +26,7 @@ import {
   NATIONALITY_TO_VINCERE_ID,
   POSITION_MAPPING,
   getVincereLicenseId,
+  toISOCountryCode,
 } from './constants';
 
 /**
@@ -419,7 +420,10 @@ export function mapCandidateToVincere(
     basicData.date_of_birth = dob.includes('T') ? dob : new Date(dob).toISOString();
   }
   if (candidate.gender) basicData.gender = candidate.gender;
-  if (candidate.nationality) basicData.nationality = candidate.nationality;
+  if (candidate.nationality) {
+    // Convert nationality to ISO country code (Vincere expects "FR" not "French")
+    basicData.nationality = toISOCountryCode(candidate.nationality);
+  }
   if (candidate.current_location) basicData.current_location = candidate.current_location;
   if (candidate.primary_position) basicData.job_title = candidate.primary_position;
   

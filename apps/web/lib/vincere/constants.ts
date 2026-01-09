@@ -161,6 +161,294 @@ export const NATIONALITY_TO_VINCERE_ID: Record<string, number> = Object.fromEntr
 );
 
 /**
+ * Nationality name to ISO 3166-1 alpha-2 country code mapping
+ * Used to convert full nationality names to the format Vincere expects
+ *
+ * Complete mapping based on ISO 3166-1 alpha-2 codes
+ * Last updated: 2026-01-09
+ */
+export const NATIONALITY_TO_ISO_CODE: Record<string, string> = {
+  // A
+  'afghan': 'AF',
+  'albanian': 'AL',
+  'algerian': 'DZ',
+  'american': 'US',
+  'andorran': 'AD',
+  'angolan': 'AO',
+  'antiguan': 'AG',
+  'argentinean': 'AR',
+  'argentine': 'AR',
+  'argentinian': 'AR',
+  'armenian': 'AM',
+  'australian': 'AU',
+  'austrian': 'AT',
+  'azerbaijani': 'AZ',
+
+  // B
+  'bahamian': 'BS',
+  'bahraini': 'BH',
+  'bangladeshi': 'BD',
+  'barbadian': 'BB',
+  'barbudans': 'AG',
+  'batswana': 'BW',
+  'belarusian': 'BY',
+  'belgian': 'BE',
+  'belizean': 'BZ',
+  'beninese': 'BJ',
+  'bhutanese': 'BT',
+  'bolivian': 'BO',
+  'bosnian': 'BA',
+  'bosnian or herzegovinian': 'BA',
+  'brazilian': 'BR',
+  'british': 'GB',
+  'uk/british': 'GB',
+  'bruneian': 'BN',
+  'bulgarian': 'BG',
+  'burkinan': 'BF',
+  'burmese': 'MM',
+  'burundian': 'BI',
+
+  // C
+  'cabo verdean': 'CV',
+  'cambodian': 'KH',
+  'cameroonian': 'CM',
+  'canadian': 'CA',
+  'central african': 'CF',
+  'chadian': 'TD',
+  'chilean': 'CL',
+  'chinese': 'CN',
+  'colombian': 'CO',
+  'comoran': 'KM',
+  'congolese': 'CG',
+  'congolese (congo)': 'CG',
+  'costa rican': 'CR',
+  'croatian': 'HR',
+  'cuban': 'CU',
+  'cypriot': 'CY',
+  'czech': 'CZ',
+
+  // D
+  'danish': 'DK',
+  'djiboutian': 'DJ',
+  'dominican': 'DO',
+  'dutch': 'NL',
+
+  // E
+  'ecuadorean': 'EC',
+  'ecuadorian': 'EC',
+  'egyptian': 'EG',
+  'emirati': 'AE',
+  'equatorial guinean': 'GQ',
+  'eritrean': 'ER',
+  'estonian': 'EE',
+  'ethiopian': 'ET',
+
+  // F
+  'fijian': 'FJ',
+  'filipino': 'PH',
+  'finnish': 'FI',
+  'french': 'FR',
+
+  // G
+  'gabonese': 'GA',
+  'gambian': 'GM',
+  'georgian': 'GE',
+  'german': 'DE',
+  'ghanaian': 'GH',
+  'greek': 'GR',
+  'grenadian': 'GD',
+  'guatemalan': 'GT',
+  'guinea-bissauan': 'GW',
+  'guinean': 'GN',
+  'guyanese': 'GY',
+
+  // H
+  'haitian': 'HT',
+  'herzegovinian': 'BA',
+  'honduran': 'HN',
+  'hungarian': 'HU',
+
+  // I
+  'icelandic': 'IS',
+  'indian': 'IN',
+  'indonesian': 'ID',
+  'iranian': 'IR',
+  'iraqi': 'IQ',
+  'irish': 'IE',
+  'israeli': 'IL',
+  'italian': 'IT',
+  'ivorian': 'CI',
+
+  // J
+  'jamaican': 'JM',
+  'japanese': 'JP',
+  'jordanian': 'JO',
+
+  // K
+  'kazakhstani': 'KZ',
+  'kenyan': 'KE',
+  'kiribati': 'KI',
+  'korean': 'KR',
+  'kuwaiti': 'KW',
+  'kyrgyzstani': 'KG',
+
+  // L
+  'lao': 'LA',
+  'laotian': 'LA',
+  'latvian': 'LV',
+  'lebanese': 'LB',
+  'liberian': 'LR',
+  'libyan': 'LY',
+  'liechtenstein': 'LI',
+  'liechtensteiner': 'LI',
+  'lithuanian': 'LT',
+  'luxembourgish': 'LU',
+  'luxembourger': 'LU',
+
+  // M
+  'macedonian': 'MK',
+  'malagasy': 'MG',
+  'malawian': 'MW',
+  'malaysian': 'MY',
+  'maldivian': 'MV',
+  'malian': 'ML',
+  'maltese': 'MT',
+  'marshallese': 'MH',
+  'mauritanian': 'MR',
+  'mauritian': 'MU',
+  'mexican': 'MX',
+  'micronesian': 'FM',
+  'moldovan': 'MD',
+  'monacan': 'MC',
+  'monegasque': 'MC',
+  'mongolian': 'MN',
+  'montenegrin': 'ME',
+  'moroccan': 'MA',
+  'mozambican': 'MZ',
+
+  // N
+  'namibian': 'NA',
+  'nauruan': 'NR',
+  'nepalese': 'NP',
+  'nepali': 'NP',
+  'new zealander': 'NZ',
+  'nicaraguan': 'NI',
+  'nigerian': 'NG',
+  'nigerien': 'NE',
+  'north korean': 'KP',
+  'northern irish': 'GB',
+  'norwegian': 'NO',
+
+  // O
+  'omani': 'OM',
+
+  // P
+  'pakistani': 'PK',
+  'palauan': 'PW',
+  'palestinian': 'PS',
+  'panamanian': 'PA',
+  'papua new guinean': 'PG',
+  'paraguayan': 'PY',
+  'peruvian': 'PE',
+  'polish': 'PL',
+  'portuguese': 'PT',
+
+  // Q
+  'qatari': 'QA',
+
+  // R
+  'romanian': 'RO',
+  'russian': 'RU',
+  'rwandan': 'RW',
+
+  // S
+  'saint lucian': 'LC',
+  'salvadoran': 'SV',
+  'samoan': 'WS',
+  'san marinese': 'SM',
+  'saudi': 'SA',
+  'saudi arabian': 'SA',
+  'scottish': 'GB',
+  'senegalese': 'SN',
+  'serbian': 'RS',
+  'seychellois': 'SC',
+  'sierra leonean': 'SL',
+  'singaporean': 'SG',
+  'slovakian': 'SK',
+  'slovak': 'SK',
+  'slovenian': 'SI',
+  'solomon islander': 'SB',
+  'somali': 'SO',
+  'south african': 'ZA',
+  'south korean': 'KR',
+  'spanish': 'ES',
+  'sri lankan': 'LK',
+  'sudanese': 'SD',
+  'surinamese': 'SR',
+  'swazi': 'SZ',
+  'swedish': 'SE',
+  'swiss': 'CH',
+  'syrian': 'SY',
+
+  // T
+  'taiwanese': 'TW',
+  'tajikistani': 'TJ',
+  'tanzanian': 'TZ',
+  'thai': 'TH',
+  'togolese': 'TG',
+  'tongan': 'TO',
+  'trinidadian': 'TT',
+  'trinidadian or tobagonian': 'TT',
+  'tunisian': 'TN',
+  'turkish': 'TR',
+  'turkmen': 'TM',
+  'tuvaluan': 'TV',
+
+  // U
+  'ugandan': 'UG',
+  'ukrainian': 'UA',
+  'uruguayan': 'UY',
+  'uzbekistani': 'UZ',
+
+  // V
+  'vanuatuan': 'VU',
+  'venezuelan': 'VE',
+  'vietnamese': 'VN',
+
+  // W
+  'welsh': 'GB',
+
+  // Y
+  'yemeni': 'YE',
+
+  // Z
+  'zambian': 'ZM',
+  'zimbabwean': 'ZW',
+};
+
+/**
+ * Convert a nationality string to ISO country code
+ * Handles both full names ("French") and existing codes ("FR")
+ */
+export function toISOCountryCode(nationality: string | null | undefined): string | null {
+  if (!nationality) return null;
+
+  const trimmed = nationality.trim();
+
+  // If it's already a 2-letter code, return it uppercase
+  if (trimmed.length === 2) {
+    return trimmed.toUpperCase();
+  }
+
+  // Look up in our mapping
+  const code = NATIONALITY_TO_ISO_CODE[trimmed.toLowerCase()];
+  if (code) return code;
+
+  // If we can't find it, return the original (it might work)
+  return trimmed;
+}
+
+/**
  * Position standardization mapping
  */
 export const POSITION_MAPPING: Record<string, { standard: string; category: string }> = {
