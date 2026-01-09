@@ -439,44 +439,63 @@ export function getVincereFunctionalExpertiseId(position: string | null | undefi
 /**
  * Vincere License Field IDs
  *
- * Maps our app license values to Vincere dropdown IDs for highestLicence field.
- * Field key: 83f3f9dc58b5fc1d0b7d591fd82f001b
+ * Maps our app license values to Vincere dropdown option numbers for highestLicence/secondLicence fields.
+ * Field keys:
+ *   - highestLicence: 83f3f9dc58b5fc1d0b7d591fd82f001b
+ *   - secondLicence: 80429528339faa3362600dedfcb72d9d
  *
- * These are used with `field_values: [id]` for dropdown custom fields.
+ * These are used with `field_values: [optionNumber]` for COMBO_BOX custom fields.
+ * Valid option numbers: 33-58, 60 (27 total options)
  *
- * Last updated: 2026-01-08
+ * IMPORTANT: The option numbers are internal Vincere IDs, NOT sequential 1-27.
+ * The mapping below corresponds to the dropdown order in Vincere admin:
+ *   Position 1 (Master Unlimited) = Option 33
+ *   Position 2 (Master 3000) = Option 34
+ *   ... etc.
+ *
+ * Last updated: 2026-01-09
  */
 export const VINCERE_LICENSE_IDS: Record<string, number> = {
-  // Deck/Bridge licenses
-  'master_unlimited': 1,
-  'master_3000gt': 2,
-  'master_500gt': 3,
-  'master_200gt': 8,
-  'mca_chief_mate': 4,      // Chief Mate Unlimited
-  'chief_mate_3000': 5,     // Chief Mate 3000
-  'mca_oow': 6,             // OOW Unlimited
-  'oow_3000': 7,            // OOW 3000
-  'rya_yachtmaster_ocean': 9,
-  'rya_yachtmaster_offshore': 10,
-  'yacht_rating': 11,
-  'coastal_skipper': 12,
-  'day_skipper': 13,
-  'powerboat_level_2': 14,
+  // Deck/Bridge licenses (positions 1-14 = options 33-46)
+  'master_unlimited': 33,        // Position 1: Master Unlimited
+  'master_3000gt': 34,           // Position 2: Master 3000
+  'master_3000': 34,             // Alias
+  'master_500gt': 35,            // Position 3: Master 500
+  'master_500': 35,              // Alias
+  'chief_mate_unlimited': 36,    // Position 4: Chief Mate Unlimited
+  'mca_chief_mate': 36,          // Alias
+  'chief_mate_3000': 37,         // Position 5: Chief Mate 3000
+  'oow_unlimited': 38,           // Position 6: OOW Unlimited
+  'mca_oow': 38,                 // Alias
+  'ow_unlimited': 38,            // Alias (from DB)
+  'oow_3000': 39,                // Position 7: OOW 3000
+  'master_200gt': 40,            // Position 8: Master 200
+  'master_200': 40,              // Alias
+  'rya_yachtmaster_ocean': 41,   // Position 9: RYA Yachtmaster Ocean
+  'rya_yachtmaster_offshore': 42, // Position 10: RYA Yachtmaster Offshore
+  'yacht_rating': 43,            // Position 11: Yacht Rating
+  'coastal_skipper': 44,         // Position 12: Coastal Skipper
+  'day_skipper': 45,             // Position 13: Day Skipper
+  'powerboat_level_2': 46,       // Position 14: Powerboat Level 2
 
-  // Engineering licenses
-  'chief_engineer_unlimited': 15,
-  'second_engineer_unlimited': 16,
-  'eoow': 17,
-  'y1_engineer': 18,
-  'y2_engineer': 19,
-  'y3_engineer': 20,
-  'y4_engineer': 21,
-  'meol': 22,
-  'aec': 23,
-  'chief_engineer_3000kw': 24,
-  'sv_2nd_engineer': 25,
-  'sv_chief_engineer_3000kw': 26,
-  'sv_chief_engineer_9000kw': 27,
+  // Engineering licenses (positions 15-27 = options 47-58, 60)
+  'chief_engineer_unlimited': 47, // Position 15: Chief Engineer Unlimited
+  'second_engineer_unlimited': 48, // Position 16: Second Engineer Unlimited
+  'eoow': 49,                    // Position 17: EOOW
+  'y1_engineer': 50,             // Position 18: Y1 Engineer
+  'y1': 50,                      // Alias
+  'y2_engineer': 51,             // Position 19: Y2 Engineer
+  'y2': 51,                      // Alias
+  'y3_engineer': 52,             // Position 20: Y3 Engineer
+  'y3': 52,                      // Alias
+  'y4_engineer': 53,             // Position 21: Y4 Engineer
+  'y4': 53,                      // Alias
+  'meol': 54,                    // Position 22: MEOL
+  'aec': 55,                     // Position 23: AEC
+  'chief_engineer_3000kw': 56,   // Position 24: Chief Engineer 3000kW
+  'sv_2nd_engineer': 57,         // Position 25: SV 2nd Engineer
+  'sv_chief_engineer_3000kw': 58, // Position 26: SV Chief Engineer 3000kW
+  'sv_chief_engineer_9000kw': 60, // Position 27: SV Chief Engineer 9000kW (note: skips 59)
 };
 
 /**
