@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/invoice-fees",
       "schedule": "0 6 1 * *"
+    },
+    {
+      "path": "/api/cron/generate-seo-content",
+      "schedule": "* * * * *"
     }
   ]
 }
