@@ -6,6 +6,19 @@ import { syncCandidateUpdate, syncDocumentUpload } from "@/lib/vincere/sync-serv
 import type { Candidate } from "../../../../../packages/database/types";
 
 /**
+ * Structured location data from Google Places or manual entry
+ */
+export interface LocationData {
+  displayName: string; // "Fort Lauderdale, FL, USA" - for display
+  city: string; // "Fort Lauderdale"
+  state?: string; // "FL"
+  country: string; // "United States"
+  countryCode: string; // "US"
+  latitude?: number;
+  longitude?: number;
+}
+
+/**
  * Profile data types
  */
 export interface CandidateProfile {
@@ -338,7 +351,7 @@ export async function updatePersonalInfo(data: {
   gender?: string;
   nationality?: string;
   secondNationality?: string;
-  currentLocation?: string;
+  currentLocation?: LocationData | null;
 }): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
 
@@ -402,7 +415,10 @@ export async function updatePersonalInfo(data: {
   if (data.gender !== undefined) updateData.gender = data.gender;
   if (data.nationality !== undefined) updateData.nationality = data.nationality;
   if (data.secondNationality !== undefined) updateData.second_nationality = data.secondNationality;
-  if (data.currentLocation !== undefined) updateData.current_location = data.currentLocation;
+  // Store the display name in the database for backwards compatibility
+  if (data.currentLocation !== undefined) {
+    updateData.current_location = data.currentLocation?.displayName || null;
+  }
 
   const { error } = await supabase
     .from("candidates")
@@ -415,7 +431,8 @@ export async function updatePersonalInfo(data: {
   }
 
   // Sync to Vincere (fire-and-forget)
-  syncCandidateUpdate(candidate.id, {
+  // Pass structured location data for proper Vincere formatting
+  const syncPayload: Parameters<typeof syncCandidateUpdate>[1] = {
     first_name: data.firstName,
     last_name: data.lastName,
     email: data.email,
@@ -425,8 +442,12 @@ export async function updatePersonalInfo(data: {
     gender: data.gender,
     nationality: data.nationality,
     second_nationality: data.secondNationality,
-    current_location: data.currentLocation,
-  }).catch((err) => console.error("Vincere sync failed for personal info update:", err));
+  };
+  if (data.currentLocation) {
+    syncPayload.current_location = data.currentLocation;
+  }
+  syncCandidateUpdate(candidate.id, syncPayload)
+    .catch((err) => console.error("Vincere sync failed for personal info update:", err));
 
   revalidatePath("/crew/profile/edit");
   revalidatePath("/crew/dashboard");

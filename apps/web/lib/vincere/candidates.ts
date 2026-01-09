@@ -503,25 +503,65 @@ export async function getCandidateStatus(
 }
 
 /**
+ * Structured location data for proper Vincere formatting
+ */
+export interface LocationData {
+  displayName: string; // "Fort Lauderdale, FL, USA"
+  city: string; // "Fort Lauderdale"
+  state?: string; // "FL"
+  country: string; // "United States"
+  countryCode: string; // "US"
+  latitude?: number;
+  longitude?: number;
+}
+
+/**
  * Set current location for a candidate
  * Endpoint: PUT /candidate/{id}/currentlocation
  *
+ * Vincere expects structured location data:
+ * - city: The city name (required)
+ * - state: The state/region (optional)
+ * - country: The country code like "US" (required for accurate geocoding)
+ * - address: Full address string
+ * - location_name: Display name
+ *
  * @param vincereId - Vincere candidate ID
- * @param location - Location string (used for location_name, city, and address)
+ * @param location - Structured location data or plain string for backwards compatibility
  */
 export async function setCurrentLocation(
   vincereId: number,
-  location: string,
+  location: string | LocationData,
   client?: VincereClient
 ): Promise<void> {
   const vincere = client ?? getVincereClient();
 
-  // Vincere expects location_name, city, and address fields
-  await vincere.put(`/candidate/${vincereId}/currentlocation`, {
-    location_name: location,
-    city: location,
-    address: location,
-  });
+  // Handle both old string format and new structured format
+  if (typeof location === 'string') {
+    // Legacy: just pass the string to all fields
+    await vincere.put(`/candidate/${vincereId}/currentlocation`, {
+      location_name: location,
+      city: location,
+      address: location,
+    });
+  } else {
+    // New structured format: send properly formatted data to Vincere
+    // Build the address string: "City, State, Country" or "City, Country"
+    const addressParts = [location.city];
+    if (location.state) addressParts.push(location.state);
+    addressParts.push(location.country);
+    const address = addressParts.join(', ');
+
+    await vincere.put(`/candidate/${vincereId}/currentlocation`, {
+      location_name: location.displayName,
+      city: location.city,
+      state: location.state || undefined,
+      country: location.countryCode || location.country, // Prefer country code (US) over full name
+      address: address,
+      latitude: location.latitude,
+      longitude: location.longitude,
+    });
+  }
 }
 
 /**

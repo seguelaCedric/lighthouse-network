@@ -80,6 +80,9 @@ importers:
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      csv-parse:
+        specifier: ^6.1.0
+        version: 6.1.0
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -132,6 +135,9 @@ importers:
       '@tailwindcss/postcss':
         specifier: ^4
         version: 4.1.17
+      '@types/google.maps':
+        specifier: ^3.58.1
+        version: 3.58.1
       '@types/node':
         specifier: ^20
         version: 20.19.25
@@ -2380,6 +2386,10 @@ packages:
   /@types/estree@1.0.8:
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
 
+  /@types/google.maps@3.58.1:
+    resolution: {integrity: sha512-X9QTSvGJ0nCfMzYOnaVs/k6/4L+7F5uCS+4iUmkLEls6J9S/Phv+m/i3mDeyc49ZBgwab3EFO1HEoBY7k98EGQ==}
+    dev: true
+
   /@types/hast@3.0.4:
     resolution: {integrity: sha512-WPs+bbQw5aCj+x6laNGWLH3wviHtoCv/P3+otBhbOhJgG8qtpdAMlTCxLtsTWA7LH1Oh/bFCHsBn0TPS5m30EQ==}
     dependencies:
@@ -3576,6 +3586,10 @@ packages:
 
   /csstype@3.2.3:
     resolution: {integrity: sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==}
+
+  /csv-parse@6.1.0:
+    resolution: {integrity: sha512-CEE+jwpgLn+MmtCpVcPtiCZpVtB6Z2OKPTr34pycYYoL7sxdOkXDdQ4lRiw6ioC0q6BLqhc6cKweCVvral8yhw==}
+    dev: false
 
   /damerau-levenshtein@1.0.8:
     resolution: {integrity: sha512-sdQSFB7+llfUcQHUQO3+B8ERRj0Oa4w9POWMI/puGtuf7gFywGmkaLCElnudfTiKZV+NvHqL0ifzdrI8Ro7ESA==}

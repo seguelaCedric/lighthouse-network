@@ -35,6 +35,7 @@ import {
 import { StepNavigator } from "@/components/profile/StepNavigator";
 import { type ProfileStep, type CandidateType, profileSteps, nationalityOptions } from "@/components/profile/constants";
 import { PersonalInfoForm } from "@/components/profile/PersonalInfoForm";
+import { type LocationData, parseLocationString } from "@/components/ui/LocationInput";
 import { ProfessionalDetailsForm } from "@/components/profile/ProfessionalDetailsForm";
 import { CertificationsForm } from "@/components/profile/CertificationsForm";
 import { PersonalDetailsForm } from "@/components/profile/PersonalDetailsForm";
@@ -381,7 +382,9 @@ export function ProfileEditClient({
   const [phone, setPhone] = React.useState(candidate.phone || "");
   const [whatsapp, setWhatsapp] = React.useState(candidate.whatsapp || "");
   const [email, setEmail] = React.useState(candidate.email || "");
-  const [currentLocation, setCurrentLocation] = React.useState(candidate.currentLocation || "");
+  const [currentLocation, setCurrentLocation] = React.useState<LocationData | null>(
+    candidate.currentLocation ? parseLocationString(candidate.currentLocation) : null
+  );
 
   // Professional Details
   const [candidateType, setCandidateType] = React.useState<CandidateType>(initialCandidateType);
@@ -994,7 +997,7 @@ export function ProfileEditClient({
       phone,
       dateOfBirth,
       nationality,
-      currentLocation,
+      currentLocation: currentLocation?.displayName || null,
       candidateType,
       primaryPosition,
       avatarUrl: profilePhotoUrl,
@@ -1052,7 +1055,7 @@ export function ProfileEditClient({
     phone,
     whatsapp,
     email,
-    currentLocation,
+    currentLocation: currentLocation?.displayName || "",
     candidateType,
     primaryPosition,
     otherRoleDetails: jobSearchNotes,

@@ -1,11 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { Camera, Upload, Phone, Mail, MapPin, Loader2 } from "lucide-react";
+import { Camera, Upload, Phone, Mail, Loader2 } from "lucide-react";
 import { FormField } from "@/components/ui/FormField";
 import { TextInput } from "@/components/ui/TextInput";
 import { SelectInput } from "@/components/ui/SelectInput";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
+import { LocationInput, type LocationData } from "@/components/ui/LocationInput";
 import { Button } from "@/components/ui/button";
 import { genderOptions, nationalityOptions } from "./constants";
 import { updateProfilePhoto } from "@/app/crew/profile/actions";
@@ -105,8 +106,8 @@ interface PersonalInfoFormProps {
   setWhatsapp: (value: string) => void;
   email: string;
   setEmail: (value: string) => void;
-  currentLocation: string;
-  setCurrentLocation: (value: string) => void;
+  currentLocation: LocationData | null;
+  setCurrentLocation: (value: LocationData | null) => void;
   errors?: {
     firstName?: string;
     lastName?: string;
@@ -352,11 +353,10 @@ export function PersonalInfoForm({
         </FormField>
 
         <FormField label="Current Location">
-          <TextInput
+          <LocationInput
             value={currentLocation}
             onChange={setCurrentLocation}
-            placeholder="City, Country"
-            prefix={<MapPin className="size-4 text-gray-400" />}
+            placeholder="Search city..."
           />
         </FormField>
       </div>

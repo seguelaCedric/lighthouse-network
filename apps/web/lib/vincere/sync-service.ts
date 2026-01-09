@@ -14,6 +14,7 @@ import {
   updateCustomFields,
   setFunctionalExpertises,
   setCurrentLocation,
+  type LocationData,
 } from './candidates';
 import { uploadCandidateCV, uploadCandidateCertificate, uploadCandidatePhoto } from './files';
 import { addCandidateToJob, VINCERE_APPLICATION_STAGES } from './jobs';
@@ -297,11 +298,19 @@ export async function syncCandidateCreation(
 }
 
 /**
+ * Extended fields that can include structured location data
+ * Uses Omit to override the current_location type from Candidate
+ */
+type SyncableFields = Omit<Partial<Candidate>, 'current_location'> & {
+  current_location?: string | LocationData | null;
+};
+
+/**
  * Sync candidate profile updates to Vincere
  */
 export async function syncCandidateUpdate(
   candidateId: string,
-  changedFields?: Partial<Candidate>
+  changedFields?: SyncableFields
 ): Promise<SyncResult> {
   if (!isVincereConfigured()) {
     console.log('[VincereSync] Skipping sync - Vincere not configured');
@@ -390,8 +399,11 @@ export async function syncCandidateUpdate(
     // Update current location if changed (uses separate endpoint)
     if (fieldsToSync.current_location) {
       try {
-        await setCurrentLocation(vincereId, fieldsToSync.current_location, vincere);
-        console.log(`[VincereSync] Updated current location for candidate ${vincereId}: ${fieldsToSync.current_location}`);
+        // Pass the location data directly - setCurrentLocation handles both string and LocationData
+        const locationData = fieldsToSync.current_location;
+        await setCurrentLocation(vincereId, locationData, vincere);
+        const displayName = typeof locationData === 'string' ? locationData : locationData.displayName;
+        console.log(`[VincereSync] Updated current location for candidate ${vincereId}: ${displayName}`);
       } catch (err) {
         // Log but don't fail the whole sync for location errors
         console.error(`[VincereSync] Failed to update current location for candidate ${vincereId}:`, err);
