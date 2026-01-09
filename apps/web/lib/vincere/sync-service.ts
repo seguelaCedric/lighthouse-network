@@ -23,7 +23,7 @@ import {
   uploadCandidatePhoto,
   VINCERE_DOCUMENT_TYPES,
 } from './files';
-import { addCandidateToJob, VINCERE_APPLICATION_STAGES } from './jobs';
+import { shortlistCandidateOnJob } from './jobs';
 import { mapCandidateToVincere } from './sync';
 import { VINCERE_FIELD_KEYS, getVincereFunctionalExpertiseId } from './constants';
 import type { Candidate } from '../../../../packages/database/types';
@@ -626,10 +626,11 @@ export async function syncJobApplication(
     const jobVincereId = parseInt(job.external_id);
     const vincere = getVincereClient();
 
-    // Add candidate to job shortlist (use SHORTLIST stage as per requirements)
-    await addCandidateToJob(jobVincereId, candidateVincereId, VINCERE_APPLICATION_STAGES.SHORTLIST, vincere);
+    // Add candidate to job shortlist using POST /application endpoint
+    // This is the correct endpoint that Vincere supports (not POST /position/{id}/applications)
+    await shortlistCandidateOnJob(jobVincereId, candidateVincereId, undefined, undefined, vincere);
 
-    console.log(`[VincereSync] Added candidate ${candidateVincereId} to job ${jobVincereId}`);
+    console.log(`[VincereSync] Shortlisted candidate ${candidateVincereId} on job ${jobVincereId}`);
     return { success: true, vincereId: candidateVincereId };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';

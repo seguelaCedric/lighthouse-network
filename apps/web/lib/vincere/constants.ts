@@ -427,6 +427,135 @@ export const NATIONALITY_TO_ISO_CODE: Record<string, string> = {
 };
 
 /**
+ * Country name to ISO 3166-1 alpha-2 country code mapping
+ * Supports English and French country names from Google Places
+ * Used to convert location country names to Vincere format
+ */
+export const COUNTRY_NAME_TO_ISO_CODE: Record<string, string> = {
+  // English names
+  'united states': 'US',
+  'united states of america': 'US',
+  'usa': 'US',
+  'united kingdom': 'GB',
+  'uk': 'GB',
+  'great britain': 'GB',
+  'france': 'FR',
+  'germany': 'DE',
+  'italy': 'IT',
+  'spain': 'ES',
+  'monaco': 'MC',
+  'australia': 'AU',
+  'canada': 'CA',
+  'mexico': 'MX',
+  'brazil': 'BR',
+  'netherlands': 'NL',
+  'belgium': 'BE',
+  'switzerland': 'CH',
+  'austria': 'AT',
+  'portugal': 'PT',
+  'greece': 'GR',
+  'croatia': 'HR',
+  'turkey': 'TR',
+  'thailand': 'TH',
+  'singapore': 'SG',
+  'indonesia': 'ID',
+  'malaysia': 'MY',
+  'philippines': 'PH',
+  'japan': 'JP',
+  'south korea': 'KR',
+  'china': 'CN',
+  'hong kong': 'HK',
+  'india': 'IN',
+  'united arab emirates': 'AE',
+  'uae': 'AE',
+  'qatar': 'QA',
+  'saudi arabia': 'SA',
+  'bahamas': 'BS',
+  'cayman islands': 'KY',
+  'british virgin islands': 'VG',
+  'antigua and barbuda': 'AG',
+  'st. kitts and nevis': 'KN',
+  'saint kitts and nevis': 'KN',
+  'bahrain': 'BH',
+  'new zealand': 'NZ',
+  'south africa': 'ZA',
+  'ireland': 'IE',
+
+  // French names (from Google Places in French locale)
+  'états-unis': 'US',
+  'etats-unis': 'US',
+  'royaume-uni': 'GB',
+  'allemagne': 'DE',
+  'italie': 'IT',
+  'espagne': 'ES',
+  'pays-bas': 'NL',
+  'belgique': 'BE',
+  'suisse': 'CH',
+  'autriche': 'AT',
+  'grèce': 'GR',
+  'grece': 'GR',
+  'croatie': 'HR',
+  'turquie': 'TR',
+  'thaïlande': 'TH',
+  'thailande': 'TH',
+  'singapour': 'SG',
+  'indonésie': 'ID',
+  'indonesie': 'ID',
+  'malaisie': 'MY',
+  'japon': 'JP',
+  'corée du sud': 'KR',
+  'coree du sud': 'KR',
+  'chine': 'CN',
+  'inde': 'IN',
+  'émirats arabes unis': 'AE',
+  'emirats arabes unis': 'AE',
+  'arabie saoudite': 'SA',
+  'nouvelle-zélande': 'NZ',
+  'nouvelle-zelande': 'NZ',
+  'afrique du sud': 'ZA',
+  'irlande': 'IE',
+  'floride': 'US', // State name - defaults to US
+
+  // Additional common variations
+  'russia': 'RU',
+  'russie': 'RU',
+  'poland': 'PL',
+  'pologne': 'PL',
+  'sweden': 'SE',
+  'suède': 'SE',
+  'suede': 'SE',
+  'norway': 'NO',
+  'norvège': 'NO',
+  'norvege': 'NO',
+  'denmark': 'DK',
+  'danemark': 'DK',
+  'finland': 'FI',
+  'finlande': 'FI',
+};
+
+/**
+ * Convert a country name to ISO country code
+ * Handles full country names in English and French
+ */
+export function countryNameToISOCode(country: string | null | undefined): string | null {
+  if (!country) return null;
+
+  const trimmed = country.trim();
+
+  // If it's already a 2-letter code, return it uppercase
+  if (trimmed.length === 2) {
+    return trimmed.toUpperCase();
+  }
+
+  // Look up in our mapping
+  const code = COUNTRY_NAME_TO_ISO_CODE[trimmed.toLowerCase()];
+  if (code) return code;
+
+  // If we can't find it, return null (Vincere will use its own geocoding)
+  return null;
+}
+
+/**
  * Convert a nationality string to ISO country code
  * Handles both full names ("French") and existing codes ("FR")
  */

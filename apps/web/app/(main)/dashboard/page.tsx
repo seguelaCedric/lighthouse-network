@@ -168,18 +168,23 @@ async function getDashboardData() {
   const fiveDaysAgo = new Date();
   fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
 
-  // Get application counts for the jobs
+  // Get application counts for the jobs using efficient COUNT aggregation
   const jobIds = (staleJobsResult.data ?? []).map((j) => j.id);
 
   let applicationCounts: Record<string, number> = {};
   if (jobIds.length > 0) {
-    const { data: appData } = await supabase
-      .from("applications")
-      .select("job_id")
-      .in("job_id", jobIds);
+    // Use parallel COUNT queries instead of fetching all rows
+    const countPromises = jobIds.map(async (jobId) => {
+      const { count } = await supabase
+        .from("applications")
+        .select("id", { count: "exact", head: true })
+        .eq("job_id", jobId);
+      return { jobId, count: count ?? 0 };
+    });
 
-    applicationCounts = (appData ?? []).reduce((acc, app) => {
-      acc[app.job_id] = (acc[app.job_id] || 0) + 1;
+    const counts = await Promise.all(countPromises);
+    applicationCounts = counts.reduce((acc, { jobId, count }) => {
+      acc[jobId] = count;
       return acc;
     }, {} as Record<string, number>);
   }

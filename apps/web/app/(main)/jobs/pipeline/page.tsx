@@ -305,9 +305,12 @@ export default function JobPipelinePage() {
   const [jobs, setJobs] = React.useState<Job[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [selectedJobs, setSelectedJobs] = React.useState<Set<string>>(new Set());
+  const [totalJobs, setTotalJobs] = React.useState(0);
+  const [totalPages, setTotalPages] = React.useState(1);
 
   // Filters
   const [searchQuery, setSearchQuery] = React.useState("");
+  const [debouncedSearch, setDebouncedSearch] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<StageId | "">("");
   const [sourceFilter, setSourceFilter] = React.useState<"all" | "vincere" | "manual">("all");
   const [urgencyFilter, setUrgencyFilter] = React.useState<"all" | "urgent">("all");
@@ -318,56 +321,76 @@ export default function JobPipelinePage() {
     direction: "desc",
   });
 
-  // Pagination
+  // Pagination - server-side
   const [currentPage, setCurrentPage] = React.useState(1);
   const [jobsPerPage] = React.useState(50);
 
-  // Fetch jobs from API
+  // Debounce search input
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+      setCurrentPage(1); // Reset to first page on search
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Map sort field to API field
+  const getSortByField = (field: SortField): string => {
+    switch (field) {
+      case "position": return "title";
+      case "client": return "vessel_name";
+      case "status": return "status";
+      case "salary": return "salary_max";
+      case "startDate": return "start_date";
+      case "candidates": return "submissions_count";
+      case "days": return "updated_at";
+      case "created": return "created_at";
+      default: return "created_at";
+    }
+  };
+
+  // Fetch jobs from API with server-side pagination
   React.useEffect(() => {
     async function fetchJobs() {
       try {
         setLoading(true);
-        const allJobs: any[] = [];
-        let page = 1;
-        const limit = 100;
-        let hasMore = true;
 
-        while (hasMore) {
-          const response = await fetch(
-            `/api/jobs?limit=${limit}&page=${page}&sortBy=created_at&sortOrder=desc`,
-            {
-              credentials: "include",
-            }
-          );
+        // Build query params
+        const params = new URLSearchParams();
+        params.set("limit", jobsPerPage.toString());
+        params.set("page", currentPage.toString());
+        params.set("sortBy", getSortByField(sort?.field || "created"));
+        params.set("sortOrder", sort?.direction || "desc");
 
-          if (!response.ok) {
-            const errorText = await response.text();
-            console.error("API error:", response.status, errorText);
-            if (response.status === 401) {
-              throw new Error("Please log in to view jobs");
-            }
-            throw new Error(`Failed to fetch jobs: ${response.status} ${errorText}`);
-          }
-
-          const result = await response.json();
-          const jobs = result.data || result || [];
-
-          if (!Array.isArray(jobs)) {
-            console.error("API returned non-array data:", jobs);
-            hasMore = false;
-            break;
-          }
-
-          if (jobs.length > 0) {
-            allJobs.push(...jobs);
-            hasMore = jobs.length === limit && page < 30;
-            page++;
-          } else {
-            hasMore = false;
-          }
+        // Add search filter
+        if (debouncedSearch) {
+          params.set("search", debouncedSearch);
         }
 
-        const mappedJobs: Job[] = allJobs.map((job: any) => {
+        // Add status filter (convert stage to database status)
+        if (statusFilter) {
+          params.set("status", stageToStatus(statusFilter));
+        }
+
+        const response = await fetch(`/api/jobs?${params.toString()}`, {
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("API error:", response.status, errorText);
+          if (response.status === 401) {
+            throw new Error("Please log in to view jobs");
+          }
+          throw new Error(`Failed to fetch jobs: ${response.status} ${errorText}`);
+        }
+
+        const result = await response.json();
+        const jobsData = result.data || [];
+        const total = result.total || 0;
+        const pages = result.total_pages || 1;
+
+        const mappedJobs: Job[] = jobsData.map((job: any) => {
           const updatedAt = job.updated_at || job.created_at || new Date().toISOString();
           const createdAt = job.created_at || new Date().toISOString();
           const daysInStage = calculateDaysInStage(updatedAt, createdAt);
@@ -393,117 +416,47 @@ export default function JobPipelinePage() {
           };
         });
 
-        // Initial sort: Vincere first, then by created date
-        mappedJobs.sort((a, b) => {
-          const aCreated = new Date(a.createdAt || 0).getTime();
-          const bCreated = new Date(b.createdAt || 0).getTime();
-          const aIsVincere = a.externalSource === "vincere";
-          const bIsVincere = b.externalSource === "vincere";
+        // Client-side filtering for source and urgency (not in API)
+        let filteredJobs = mappedJobs;
+        if (sourceFilter !== "all") {
+          filteredJobs = filteredJobs.filter(job => {
+            if (sourceFilter === "vincere") return job.externalSource === "vincere";
+            if (sourceFilter === "manual") return job.externalSource !== "vincere";
+            return true;
+          });
+        }
+        if (urgencyFilter === "urgent") {
+          filteredJobs = filteredJobs.filter(job => job.priority === "urgent");
+        }
 
-          if (aIsVincere && !bIsVincere) return -1;
-          if (!aIsVincere && bIsVincere) return 1;
-          return bCreated - aCreated;
-        });
-
-        setJobs(mappedJobs);
+        setJobs(filteredJobs);
+        setTotalJobs(total);
+        setTotalPages(pages);
       } catch (error) {
         console.error("Error fetching jobs:", error);
         setJobs([]);
+        setTotalJobs(0);
+        setTotalPages(1);
       } finally {
         setLoading(false);
       }
     }
 
     fetchJobs();
-  }, []);
+  }, [currentPage, jobsPerPage, debouncedSearch, statusFilter, sourceFilter, urgencyFilter, sort]);
 
-  // Filtered and sorted jobs
-  const filteredJobs = React.useMemo(() => {
-    let result = jobs.filter((job) => {
-      if (statusFilter && job.stage !== statusFilter) return false;
-      if (sourceFilter !== "all") {
-        const jobSource = job.externalSource;
-        if (sourceFilter === "vincere" && jobSource !== "vincere") return false;
-        if (sourceFilter === "manual" && jobSource === "vincere") return false;
-      }
-      if (urgencyFilter === "urgent" && job.priority !== "urgent") return false;
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase();
-        return (
-          job.position.toLowerCase().includes(query) ||
-          job.client.toLowerCase().includes(query)
-        );
-      }
-      return true;
-    });
+  // Jobs are now fetched with server-side pagination, filtering, and sorting
+  // The `jobs` state already contains the paginated results from the API
+  const paginatedJobs = jobs;
 
-    // Apply sorting
-    if (sort) {
-      result = [...result].sort((a, b) => {
-        let aVal: any;
-        let bVal: any;
-
-        switch (sort.field) {
-          case "position":
-            aVal = a.position.toLowerCase();
-            bVal = b.position.toLowerCase();
-            break;
-          case "client":
-            aVal = a.client.toLowerCase();
-            bVal = b.client.toLowerCase();
-            break;
-          case "status":
-            aVal = a.stage;
-            bVal = b.stage;
-            break;
-          case "salary":
-            aVal = a.salaryMax || a.salaryMin || 0;
-            bVal = b.salaryMax || b.salaryMin || 0;
-            break;
-          case "startDate":
-            aVal = a.startDate.getTime();
-            bVal = b.startDate.getTime();
-            break;
-          case "candidates":
-            aVal = a.candidatesCount;
-            bVal = b.candidatesCount;
-            break;
-          case "days":
-            aVal = a.daysInStage;
-            bVal = b.daysInStage;
-            break;
-          case "created":
-            aVal = new Date(a.createdAt || 0).getTime();
-            bVal = new Date(b.createdAt || 0).getTime();
-            // Vincere priority for created sort
-            const aIsVincere = a.externalSource === "vincere";
-            const bIsVincere = b.externalSource === "vincere";
-            if (aIsVincere && !bIsVincere) return -1;
-            if (!aIsVincere && bIsVincere) return 1;
-            break;
-          default:
-            return 0;
-        }
-
-        if (aVal < bVal) return sort.direction === "asc" ? -1 : 1;
-        if (aVal > bVal) return sort.direction === "asc" ? 1 : -1;
-        return 0;
-      });
-    }
-
-    return result;
-  }, [jobs, statusFilter, sourceFilter, urgencyFilter, searchQuery, sort]);
-
-  // Pagination
-  const totalPages = Math.ceil(filteredJobs.length / jobsPerPage);
+  // Calculate display values
   const startIndex = (currentPage - 1) * jobsPerPage;
-  const endIndex = startIndex + jobsPerPage;
-  const paginatedJobs = filteredJobs.slice(startIndex, endIndex);
+  const endIndex = Math.min(startIndex + jobsPerPage, totalJobs);
 
+  // Reset selection when filters change (page reset is handled in debounce effect)
   React.useEffect(() => {
-    setCurrentPage(1);
     setSelectedJobs(new Set());
-  }, [statusFilter, sourceFilter, urgencyFilter, searchQuery]);
+  }, [statusFilter, sourceFilter, urgencyFilter]);
 
   const handleSort = (field: SortField) => {
     setSort((current) => {
@@ -693,17 +646,17 @@ export default function JobPipelinePage() {
 
               <div className="ml-auto flex items-center gap-4 text-xs text-gray-600">
                 <span>
-                  <span className="font-semibold text-navy-900">{filteredJobs.length}</span> jobs
+                  <span className="font-semibold text-navy-900">{totalJobs}</span> jobs
                 </span>
                 <span>
                   <span className="font-semibold text-error-600">
-                    {filteredJobs.filter((j) => j.priority === "urgent").length}
+                    {paginatedJobs.filter((j) => j.priority === "urgent").length}
                   </span>{" "}
                   urgent
                 </span>
                 <span>
                   <span className="font-semibold text-warning-600">
-                    {filteredJobs.filter((j) => j.daysInStage > 7).length}
+                    {paginatedJobs.filter((j) => j.daysInStage > 7).length}
                   </span>{" "}
                   needs attention
                 </span>
@@ -958,8 +911,8 @@ export default function JobPipelinePage() {
           <div className="mt-6 flex items-center justify-between rounded-lg border border-gray-200 bg-white px-6 py-4">
             <div className="text-sm text-gray-600">
               Showing <span className="font-semibold text-navy-900">{startIndex + 1}</span> to{" "}
-              <span className="font-semibold text-navy-900">{Math.min(endIndex, filteredJobs.length)}</span> of{" "}
-              <span className="font-semibold text-navy-900">{filteredJobs.length}</span> jobs
+              <span className="font-semibold text-navy-900">{endIndex}</span> of{" "}
+              <span className="font-semibold text-navy-900">{totalJobs}</span> jobs
             </div>
             <div className="flex items-center gap-2">
               <button

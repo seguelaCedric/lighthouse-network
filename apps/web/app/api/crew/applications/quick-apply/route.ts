@@ -10,7 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
 import { calculateProfileCompletion } from "@/lib/profile-completion";
 import { candidateHasCV } from "@/lib/utils/candidate-cv";
-import { shortlistCandidateOnJob } from "@/lib/vincere";
+import { syncJobApplication } from "@/lib/vincere/sync-service";
 
 // ----------------------------------------------------------------------------
 // REQUEST SCHEMA
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
       industry_preference, second_nationality,
       is_smoker, has_visible_tattoos, is_couple, partner_position,
       verification_tier, avatar_url, embedding,
-      external_id, created_at
+      vincere_id, created_at
     `;
 
     // Get user record (auth_id -> user_id mapping)
@@ -437,9 +437,9 @@ export async function POST(request: NextRequest) {
 
 async function createApplication(
   supabase: Awaited<ReturnType<typeof createClient>>,
-  candidate: { id: string; external_id?: string | null; created_at?: string | null },
-  job: { id: string; title: string; created_by_agency_id: string | null; external_id?: string | null },
-  userId: string
+  candidate: { id: string },
+  job: { id: string; title: string; created_by_agency_id: string | null },
+  _userId: string
 ) {
   // Check for existing application
   const { data: existingApplication } = await supabase
@@ -509,26 +509,19 @@ async function createApplication(
     );
   }
 
-  // Shortlist candidate on job in Vincere (fire and forget)
-  // Both candidate and job must have Vincere IDs (external_id) for this to work
-  if (candidate.external_id && job.external_id) {
-    const candidateVincereId = parseInt(candidate.external_id, 10);
-    const jobVincereId = parseInt(job.external_id, 10);
-
-    if (!isNaN(candidateVincereId) && !isNaN(jobVincereId)) {
-      shortlistCandidateOnJob(
-        jobVincereId,
-        candidateVincereId,
-        candidate.created_at || undefined
-      )
-        .then((result) => {
-          console.log(`[Vincere] Shortlisted candidate ${candidateVincereId} on job ${jobVincereId}:`, result);
-        })
-        .catch((err) => {
-          console.error(`[Vincere] Failed to shortlist candidate ${candidateVincereId} on job ${jobVincereId}:`, err);
-        });
-    }
-  }
+  // Sync application to Vincere (fire and forget)
+  // This will create the candidate in Vincere if they don't exist yet
+  syncJobApplication(candidate.id, job.id)
+    .then((result) => {
+      if (result.success) {
+        console.log(`[Vincere] Synced application for candidate ${candidate.id} to job ${job.id}`);
+      } else if (result.error) {
+        console.error(`[Vincere] Failed to sync application: ${result.error}`);
+      }
+    })
+    .catch((err: Error) => {
+      console.error(`[Vincere] Failed to sync application for candidate ${candidate.id}:`, err);
+    });
 
   return NextResponse.json({
     success: true,

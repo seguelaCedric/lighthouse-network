@@ -283,13 +283,6 @@ export async function getDashboardData(): Promise<DashboardData | null> {
 
   if (!user || !user.email) return null;
 
-  // Get user record (may not exist for new signups)
-  const { data: userData } = await supabase
-    .from("users")
-    .select("id")
-    .eq("auth_id", user.id)
-    .single();
-
   const candidateFields = `
     id,
     first_name,
@@ -328,58 +321,86 @@ export async function getDashboardData(): Promise<DashboardData | null> {
     user_id
   `;
 
-  // Try to get candidate by user_id first (if user record exists)
-  let candidate = null;
-  let candidateError = null;
-
-  if (userData) {
-    const result = await supabase
-      .from("candidates")
-      .select(candidateFields)
-      .eq("user_id", userData.id)
-      .single();
-    candidate = result.data;
-    candidateError = result.error;
-  }
-
-  // If no candidate found by user_id, try by email (for Vincere-imported candidates)
-  if (!candidate) {
-    const result = await supabase
+  // PERFORMANCE: Run both lookups in parallel
+  const [userResult, candidateByEmailResult] = await Promise.all([
+    supabase.from("users").select("id").eq("auth_id", user.id).maybeSingle(),
+    supabase
       .from("candidates")
       .select(candidateFields)
       .eq("email", user.email)
-      .single();
-    candidate = result.data;
-    candidateError = result.error;
+      .maybeSingle(),
+  ]);
 
-    // If found by email and we have a user record, link them
-    if (candidate && userData && !candidate.user_id) {
-      await supabase
-        .from("candidates")
-        .update({ user_id: userData.id })
-        .eq("id", candidate.id);
-      candidate.user_id = userData.id;
-    }
+  let candidate = candidateByEmailResult.data;
+
+  // If we have a user record and no candidate by email, try by user_id
+  if (userResult.data && !candidate) {
+    const result = await supabase
+      .from("candidates")
+      .select(candidateFields)
+      .eq("user_id", userResult.data.id)
+      .maybeSingle();
+    candidate = result.data;
   }
 
-  if (candidateError && candidateError.code && candidateError.code !== "PGRST116") {
-    // PGRST116 = no rows returned (not an error, just no candidate found)
-    console.error("Error fetching candidate:", candidateError);
-    return null;
+  // If found by email and we have a user record, link them (fire and forget)
+  if (candidate && userResult.data && !candidate.user_id) {
+    supabase
+      .from("candidates")
+      .update({ user_id: userResult.data.id })
+      .eq("id", candidate.id)
+      .then(() => {});
+    candidate.user_id = userResult.data.id;
   }
 
   if (!candidate) {
     // No candidate record exists - user needs to create their profile
-    // Return null to show onboarding/profile creation flow
     return null;
   }
 
-  // Get documents separately (no FK constraint exists for entity_id)
-  const { data: documents } = await supabase
-    .from("documents")
-    .select("id, type, name")
-    .eq("entity_type", "candidate")
-    .eq("entity_id", candidate.id);
+  // PERFORMANCE: Run all independent queries in parallel
+  const [documentsResult, jobsResult, applicationsResult, certificationsResult] =
+    await Promise.all([
+      // Get documents
+      supabase
+        .from("documents")
+        .select("id, type, name")
+        .eq("entity_type", "candidate")
+        .eq("entity_id", candidate.id),
+      // Get jobs (30 most recent open jobs)
+      supabase
+        .from("jobs")
+        .select(
+          `id, title, vessel_name, vessel_size_meters, primary_region,
+           salary_min, salary_max, salary_currency, contract_type, is_urgent, created_at`
+        )
+        .eq("status", "open")
+        .eq("is_public", true)
+        .order("created_at", { ascending: false })
+        .limit(30),
+      // Get applications
+      supabase
+        .from("applications")
+        .select(
+          `id, stage, applied_at, job:jobs (id, title, vessel_name)`
+        )
+        .eq("candidate_id", candidate.id)
+        .order("applied_at", { ascending: false })
+        .limit(10),
+      // Get certifications for alerts
+      supabase
+        .from("candidate_certifications")
+        .select("id, certification_type, custom_name, expiry_date")
+        .eq("candidate_id", candidate.id)
+        .eq("has_certification", true)
+        .not("expiry_date", "is", null)
+        .order("expiry_date", { ascending: true }),
+    ]);
+
+  const documents = documentsResult.data;
+  const jobs = jobsResult.data;
+  const applications = applicationsResult.data;
+  const certifications = certificationsResult.data;
 
   // Attach documents to candidate for profile completeness calculation
   const candidateWithDocs = {
@@ -405,30 +426,6 @@ export async function getDashboardData(): Promise<DashboardData | null> {
     verificationTier: candidate.verification_tier,
     documents: candidateWithDocs.documents,
   });
-
-  // Get more jobs to find the most relevant matches
-  // Fetch 30 recent jobs, then sort by relevance and return top 4
-  const { data: jobs } = await supabase
-    .from("jobs")
-    .select(
-      `
-      id,
-      title,
-      vessel_name,
-      vessel_size_meters,
-      primary_region,
-      salary_min,
-      salary_max,
-      salary_currency,
-      contract_type,
-      is_urgent,
-      created_at
-    `
-    )
-    .eq("status", "open")
-    .eq("is_public", true)
-    .order("created_at", { ascending: false })
-    .limit(30);
 
   // Calculate match scores for all jobs and sort by relevance
   const jobsWithScores = (jobs || []).map((job) => {
@@ -522,26 +519,7 @@ export async function getDashboardData(): Promise<DashboardData | null> {
     return jobData;
   });
 
-  // Get candidate's applications (simplified status per PRD)
-  const { data: applications } = await supabase
-    .from("applications")
-    .select(
-      `
-      id,
-      stage,
-      applied_at,
-      job:jobs (
-        id,
-        title,
-        vessel_name
-      )
-    `
-    )
-    .eq("candidate_id", candidate.id)
-    .order("applied_at", { ascending: false })
-    .limit(10);
-
-  // Map applications with simplified status
+  // Map applications with simplified status (data already fetched in parallel above)
   const mappedApplications: CandidateApplication[] = (applications || []).map(
     (app) => {
       // Per PRD: candidates only see "Applied" or "In Progress"
@@ -621,17 +599,14 @@ export async function getDashboardData(): Promise<DashboardData | null> {
     }
   }
 
-  // Get certifications from candidate_certifications for expiry alerts
-  const { data: certifications } = await supabase
-    .from("candidate_certifications")
-    .select("id, certification_type, custom_name, expiry_date")
-    .eq("candidate_id", candidate.id)
-    .eq("has_certification", true)
-    .not("expiry_date", "is", null)
-    .lte("expiry_date", ninetyDaysFromNow.toISOString().split("T")[0])
-    .order("expiry_date", { ascending: true });
+  // Filter certifications expiring within 90 days (data already fetched in parallel above)
+  const expiringCerts = (certifications || []).filter((cert) => {
+    if (!cert.expiry_date) return false;
+    const expiryDate = new Date(cert.expiry_date);
+    return expiryDate <= ninetyDaysFromNow;
+  });
 
-  for (const cert of certifications || []) {
+  for (const cert of expiringCerts) {
     if (cert.expiry_date) {
       const expiryDate = new Date(cert.expiry_date);
       const isUrgent = expiryDate <= thirtyDaysFromNow;

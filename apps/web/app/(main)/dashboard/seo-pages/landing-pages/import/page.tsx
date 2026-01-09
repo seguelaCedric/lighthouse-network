@@ -1,10 +1,32 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Upload, Loader2, CheckCircle2, AlertCircle, X } from "lucide-react";
+import { ArrowLeft, Upload, Loader2, CheckCircle2, AlertCircle, X, FileSpreadsheet, Trash2, Download } from "lucide-react";
 import Link from "next/link";
+
+interface BulkItem {
+  url: string;
+  position: string;
+  country: string;
+  state: string;
+  city: string;
+}
+
+interface ImportJob {
+  id: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  total_items: number;
+  processed_items: number;
+  created_pages: number;
+  failed_items: number;
+  generate_ai_content: boolean;
+  ai_generated_count: number;
+  ai_pending_count: number;
+  errors?: Array<{ index: number; error: string }>;
+  progress: number;
+}
 
 export default function ImportPagePage() {
   const router = useRouter();
@@ -27,6 +49,13 @@ export default function ImportPagePage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [importedPage, setImportedPage] = useState<any>(null);
+
+  // Bulk import state
+  const [bulkItems, setBulkItems] = useState<BulkItem[]>([]);
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [bulkGenerateAi, setBulkGenerateAi] = useState(false);
+  const [activeJob, setActiveJob] = useState<ImportJob | null>(null);
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleImport = async () => {
     if (!url.trim() && !(manualFields.position && manualFields.country)) {
@@ -87,6 +116,202 @@ export default function ImportPagePage() {
       setError(error instanceof Error ? error.message : "Failed to import page. Please try again.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCSVUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      const lines = text.split("\n").filter((line) => line.trim());
+
+      if (lines.length < 2) {
+        setError("CSV file must have a header row and at least one data row");
+        setTimeout(() => setError(null), 5000);
+        return;
+      }
+
+      const headers = lines[0].split(",").map((h) => h.trim().toLowerCase());
+      const parsedItems: BulkItem[] = [];
+
+      for (let i = 1; i < lines.length; i++) {
+        // Handle quoted CSV values
+        const values: string[] = [];
+        let current = "";
+        let inQuotes = false;
+
+        for (const char of lines[i]) {
+          if (char === '"') {
+            inQuotes = !inQuotes;
+          } else if (char === "," && !inQuotes) {
+            values.push(current.trim());
+            current = "";
+          } else {
+            current += char;
+          }
+        }
+        values.push(current.trim());
+
+        const item: Partial<BulkItem> = {
+          url: "",
+          position: "",
+          country: "",
+          state: "",
+          city: "",
+        };
+
+        headers.forEach((header, idx) => {
+          const value = values[idx] || "";
+          if (header === "url") item.url = value;
+          if (header === "position") item.position = value;
+          if (header === "country") item.country = value;
+          if (header === "state") item.state = value;
+          if (header === "city") item.city = value;
+        });
+
+        // Only add items that have either URL or position+country
+        if (item.url || (item.position && item.country)) {
+          parsedItems.push(item as BulkItem);
+        }
+      }
+
+      if (parsedItems.length === 0) {
+        setError("No valid rows found. Each row needs either a URL or position + country");
+        setTimeout(() => setError(null), 5000);
+        return;
+      }
+
+      setBulkItems([...bulkItems, ...parsedItems]);
+      setSuccess(`Added ${parsedItems.length} items from CSV`);
+      setTimeout(() => setSuccess(null), 3000);
+    };
+    reader.readAsText(file);
+
+    // Reset the input so the same file can be uploaded again
+    event.target.value = "";
+  };
+
+  const updateBulkItem = (index: number, field: keyof BulkItem, value: string) => {
+    const newItems = [...bulkItems];
+    newItems[index] = { ...newItems[index], [field]: value };
+    setBulkItems(newItems);
+  };
+
+  const removeBulkItem = (index: number) => {
+    setBulkItems(bulkItems.filter((_, i) => i !== index));
+  };
+
+  const clearBulkItems = () => {
+    setBulkItems([]);
+    setActiveJob(null);
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+  };
+
+  const downloadTemplate = () => {
+    const template = "url,position,country,state,city\nhttps://www.lighthouse-careers.com/hire-a-butler-australia/new-south-wales/sydney-2/,,,,\n,Butler,France,Provence,Nice";
+    const blob = new Blob([template], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "landing-pages-template.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Poll job status
+  const pollJobStatus = async (jobId: string) => {
+    try {
+      const response = await fetch(`/api/seo-pages/bulk-import/${jobId}`);
+      if (!response.ok) return;
+
+      const job: ImportJob = await response.json();
+      setActiveJob(job);
+
+      // Stop polling when job is complete
+      if (job.status === 'completed' || job.status === 'failed') {
+        if (pollingRef.current) {
+          clearInterval(pollingRef.current);
+          pollingRef.current = null;
+        }
+        setBulkLoading(false);
+
+        if (job.status === 'completed') {
+          setSuccess(`Successfully imported ${job.created_pages} landing page${job.created_pages !== 1 ? "s" : ""}!${job.generate_ai_content ? ' AI content generation is running in the background.' : ''}`);
+          setBulkItems([]);
+        } else {
+          setError('Import job failed');
+        }
+      }
+    } catch (err) {
+      console.error('Failed to poll job status:', err);
+    }
+  };
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+      }
+    };
+  }, []);
+
+  const handleBulkImport = async () => {
+    if (bulkItems.length === 0) {
+      setError("Please add at least one item to import");
+      setTimeout(() => setError(null), 5000);
+      return;
+    }
+
+    setBulkLoading(true);
+    setError(null);
+    setActiveJob(null);
+
+    try {
+      const response = await fetch("/api/seo-pages/bulk-import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: bulkItems,
+          generate_ai_content: bulkGenerateAi,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to start bulk import");
+      }
+
+      // Start polling for job status
+      const jobId = data.job_id;
+      setActiveJob({
+        id: jobId,
+        status: 'pending',
+        total_items: data.total_items,
+        processed_items: 0,
+        created_pages: 0,
+        failed_items: 0,
+        generate_ai_content: bulkGenerateAi,
+        ai_generated_count: 0,
+        ai_pending_count: 0,
+        progress: 0,
+      });
+
+      // Poll every 2 seconds
+      pollingRef.current = setInterval(() => pollJobStatus(jobId), 2000);
+      // Also poll immediately
+      pollJobStatus(jobId);
+    } catch (error) {
+      console.error("Bulk import error:", error);
+      setError(error instanceof Error ? error.message : "Failed to start bulk import");
+      setBulkLoading(false);
     }
   };
 
@@ -391,6 +616,237 @@ export default function ImportPagePage() {
           </div>
         </div>
       )}
+
+      {/* Bulk Import Section */}
+      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="mb-4 flex items-center gap-2">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gold-100">
+            <FileSpreadsheet className="h-5 w-5 text-gold-600" />
+          </div>
+          <div className="flex-1">
+            <h2 className="text-lg font-semibold text-navy-900">Bulk Import from CSV</h2>
+            <p className="text-sm text-gray-600">Import multiple landing pages at once</p>
+          </div>
+          <Button variant="ghost" size="sm" onClick={downloadTemplate}>
+            <Download className="mr-2 h-4 w-4" />
+            Template
+          </Button>
+        </div>
+
+        <div className="space-y-4">
+          {/* CSV Upload */}
+          <div>
+            <input
+              type="file"
+              accept=".csv"
+              onChange={handleCSVUpload}
+              className="block w-full text-sm text-gray-500 file:mr-4 file:rounded-lg file:border-0 file:bg-gold-100 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-gold-700 hover:file:bg-gold-200"
+              disabled={bulkLoading}
+            />
+            <p className="mt-2 text-xs text-gray-500">
+              CSV columns: url, position, country, state, city. Each row needs either a URL or position + country.
+            </p>
+          </div>
+
+          {/* AI Generation Toggle */}
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="bulkGenerateAi"
+              checked={bulkGenerateAi}
+              onChange={(e) => setBulkGenerateAi(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-gold-600 focus:ring-gold-500"
+              disabled={bulkLoading}
+            />
+            <label htmlFor="bulkGenerateAi" className="text-sm text-gray-700">
+              Generate SEO-optimized content with AI (slower, processes sequentially)
+            </label>
+          </div>
+
+          {/* Preview Table */}
+          {bulkItems.length > 0 && (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-semibold text-gray-900">
+                  {bulkItems.length} item{bulkItems.length !== 1 ? "s" : ""} to import
+                </span>
+                <Button variant="ghost" size="sm" onClick={clearBulkItems}>
+                  Clear All
+                </Button>
+              </div>
+              <div className="max-h-80 overflow-y-auto rounded-lg border border-gray-200">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50 sticky top-0">
+                    <tr>
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">URL / Position</th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">Country</th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">State</th>
+                      <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">City</th>
+                      <th className="px-3 py-2 w-10"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200 bg-white">
+                    {bulkItems.map((item, index) => (
+                      <tr key={index} className="hover:bg-gray-50">
+                        <td className="px-3 py-2">
+                          {item.url ? (
+                            <span className="text-xs font-mono text-gray-600 truncate block max-w-xs" title={item.url}>
+                              {item.url.replace(/^https?:\/\/[^/]+\//, "/")}
+                            </span>
+                          ) : (
+                            <input
+                              type="text"
+                              value={item.position}
+                              onChange={(e) => updateBulkItem(index, "position", e.target.value)}
+                              className="w-full rounded border border-gray-200 px-2 py-1 text-xs focus:border-gold-500 focus:outline-none"
+                              placeholder="Position"
+                            />
+                          )}
+                        </td>
+                        <td className="px-3 py-2">
+                          <input
+                            type="text"
+                            value={item.country}
+                            onChange={(e) => updateBulkItem(index, "country", e.target.value)}
+                            className="w-full rounded border border-gray-200 px-2 py-1 text-xs focus:border-gold-500 focus:outline-none"
+                            placeholder="Country"
+                            disabled={!!item.url}
+                          />
+                        </td>
+                        <td className="px-3 py-2">
+                          <input
+                            type="text"
+                            value={item.state}
+                            onChange={(e) => updateBulkItem(index, "state", e.target.value)}
+                            className="w-full rounded border border-gray-200 px-2 py-1 text-xs focus:border-gold-500 focus:outline-none"
+                            placeholder="State"
+                            disabled={!!item.url}
+                          />
+                        </td>
+                        <td className="px-3 py-2">
+                          <input
+                            type="text"
+                            value={item.city}
+                            onChange={(e) => updateBulkItem(index, "city", e.target.value)}
+                            className="w-full rounded border border-gray-200 px-2 py-1 text-xs focus:border-gold-500 focus:outline-none"
+                            placeholder="City"
+                            disabled={!!item.url}
+                          />
+                        </td>
+                        <td className="px-3 py-2">
+                          <button
+                            onClick={() => removeBulkItem(index)}
+                            className="text-gray-400 hover:text-error-600"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <Button
+                onClick={handleBulkImport}
+                disabled={bulkLoading || bulkItems.length === 0}
+                variant="primary"
+                className="w-full"
+              >
+                {bulkLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Importing {bulkItems.length} page{bulkItems.length !== 1 ? "s" : ""}...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Import {bulkItems.length} Page{bulkItems.length !== 1 ? "s" : ""}
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
+
+          {/* Job Progress */}
+          {activeJob && (
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-semibold text-gray-900">
+                  {activeJob.status === 'completed' ? 'Import Complete' :
+                   activeJob.status === 'failed' ? 'Import Failed' :
+                   'Importing...'}
+                </h3>
+                <span className="text-xs text-gray-500">
+                  {activeJob.processed_items} / {activeJob.total_items} items
+                </span>
+              </div>
+
+              {/* Progress bar */}
+              <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
+                <div
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    activeJob.status === 'completed' ? 'bg-success-500' :
+                    activeJob.status === 'failed' ? 'bg-error-500' :
+                    'bg-gold-500'
+                  }`}
+                  style={{ width: `${activeJob.progress}%` }}
+                />
+              </div>
+
+              {/* Stats */}
+              <div className="flex gap-4 text-sm">
+                <span className="text-success-600">
+                  <CheckCircle2 className="inline h-4 w-4 mr-1" />
+                  {activeJob.created_pages} created
+                </span>
+                {activeJob.failed_items > 0 && (
+                  <span className="text-error-600">
+                    <AlertCircle className="inline h-4 w-4 mr-1" />
+                    {activeJob.failed_items} failed
+                  </span>
+                )}
+              </div>
+
+              {/* AI Generation Status */}
+              {activeJob.generate_ai_content && activeJob.status === 'completed' && (
+                <div className="mt-3 pt-3 border-t border-gray-200">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Loader2 className="h-4 w-4 animate-spin text-gold-500" />
+                    <span>
+                      AI content generation running in background
+                      {activeJob.ai_pending_count > 0 && ` (${activeJob.ai_pending_count} pending)`}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Errors */}
+              {activeJob.errors && activeJob.errors.length > 0 && (
+                <div className="mt-2 text-xs text-error-600">
+                  {activeJob.errors.slice(0, 5).map((err, i) => (
+                    <div key={i}>Row {err.index + 1}: {err.error}</div>
+                  ))}
+                  {activeJob.errors.length > 5 && (
+                    <div>...and {activeJob.errors.length - 5} more errors</div>
+                  )}
+                </div>
+              )}
+
+              {/* View imported pages link */}
+              {activeJob.status === 'completed' && activeJob.created_pages > 0 && (
+                <div className="mt-3 pt-3 border-t border-gray-200">
+                  <Link href="/dashboard/seo-pages/landing-pages">
+                    <Button variant="secondary" size="sm">
+                      View Imported Pages
+                    </Button>
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

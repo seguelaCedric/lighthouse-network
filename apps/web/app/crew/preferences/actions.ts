@@ -268,82 +268,40 @@ export async function loadJobMatches(
     verification_tier, embedding
   `;
 
-  // Get user record (auth_id -> user_id mapping)
-  const { data: userData, error: userDataError } = await supabase
-    .from("users")
-    .select("id")
-    .eq("auth_id", user.id)
-    .maybeSingle();
+  // PERFORMANCE: Run user, candidate-by-email, and candidate-by-id lookups in parallel
+  const [userResult, candidateByEmailResult, candidateByIdResult] = await Promise.all([
+    supabase.from("users").select("id").eq("auth_id", user.id).maybeSingle(),
+    user.email
+      ? supabase.from("candidates").select(candidateSelectFields).eq("email", user.email).maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    candidateId
+      ? supabase.from("candidates").select(candidateSelectFields).eq("id", candidateId).maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+  ]);
 
-  console.log("[loadJobMatches] Users table lookup:", {
-    hasUserData: !!userData,
-    userDataId: userData?.id,
-    hasError: !!userDataError,
-    error: userDataError?.message,
+  console.log("[loadJobMatches] Parallel lookups:", {
+    hasUserData: !!userResult.data,
+    hasCandidateByEmail: !!candidateByEmailResult.data,
+    hasCandidateById: !!candidateByIdResult.data,
   });
 
-  let candidate = null;
+  // Priority: email > candidateId > user_id
+  let candidate = candidateByEmailResult.data || candidateByIdResult.data;
 
-  // Try to find candidate by user_id if user record exists
-  if (userData) {
-    const { data: candidateByUserId, error: candidateByUserIdError } = await supabase
+  // If we have a user record but no candidate yet, try by user_id
+  if (userResult.data && !candidate) {
+    const { data: candidateByUserId } = await supabase
       .from("candidates")
       .select(candidateSelectFields)
-      .eq("user_id", userData.id)
+      .eq("user_id", userResult.data.id)
       .maybeSingle();
 
     console.log("[loadJobMatches] Candidate lookup by user_id:", {
       hasCandidate: !!candidateByUserId,
       candidateId: candidateByUserId?.id,
-      hasError: !!candidateByUserIdError,
-      error: candidateByUserIdError?.message,
     });
 
-    if (candidateByUserId) {
-      candidate = candidateByUserId;
-    }
-  }
-
-  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
-  if (!candidate && user.email) {
-    const { data: candidateByEmail, error: candidateByEmailError } = await supabase
-      .from("candidates")
-      .select(candidateSelectFields)
-      .eq("email", user.email)
-      .maybeSingle();
-
-    console.log("[loadJobMatches] Candidate lookup by email:", {
-      hasCandidate: !!candidateByEmail,
-      candidateId: candidateByEmail?.id,
-      hasError: !!candidateByEmailError,
-      error: candidateByEmailError?.message,
-      userEmail: user.email,
-    });
-
-    if (candidateByEmail) {
-      candidate = candidateByEmail;
-    }
-  }
-
-  // Last resort: Try the provided candidateId directly (for server-side calls)
-  if (!candidate && candidateId) {
-    const { data: candidateById, error: candidateByIdError } = await supabase
-      .from("candidates")
-      .select(candidateSelectFields)
-      .eq("id", candidateId)
-      .maybeSingle();
-
-    console.log("[loadJobMatches] Candidate lookup by candidateId:", {
-      hasCandidate: !!candidateById,
-      candidateId: candidateById?.id,
-      hasError: !!candidateByIdError,
-      error: candidateByIdError?.message,
-      providedCandidateId: candidateId,
-    });
-
-    if (candidateById) {
-      candidate = candidateById;
-    }
+    candidate = candidateByUserId;
   }
 
   console.log("[loadJobMatches] Final candidate check:", {

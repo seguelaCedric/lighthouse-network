@@ -369,6 +369,10 @@ export function ProfileEditClient({
   const saveTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   // Initialize with a marker to skip first save on mount
   const lastSavedDataRef = React.useRef<string>("__INITIAL_MOUNT__");
+  // Track which sections have pending changes (dirty sections)
+  const dirtySectionsRef = React.useRef<Set<string>>(new Set());
+  // Track last saved data per section to detect actual changes
+  const lastSavedPerSectionRef = React.useRef<Record<string, string>>({});
 
   // Refs to hold current form values for auto-save (avoids recreating callback on every state change)
   const formValuesRef = React.useRef({
@@ -788,114 +792,109 @@ export function ProfileEditClient({
     [] // No dependencies - uses ref for current values
   );
 
-  // Consolidated auto-save with 1.5s debounce
-  React.useEffect(() => {
-    const currentDataString = JSON.stringify({
-      // Personal fields
-      firstName,
-      lastName,
-      email,
-      phone,
-      dateOfBirth,
-      gender,
-      nationality,
-      secondNationality,
-      currentLocation,
-      // Professional fields
-      candidateType,
-      primaryPosition,
-      secondaryPositions,
-      jobSearchNotes,
-      highestLicense,
-      secondaryLicense,
-      // Certifications fields
-      hasSTCW,
-      stcwExpiry,
-      hasENG1,
-      eng1Expiry,
-      hasSchengen,
-      schengenExpiry,
-      hasB1B2,
-      b1b2Expiry,
-      certificationChecklist,
-      // Details fields
-      smoker,
-      hasTattoos,
-      tattooLocation,
-      maritalStatus,
-      couplePosition,
-      partnerName,
-      partnerPosition,
-    });
+  // Helper to get section data strings for comparison
+  const getSectionData = React.useCallback(() => {
+    return {
+      personal: JSON.stringify({
+        firstName,
+        lastName,
+        email,
+        phone,
+        dateOfBirth,
+        gender,
+        nationality,
+        secondNationality,
+        currentLocation,
+      }),
+      professional: JSON.stringify({
+        candidateType,
+        primaryPosition,
+        secondaryPositions,
+        jobSearchNotes,
+        highestLicense,
+        secondaryLicense,
+      }),
+      certifications: JSON.stringify({
+        hasSTCW,
+        stcwExpiry,
+        hasENG1,
+        eng1Expiry,
+        hasSchengen,
+        schengenExpiry,
+        hasB1B2,
+        b1b2Expiry,
+        certificationChecklist,
+      }),
+      details: JSON.stringify({
+        smoker,
+        hasTattoos,
+        tattooLocation,
+        maritalStatus,
+        couplePosition,
+        partnerName,
+        partnerPosition,
+      }),
+    };
+  }, [
+    firstName, lastName, email, phone, dateOfBirth, gender, nationality, secondNationality, currentLocation,
+    candidateType, primaryPosition, secondaryPositions, jobSearchNotes, highestLicense, secondaryLicense,
+    hasSTCW, stcwExpiry, hasENG1, eng1Expiry, hasSchengen, schengenExpiry, hasB1B2, b1b2Expiry, certificationChecklist,
+    smoker, hasTattoos, tattooLocation, maritalStatus, couplePosition, partnerName, partnerPosition,
+  ]);
 
-    // Skip save on initial mount - set the initial snapshot without saving
+  // Consolidated auto-save with 2s debounce - only saves changed sections
+  React.useEffect(() => {
+    const sectionData = getSectionData();
+
+    // Skip save on initial mount - set the initial snapshots without saving
     if (lastSavedDataRef.current === "__INITIAL_MOUNT__") {
-      lastSavedDataRef.current = currentDataString;
+      lastSavedDataRef.current = JSON.stringify(sectionData);
+      lastSavedPerSectionRef.current = { ...sectionData };
       return;
     }
 
-    // Skip save if data hasn't changed
-    if (currentDataString === lastSavedDataRef.current) return;
+    // Detect which sections have actually changed
+    const changedSections: string[] = [];
+    for (const section of ["personal", "professional", "certifications", "details"] as const) {
+      const currentSectionData = sectionData[section];
+      const lastSectionData = lastSavedPerSectionRef.current[section];
+      if (currentSectionData !== lastSectionData) {
+        changedSections.push(section);
+        dirtySectionsRef.current.add(section);
+      }
+    }
+
+    // Skip if no sections changed
+    if (changedSections.length === 0) return;
 
     // Clear existing timeout
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
 
-    // Set new timeout for 1.5s debounce
+    // Set new timeout for 2s debounce (increased from 1.5s for better UX)
     saveTimeoutRef.current = setTimeout(async () => {
-      await Promise.all([
-        autoSave("personal"),
-        autoSave("professional"),
-        autoSave("certifications"),
-        autoSave("details"),
-      ]);
-      lastSavedDataRef.current = currentDataString;
-    }, 1500);
+      const sectionsToSave = Array.from(dirtySectionsRef.current);
+      if (sectionsToSave.length === 0) return;
+
+      // Only save the sections that actually changed
+      await Promise.all(sectionsToSave.map(section => autoSave(section)));
+
+      // Update last saved snapshots for saved sections
+      const currentSectionData = getSectionData();
+      for (const section of sectionsToSave) {
+        lastSavedPerSectionRef.current[section] = currentSectionData[section as keyof typeof currentSectionData];
+      }
+      lastSavedDataRef.current = JSON.stringify(currentSectionData);
+      dirtySectionsRef.current.clear();
+    }, 2000);
 
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [
-    // Personal fields
-    firstName,
-    lastName,
-    email,
-    phone,
-    dateOfBirth,
-    gender,
-    nationality,
-    secondNationality,
-    currentLocation,
-    // Professional fields
-    candidateType,
-    primaryPosition,
-    secondaryPositions,
-    jobSearchNotes,
-    highestLicense,
-    secondaryLicense,
-    // Certifications fields
-    hasSTCW,
-    stcwExpiry,
-    hasENG1,
-    eng1Expiry,
-    hasSchengen,
-    schengenExpiry,
-    hasB1B2,
-    b1b2Expiry,
-    certificationChecklist,
-    // Details fields
-    smoker,
-    hasTattoos,
-    tattooLocation,
-    maritalStatus,
-    couplePosition,
-    partnerName,
-    partnerPosition,
-    // Note: autoSave removed - it uses refs internally so doesn't need to be a dependency
-  ]);
+  }, [getSectionData, autoSave]);
 
   // Save before navigate - called when user clicks a wizard step
   const handleStepClick = React.useCallback(
@@ -941,24 +940,29 @@ export function ProfileEditClient({
         clearTimeout(saveTimeoutRef.current);
       }
 
-      // 2. Save immediately before navigation
-      setSaveStatus("saving");
-      try {
-        await Promise.all([
-          autoSave("personal"),
-          autoSave("professional"),
-          autoSave("certifications"),
-          autoSave("details"),
-        ]);
+      // 2. Only save sections that have pending changes (dirty sections)
+      const sectionsToSave = Array.from(dirtySectionsRef.current);
 
-        // Update last saved snapshot using current ref values
-        lastSavedDataRef.current = JSON.stringify(formValuesRef.current);
+      if (sectionsToSave.length > 0) {
+        setSaveStatus("saving");
+        try {
+          // Only save dirty sections instead of all 4
+          await Promise.all(sectionsToSave.map(section => autoSave(section)));
 
-        setSaveStatus("saved");
-        setLastSaved(new Date());
-      } catch (error) {
-        console.error("Save before navigate error:", error);
-        setSaveStatus("error");
+          // Update last saved snapshots for saved sections
+          const currentSectionData = getSectionData();
+          for (const section of sectionsToSave) {
+            lastSavedPerSectionRef.current[section] = currentSectionData[section as keyof typeof currentSectionData];
+          }
+          lastSavedDataRef.current = JSON.stringify(currentSectionData);
+          dirtySectionsRef.current.clear();
+
+          setSaveStatus("saved");
+          setLastSaved(new Date());
+        } catch (error) {
+          console.error("Save before navigate error:", error);
+          setSaveStatus("error");
+        }
       }
 
       // 3. Navigate to target step
@@ -973,8 +977,9 @@ export function ProfileEditClient({
       autoSave,
       currentStep,
       validateStep,
+      getSectionData,
       // Note: form values are accessed via formValuesRef in autoSave, so they don't need to be dependencies
-      // We only need currentStep for navigation logic and validateStep for validation
+      // We only need currentStep for navigation logic, validateStep for validation, and getSectionData for dirty section tracking
     ]
   );
 

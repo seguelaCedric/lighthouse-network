@@ -18,13 +18,6 @@ export default async function PreferencesPage() {
     redirect("/auth/login?redirect=/crew/preferences");
   }
 
-  // Get user record (auth_id -> user_id mapping)
-  const { data: userData } = await supabase
-    .from("users")
-    .select("id")
-    .eq("auth_id", user.id)
-    .maybeSingle();
-
   const candidateSelectFields = `
     id,
     first_name,
@@ -53,28 +46,29 @@ export default async function PreferencesPage() {
     preferences_completed_at
   `;
 
-  let candidate = null;
+  // PERFORMANCE: Run user and candidate-by-email lookups in parallel
+  const [userResult, candidateByEmailResult] = await Promise.all([
+    supabase.from("users").select("id").eq("auth_id", user.id).maybeSingle(),
+    user.email
+      ? supabase
+          .from("candidates")
+          .select(candidateSelectFields)
+          .eq("email", user.email)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
 
-  // Try to find candidate by user_id if user record exists
-  if (userData) {
+  let candidate = candidateByEmailResult.data;
+
+  // If we have a user record but no candidate yet, try by user_id
+  if (userResult.data && !candidate) {
     const { data: candidateByUserId } = await supabase
       .from("candidates")
       .select(candidateSelectFields)
-      .eq("user_id", userData.id)
+      .eq("user_id", userResult.data.id)
       .maybeSingle();
 
     candidate = candidateByUserId;
-  }
-
-  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
-  if (!candidate && user.email) {
-    const { data: candidateByEmail } = await supabase
-      .from("candidates")
-      .select(candidateSelectFields)
-      .eq("email", user.email)
-      .maybeSingle();
-
-    candidate = candidateByEmail;
   }
 
   if (!candidate) {

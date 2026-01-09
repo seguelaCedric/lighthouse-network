@@ -274,83 +274,50 @@ export async function getJobsData(
 
   if (!user) return null;
 
-  // Get user record (auth_id -> user_id mapping)
-  const { data: userData } = await supabase
-    .from("users")
-    .select("id")
-    .eq("auth_id", user.id)
-    .maybeSingle();
+  // PERFORMANCE: Define candidate fields once
+  const candidateFields = `
+    id,
+    primary_position,
+    secondary_position,
+    secondary_positions,
+    positions_held,
+    position_category,
+    preferred_regions,
+    preferred_contract_types,
+    desired_salary_min,
+    desired_salary_max,
+    years_experience,
+    has_stcw,
+    has_eng1,
+    yacht_primary_position,
+    yacht_secondary_positions,
+    household_primary_position,
+    household_secondary_positions,
+    industry_preference,
+    candidate_type
+  `;
 
-  let candidate = null;
+  // PERFORMANCE: Run user and candidate-by-email lookups in parallel
+  const [userResult, candidateByEmailResult] = await Promise.all([
+    supabase.from("users").select("id").eq("auth_id", user.id).maybeSingle(),
+    supabase
+      .from("candidates")
+      .select(candidateFields)
+      .eq("email", user.email)
+      .maybeSingle(),
+  ]);
 
-  // Try to find candidate by user_id if user record exists
-  if (userData) {
+  let candidate = candidateByEmailResult.data;
+
+  // If we have a user record but no candidate yet, try by user_id
+  if (userResult.data && !candidate) {
     const { data: candidateByUserId } = await supabase
       .from("candidates")
-      .select(
-        `
-        id,
-        primary_position,
-        secondary_position,
-        secondary_positions,
-        positions_held,
-        position_category,
-        preferred_regions,
-        preferred_contract_types,
-        desired_salary_min,
-        desired_salary_max,
-        years_experience,
-        has_stcw,
-        has_eng1,
-        yacht_primary_position,
-        yacht_secondary_positions,
-        household_primary_position,
-        household_secondary_positions,
-        industry_preference,
-        candidate_type
-      `
-      )
-      .eq("user_id", userData.id)
+      .select(candidateFields)
+      .eq("user_id", userResult.data.id)
       .maybeSingle();
 
-    if (candidateByUserId) {
-      candidate = candidateByUserId;
-    }
-  }
-
-  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
-  if (!candidate && user.email) {
-    const { data: candidateByEmail } = await supabase
-      .from("candidates")
-      .select(
-        `
-        id,
-        primary_position,
-        secondary_position,
-        secondary_positions,
-        positions_held,
-        position_category,
-        preferred_regions,
-        preferred_contract_types,
-        desired_salary_min,
-        desired_salary_max,
-        years_experience,
-        has_stcw,
-        has_eng1,
-        yacht_primary_position,
-        yacht_secondary_positions,
-        household_primary_position,
-        household_secondary_positions,
-        industry_preference,
-        candidate_type
-      `
-      )
-      .eq("email", user.email)
-      .maybeSingle();
-
-    if (candidateByEmail) {
-      candidate = candidateByEmail;
-    }
+    candidate = candidateByUserId;
   }
 
   if (!candidate) return null;
@@ -367,21 +334,20 @@ export async function getJobsData(
     candidate_type: candidate.candidate_type,
   });
 
-  // Get candidate's applied job IDs
-  const { data: applications } = await supabase
-    .from("applications")
-    .select("job_id")
-    .eq("candidate_id", candidate.id);
+  // PERFORMANCE: Run applications and saved_jobs queries in parallel
+  const [applicationsResult, savedJobsResult] = await Promise.all([
+    supabase
+      .from("applications")
+      .select("job_id")
+      .eq("candidate_id", candidate.id),
+    supabase
+      .from("saved_jobs")
+      .select("job_id")
+      .eq("candidate_id", candidate.id),
+  ]);
 
-  const appliedJobIds = (applications || []).map((a) => a.job_id);
-
-  // Get candidate's saved job IDs
-  const { data: savedJobs } = await supabase
-    .from("saved_jobs")
-    .select("job_id")
-    .eq("candidate_id", candidate.id);
-
-  const savedJobIds = (savedJobs || []).map((s) => s.job_id);
+  const appliedJobIds = (applicationsResult.data || []).map((a) => a.job_id);
+  const savedJobIds = (savedJobsResult.data || []).map((s) => s.job_id);
 
   // Build jobs query
   let query = supabase
@@ -531,139 +497,106 @@ export async function getJobById(
 
   if (!user) return null;
 
-  // Get user record (auth_id -> user_id mapping)
-  const { data: userData } = await supabase
-    .from("users")
-    .select("id")
-    .eq("auth_id", user.id)
-    .maybeSingle();
+  // PERFORMANCE: Define candidate fields once
+  const candidateFields = `
+    id,
+    primary_position,
+    secondary_position,
+    secondary_positions,
+    positions_held,
+    position_category,
+    preferred_regions,
+    preferred_contract_types,
+    desired_salary_min,
+    desired_salary_max,
+    years_experience,
+    has_stcw,
+    has_eng1,
+    yacht_primary_position,
+    yacht_secondary_positions,
+    household_primary_position,
+    household_secondary_positions
+  `;
 
-  let candidate = null;
+  // PERFORMANCE: Run user, candidate-by-email, and job lookups in parallel
+  const [userResult, candidateByEmailResult, jobResult] = await Promise.all([
+    supabase.from("users").select("id").eq("auth_id", user.id).maybeSingle(),
+    supabase
+      .from("candidates")
+      .select(candidateFields)
+      .eq("email", user.email)
+      .maybeSingle(),
+    supabase
+      .from("jobs")
+      .select(
+        `
+        id,
+        title,
+        vessel_name,
+        vessel_type,
+        vessel_size_meters,
+        primary_region,
+        contract_type,
+        rotation_schedule,
+        start_date,
+        salary_min,
+        salary_max,
+        salary_currency,
+        salary_period,
+        holiday_days,
+        benefits,
+        requirements_text,
+        requirements,
+        is_urgent,
+        apply_deadline,
+        applications_count,
+        views_count,
+        published_at,
+        created_at
+      `
+      )
+      .eq("id", jobId)
+      .eq("status", "open")
+      .eq("is_public", true)
+      .is("deleted_at", null)
+      .single(),
+  ]);
 
-  // Try to find candidate by user_id if user record exists
-  if (userData) {
+  let candidate = candidateByEmailResult.data;
+
+  // If we have a user record but no candidate yet, try by user_id
+  if (userResult.data && !candidate) {
     const { data: candidateByUserId } = await supabase
       .from("candidates")
-      .select(
-        `
-        id,
-        primary_position,
-        secondary_position,
-        secondary_positions,
-        positions_held,
-        position_category,
-        preferred_regions,
-        preferred_contract_types,
-        desired_salary_min,
-        desired_salary_max,
-        years_experience,
-        has_stcw,
-        has_eng1,
-        yacht_primary_position,
-        yacht_secondary_positions,
-        household_primary_position,
-        household_secondary_positions
-      `
-      )
-      .eq("user_id", userData.id)
+      .select(candidateFields)
+      .eq("user_id", userResult.data.id)
       .maybeSingle();
 
-    if (candidateByUserId) {
-      candidate = candidateByUserId;
-    }
-  }
-
-  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
-  if (!candidate && user.email) {
-    const { data: candidateByEmail } = await supabase
-      .from("candidates")
-      .select(
-        `
-        id,
-        primary_position,
-        secondary_position,
-        secondary_positions,
-        positions_held,
-        position_category,
-        preferred_regions,
-        preferred_contract_types,
-        desired_salary_min,
-        desired_salary_max,
-        years_experience,
-        has_stcw,
-        has_eng1,
-        yacht_primary_position,
-        yacht_secondary_positions,
-        household_primary_position,
-        household_secondary_positions
-      `
-      )
-      .eq("email", user.email)
-      .maybeSingle();
-
-    if (candidateByEmail) {
-      candidate = candidateByEmail;
-    }
+    candidate = candidateByUserId;
   }
 
   if (!candidate) return null;
 
-  // Get job
-  const { data: job } = await supabase
-    .from("jobs")
-    .select(
-      `
-      id,
-      title,
-      vessel_name,
-      vessel_type,
-      vessel_size_meters,
-      primary_region,
-      contract_type,
-      rotation_schedule,
-      start_date,
-      salary_min,
-      salary_max,
-      salary_currency,
-      salary_period,
-      holiday_days,
-      benefits,
-      requirements_text,
-      requirements,
-      is_urgent,
-      apply_deadline,
-      applications_count,
-      views_count,
-      published_at,
-      created_at
-    `
-    )
-    .eq("id", jobId)
-    .eq("status", "open")
-    .eq("is_public", true)
-    .is("deleted_at", null)
-    .single();
-
+  const job = jobResult.data;
   if (!job) return null;
 
-  // Check if applied
-  const { data: application } = await supabase
-    .from("applications")
-    .select("id")
-    .eq("candidate_id", candidate.id)
-    .eq("job_id", jobId)
-    .maybeSingle();
-
-  // Check if saved
-  const { data: savedJob } = await supabase
-    .from("saved_jobs")
-    .select("id")
-    .eq("candidate_id", candidate.id)
-    .eq("job_id", jobId)
-    .maybeSingle();
-
-  // Increment view count
-  await supabase.rpc("increment_job_views", { p_job_id: jobId });
+  // PERFORMANCE: Run application check, saved check, and view increment in parallel
+  const [applicationResult, savedJobResult] = await Promise.all([
+    supabase
+      .from("applications")
+      .select("id")
+      .eq("candidate_id", candidate.id)
+      .eq("job_id", jobId)
+      .maybeSingle(),
+    supabase
+      .from("saved_jobs")
+      .select("id")
+      .eq("candidate_id", candidate.id)
+      .eq("job_id", jobId)
+      .maybeSingle(),
+    // Fire-and-forget view increment (don't await result)
+    supabase.rpc("increment_job_views", { p_job_id: jobId }),
+  ]);
 
   // Calculate match score - now returns both score and matchType
   const { score: matchScore, matchType } = calculateMatchScore(job as any, candidate as any);
@@ -695,8 +628,8 @@ export async function getJobById(
     // Only set matchScore if position is relevant (not "none")
     matchScore: matchType !== "none" ? matchScore : null,
     matchType,
-    hasApplied: !!application,
-    isSaved: !!savedJob,
+    hasApplied: !!applicationResult.data,
+    isSaved: !!savedJobResult.data,
   };
 }
 

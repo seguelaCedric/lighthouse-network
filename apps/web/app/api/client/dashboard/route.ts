@@ -41,35 +41,36 @@ export async function GET() {
       .eq("client_id", session.clientId)
       .in("status", ["open", "shortlisting", "interviewing"]);
 
-    // Get total shortlisted candidates across all jobs
+    // Get total shortlisted candidates across all jobs (limited query for job IDs)
     const { data: jobs } = await supabase
       .from("jobs")
       .select("id")
-      .eq("client_id", session.clientId);
+      .eq("client_id", session.clientId)
+      .limit(100); // Limit to prevent unbounded queries
 
     const jobIds = jobs?.map((j) => j.id) || [];
 
     let shortlistedCount = 0;
     let interviewsScheduled = 0;
 
-    if (jobIds.length > 0) {
-      const { count: shortlisted } = await supabase
-        .from("submissions")
-        .select("id", { count: "exact", head: true })
-        .in("job_id", jobIds)
-        .eq("status", "shortlisted");
-
-      shortlistedCount = shortlisted || 0;
-
-      // Get scheduled interviews
-      const { count: interviews } = await supabase
+    // Run these counts in parallel
+    const [shortlistedResult, interviewsResult] = await Promise.all([
+      jobIds.length > 0
+        ? supabase
+            .from("submissions")
+            .select("id", { count: "exact", head: true })
+            .in("job_id", jobIds)
+            .eq("status", "shortlisted")
+        : Promise.resolve({ count: 0 }),
+      supabase
         .from("interview_requests")
         .select("id", { count: "exact", head: true })
         .eq("client_id", session.clientId)
-        .eq("status", "scheduled");
+        .eq("status", "scheduled"),
+    ]);
 
-      interviewsScheduled = interviews || 0;
-    }
+    shortlistedCount = shortlistedResult.count || 0;
+    interviewsScheduled = interviewsResult.count || 0;
 
     // Get active searches with details
     const { data: activeJobs } = await supabase
@@ -88,29 +89,61 @@ export async function GET() {
       .order("created_at", { ascending: false })
       .limit(5);
 
-    // Get submission stats for active jobs
-    const activeSearchesWithStats = await Promise.all(
-      (activeJobs || []).map(async (job) => {
-        const { data: submissions } = await supabase
-          .from("submissions")
-          .select("id, status")
-          .eq("job_id", job.id);
+    // Get submission stats for active jobs using efficient COUNT queries
+    const activeJobIds = (activeJobs || []).map((j) => j.id);
 
-        return {
-          id: job.id,
-          position: job.title,
-          status: job.status,
-          urgent: job.is_urgent,
-          daysOpen: Math.floor(
-            (Date.now() - new Date(job.created_at).getTime()) /
-              (1000 * 60 * 60 * 24)
-          ),
-          candidatesInPipeline: submissions?.length || 0,
-          shortlisted:
-            submissions?.filter((s) => s.status === "shortlisted").length || 0,
-        };
-      })
-    );
+    // Batch fetch submission counts instead of N+1 queries
+    let submissionStats: Record<string, { total: number; shortlisted: number }> = {};
+
+    if (activeJobIds.length > 0) {
+      // Get total submissions per job and shortlisted count in parallel
+      const [totalCountsResult, shortlistedCountsResult] = await Promise.all([
+        // Get total submissions per job
+        Promise.all(
+          activeJobIds.map(async (jobId) => {
+            const { count } = await supabase
+              .from("submissions")
+              .select("id", { count: "exact", head: true })
+              .eq("job_id", jobId);
+            return { jobId, count: count ?? 0 };
+          })
+        ),
+        // Get shortlisted count per job
+        Promise.all(
+          activeJobIds.map(async (jobId) => {
+            const { count } = await supabase
+              .from("submissions")
+              .select("id", { count: "exact", head: true })
+              .eq("job_id", jobId)
+              .eq("status", "shortlisted");
+            return { jobId, count: count ?? 0 };
+          })
+        ),
+      ]);
+
+      // Build stats map
+      totalCountsResult.forEach(({ jobId, count }) => {
+        submissionStats[jobId] = { total: count, shortlisted: 0 };
+      });
+      shortlistedCountsResult.forEach(({ jobId, count }) => {
+        if (submissionStats[jobId]) {
+          submissionStats[jobId].shortlisted = count;
+        }
+      });
+    }
+
+    const activeSearchesWithStats = (activeJobs || []).map((job) => ({
+      id: job.id,
+      position: job.title,
+      status: job.status,
+      urgent: job.is_urgent,
+      daysOpen: Math.floor(
+        (Date.now() - new Date(job.created_at).getTime()) /
+          (1000 * 60 * 60 * 24)
+      ),
+      candidatesInPipeline: submissionStats[job.id]?.total || 0,
+      shortlisted: submissionStats[job.id]?.shortlisted || 0,
+    }));
 
     // Get recent shortlisted candidates
     const { data: recentShortlisted } = await supabase

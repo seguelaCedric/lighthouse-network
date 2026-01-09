@@ -6,6 +6,52 @@ import { syncCandidateUpdate, syncDocumentUpload } from "@/lib/vincere/sync-serv
 import type { Candidate } from "../../../../../packages/database/types";
 
 /**
+ * Helper function to get candidate ID from authenticated user
+ * This consolidates the 3-tier lookup logic (user_id -> email fallback)
+ * to avoid repeating it in every server action
+ */
+async function getCandidateIdFromAuth(): Promise<{ candidateId: string | null; error?: string }> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (!user || authError) {
+    return { candidateId: null, error: "Not authenticated" };
+  }
+
+  // PERFORMANCE: Run user and candidate-by-email lookups in parallel
+  const [userResult, candidateByEmailResult] = await Promise.all([
+    supabase.from("users").select("id").eq("auth_id", user.id).maybeSingle(),
+    user.email
+      ? supabase.from("candidates").select("id").eq("email", user.email).maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
+
+  // Check email lookup first (most common for Vincere imports)
+  if (candidateByEmailResult.data) {
+    return { candidateId: candidateByEmailResult.data.id };
+  }
+
+  // If we have a user record, try by user_id
+  if (userResult.data) {
+    const { data: candidateByUserId } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("user_id", userResult.data.id)
+      .maybeSingle();
+
+    if (candidateByUserId) {
+      return { candidateId: candidateByUserId.id };
+    }
+  }
+
+  return { candidateId: null, error: "Candidate not found" };
+}
+
+/**
  * Structured location data from Google Places or manual entry
  */
 export interface LocationData {
@@ -126,15 +172,6 @@ export async function getProfileData(): Promise<ProfileData | null> {
     return null;
   }
 
-  // Get user record (auth_id -> user_id mapping)
-  const { data: userData, error: userError } = await supabase
-    .from("users")
-    .select("id")
-    .eq("auth_id", user.id)
-    .maybeSingle();
-
-  console.log("[getProfileData] Users table lookup - userData:", userData?.id, "error:", userError?.message);
-
   const candidateFields = `
     id,
     first_name,
@@ -188,39 +225,30 @@ export async function getProfileData(): Promise<ProfileData | null> {
     job_search_notes
   `;
 
-  let candidate = null;
-  let candidateError = null;
-
-  // Try to find candidate by user_id if user record exists
-  if (userData) {
-    const result = await supabase
-      .from("candidates")
-      .select(candidateFields)
-      .eq("user_id", userData.id)
-      .maybeSingle();
-    
-    candidate = result.data;
-    candidateError = result.error;
-    console.log("[getProfileData] Candidate lookup by user_id - found:", !!candidate, "error:", candidateError?.message);
-  }
-
-  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
-  if (!candidate && user.email) {
-    const result = await supabase
+  // PERFORMANCE: Run user and candidate-by-email lookups in parallel
+  const [userResult, candidateByEmailResult] = await Promise.all([
+    supabase.from("users").select("id").eq("auth_id", user.id).maybeSingle(),
+    supabase
       .from("candidates")
       .select(candidateFields)
       .eq("email", user.email)
-      .maybeSingle();
-    
-    candidate = result.data;
-    candidateError = result.error;
-    console.log("[getProfileData] Candidate lookup by email - found:", !!candidate, "error:", candidateError?.message);
-  }
+      .maybeSingle(),
+  ]);
 
-  // Check for errors (excluding PGRST116 which means no rows found)
-  if (candidateError && candidateError.code && candidateError.code !== "PGRST116") {
-    console.error("[getProfileData] Error fetching candidate:", candidateError);
-    return null;
+  console.log("[getProfileData] Parallel lookup - userData:", userResult.data?.id, "candidateByEmail:", !!candidateByEmailResult.data);
+
+  let candidate = candidateByEmailResult.data;
+
+  // If we have a user record but no candidate yet, try by user_id
+  if (userResult.data && !candidate) {
+    const result = await supabase
+      .from("candidates")
+      .select(candidateFields)
+      .eq("user_id", userResult.data.id)
+      .maybeSingle();
+
+    candidate = result.data;
+    console.log("[getProfileData] Candidate lookup by user_id - found:", !!candidate);
   }
 
   if (!candidate) {
@@ -230,38 +258,41 @@ export async function getProfileData(): Promise<ProfileData | null> {
 
   console.log("[getProfileData] Success - candidate ID:", candidate.id);
 
-  // Get certifications
-  const { data: certifications } = await supabase
-    .from("candidate_certifications")
-    .select(
+  // PERFORMANCE: Run certifications and documents queries in parallel
+  const [certificationsResult, documentsResult] = await Promise.all([
+    supabase
+      .from("candidate_certifications")
+      .select(
+        `
+        id,
+        certification_type,
+        custom_name,
+        expiry_date,
+        has_certification
       `
-      id,
-      certification_type,
-      custom_name,
-      expiry_date,
-      has_certification
-    `
-    )
-    .eq("candidate_id", candidate.id)
-    .eq("has_certification", true)
-    .order("expiry_date", { ascending: true });
+      )
+      .eq("candidate_id", candidate.id)
+      .eq("has_certification", true)
+      .order("expiry_date", { ascending: true }),
+    supabase
+      .from("documents")
+      .select(
+        `
+        id,
+        name,
+        type,
+        file_size,
+        created_at,
+        file_url
+      `
+      )
+      .eq("entity_id", candidate.id)
+      .eq("entity_type", "candidate")
+      .order("created_at", { ascending: false }),
+  ]);
 
-  // Get documents
-  const { data: documents } = await supabase
-    .from("documents")
-    .select(
-      `
-      id,
-      name,
-      type,
-      file_size,
-      created_at,
-      file_url
-    `
-    )
-    .eq("entity_id", candidate.id)
-    .eq("entity_type", "candidate")
-    .order("created_at", { ascending: false });
+  const certifications = certificationsResult.data;
+  const documents = documentsResult.data;
 
   return {
     candidate: {
@@ -353,54 +384,13 @@ export async function updatePersonalInfo(data: {
   secondNationality?: string;
   currentLocation?: LocationData | null;
 }): Promise<{ success: boolean; error?: string }> {
+  // Use shared utility to get candidate ID
+  const { candidateId, error: lookupError } = await getCandidateIdFromAuth();
+  if (!candidateId) {
+    return { success: false, error: lookupError || "Candidate not found" };
+  }
+
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { success: false, error: "Not authenticated" };
-  }
-
-  // Get user record (auth_id -> user_id mapping)
-  const { data: userData } = await supabase
-    .from("users")
-    .select("id")
-    .eq("auth_id", user.id)
-    .maybeSingle();
-
-  let candidate = null;
-
-  // Try to find candidate by user_id if user record exists
-  if (userData) {
-    const { data: candidateByUserId } = await supabase
-      .from("candidates")
-      .select("id")
-      .eq("user_id", userData.id)
-      .maybeSingle();
-
-    if (candidateByUserId) {
-      candidate = candidateByUserId;
-    }
-  }
-
-  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
-  if (!candidate && user.email) {
-    const { data: candidateByEmail } = await supabase
-      .from("candidates")
-      .select("id")
-      .eq("email", user.email)
-      .maybeSingle();
-
-    if (candidateByEmail) {
-      candidate = candidateByEmail;
-    }
-  }
-
-  if (!candidate) {
-    return { success: false, error: "Candidate not found" };
-  }
 
   const updateData: Record<string, unknown> = {
     first_name: data.firstName,
@@ -423,7 +413,7 @@ export async function updatePersonalInfo(data: {
   const { error } = await supabase
     .from("candidates")
     .update(updateData)
-    .eq("id", candidate.id);
+    .eq("id", candidateId);
 
   if (error) {
     console.error("Error updating personal info:", error);
@@ -447,9 +437,14 @@ export async function updatePersonalInfo(data: {
   if (data.currentLocation) {
     syncPayload.current_location = data.currentLocation;
   }
-  console.log("[updatePersonalInfo] Syncing to Vincere with phone:", data.phone, "syncPayload.phone:", syncPayload.phone);
-  syncCandidateUpdate(candidate.id, syncPayload)
-    .catch((err) => console.error("Vincere sync failed for personal info update:", err));
+
+  // Sync to Vincere - await to ensure completion before server action returns
+  try {
+    const syncResult = await syncCandidateUpdate(candidateId, syncPayload);
+    console.log(`[updatePersonalInfo] Vincere sync completed for ${candidateId}:`, syncResult.success ? 'success' : syncResult.error);
+  } catch (err) {
+    console.error("[updatePersonalInfo] Vincere sync failed:", err);
+  }
 
   revalidatePath("/crew/profile/edit");
   revalidatePath("/crew/dashboard");
@@ -470,54 +465,13 @@ export async function updateProfessionalDetails(data: {
   secondaryLicense?: string;
   jobSearchNotes?: string;
 }): Promise<{ success: boolean; error?: string }> {
+  // Use shared utility to get candidate ID
+  const { candidateId, error: lookupError } = await getCandidateIdFromAuth();
+  if (!candidateId) {
+    return { success: false, error: lookupError || "Candidate not found" };
+  }
+
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { success: false, error: "Not authenticated" };
-  }
-
-  // Get user record (auth_id -> user_id mapping)
-  const { data: userData } = await supabase
-    .from("users")
-    .select("id")
-    .eq("auth_id", user.id)
-    .maybeSingle();
-
-  let candidate = null;
-
-  // Try to find candidate by user_id if user record exists
-  if (userData) {
-    const { data: candidateByUserId } = await supabase
-      .from("candidates")
-      .select("id")
-      .eq("user_id", userData.id)
-      .maybeSingle();
-
-    if (candidateByUserId) {
-      candidate = candidateByUserId;
-    }
-  }
-
-  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
-  if (!candidate && user.email) {
-    const { data: candidateByEmail } = await supabase
-      .from("candidates")
-      .select("id")
-      .eq("email", user.email)
-      .maybeSingle();
-
-    if (candidateByEmail) {
-      candidate = candidateByEmail;
-    }
-  }
-
-  if (!candidate) {
-    return { success: false, error: "Candidate not found" };
-  }
 
   const updateData: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
@@ -536,7 +490,7 @@ export async function updateProfessionalDetails(data: {
   const { error } = await supabase
     .from("candidates")
     .update(updateData)
-    .eq("id", candidate.id);
+    .eq("id", candidateId);
 
   if (error) {
     console.error("Error updating professional details:", error);
@@ -556,8 +510,8 @@ export async function updateProfessionalDetails(data: {
   if (data.highestLicense !== undefined) syncData.highest_license = data.highestLicense;
   if (data.secondaryLicense !== undefined) syncData.second_license = data.secondaryLicense;
   // Note: job_search_notes is not part of Candidate type, so we skip it in sync
-  
-  syncCandidateUpdate(candidate.id, syncData).catch((err) => console.error("Vincere sync failed for professional details update:", err));
+
+  syncCandidateUpdate(candidateId, syncData).catch((err) => console.error("Vincere sync failed for professional details update:", err));
 
   revalidatePath("/crew/profile/edit");
   revalidatePath("/crew/dashboard");
@@ -578,54 +532,13 @@ export async function updateWorkPreferences(data: {
   salaryMax?: number;
   availableFrom?: string;
 }): Promise<{ success: boolean; error?: string }> {
+  // Use shared utility to get candidate ID
+  const { candidateId, error: lookupError } = await getCandidateIdFromAuth();
+  if (!candidateId) {
+    return { success: false, error: lookupError || "Candidate not found" };
+  }
+
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { success: false, error: "Not authenticated" };
-  }
-
-  // Get user record (auth_id -> user_id mapping)
-  const { data: userData } = await supabase
-    .from("users")
-    .select("id")
-    .eq("auth_id", user.id)
-    .maybeSingle();
-
-  let candidate = null;
-
-  // Try to find candidate by user_id if user record exists
-  if (userData) {
-    const { data: candidateByUserId } = await supabase
-      .from("candidates")
-      .select("id")
-      .eq("user_id", userData.id)
-      .maybeSingle();
-
-    if (candidateByUserId) {
-      candidate = candidateByUserId;
-    }
-  }
-
-  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
-  if (!candidate && user.email) {
-    const { data: candidateByEmail } = await supabase
-      .from("candidates")
-      .select("id")
-      .eq("email", user.email)
-      .maybeSingle();
-
-    if (candidateByEmail) {
-      candidate = candidateByEmail;
-    }
-  }
-
-  if (!candidate) {
-    return { success: false, error: "Candidate not found" };
-  }
 
   const updateData: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
@@ -644,7 +557,7 @@ export async function updateWorkPreferences(data: {
   const { error } = await supabase
     .from("candidates")
     .update(updateData)
-    .eq("id", candidate.id);
+    .eq("id", candidateId);
 
   if (error) {
     console.error("Error updating work preferences:", error);
@@ -652,7 +565,7 @@ export async function updateWorkPreferences(data: {
   }
 
   // Sync to Vincere (fire-and-forget)
-  syncCandidateUpdate(candidate.id, {
+  syncCandidateUpdate(candidateId, {
     preferred_yacht_types: data.preferredYachtTypes,
     preferred_yacht_size_min: data.preferredYachtSizeMin,
     preferred_yacht_size_max: data.preferredYachtSizeMax,
@@ -681,54 +594,13 @@ export async function updateSpecialCircumstances(data: {
   partnerName?: string;
   partnerPosition?: string;
 }): Promise<{ success: boolean; error?: string }> {
+  // Use shared utility to get candidate ID
+  const { candidateId, error: lookupError } = await getCandidateIdFromAuth();
+  if (!candidateId) {
+    return { success: false, error: lookupError || "Candidate not found" };
+  }
+
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { success: false, error: "Not authenticated" };
-  }
-
-  // Get user record (auth_id -> user_id mapping)
-  const { data: userData } = await supabase
-    .from("users")
-    .select("id")
-    .eq("auth_id", user.id)
-    .maybeSingle();
-
-  let candidate = null;
-
-  // Try to find candidate by user_id if user record exists
-  if (userData) {
-    const { data: candidateByUserId } = await supabase
-      .from("candidates")
-      .select("id")
-      .eq("user_id", userData.id)
-      .maybeSingle();
-
-    if (candidateByUserId) {
-      candidate = candidateByUserId;
-    }
-  }
-
-  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
-  if (!candidate && user.email) {
-    const { data: candidateByEmail } = await supabase
-      .from("candidates")
-      .select("id")
-      .eq("email", user.email)
-      .maybeSingle();
-
-    if (candidateByEmail) {
-      candidate = candidateByEmail;
-    }
-  }
-
-  if (!candidate) {
-    return { success: false, error: "Candidate not found" };
-  }
 
   const updateData: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
@@ -745,7 +617,7 @@ export async function updateSpecialCircumstances(data: {
   const { error } = await supabase
     .from("candidates")
     .update(updateData)
-    .eq("id", candidate.id);
+    .eq("id", candidateId);
 
   if (error) {
     console.error("Error updating special circumstances:", error);
@@ -753,7 +625,7 @@ export async function updateSpecialCircumstances(data: {
   }
 
   // Sync to Vincere (fire-and-forget)
-  syncCandidateUpdate(candidate.id, {
+  syncCandidateUpdate(candidateId, {
     is_smoker: data.isSmoker,
     has_visible_tattoos: data.hasTattoos,
     tattoo_description: data.tattooDescription,
@@ -781,54 +653,13 @@ export async function updateCertificationStatus(data: {
   hasB1B2?: boolean;
   b1b2Expiry?: string;
 }): Promise<{ success: boolean; error?: string }> {
+  // Use shared utility to get candidate ID
+  const { candidateId, error: lookupError } = await getCandidateIdFromAuth();
+  if (!candidateId) {
+    return { success: false, error: lookupError || "Candidate not found" };
+  }
+
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { success: false, error: "Not authenticated" };
-  }
-
-  // Get user record (auth_id -> user_id mapping)
-  const { data: userData } = await supabase
-    .from("users")
-    .select("id")
-    .eq("auth_id", user.id)
-    .maybeSingle();
-
-  let candidate = null;
-
-  // Try to find candidate by user_id if user record exists
-  if (userData) {
-    const { data: candidateByUserId } = await supabase
-      .from("candidates")
-      .select("id")
-      .eq("user_id", userData.id)
-      .maybeSingle();
-
-    if (candidateByUserId) {
-      candidate = candidateByUserId;
-    }
-  }
-
-  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
-  if (!candidate && user.email) {
-    const { data: candidateByEmail } = await supabase
-      .from("candidates")
-      .select("id")
-      .eq("email", user.email)
-      .maybeSingle();
-
-    if (candidateByEmail) {
-      candidate = candidateByEmail;
-    }
-  }
-
-  if (!candidate) {
-    return { success: false, error: "Candidate not found" };
-  }
 
   const updateData: Record<string, unknown> = {
     updated_at: new Date().toISOString(),
@@ -846,7 +677,7 @@ export async function updateCertificationStatus(data: {
   const { error } = await supabase
     .from("candidates")
     .update(updateData)
-    .eq("id", candidate.id);
+    .eq("id", candidateId);
 
   if (error) {
     console.error("Error updating certification status:", error);
@@ -854,7 +685,7 @@ export async function updateCertificationStatus(data: {
   }
 
   // Sync to Vincere (fire-and-forget)
-  syncCandidateUpdate(candidate.id, {
+  syncCandidateUpdate(candidateId, {
     has_stcw: data.hasStcw,
     stcw_expiry: data.stcwExpiry,
     has_eng1: data.hasEng1,
@@ -880,59 +711,18 @@ export async function addCertification(data: {
   issueDate?: string;
   expiryDate?: string;
 }): Promise<{ success: boolean; certificationId?: string; error?: string }> {
+  // Use shared utility to get candidate ID
+  const { candidateId, error: lookupError } = await getCandidateIdFromAuth();
+  if (!candidateId) {
+    return { success: false, error: lookupError || "Candidate not found" };
+  }
+
   const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { success: false, error: "Not authenticated" };
-  }
-
-  // Get user record (auth_id -> user_id mapping)
-  const { data: userData } = await supabase
-    .from("users")
-    .select("id")
-    .eq("auth_id", user.id)
-    .maybeSingle();
-
-  let candidate = null;
-
-  // Try to find candidate by user_id if user record exists
-  if (userData) {
-    const { data: candidateByUserId } = await supabase
-      .from("candidates")
-      .select("id")
-      .eq("user_id", userData.id)
-      .maybeSingle();
-
-    if (candidateByUserId) {
-      candidate = candidateByUserId;
-    }
-  }
-
-  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
-  if (!candidate && user.email) {
-    const { data: candidateByEmail } = await supabase
-      .from("candidates")
-      .select("id")
-      .eq("email", user.email)
-      .maybeSingle();
-
-    if (candidateByEmail) {
-      candidate = candidateByEmail;
-    }
-  }
-
-  if (!candidate) {
-    return { success: false, error: "Candidate not found" };
-  }
 
   const { data: certification, error } = await supabase
     .from("candidate_certifications")
     .insert({
-      candidate_id: candidate.id,
+      candidate_id: candidateId,
       certification_type: "other",
       custom_name: data.name,
       expiry_date: data.expiryDate || null,
@@ -1034,54 +824,13 @@ export async function updateProfilePhoto(formData: FormData): Promise<{
   photoUrl?: string;
   error?: string
 }> {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { success: false, error: "Not authenticated" };
-  }
-
-  // Get user record (auth_id -> user_id mapping)
-  const { data: userData } = await supabase
-    .from("users")
-    .select("id")
-    .eq("auth_id", user.id)
-    .maybeSingle();
-
-  let candidateId: string | null = null;
-
-  // Try to find candidate by user_id if user record exists
-  if (userData) {
-    const { data: candidateByUserId } = await supabase
-      .from("candidates")
-      .select("id")
-      .eq("user_id", userData.id)
-      .maybeSingle();
-
-    if (candidateByUserId) {
-      candidateId = candidateByUserId.id;
-    }
-  }
-
-  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
-  if (!candidateId && user.email) {
-    const { data: candidateByEmail } = await supabase
-      .from("candidates")
-      .select("id")
-      .eq("email", user.email)
-      .maybeSingle();
-
-    if (candidateByEmail) {
-      candidateId = candidateByEmail.id;
-    }
-  }
-
+  // Use shared utility to get candidate ID
+  const { candidateId, error: lookupError } = await getCandidateIdFromAuth();
   if (!candidateId) {
-    return { success: false, error: "Candidate not found" };
+    return { success: false, error: lookupError || "Candidate not found" };
   }
+
+  const supabase = await createClient();
 
   const file = formData.get("photo") as File;
   if (!file) {
@@ -1125,31 +874,14 @@ export async function updateProfilePhoto(formData: FormData): Promise<{
 
   const photoUrl = urlData.publicUrl;
 
-  // Update candidate record - try user_id first, then email fallback
-  let updateError = null;
-
-  if (userData) {
-    const { error } = await supabase
-      .from("candidates")
-      .update({
-        avatar_url: photoUrl,
-        updated_at: new Date().toISOString()
-      })
-      .eq("user_id", userData.id);
-    updateError = error;
-  }
-
-  // If user_id update failed or no userData, try by candidate id
-  if (updateError || !userData) {
-    const { error } = await supabase
-      .from("candidates")
-      .update({
-        avatar_url: photoUrl,
-        updated_at: new Date().toISOString()
-      })
-      .eq("id", candidateId);
-    updateError = error;
-  }
+  // Update candidate record using the candidate ID we already have
+  const { error: updateError } = await supabase
+    .from("candidates")
+    .update({
+      avatar_url: photoUrl,
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", candidateId);
 
   if (updateError) {
     console.error("Error updating candidate avatar:", updateError);
@@ -1183,48 +915,13 @@ export async function updateCertificationChecklist(data: {
     customName?: string;
   }>;
 }): Promise<{ success: boolean; error?: string }> {
+  // Use shared utility to get candidate ID
+  const { candidateId, error: lookupError } = await getCandidateIdFromAuth();
+  if (!candidateId) {
+    return { success: false, error: lookupError || "Candidate not found" };
+  }
+
   const supabase = await createClient();
-
-  // Get authenticated user
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "Not authenticated" };
-
-  // Get user record (auth_id -> user_id mapping)
-  const { data: userData } = await supabase
-    .from("users")
-    .select("id")
-    .eq("auth_id", user.id)
-    .maybeSingle();
-
-  let candidate = null;
-
-  // Try to find candidate by user_id if user record exists
-  if (userData) {
-    const { data: candidateByUserId } = await supabase
-      .from("candidates")
-      .select("id")
-      .eq("user_id", userData.id)
-      .maybeSingle();
-
-    if (candidateByUserId) {
-      candidate = candidateByUserId;
-    }
-  }
-
-  // Fallback: Try to find candidate by email (for Vincere-imported candidates)
-  if (!candidate && user.email) {
-    const { data: candidateByEmail } = await supabase
-      .from("candidates")
-      .select("id")
-      .eq("email", user.email)
-      .maybeSingle();
-
-    if (candidateByEmail) {
-      candidate = candidateByEmail;
-    }
-  }
-
-  if (!candidate) return { success: false, error: "Candidate not found" };
 
   // Upsert certifications (delete unchecked, upsert checked)
   for (const cert of data.certifications) {
@@ -1233,14 +930,14 @@ export async function updateCertificationChecklist(data: {
       await supabase
         .from("candidate_certifications")
         .delete()
-        .eq("candidate_id", candidate.id)
+        .eq("candidate_id", candidateId)
         .eq("certification_type", cert.type);
     } else {
       // Upsert if checked
       await supabase
         .from("candidate_certifications")
         .upsert({
-          candidate_id: candidate.id,
+          candidate_id: candidateId,
           certification_type: cert.type,
           has_certification: true,
           expiry_date: cert.expiryDate || null,

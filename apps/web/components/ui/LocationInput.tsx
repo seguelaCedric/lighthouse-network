@@ -22,10 +22,59 @@ interface LocationInputProps {
   disabled?: boolean;
 }
 
-// Declare google types for the new Places API
+// Types for the new Places API (New)
+interface PlacePrediction {
+  placeId: string;
+  text: {
+    text: string;
+  };
+  structuredFormat?: {
+    mainText: { text: string };
+    secondaryText?: { text: string };
+  };
+}
+
+interface AutocompleteSuggestion {
+  placePrediction: PlacePrediction;
+}
+
+interface Place {
+  id: string;
+  displayName?: string;
+  formattedAddress?: string;
+  addressComponents?: Array<{
+    longText: string;
+    shortText: string;
+    types: string[];
+  }>;
+  location?: {
+    lat: () => number;
+    lng: () => number;
+  };
+}
+
+// Declare google types
 declare global {
   interface Window {
-    google: typeof google;
+    google: {
+      maps: {
+        places: {
+          AutocompleteSuggestion: {
+            fetchAutocompleteSuggestions: (request: {
+              input: string;
+              includedPrimaryTypes?: string[];
+              sessionToken?: unknown;
+            }) => Promise<{ suggestions: AutocompleteSuggestion[] }>;
+          };
+          Place: {
+            new (options: { id: string }): Place;
+            fetchFields: (options: { fields: string[] }) => Promise<Place>;
+          };
+          AutocompleteSessionToken: new () => unknown;
+        };
+        importLibrary: (name: string) => Promise<unknown>;
+      };
+    };
     initGooglePlaces?: () => void;
   }
 }
@@ -56,7 +105,7 @@ function loadGoogleMaps(): Promise<void> {
     };
 
     const script = document.createElement("script");
-    // Use loading=async for better performance as Google recommends
+    // Use the new Places API with the places library
     script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async&callback=initGooglePlaces`;
     script.async = true;
     script.defer = true;
@@ -81,22 +130,22 @@ export function LocationInput({
   const [isLoading, setIsLoading] = React.useState(true);
   const [isInitialized, setIsInitialized] = React.useState(false);
   const [useFallback, setUseFallback] = React.useState(false);
-  const [suggestions, setSuggestions] = React.useState<google.maps.places.AutocompletePrediction[]>([]);
+  const [suggestions, setSuggestions] = React.useState<AutocompleteSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = React.useState(false);
   const [highlightedIndex, setHighlightedIndex] = React.useState(0);
 
   const inputRef = React.useRef<HTMLInputElement>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
-  const autocompleteServiceRef = React.useRef<google.maps.places.AutocompleteService | null>(null);
-  const placesServiceRef = React.useRef<google.maps.places.PlacesService | null>(null);
-  const sessionTokenRef = React.useRef<google.maps.places.AutocompleteSessionToken | null>(null);
+  const sessionTokenRef = React.useRef<unknown>(null);
+  const placesLibraryRef = React.useRef<typeof window.google.maps.places | null>(null);
+  const selectionMadeRef = React.useRef(false);
 
   // Sync input value with prop
   React.useEffect(() => {
     setInputValue(value?.displayName || "");
   }, [value?.displayName]);
 
-  // Initialize Google Places
+  // Initialize Google Places (New API)
   React.useEffect(() => {
     let mounted = true;
 
@@ -114,15 +163,12 @@ export function LocationInput({
 
         if (!mounted) return;
 
-        // Create services
-        autocompleteServiceRef.current = new window.google.maps.places.AutocompleteService();
-
-        // Create a dummy div for PlacesService (required but not displayed)
-        const dummyDiv = document.createElement("div");
-        placesServiceRef.current = new window.google.maps.places.PlacesService(dummyDiv);
+        // Import the places library (new API style)
+        const placesLib = await window.google.maps.importLibrary("places") as typeof window.google.maps.places;
+        placesLibraryRef.current = placesLib;
 
         // Create session token for billing optimization
-        sessionTokenRef.current = new window.google.maps.places.AutocompleteSessionToken();
+        sessionTokenRef.current = new placesLib.AutocompleteSessionToken();
 
         setIsInitialized(true);
       } catch (err) {
@@ -156,29 +202,33 @@ export function LocationInput({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Fetch suggestions when input changes
-  const fetchSuggestions = React.useCallback((input: string) => {
-    if (!autocompleteServiceRef.current || !input.trim()) {
+  // Fetch suggestions using the new Places API
+  const fetchSuggestions = React.useCallback(async (input: string) => {
+    if (!placesLibraryRef.current || !input.trim()) {
       setSuggestions([]);
       return;
     }
 
-    autocompleteServiceRef.current.getPlacePredictions(
-      {
+    try {
+      const { AutocompleteSuggestion } = placesLibraryRef.current;
+
+      const response = await AutocompleteSuggestion.fetchAutocompleteSuggestions({
         input,
-        types: ["(cities)"],
-        sessionToken: sessionTokenRef.current || undefined,
-      },
-      (predictions, status) => {
-        if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
-          setSuggestions(predictions);
-          setShowSuggestions(true);
-          setHighlightedIndex(0);
-        } else {
-          setSuggestions([]);
-        }
+        includedPrimaryTypes: ["(cities)"],
+        sessionToken: sessionTokenRef.current,
+      });
+
+      if (response.suggestions) {
+        setSuggestions(response.suggestions);
+        setShowSuggestions(true);
+        setHighlightedIndex(0);
+      } else {
+        setSuggestions([]);
       }
-    );
+    } catch (err) {
+      console.warn("Autocomplete error:", err);
+      setSuggestions([]);
+    }
   }, []);
 
   // Debounce input changes
@@ -217,27 +267,52 @@ export function LocationInput({
     }, 300);
   };
 
-  const handleSelectPlace = (prediction: google.maps.places.AutocompletePrediction) => {
-    if (!placesServiceRef.current) return;
+  const handleSelectPlace = async (suggestion: AutocompleteSuggestion) => {
+    selectionMadeRef.current = true;
 
-    placesServiceRef.current.getDetails(
-      {
-        placeId: prediction.place_id,
-        fields: ["address_components", "geometry", "name"],
-        sessionToken: sessionTokenRef.current || undefined,
-      },
-      (place, status) => {
-        if (status === window.google.maps.places.PlacesServiceStatus.OK && place) {
-          const locationData = parseAddressComponents(place);
-          if (locationData) {
-            setInputValue(locationData.displayName);
-            onChange(locationData);
-          }
-        }
-        // Create new session token after selection (billing optimization)
-        sessionTokenRef.current = new window.google.maps.places.AutocompleteSessionToken();
-      }
-    );
+    // The text.text contains the full location string like "Fort Lauderdale, Florida, USA"
+    // We need to parse it to extract city, state, and country
+    const fullText = suggestion.placePrediction.text.text;
+    const parts = fullText.split(", ").map(p => p.trim());
+
+    // Parse based on number of parts:
+    // 2 parts: "City, Country" (e.g., "Monaco, Monaco")
+    // 3+ parts: "City, State/Region, Country" (e.g., "Fort Lauderdale, Florida, USA")
+    let city: string;
+    let state: string | undefined;
+    let country: string;
+
+    if (parts.length >= 3) {
+      city = parts[0];
+      state = parts[1];
+      country = parts[parts.length - 1];
+    } else if (parts.length === 2) {
+      city = parts[0];
+      country = parts[1];
+    } else {
+      city = fullText;
+      country = "";
+    }
+
+    // Use the full text as display name
+    const displayName = fullText;
+
+    const locationData: LocationData = {
+      displayName,
+      city,
+      state,
+      country,
+      countryCode: "", // We don't get this from autocomplete, Vincere will handle it
+    };
+
+    setInputValue(displayName);
+    onChange(locationData);
+
+    // Create new session token after selection (billing optimization)
+    if (placesLibraryRef.current) {
+      const { AutocompleteSessionToken } = placesLibraryRef.current;
+      sessionTokenRef.current = new AutocompleteSessionToken();
+    }
 
     setShowSuggestions(false);
     setSuggestions([]);
@@ -278,6 +353,13 @@ export function LocationInput({
   const handleBlur = () => {
     // Delay to allow click on suggestions
     setTimeout(() => {
+      // Skip reset if a selection was just made
+      if (selectionMadeRef.current) {
+        selectionMadeRef.current = false;
+        setShowSuggestions(false);
+        return;
+      }
+
       if (!useFallback && inputValue && (!value || inputValue !== value.displayName)) {
         setInputValue(value?.displayName || "");
       }
@@ -325,59 +407,62 @@ export function LocationInput({
       {/* Suggestions dropdown */}
       {showSuggestions && suggestions.length > 0 && (
         <ul className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-gray-200 bg-white py-1 shadow-lg">
-          {suggestions.map((suggestion, index) => (
-            <li
-              key={suggestion.place_id}
-              onClick={() => handleSelectPlace(suggestion)}
-              onMouseEnter={() => setHighlightedIndex(index)}
-              className={cn(
-                "cursor-pointer px-3 py-2 text-sm",
-                index === highlightedIndex ? "bg-gray-100" : "hover:bg-gray-50"
-              )}
-            >
-              <div className="font-medium">{suggestion.structured_formatting.main_text}</div>
-              <div className="text-gray-500 text-xs">
-                {suggestion.structured_formatting.secondary_text}
-              </div>
-            </li>
-          ))}
+          {suggestions.map((suggestion, index) => {
+            const mainText = suggestion.placePrediction.structuredFormat?.mainText?.text || suggestion.placePrediction.text.text;
+            const secondaryText = suggestion.placePrediction.structuredFormat?.secondaryText?.text;
+
+            return (
+              <li
+                key={suggestion.placePrediction.placeId}
+                onClick={() => handleSelectPlace(suggestion)}
+                onMouseEnter={() => setHighlightedIndex(index)}
+                className={cn(
+                  "cursor-pointer px-3 py-2 text-sm",
+                  index === highlightedIndex ? "bg-gray-100" : "hover:bg-gray-50"
+                )}
+              >
+                <div className="font-medium">{mainText}</div>
+                {secondaryText && (
+                  <div className="text-gray-500 text-xs">{secondaryText}</div>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
   );
 }
 
-function parseAddressComponents(
-  place: google.maps.places.PlaceResult
-): LocationData | null {
-  if (!place.address_components) return null;
+function parseNewPlaceResult(place: Place): LocationData | null {
+  if (!place.addressComponents) return null;
 
-  const components: Record<string, { long_name: string; short_name: string }> = {};
+  const components: Record<string, { longText: string; shortText: string }> = {};
 
-  for (const component of place.address_components) {
+  for (const component of place.addressComponents) {
     for (const type of component.types) {
       components[type] = {
-        long_name: component.long_name,
-        short_name: component.short_name,
+        longText: component.longText,
+        shortText: component.shortText,
       };
     }
   }
 
   // Get city - try locality first, then sublocality, then administrative_area_level_2
   const city =
-    components["locality"]?.long_name ||
-    components["sublocality"]?.long_name ||
-    components["administrative_area_level_2"]?.long_name ||
-    components["administrative_area_level_1"]?.long_name ||
+    components["locality"]?.longText ||
+    components["sublocality"]?.longText ||
+    components["administrative_area_level_2"]?.longText ||
+    components["administrative_area_level_1"]?.longText ||
     "";
 
   const state =
-    components["administrative_area_level_1"]?.short_name ||
-    components["administrative_area_level_1"]?.long_name ||
+    components["administrative_area_level_1"]?.shortText ||
+    components["administrative_area_level_1"]?.longText ||
     "";
 
-  const country = components["country"]?.long_name || "";
-  const countryCode = components["country"]?.short_name || "";
+  const country = components["country"]?.longText || "";
+  const countryCode = components["country"]?.shortText || "";
 
   if (!city || !country) return null;
 
@@ -393,8 +478,8 @@ function parseAddressComponents(
     state: state || undefined,
     country,
     countryCode,
-    latitude: place.geometry?.location?.lat(),
-    longitude: place.geometry?.location?.lng(),
+    latitude: place.location?.lat(),
+    longitude: place.location?.lng(),
   };
 }
 

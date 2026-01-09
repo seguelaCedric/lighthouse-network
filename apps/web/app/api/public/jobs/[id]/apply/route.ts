@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { applyToJobSchema } from "@/lib/validations/public-job";
 import { candidateHasCV } from "@/lib/utils/candidate-cv";
-import { shortlistCandidateOnJob } from "@/lib/vincere";
+import { syncJobApplication } from "@/lib/vincere/sync-service";
 
 /**
  * POST /api/public/jobs/[id]/apply
@@ -55,7 +55,7 @@ export async function POST(
     // Get candidate linked to this user
     const { data: candidate } = await supabase
       .from("candidates")
-      .select("id, first_name, last_name, email, external_id, created_at")
+      .select("id, first_name, last_name, email")
       .eq("user_id", userData.id)
       .single();
 
@@ -176,26 +176,19 @@ export async function POST(
       .eq("id", jobId)
       .then(() => {}, (err) => console.error("Failed to increment applications count:", err));
 
-    // Shortlist candidate on job in Vincere (fire and forget)
-    // Both candidate and job must have Vincere IDs (external_id) for this to work
-    if (candidate.external_id && job.external_id) {
-      const candidateVincereId = parseInt(candidate.external_id, 10);
-      const jobVincereId = parseInt(job.external_id, 10);
-
-      if (!isNaN(candidateVincereId) && !isNaN(jobVincereId)) {
-        shortlistCandidateOnJob(
-          jobVincereId,
-          candidateVincereId,
-          candidate.created_at || undefined
-        )
-          .then((result) => {
-            console.log(`[Vincere] Shortlisted candidate ${candidateVincereId} on job ${jobVincereId}:`, result);
-          })
-          .catch((err) => {
-            console.error(`[Vincere] Failed to shortlist candidate ${candidateVincereId} on job ${jobVincereId}:`, err);
-          });
-      }
-    }
+    // Sync application to Vincere (fire and forget)
+    // This will create the candidate in Vincere if they don't exist yet
+    syncJobApplication(candidate.id, jobId)
+      .then((result) => {
+        if (result.success) {
+          console.log(`[Vincere] Synced application for candidate ${candidate.id} to job ${jobId}`);
+        } else if (result.error) {
+          console.error(`[Vincere] Failed to sync application: ${result.error}`);
+        }
+      })
+      .catch((err: Error) => {
+        console.error(`[Vincere] Failed to sync application for candidate ${candidate.id}:`, err);
+      });
 
     // Create alert/notification for agency recruiters
     const { data: agencyUsers } = await supabase

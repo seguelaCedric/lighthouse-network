@@ -30,32 +30,34 @@ async function getNotificationCount(
     if (expiry <= ninetyDaysFromNow) count++;
   }
 
-  // Check other certifications (exclude STCW/ENG1 to avoid double counting)
-  const { data: certs } = await supabase
-    .from("candidate_certifications")
-    .select("id, certification_type, custom_name, expiry_date")
-    .eq("candidate_id", candidateId)
-    .eq("has_certification", true)
-    .not("expiry_date", "is", null)
-    .lte("expiry_date", ninetyDaysFromNow.toISOString().split("T")[0]);
+  // PERFORMANCE: Run both queries in parallel
+  const [certsResult, appCountResult] = await Promise.all([
+    // Check other certifications (exclude STCW/ENG1 to avoid double counting)
+    supabase
+      .from("candidate_certifications")
+      .select("id, certification_type, custom_name, expiry_date")
+      .eq("candidate_id", candidateId)
+      .eq("has_certification", true)
+      .not("expiry_date", "is", null)
+      .lte("expiry_date", ninetyDaysFromNow.toISOString().split("T")[0]),
+    // Count recent application status updates (placed/rejected)
+    supabase
+      .from("applications")
+      .select("id", { count: "exact", head: true })
+      .eq("candidate_id", candidateId)
+      .in("stage", ["placed", "rejected"])
+      .gte("updated_at", thirtyDaysAgo.toISOString()),
+  ]);
 
   // Filter out STCW/ENG1 duplicates
-  const otherCerts = (certs || []).filter((cert) => {
+  const otherCerts = (certsResult.data || []).filter((cert) => {
     const name = cert.custom_name || cert.certification_type;
     const nameLower = name.toLowerCase();
     return !nameLower.includes("stcw") && !nameLower.includes("eng1");
   });
   count += otherCerts.length;
 
-  // Count recent application status updates (placed/rejected)
-  const { count: appCount } = await supabase
-    .from("applications")
-    .select("id", { count: "exact", head: true })
-    .eq("candidate_id", candidateId)
-    .in("stage", ["placed", "rejected"])
-    .gte("updated_at", thirtyDaysAgo.toISOString());
-
-  count += appCount || 0;
+  count += appCountResult.count || 0;
 
   return count;
 }
@@ -76,40 +78,33 @@ export default async function CrewLayout({
     redirect("/auth/login?redirect=/crew/dashboard");
   }
 
-  // Get candidate profile - try multiple lookup strategies
-  // This handles both linked users and Vincere imports without user_id
-  let candidate = null;
+  // PERFORMANCE: Run both lookups in parallel instead of sequential
+  // This reduces 3 sequential queries to 2 parallel queries
+  const candidateFields =
+    "id, first_name, last_name, email, primary_position, avatar_url, availability_status, stcw_expiry, eng1_expiry";
 
-  // Strategy 1: Look up via users table -> candidates.user_id
-  const { data: userData } = await supabase
-    .from("users")
-    .select("id")
-    .eq("auth_id", user.id)
-    .maybeSingle();
+  const [userResult, candidateByEmailResult] = await Promise.all([
+    // Strategy 1: Look up via users table
+    supabase.from("users").select("id").eq("auth_id", user.id).maybeSingle(),
+    // Strategy 2: Look up candidate by email (for Vincere imports)
+    supabase
+      .from("candidates")
+      .select(candidateFields)
+      .eq("email", user.email)
+      .maybeSingle(),
+  ]);
 
-  if (userData) {
+  let candidate = candidateByEmailResult.data;
+
+  // If we have a user record, try to find candidate by user_id (more authoritative)
+  if (userResult.data && !candidate) {
     const { data: candidateByUserId } = await supabase
       .from("candidates")
-      .select(
-        "id, first_name, last_name, email, primary_position, avatar_url, availability_status, stcw_expiry, eng1_expiry"
-      )
-      .eq("user_id", userData.id)
+      .select(candidateFields)
+      .eq("user_id", userResult.data.id)
       .maybeSingle();
 
     candidate = candidateByUserId;
-  }
-
-  // Strategy 2: If not found by user_id, try by email (handles Vincere imports)
-  if (!candidate) {
-    const { data: candidateByEmail } = await supabase
-      .from("candidates")
-      .select(
-        "id, first_name, last_name, email, primary_position, avatar_url, availability_status, stcw_expiry, eng1_expiry"
-      )
-      .eq("email", user.email)
-      .maybeSingle();
-
-    candidate = candidateByEmail;
   }
 
   if (!candidate) {
@@ -118,7 +113,7 @@ export default async function CrewLayout({
     redirect("/auth/register?redirect=/crew/dashboard");
   }
 
-  // Get notification count
+  // Get notification count (runs after candidate is found, but uses parallel queries internally)
   const notificationCount = await getNotificationCount(
     supabase,
     candidate.id,

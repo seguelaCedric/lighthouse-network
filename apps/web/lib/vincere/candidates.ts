@@ -5,7 +5,7 @@
  */
 
 import { getVincereClient, VincereClient } from './client';
-import { VINCERE_FIELD_KEYS, VINCERE_INDUSTRY_IDS, VINCERE_SYSTEM_IDS } from './constants';
+import { VINCERE_FIELD_KEYS, VINCERE_INDUSTRY_IDS, VINCERE_SYSTEM_IDS, countryNameToISOCode } from './constants';
 
 /**
  * Vincere candidate from API
@@ -334,7 +334,16 @@ export async function updateCandidate(
 
   // Only make the API call if there's something to update
   if (Object.keys(payload).length > 0) {
-    await vincere.patch(`/candidate/${vincereId}`, payload);
+    console.log(`[updateCandidate] PATCH /candidate/${vincereId} with payload keys:`, Object.keys(payload));
+    try {
+      await vincere.patch(`/candidate/${vincereId}`, payload);
+      console.log(`[updateCandidate] PATCH success for candidate ${vincereId}`);
+    } catch (err) {
+      console.error(`[updateCandidate] PATCH FAILED for candidate ${vincereId}:`, err);
+      throw err;
+    }
+  } else {
+    console.log(`[updateCandidate] No payload to update for candidate ${vincereId}`);
   }
 }
 
@@ -552,15 +561,27 @@ export async function setCurrentLocation(
     addressParts.push(location.country);
     const address = addressParts.join(', ');
 
-    await vincere.put(`/candidate/${vincereId}/currentlocation`, {
+    // Convert country name to ISO code - handles localized names like "États-Unis" -> "US"
+    const countryCode = location.countryCode || countryNameToISOCode(location.country) || location.country;
+
+    console.log(`[setCurrentLocation] Location data received:`, JSON.stringify(location, null, 2));
+    console.log(`[setCurrentLocation] Country: "${location.country}" -> CountryCode: "${countryCode}"`);
+
+    const payload = {
       location_name: location.displayName,
       city: location.city,
       state: location.state || undefined,
-      country: location.countryCode || location.country, // Prefer country code (US) over full name
+      country: countryCode, // ISO code (US, FR, MC) for proper Vincere geocoding
       address: address,
       latitude: location.latitude,
       longitude: location.longitude,
-    });
+    };
+
+    console.log(`[setCurrentLocation] Sending to Vincere for candidate ${vincereId}:`, JSON.stringify(payload, null, 2));
+
+    await vincere.put(`/candidate/${vincereId}/currentlocation`, payload);
+
+    console.log(`[setCurrentLocation] Success for candidate ${vincereId}`);
   }
 }
 
