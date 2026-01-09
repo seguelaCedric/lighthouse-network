@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { applyToJobSchema } from "@/lib/validations/public-job";
 import { candidateHasCV } from "@/lib/utils/candidate-cv";
+import { shortlistCandidateOnJob } from "@/lib/vincere";
 
 /**
  * POST /api/public/jobs/[id]/apply
@@ -54,7 +55,7 @@ export async function POST(
     // Get candidate linked to this user
     const { data: candidate } = await supabase
       .from("candidates")
-      .select("id, first_name, last_name, email")
+      .select("id, first_name, last_name, email, external_id, created_at")
       .eq("user_id", userData.id)
       .single();
 
@@ -97,7 +98,7 @@ export async function POST(
     // Verify job exists, is public, and is open
     const { data: job, error: jobError } = await supabase
       .from("jobs")
-      .select("id, title, created_by_agency_id, is_public, status, apply_deadline")
+      .select("id, title, created_by_agency_id, is_public, status, apply_deadline, external_id")
       .eq("id", jobId)
       .single();
 
@@ -174,6 +175,27 @@ export async function POST(
       .update({ applications_count: (job as { applications_count?: number }).applications_count ?? 0 + 1 })
       .eq("id", jobId)
       .then(() => {}, (err) => console.error("Failed to increment applications count:", err));
+
+    // Shortlist candidate on job in Vincere (fire and forget)
+    // Both candidate and job must have Vincere IDs (external_id) for this to work
+    if (candidate.external_id && job.external_id) {
+      const candidateVincereId = parseInt(candidate.external_id, 10);
+      const jobVincereId = parseInt(job.external_id, 10);
+
+      if (!isNaN(candidateVincereId) && !isNaN(jobVincereId)) {
+        shortlistCandidateOnJob(
+          jobVincereId,
+          candidateVincereId,
+          candidate.created_at || undefined
+        )
+          .then((result) => {
+            console.log(`[Vincere] Shortlisted candidate ${candidateVincereId} on job ${jobVincereId}:`, result);
+          })
+          .catch((err) => {
+            console.error(`[Vincere] Failed to shortlist candidate ${candidateVincereId} on job ${jobVincereId}:`, err);
+          });
+      }
+    }
 
     // Create alert/notification for agency recruiters
     const { data: agencyUsers } = await supabase

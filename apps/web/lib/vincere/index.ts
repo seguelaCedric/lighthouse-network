@@ -97,11 +97,22 @@ export {
   getJobFieldValue,
   mapVincereToJob,
   searchJobs,
+  // Job application functions
+  shortlistCandidateOnJob,
+  addCandidateToJob,
+  updateApplicationStage,
+  removeCandidateFromJob,
+  VINCERE_APPLICATION_STAGES,
+  VINCERE_STAGE_NAMES,
+  VINCERE_DEFAULT_CREATOR_ID,
 } from './jobs';
 
 export type {
   VincereJob,
   VincereJobSearchResult,
+  VincereApplicationResponse,
+  VincereApplicationStage,
+  VincereStageName,
 } from './jobs';
 
 // Files API

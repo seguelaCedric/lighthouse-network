@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
 import { calculateProfileCompletion } from "@/lib/profile-completion";
 import { candidateHasCV } from "@/lib/utils/candidate-cv";
+import { shortlistCandidateOnJob } from "@/lib/vincere";
 
 // ----------------------------------------------------------------------------
 // REQUEST SCHEMA
@@ -81,7 +82,8 @@ export async function POST(request: NextRequest) {
       has_schengen, has_b1b2, has_c1d,
       industry_preference, second_nationality,
       is_smoker, has_visible_tattoos, is_couple, partner_position,
-      verification_tier, avatar_url, embedding
+      verification_tier, avatar_url, embedding,
+      external_id, created_at
     `;
 
     // Get user record (auth_id -> user_id mapping)
@@ -369,7 +371,7 @@ export async function POST(request: NextRequest) {
     // Check if job exists and is open
     const { data: job, error: jobError } = await supabase
       .from("jobs")
-      .select("id, title, status, created_by_agency_id")
+      .select("id, title, status, created_by_agency_id, external_id")
       .eq("id", jobId)
       .single();
 
@@ -377,7 +379,7 @@ export async function POST(request: NextRequest) {
       // Also check public_jobs table
       const { data: publicJob, error: publicJobError } = await supabase
         .from("public_jobs")
-        .select("id, title, status, created_by_agency_id")
+        .select("id, title, status, created_by_agency_id, external_id")
         .eq("id", jobId)
         .single();
 
@@ -435,8 +437,8 @@ export async function POST(request: NextRequest) {
 
 async function createApplication(
   supabase: Awaited<ReturnType<typeof createClient>>,
-  candidate: { id: string },
-  job: { id: string; title: string; created_by_agency_id: string | null },
+  candidate: { id: string; external_id?: string | null; created_at?: string | null },
+  job: { id: string; title: string; created_by_agency_id: string | null; external_id?: string | null },
   userId: string
 ) {
   // Check for existing application
@@ -505,6 +507,27 @@ async function createApplication(
       { error: "Failed to submit application" },
       { status: 500 }
     );
+  }
+
+  // Shortlist candidate on job in Vincere (fire and forget)
+  // Both candidate and job must have Vincere IDs (external_id) for this to work
+  if (candidate.external_id && job.external_id) {
+    const candidateVincereId = parseInt(candidate.external_id, 10);
+    const jobVincereId = parseInt(job.external_id, 10);
+
+    if (!isNaN(candidateVincereId) && !isNaN(jobVincereId)) {
+      shortlistCandidateOnJob(
+        jobVincereId,
+        candidateVincereId,
+        candidate.created_at || undefined
+      )
+        .then((result) => {
+          console.log(`[Vincere] Shortlisted candidate ${candidateVincereId} on job ${jobVincereId}:`, result);
+        })
+        .catch((err) => {
+          console.error(`[Vincere] Failed to shortlist candidate ${candidateVincereId} on job ${jobVincereId}:`, err);
+        });
+    }
   }
 
   return NextResponse.json({

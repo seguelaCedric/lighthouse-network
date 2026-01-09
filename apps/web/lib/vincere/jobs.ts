@@ -584,6 +584,26 @@ export const VINCERE_APPLICATION_STAGES = {
 export type VincereApplicationStage = typeof VINCERE_APPLICATION_STAGES[keyof typeof VINCERE_APPLICATION_STAGES];
 
 /**
+ * Vincere application stage names (string format used by /application endpoint)
+ */
+export const VINCERE_STAGE_NAMES = {
+  APPLICATION: 'APPLICATION',
+  SHORTLISTED: 'SHORTLISTED',
+  SUBMITTED: 'SUBMITTED',
+  INTERVIEW: 'INTERVIEW',
+  OFFER: 'OFFER',
+  PLACED: 'PLACED',
+} as const;
+
+export type VincereStageName = typeof VINCERE_STAGE_NAMES[keyof typeof VINCERE_STAGE_NAMES];
+
+/**
+ * Default creator ID for Vincere applications
+ * This is the Vincere user ID that will be set as the creator of applications
+ */
+export const VINCERE_DEFAULT_CREATOR_ID = 28959;
+
+/**
  * Response from adding a candidate to a job
  */
 export interface VincereApplicationResponse {
@@ -617,6 +637,51 @@ export async function addCandidateToJob(
     {
       candidate_id: candidateVincereId,
       stage_id: stage,
+    }
+  );
+
+  return result;
+}
+
+/**
+ * Shortlist a candidate on a job in Vincere
+ *
+ * This uses the /application endpoint (POST) to create an application
+ * with the SHORTLISTED stage. This matches the n8n workflow approach.
+ *
+ * The candidate will appear in the job's shortlist in Vincere immediately.
+ *
+ * @param jobVincereId - The job's Vincere ID (position ID)
+ * @param candidateVincereId - The candidate's Vincere ID
+ * @param candidateRegistrationDate - The candidate's registration date in ISO format
+ * @param creatorId - The Vincere user ID to set as creator (defaults to 28959)
+ * @param client - Optional VincereClient instance
+ */
+export async function shortlistCandidateOnJob(
+  jobVincereId: number,
+  candidateVincereId: number,
+  candidateRegistrationDate?: string,
+  creatorId: number = VINCERE_DEFAULT_CREATOR_ID,
+  client?: VincereClient
+): Promise<VincereApplicationResponse> {
+  const vincere = client ?? getVincereClient();
+
+  // Current timestamp in ISO format for stage dates
+  const now = new Date().toISOString();
+
+  // Use provided registration date or current date
+  const registrationDate = candidateRegistrationDate || now;
+
+  const result = await vincere.post<VincereApplicationResponse>(
+    '/application',
+    {
+      candidate_id: candidateVincereId,
+      job_id: jobVincereId,
+      stage: VINCERE_STAGE_NAMES.SHORTLISTED,
+      application_stage_associated_date: now,
+      shortlisted_stage_associated_date: now,
+      registration_date: registrationDate,
+      creator_id: creatorId,
     }
   );
 
