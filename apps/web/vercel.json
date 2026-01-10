@@ -6,7 +6,7 @@
     },
     {
       "path": "/api/cron/generate-seo-content",
-      "schedule": "* * * * *"
+      "schedule": "*/5 * * * *"
     }
   ]
 }
