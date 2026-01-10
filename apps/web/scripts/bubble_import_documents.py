@@ -325,7 +325,7 @@ def create_document_record(supabase: Client, candidate_id: str, doc_type: str, s
         supabase.table("documents").insert({
             "entity_type": "candidate",
             "entity_id": candidate_id,
-            "organization_id": "c4e1e6ff-b71a-4fbd-bb31-dd282d981436",  # Lighthouse Careers (correct UUID)
+            "organization_id": "00000000-0000-0000-0000-000000000001",  # Lighthouse Careers
             "type": doc_type,
             "name": original_filename,
             "file_url": file_url,
