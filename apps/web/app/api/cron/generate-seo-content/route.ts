@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const BATCH_SIZE = 25; // Process 25 pages per cron run (every 5 mins)
-const CONCURRENCY = 5; // Process 5 pages in parallel
+const BATCH_SIZE = 10; // Process 10 pages per cron run (every 10 mins)
+const CONCURRENCY = 2; // Process 2 pages in parallel to avoid rate limits
 
 export async function GET(request: NextRequest) {
   try {
