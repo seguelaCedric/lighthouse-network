@@ -34,8 +34,12 @@ function formatTel(value?: string | null) {
   return value.replace(/[^0-9+]/g, "");
 }
 
+// Design token colors from lib/design-tokens.ts
+const GOLD_500 = "#B49A5E"; // Primary brand color
+const GOLD_300 = "#E1D4B5"; // For borders/accents
+
 function renderIconSvg(type: "linkedin" | "facebook") {
-  const stroke = "#C3A578";
+  const stroke = GOLD_500;
   if (type === "linkedin") {
     return `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="${stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>`;
   }
@@ -54,10 +58,10 @@ export function buildSignatureHtml(member: SignatureMember, settings: SignatureS
 
   const socialLinks = [
     member.linkedin_url
-      ? `<a href="${escapeHtml(member.linkedin_url)}" style="text-decoration:none; display:inline-block; margin-right:8px; border:1px solid #E7D9C0; border-radius:999px; padding:4px;">${renderIconSvg("linkedin")}</a>`
+      ? `<a href="${escapeHtml(member.linkedin_url)}" style="text-decoration:none; display:inline-block; margin-right:8px; border:1px solid ${GOLD_300}; border-radius:999px; padding:4px;">${renderIconSvg("linkedin")}</a>`
       : "",
     member.facebook_url
-      ? `<a href="${escapeHtml(member.facebook_url)}" style="text-decoration:none; display:inline-block; border:1px solid #E7D9C0; border-radius:999px; padding:4px;">${renderIconSvg("facebook")}</a>`
+      ? `<a href="${escapeHtml(member.facebook_url)}" style="text-decoration:none; display:inline-block; border:1px solid ${GOLD_300}; border-radius:999px; padding:4px;">${renderIconSvg("facebook")}</a>`
       : "",
   ].join("");
 
@@ -69,10 +73,10 @@ export function buildSignatureHtml(member: SignatureMember, settings: SignatureS
     </td>
     <td style="vertical-align: top;">
       <div style="font-size: 14px; font-weight: 700; color: #111827;">${name}</div>
-      <div style="font-size: 13px; color: #C3A578;">${role}</div>
+      <div style="font-size: 13px; color: ${GOLD_500};">${role}</div>
       <div style="margin-top: 8px; font-size: 13px;">
-        ${email ? `<div><span style="color:#C3A578; font-weight:600; margin-right:6px;">E</span><a href="mailto:${escapeHtml(member.email)}" style="color:#1f2937; text-decoration:none;">${email}</a></div>` : ""}
-        ${phone ? `<div><span style="color:#C3A578; font-weight:600; margin-right:6px;">T</span><a href="tel:${escapeHtml(phoneHref)}" style="color:#1f2937; text-decoration:none;">${phone}</a></div>` : ""}
+        ${email ? `<div><span style="color:${GOLD_500}; font-weight:600; margin-right:6px;">E</span><a href="mailto:${escapeHtml(member.email)}" style="color:#1f2937; text-decoration:none;">${email}</a></div>` : ""}
+        ${phone ? `<div><span style="color:${GOLD_500}; font-weight:600; margin-right:6px;">T</span><a href="tel:${escapeHtml(phoneHref)}" style="color:#1f2937; text-decoration:none;">${phone}</a></div>` : ""}
       </div>
       ${socialLinks ? `<div style="margin-top: 10px; display:flex; align-items:center;">${socialLinks}</div>` : ""}
     </td>
