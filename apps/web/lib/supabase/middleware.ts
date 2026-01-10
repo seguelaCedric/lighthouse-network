@@ -30,6 +30,7 @@ const publicRoutes = [
   '/client/auth',    // Client auth pages
   '/api/webhooks',
   '/api/public',
+  '/api/cron',       // Vercel cron jobs (protected by Vercel infrastructure)
 ];
 
 function isRecruiterProtectedRoute(pathname: string): boolean {
