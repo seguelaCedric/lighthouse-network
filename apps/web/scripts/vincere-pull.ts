@@ -87,13 +87,18 @@ const processDocuments = args.includes("--documents");
 const limitArg = args.find((arg) => arg.startsWith("--limit="));
 const limit = limitArg ? parseInt(limitArg.split("=")[1], 10) : 10;
 
-// Validate --documents requires --sync and --candidates
-if (processDocuments && !shouldSync) {
-  console.error("Error: --documents requires --sync flag");
-  process.exit(1);
-}
-if (processDocuments && !fetchCandidates) {
-  console.error("Error: --documents only works with --candidates");
+// DISABLED: Document sync from Vincere
+// CVs should only come from Bubble to avoid syncing confidential notes and data.
+// Use import-bubble-documents.ts instead.
+if (processDocuments) {
+  console.error("╔════════════════════════════════════════════════════════════════════╗");
+  console.error("║  ERROR: --documents flag is DISABLED for Vincere sync             ║");
+  console.error("║                                                                    ║");
+  console.error("║  CVs must come from Bubble only, not Vincere.                     ║");
+  console.error("║  Vincere contains confidential notes that should not be synced.   ║");
+  console.error("║                                                                    ║");
+  console.error("║  Use: npx tsx scripts/import-bubble-documents.ts                  ║");
+  console.error("╚════════════════════════════════════════════════════════════════════╝");
   process.exit(1);
 }
 

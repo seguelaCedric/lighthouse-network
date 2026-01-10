@@ -13,6 +13,7 @@ import {
   Languages,
   Shield,
   Sparkles,
+  Info,
 } from "lucide-react";
 import { LeadCaptureForm } from "@/components/match/LeadCaptureForm";
 import { analytics } from "@/lib/analytics/seo-tracking";
@@ -43,6 +44,8 @@ interface MatchPreviewProps {
   location: string; // e.g., "Sydney, New South Wales, Australia"
   positionSlug?: string;
   locationSlug?: string;
+  previewCount?: number; // Number of candidates to show (for A/B testing)
+  onCandidateClick?: (candidateId?: string) => void; // Track clicks for A/B testing
 }
 
 export function MatchPreview({
@@ -50,6 +53,8 @@ export function MatchPreview({
   location,
   positionSlug,
   locationSlug,
+  previewCount = 3,
+  onCandidateClick,
 }: MatchPreviewProps) {
   const router = useRouter();
   const [candidates, setCandidates] = useState<AnonymizedCandidate[]>([]);
@@ -57,6 +62,7 @@ export function MatchPreview({
   const [error, setError] = useState<string | null>(null);
   const [totalMatches, setTotalMatches] = useState<number | null>(null);
   const [showLeadCapture, setShowLeadCapture] = useState(false);
+  const [fallbackMode, setFallbackMode] = useState(false);
 
   // Generate pre-filled query
   const matchQuery = `Hire a ${position} in ${location}`;
@@ -73,7 +79,7 @@ export function MatchPreview({
           body: JSON.stringify({
             query: matchQuery,
             preview_mode: true, // Request limited results for preview
-            limit: 3, // Show top 3 candidates
+            limit: previewCount, // Show top N candidates (configurable for A/B testing)
           }),
         });
 
@@ -82,14 +88,17 @@ export function MatchPreview({
         }
 
         const data = await response.json();
-        const candidates = data.candidates || [];
-        const totalMatches = data.total_matches || data.total_found || candidates.length || 0;
-        setCandidates(candidates);
-        setTotalMatches(totalMatches);
+        const candidatesData = data.candidates || [];
+        const totalMatchesData = data.total_matches || data.total_found || candidatesData.length || 0;
+        const isFallback = data.fallback_mode === true;
+
+        setCandidates(candidatesData);
+        setTotalMatches(totalMatchesData);
+        setFallbackMode(isFallback);
 
         // Track match preview viewed
-        if (candidates.length > 0) {
-          analytics.trackMatchPreviewViewed(position, location, totalMatches);
+        if (candidatesData.length > 0) {
+          analytics.trackMatchPreviewViewed(position, location, totalMatchesData);
         }
       } catch (err) {
         console.error("Match preview error:", err);
@@ -100,7 +109,7 @@ export function MatchPreview({
     };
 
     fetchMatches();
-  }, [matchQuery, position, location]);
+  }, [matchQuery, position, location, previewCount]);
 
   const handleViewMore = () => {
     // Track event
@@ -120,6 +129,10 @@ export function MatchPreview({
 
   const handleCandidateClick = (candidateId: string) => {
     analytics.trackMatchPreviewCandidateClick(position, location, candidateId);
+    // Call A/B testing callback if provided
+    if (onCandidateClick) {
+      onCandidateClick(candidateId);
+    }
   };
 
   if (isLoading) {
@@ -175,7 +188,9 @@ export function MatchPreview({
                 </h3>
               </div>
               <p className="text-sm text-gray-300">
-                Preview of candidates matching your requirements
+                {fallbackMode
+                  ? "Preview of candidates with relevant experience"
+                  : "Preview of candidates matching your requirements"}
               </p>
             </div>
             {totalMatches !== null && totalMatches > candidates.length && (
@@ -188,6 +203,18 @@ export function MatchPreview({
             )}
           </div>
         </div>
+
+        {/* Fallback Mode Info Banner */}
+        {fallbackMode && (
+          <div className="border-b border-amber-200 bg-amber-50 px-6 py-3">
+            <div className="flex items-center gap-2 text-sm text-amber-800">
+              <Info className="h-4 w-4 flex-shrink-0" />
+              <span>
+                Showing candidates with relevant experience in similar roles. Match scores reflect position fit and experience level.
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Candidate Cards */}
         <div className="divide-y divide-gray-200">
@@ -304,7 +331,9 @@ export function MatchPreview({
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="text-center sm:text-left">
               <p className="text-sm font-semibold text-navy-900">
-                {totalMatches !== null && totalMatches > candidates.length
+                {fallbackMode
+                  ? `${candidates.length} candidates with relevant experience`
+                  : totalMatches !== null && totalMatches > candidates.length
                   ? `${totalMatches} total candidates match your requirements`
                   : `${candidates.length} candidates available`}
               </p>

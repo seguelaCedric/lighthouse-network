@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import {
   candidateQuerySchema,
   createCandidateSchema,
@@ -22,13 +22,12 @@ import type { Candidate, PaginatedResponse } from "@lighthouse/database";
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createClient();
-
-    // Check authentication
+    // Use regular client for authentication check
+    const authClient = await createClient();
     const {
       data: { user },
       error: authError,
-    } = await supabase.auth.getUser();
+    } = await authClient.auth.getUser();
 
     if (authError || !user) {
       return NextResponse.json(
@@ -36,6 +35,10 @@ export async function GET(request: NextRequest) {
         { status: 401 }
       );
     }
+
+    // Use service role client for database queries (bypasses RLS)
+    // This is safe because we've already verified authentication above
+    const supabase = createServiceRoleClient();
 
     // Parse and validate query params
     const searchParams = Object.fromEntries(request.nextUrl.searchParams);
@@ -178,7 +181,7 @@ export async function GET(request: NextRequest) {
  * 5. Apply additional metadata filters
  */
 async function performHybridSearch(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  supabase: ReturnType<typeof createServiceRoleClient>,
   params: {
     search: string;
     position?: string;
@@ -216,9 +219,10 @@ async function performHybridSearch(
       ? [verification === 0 ? 'unverified' : verification === 1 ? 'basic' : verification === 2 ? 'verified' : 'premium']
       : ['unverified', 'basic', 'verified', 'premium'];
 
+    // Include all availability statuses including null/unknown when no filter is applied
     const availabilityStatuses = availability
       ? [availability]
-      : ['available', 'not_looking'];
+      : ['available', 'not_looking', 'notice_period', 'on_contract', 'unknown'];
 
     // Vector similarity search (candidates WITH embeddings)
     const { data: vectorResults, error: vectorError } = await supabase.rpc(
@@ -238,13 +242,13 @@ async function performHybridSearch(
       // Fall back to keyword search on error
     }
 
-    // Keyword search for candidates WITHOUT embeddings (fallback)
-    // This ensures we don't miss candidates who haven't been vectorized yet
+    // Keyword search for ALL candidates (not just those without embeddings)
+    // This ensures we find exact name matches even when vector similarity is low
+    // E.g., searching "Elliott" should find "Elliott Mills" even if semantic match is poor
     let keywordQuery = supabase
       .from("candidates")
       .select("*")
-      .is("deleted_at", null)
-      .is("embedding", null); // Only candidates without embeddings
+      .is("deleted_at", null);
 
     const searchTerms = search.trim().split(/\s+/).filter(Boolean);
     if (searchTerms.length === 1) {
@@ -376,13 +380,12 @@ async function performHybridSearch(
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
-
-    // Check authentication
+    // Use regular client for authentication check
+    const authClient = await createClient();
     const {
       data: { user },
       error: authError,
-    } = await supabase.auth.getUser();
+    } = await authClient.auth.getUser();
 
     if (authError || !user) {
       return NextResponse.json(
@@ -390,6 +393,9 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       );
     }
+
+    // Use service role client for database operations
+    const supabase = createServiceRoleClient();
 
     // Parse request body
     let body: unknown;

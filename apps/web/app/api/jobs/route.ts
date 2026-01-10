@@ -49,10 +49,10 @@ export async function GET(request: NextRequest) {
       sortOrder,
     } = parseResult.data;
 
-    // Build query
+    // Build query - include client relationship
     let query = supabase
       .from("jobs")
-      .select("*", { count: "exact" })
+      .select("*, client:clients(id, name, primary_contact_name, primary_contact_email)", { count: "exact" })
       .is("deleted_at", null);
 
     // Filter by agency (default to user's agency)

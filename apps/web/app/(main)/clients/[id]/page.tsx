@@ -33,7 +33,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useClient, useUpdateClient } from "@/hooks/useClients";
 import { cn } from "@/lib/utils";
-import type { ClientType, ClientStatus, UpdateClientInput } from "@/lib/validations/client";
+import type { ClientType, ClientStatus, UpdateClientInput, ClientContact } from "@/lib/validations/client";
 import { toast } from "sonner";
 
 // Client type icons
@@ -277,7 +277,7 @@ function PortalAccessSection({
 }
 
 // Tab components
-type TabId = "overview" | "jobs" | "placements" | "notes";
+type TabId = "overview" | "contacts" | "jobs" | "placements" | "notes";
 
 function OverviewTab({ client, onUpdate }: { client: any; onUpdate: () => void }) {
   const status = statusConfig[client.status as ClientStatus];
@@ -411,7 +411,7 @@ function OverviewTab({ client, onUpdate }: { client: any; onUpdate: () => void }
       {/* Performance Stats */}
       <div className="rounded-xl border border-gray-200 bg-white p-6">
         <h3 className="mb-4 font-semibold text-navy-900">Performance</h3>
-        <div className="grid gap-6 sm:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <div className="text-center">
             <p className="text-3xl font-bold text-navy-900">{client.total_jobs}</p>
             <p className="mt-1 text-sm text-gray-500">Total Jobs</p>
@@ -419,6 +419,14 @@ function OverviewTab({ client, onUpdate }: { client: any; onUpdate: () => void }
           <div className="text-center">
             <p className="text-3xl font-bold text-navy-900">{client.total_placements}</p>
             <p className="mt-1 text-sm text-gray-500">Placements</p>
+          </div>
+          <div className="text-center">
+            <p className="text-3xl font-bold text-success-600">
+              {client.total_jobs > 0
+                ? `${Math.round((client.total_placements / client.total_jobs) * 100)}%`
+                : "—"}
+            </p>
+            <p className="mt-1 text-sm text-gray-500">Conversion Rate</p>
           </div>
           <div className="text-center">
             <p className="text-3xl font-bold text-gold-600">{formatCurrency(client.total_revenue)}</p>
@@ -431,6 +439,92 @@ function OverviewTab({ client, onUpdate }: { client: any; onUpdate: () => void }
           </p>
         )}
       </div>
+    </div>
+  );
+}
+
+function ContactsTab({ contacts, clientId }: { contacts: ClientContact[]; clientId: string }) {
+  if (!contacts || contacts.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center rounded-xl border border-gray-200 bg-white py-16 text-center">
+        <Users className="size-12 text-gray-300" />
+        <h3 className="mt-4 font-semibold text-navy-900">No contacts yet</h3>
+        <p className="mt-1 text-sm text-gray-500">Add contacts for this client to manage communications.</p>
+        <Button variant="primary" className="mt-4" leftIcon={<Plus className="size-4" />}>
+          Add Contact
+        </Button>
+      </div>
+    );
+  }
+
+  // Sort: primary first, then by name
+  const sortedContacts = [...contacts].sort((a, b) => {
+    if (a.is_primary && !b.is_primary) return -1;
+    if (!a.is_primary && b.is_primary) return 1;
+    return a.name.localeCompare(b.name);
+  });
+
+  return (
+    <div className="space-y-3">
+      {sortedContacts.map((contact) => (
+        <div
+          key={contact.id}
+          className={cn(
+            "rounded-xl border bg-white p-4 transition-colors hover:bg-gray-50",
+            contact.is_primary ? "border-gold-200 bg-gold-50/30" : "border-gray-200"
+          )}
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <h4 className="font-medium text-navy-900">{contact.name}</h4>
+                {contact.is_primary && (
+                  <span className="rounded-full bg-gold-100 px-2 py-0.5 text-xs font-medium text-gold-700">
+                    Primary
+                  </span>
+                )}
+                {contact.role && (
+                  <span className="text-sm text-gray-500">({contact.role})</span>
+                )}
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-4 text-sm">
+                {contact.email && (
+                  <a
+                    href={`mailto:${contact.email}`}
+                    className="flex items-center gap-1.5 text-navy-600 hover:text-navy-800"
+                  >
+                    <Mail className="size-4" />
+                    {contact.email}
+                  </a>
+                )}
+                {contact.phone && (
+                  <a
+                    href={`tel:${contact.phone}`}
+                    className="flex items-center gap-1.5 text-navy-600 hover:text-navy-800"
+                  >
+                    <Phone className="size-4" />
+                    {contact.phone}
+                  </a>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" leftIcon={<Send className="size-4" />}>
+                Send CV
+              </Button>
+              <Button variant="ghost" size="sm" leftIcon={<Edit2 className="size-4" />}>
+                Edit
+              </Button>
+            </div>
+          </div>
+        </div>
+      ))}
+
+      {/* Add Contact Button */}
+      <button className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 py-4 text-sm font-medium text-gray-500 transition-colors hover:border-gray-400 hover:bg-gray-100 hover:text-gray-700">
+        <Plus className="size-4" />
+        Add Contact
+      </button>
     </div>
   );
 }
@@ -555,6 +649,7 @@ function ClientDetailContent() {
 
   const tabs: { id: TabId; label: string }[] = [
     { id: "overview", label: "Overview" },
+    { id: "contacts", label: `Contacts (${client?.contacts?.length || 0})` },
     { id: "jobs", label: `Jobs (${client?.jobs?.length || 0})` },
     { id: "placements", label: `Placements (${client?.placements?.length || 0})` },
     { id: "notes", label: "Notes" },
@@ -649,6 +744,7 @@ function ClientDetailContent() {
 
             {/* Tab Content */}
             {activeTab === "overview" && <OverviewTab client={client} onUpdate={refetch} />}
+            {activeTab === "contacts" && <ContactsTab contacts={client.contacts || []} clientId={clientId} />}
             {activeTab === "jobs" && <JobsTab jobs={client.jobs || []} />}
             {activeTab === "placements" && <PlacementsTab placements={client.placements || []} />}
             {activeTab === "notes" && <NotesTab notes={client.notes} />}

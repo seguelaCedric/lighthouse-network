@@ -36,6 +36,14 @@ export const CANDIDATE_WEBHOOK_EVENT = {
 };
 
 /**
+ * Vincere placement webhook event configuration
+ */
+export const PLACEMENT_WEBHOOK_EVENT = {
+  entity_type: 'PLACEMENT',
+  action_types: ['CREATE', 'UPDATE'],
+};
+
+/**
  * Register a webhook for Vincere job updates
  * 
  * @param webhookUrl - The full URL where Vincere should send webhooks
@@ -116,8 +124,46 @@ export async function registerCandidateWebhook(
 }
 
 /**
+ * Register a webhook for Vincere placement updates
+ *
+ * @param webhookUrl - The full URL where Vincere should send webhooks
+ * @param actionTypes - Array of action types (defaults to CREATE, UPDATE)
+ * @param secret - Optional webhook secret for signature verification
+ * @returns The created webhook configuration
+ *
+ * @example
+ * ```ts
+ * const webhook = await registerPlacementWebhook(
+ *   'https://your-domain.com/api/webhooks/vincere'
+ * );
+ * ```
+ */
+export async function registerPlacementWebhook(
+  webhookUrl: string,
+  actionTypes: string[] = ['CREATE', 'UPDATE'],
+  secret?: string
+): Promise<VincereWebhook> {
+  const vincere = getVincereClient();
+
+  const eventObject = {
+    entity_type: 'PLACEMENT',
+    action_types: actionTypes,
+  };
+
+  return createWebhook(
+    {
+      webhook_url: webhookUrl,
+      events: [eventObject],
+      active: true,
+      secret,
+    },
+    vincere
+  );
+}
+
+/**
  * Find existing webhook by URL
- * 
+ *
  * @param webhookUrl - The webhook URL to search for
  * @returns The webhook if found, null otherwise
  */

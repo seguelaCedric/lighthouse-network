@@ -339,7 +339,7 @@ export default function DocumentList({
         <div className="space-y-8">
           {/* Grouped by Document Type */}
           {Object.entries(groupedDocuments).map(([type, docs]) => {
-            const typeConfig = DOCUMENT_TYPE_CONFIG[type as DocumentType];
+            const typeConfig = DOCUMENT_TYPE_CONFIG[type as DocumentType] || DOCUMENT_TYPE_CONFIG.other;
             const TypeIcon = typeConfig.icon;
             return (
               <div key={type}>

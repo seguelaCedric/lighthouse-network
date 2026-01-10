@@ -1,8 +1,13 @@
 {
-  "last_processed_row": 5700,
-  "uploaded_count": 739,
-  "skipped_count": 4950,
-  "error_count": 11,
-  "started_at": "2026-01-09T17:41:45.495437",
-  "updated_at": "2026-01-09T18:11:11.915363"
+  "lastProcessedRow": 300,
+  "uploadedCount": 288,
+  "skippedCount": 0,
+  "errorCount": 12,
+  "startedAt": "2026-01-10T12:39:55.535Z",
+  "skippedNoCandidateEmail": 0,
+  "skippedNoUrl": 0,
+  "skippedExpiredS3": 0,
+  "skippedCandidateNotFound": 0,
+  "updatedAt": "2026-01-10T12:43:19.939Z",
+  "completedAt": "2026-01-10T12:43:19.939Z"
 }

@@ -1,5 +1,10 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { v4 as uuidv4 } from 'uuid';
+
+// A/B Testing visitor ID cookie settings
+const AB_VISITOR_COOKIE = 'ab_visitor_id';
+const AB_COOKIE_MAX_AGE = 365 * 24 * 60 * 60; // 1 year
 
 // Recruiter/Agency routes that require authentication
 const recruiterProtectedRoutes = [
@@ -110,6 +115,18 @@ export async function updateSession(request: NextRequest) {
   // If user is authenticated, optionally check user_type for portal access
   // This is a lighter check - full user_type validation happens in page components
   // to avoid database queries in middleware
+
+  // Set A/B testing visitor ID cookie if not present
+  if (!request.cookies.get(AB_VISITOR_COOKIE)) {
+    const visitorId = uuidv4();
+    supabaseResponse.cookies.set(AB_VISITOR_COOKIE, visitorId, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: AB_COOKIE_MAX_AGE,
+      path: '/',
+    });
+  }
 
   return supabaseResponse;
 }

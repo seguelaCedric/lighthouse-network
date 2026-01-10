@@ -192,7 +192,7 @@ export default function DocumentCard({
   const [isLoadingUrl, setIsLoadingUrl] = useState(false);
   const [urlError, setUrlError] = useState<string | null>(null);
 
-  const typeConfig = DOCUMENT_TYPE_CONFIG[document.documentType];
+  const typeConfig = DOCUMENT_TYPE_CONFIG[document.documentType] || DOCUMENT_TYPE_CONFIG.other;
   const statusConfig = STATUS_CONFIG[document.status];
   const TypeIcon = typeConfig.icon;
   const StatusIcon = statusConfig.icon;

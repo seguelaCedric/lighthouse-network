@@ -316,15 +316,28 @@ const MANAGEMENT_POSITIONS: Record<string, PositionMapping> = {
 // OTHER POSITIONS
 // ----------------------------------------------------------------------------
 
-const OTHER_POSITIONS: Record<string, PositionMapping> = {
-  // Spa/Wellness
-  'massage therapist': { standard: 'Massage Therapist', category: 'other' },
-  'masseuse': { standard: 'Massage Therapist', category: 'other' },
-  'spa therapist': { standard: 'Spa Therapist', category: 'other' },
-  'yoga instructor': { standard: 'Yoga Instructor', category: 'other' },
-  'fitness instructor': { standard: 'Fitness Instructor', category: 'other' },
-  'personal trainer': { standard: 'Personal Trainer', category: 'other' },
+const WELLNESS_POSITIONS: Record<string, PositionMapping> = {
+  // Spa/Massage
+  'spa therapist': { standard: 'Spa Therapist', category: 'wellness' },
+  'spa manager': { standard: 'Spa Manager', category: 'wellness' },
+  'massage therapist': { standard: 'Massage Therapist', category: 'wellness' },
+  'masseuse': { standard: 'Massage Therapist', category: 'wellness' },
 
+  // Beauty
+  'beautician': { standard: 'Beautician', category: 'wellness' },
+  'aesthetician': { standard: 'Aesthetician', category: 'wellness' },
+  'beauty therapist': { standard: 'Beauty Therapist', category: 'wellness' },
+  'hairdresser': { standard: 'Hairdresser', category: 'wellness' },
+  'hair stylist': { standard: 'Hair Stylist', category: 'wellness' },
+
+  // Fitness
+  'personal trainer': { standard: 'Personal Trainer', category: 'wellness' },
+  'fitness instructor': { standard: 'Fitness Instructor', category: 'wellness' },
+  'yoga instructor': { standard: 'Yoga Instructor', category: 'wellness' },
+  'pilates instructor': { standard: 'Pilates Instructor', category: 'wellness' },
+};
+
+const OTHER_POSITIONS: Record<string, PositionMapping> = {
   // Diving
   'dive instructor': { standard: 'Dive Instructor', category: 'other' },
   'divemaster': { standard: 'Divemaster', category: 'other' },
@@ -338,9 +351,6 @@ const OTHER_POSITIONS: Record<string, PositionMapping> = {
   // Other
   'florist': { standard: 'Florist', category: 'other' },
   'photographer': { standard: 'Photographer', category: 'other' },
-  'hairdresser': { standard: 'Hairdresser', category: 'other' },
-  'hair stylist': { standard: 'Hair Stylist', category: 'other' },
-  'beautician': { standard: 'Beautician', category: 'other' },
 };
 
 // ----------------------------------------------------------------------------
@@ -365,6 +375,7 @@ export const POSITION_TAXONOMY: Record<string, PositionMapping> = {
   ...SECURITY_POSITIONS,
   ...MEDICAL_POSITIONS,
   ...MANAGEMENT_POSITIONS,
+  ...WELLNESS_POSITIONS,
   ...OTHER_POSITIONS,
 };
 
@@ -430,11 +441,12 @@ export function getAllCategories(): PositionCategory[] {
     'interior',
     'engineering',
     'galley',
-    'medical',
+    'villa',
     'childcare',
     'security',
+    'medical',
     'management',
-    'villa',
+    'wellness',
     'other',
   ];
 }

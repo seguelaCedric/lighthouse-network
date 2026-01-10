@@ -18,8 +18,12 @@ const buttonVariants = cva(
           "text-navy-600 hover:bg-gray-100 active:bg-gray-200 disabled:opacity-50 disabled:pointer-events-none focus-visible:ring-navy-600",
         ghost:
           "text-navy-600 hover:bg-gray-100 active:bg-gray-200 disabled:opacity-50 disabled:pointer-events-none focus-visible:ring-navy-600",
+        outline:
+          "border border-gray-200 bg-white text-gray-700 hover:bg-gray-100 active:bg-gray-200 disabled:opacity-50 disabled:pointer-events-none focus-visible:ring-gray-500",
         danger:
           "bg-error-500 text-white shadow-sm hover:bg-error-600 hover:shadow-md active:bg-error-700 disabled:opacity-50 disabled:pointer-events-none focus-visible:ring-error-500",
+        destructive:
+          "bg-red-500 text-white shadow-sm hover:bg-red-600 hover:shadow-md active:bg-red-700 disabled:opacity-50 disabled:pointer-events-none focus-visible:ring-red-500",
         link: "text-gold-600 underline-offset-4 hover:underline disabled:opacity-50 disabled:pointer-events-none focus-visible:ring-gold-500",
       },
       size: {
@@ -27,6 +31,7 @@ const buttonVariants = cva(
         sm: "h-11 sm:h-8 px-4 py-2 text-sm [&_svg]:size-4",
         md: "h-12 sm:h-10 px-6 py-3 text-sm [&_svg]:size-4",
         lg: "h-14 sm:h-12 px-8 py-4 text-base [&_svg]:size-5",
+        icon: "h-10 w-10 p-0 [&_svg]:size-4",
       },
     },
     defaultVariants: {

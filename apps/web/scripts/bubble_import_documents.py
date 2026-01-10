@@ -311,19 +311,21 @@ def upload_to_storage(supabase: Client, bucket: str, path: str, content: bytes, 
 def create_document_record(supabase: Client, candidate_id: str, doc_type: str, storage_path: str, original_filename: str, file_size: int, mime_type: str) -> bool:
     """Create document record in database using existing documents table"""
     try:
-        # Check if document record already exists
+        # Check if document record already exists (by entity_id + file_path)
         existing = supabase.table("documents").select("id").eq("entity_id", candidate_id).eq("file_path", storage_path).execute()
         if existing.data and len(existing.data) > 0:
+            print(f"  Skipped (already exists): {original_filename}", flush=True)
             return True  # Already exists
 
-        # Get storage URL
+        # Get storage URL - use file_path for authenticated access (bucket is private)
+        # The file_url points to the storage path, actual access requires signed URLs or auth
         supabase_url = os.getenv("NEXT_PUBLIC_SUPABASE_URL")
-        file_url = f"{supabase_url}/storage/v1/object/public/documents/{storage_path}"
+        file_url = f"{supabase_url}/storage/v1/object/documents/{storage_path}"
 
         supabase.table("documents").insert({
             "entity_type": "candidate",
             "entity_id": candidate_id,
-            "organization_id": "00000000-0000-0000-0000-000000000001",  # Lighthouse Careers
+            "organization_id": "c4e1e6ff-b71a-4fbd-bb31-dd282d981436",  # Lighthouse Careers (correct UUID)
             "type": doc_type,
             "name": original_filename,
             "file_url": file_url,

@@ -11,6 +11,8 @@ import { InquiryForm } from "./InquiryForm";
 import { MatchPreview } from "./MatchPreview";
 import { InternalLinking } from "./InternalLinking";
 import { analytics, initScrollDepthTracking } from "@/lib/analytics/seo-tracking";
+import { useExperiments } from "@/lib/ab-testing/hooks/useExperiment";
+import type { LandingPageExperiments } from "@/lib/ab-testing/types";
 import {
   CheckCircle,
   Shield,
@@ -170,6 +172,7 @@ interface Props {
   relatedPositions?: RelatedPage[];
   relatedLocations?: RelatedPage[];
   contentLinks?: ContentLink[];
+  experiments?: LandingPageExperiments;
 }
 
 const processSteps = [
@@ -198,6 +201,7 @@ export function HireLandingPage({
   relatedPositions = [],
   relatedLocations = [],
   contentLinks = [],
+  experiments,
 }: Props) {
   const locationString = [data.city, data.state, data.country]
     .filter(Boolean)
@@ -205,6 +209,15 @@ export function HireLandingPage({
 
   const router = useRouter();
   const [showStickyBar, setShowStickyBar] = useState(false);
+
+  // A/B Testing hooks
+  const {
+    cta,
+    matchPreview,
+    trackCTAClick,
+    trackFormSubmit,
+    trackMatchPreviewClick,
+  } = useExperiments(experiments);
 
   // Initialize scroll depth tracking for CRO analytics
   useEffect(() => {
@@ -224,8 +237,13 @@ export function HireLandingPage({
   }, []);
 
   // Handler to redirect to match page with pre-filled query
-  const handleSeeMatches = (source: 'hero' | 'preview' | 'cta' = 'hero') => {
+  const handleSeeMatches = async (source: 'hero' | 'preview' | 'cta' = 'hero') => {
     analytics.trackLandingPageToMatch(data.id, data.position, locationString, source);
+
+    // Track CTA click for A/B testing
+    if (cta.experimentId) {
+      await trackCTAClick(cta.cta_text);
+    }
 
     const query = `Hire a ${data.position} in ${locationString}`;
     const params = new URLSearchParams({
@@ -310,11 +328,11 @@ export function HireLandingPage({
             {/* Centered CTA */}
             <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:justify-center">
               <Button
-                size="lg"
+                size={cta.cta_size || "lg"}
                 onClick={() => handleSeeMatches('hero')}
                 className="w-full sm:w-auto sm:min-w-[200px]"
               >
-                See Matching Candidates
+                {cta.cta_text || "Start Receiving Applicants"}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Button
@@ -332,15 +350,15 @@ export function HireLandingPage({
             <div className="mt-16 flex flex-wrap items-center justify-center gap-8 text-sm text-gray-400">
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-gold-400" />
-                <span>No upfront fees</span>
+                <span>300+ Placements/Year</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-gold-400" />
-                <span>Vetted candidates</span>
+                <span>500+ Satisfied Clients</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-gold-400" />
-                <span>24-hour response</span>
+                <span>Global Coverage</span>
               </div>
             </div>
           </div>
@@ -520,28 +538,32 @@ export function HireLandingPage({
         </section>
 
         {/* Match Preview Section - Moved after Value Prop & How It Works for better conversion flow */}
-        <section id="match-preview" className="py-20 sm:py-28 bg-gradient-to-b from-gray-50 to-white" aria-labelledby="match-preview-heading">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <div className="inline-flex items-center gap-2 rounded-full border border-gold-500/30 bg-gold-50 px-5 py-2 text-sm font-medium text-gold-700 mb-6">
-                <Sparkles className="h-4 w-4" />
-                AI-Powered Matching
+        {matchPreview.show !== false && (
+          <section id="match-preview" className="py-20 sm:py-28 bg-gradient-to-b from-gray-50 to-white" aria-labelledby="match-preview-heading">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+              <div className="text-center mb-16">
+                <div className="inline-flex items-center gap-2 rounded-full border border-gold-500/30 bg-gold-50 px-5 py-2 text-sm font-medium text-gold-700 mb-6">
+                  <Sparkles className="h-4 w-4" />
+                  AI-Powered Matching
+                </div>
+                <h2 id="match-preview-heading" className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl lg:text-5xl">
+                  Your Potential {data.position} Matches
+                </h2>
+                <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
+                  Preview qualified candidates available in {locationString}. Our AI matches your requirements with our exclusive talent pool.
+                </p>
               </div>
-              <h2 id="match-preview-heading" className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl lg:text-5xl">
-                Your Potential {data.position} Matches
-              </h2>
-              <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
-                Preview qualified candidates available in {locationString}. Our AI matches your requirements with our exclusive talent pool.
-              </p>
+              <MatchPreview
+                position={data.position}
+                location={locationString}
+                positionSlug={data.position_slug}
+                locationSlug={data.city_slug || data.state_slug || data.country_slug}
+                previewCount={matchPreview.preview_count}
+                onCandidateClick={matchPreview.experimentId ? trackMatchPreviewClick : undefined}
+              />
             </div>
-            <MatchPreview
-              position={data.position}
-              location={locationString}
-              positionSlug={data.position_slug}
-              locationSlug={data.city_slug || data.state_slug || data.country_slug}
-            />
-          </div>
-        </section>
+          </section>
+        )}
 
         {/* Testimonials Section - Luxurious navy background with elegant pattern */}
         <section className="relative py-20 sm:py-28 overflow-hidden">
@@ -789,11 +811,11 @@ export function HireLandingPage({
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <Button
                 onClick={() => handleSeeMatches('cta')}
-                size="lg"
+                size={cta.cta_size || "lg"}
                 className="w-full sm:w-auto sm:min-w-[220px]"
               >
                 <Sparkles className="mr-2 h-5 w-5" />
-                See Matching Candidates
+                {cta.cta_text || "Start Receiving Applicants"}
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
               <Button
@@ -858,7 +880,7 @@ export function HireLandingPage({
                 className="w-full shadow-lg shadow-gold-500/20"
               >
                 <Sparkles className="mr-2 h-4 w-4" />
-                See Candidates
+                {cta.cta_text ? cta.cta_text.replace("Start Receiving Applicants", "Get Started") : "Get Started"}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
@@ -866,11 +888,11 @@ export function HireLandingPage({
             {/* Desktop CTA Button */}
             <Button
               onClick={() => handleSeeMatches('cta')}
-              size="lg"
+              size={cta.cta_size || "lg"}
               className="hidden sm:flex whitespace-nowrap shadow-lg shadow-gold-500/20"
             >
               <Sparkles className="mr-2 h-4 w-4" />
-              See Matching Candidates
+              {cta.cta_text || "Start Receiving Applicants"}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </div>

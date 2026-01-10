@@ -5,6 +5,10 @@
  * Uses a tiered approach: Vincere flags → file extension → filename patterns → default
  *
  * Yacht industry-specific patterns for STCW, GUEST, MCA, RYA, ENG1, etc.
+ *
+ * IMPORTANT: Also filters out dangerous documents that should NOT be imported:
+ * - Verbal references (contain unverified claims)
+ * - Rebuilt/logo CVs (contain Lighthouse branding, not original documents)
  */
 
 import { VincereFile, getFileExtension } from './files';
@@ -62,6 +66,34 @@ const PHOTO_EXTENSIONS = [
   'tiff',
   'tif',
 ];
+
+/**
+ * Exclusion patterns for documents that should NEVER be imported
+ *
+ * These document types are dangerous to import:
+ * 1. Verbal references - contain unverified/informal claims about candidates
+ * 2. Rebuilt/Logo CVs - agency-branded documents, not original candidate CVs
+ */
+const EXCLUSION_PATTERNS: Array<{ pattern: RegExp; reason: string }> = [
+  // Verbal references - informal notes, not verified references
+  { pattern: /\bverbal\b/i, reason: 'verbal_reference' },
+
+  // Rebuilt/Logo CVs - agency-branded, not original documents
+  { pattern: /\blogo\b/i, reason: 'logo_cv' },
+  { pattern: /\blighthouse[_\-\s]?careers/i, reason: 'lighthouse_branded' },
+  { pattern: /\bformatted[_\-\s]?cv/i, reason: 'formatted_cv' },
+  { pattern: /_Formatted_CV/i, reason: 'formatted_cv' },
+  { pattern: /\brebuilt\b/i, reason: 'rebuilt_cv' },
+];
+
+/**
+ * Result of checking if a document should be excluded
+ */
+export interface ExclusionResult {
+  excluded: boolean;
+  reason?: string;
+  matchedPattern?: string;
+}
 
 /**
  * Filename patterns for each document type
@@ -184,6 +216,29 @@ function normalizeFilename(filename: string): string {
 
   // Convert to lowercase and replace common separators with spaces
   return name.toLowerCase().replace(/[_\-\.]/g, ' ');
+}
+
+/**
+ * Check if a file should be excluded from import
+ * Returns exclusion status and reason if excluded
+ *
+ * IMPORTANT: Call this BEFORE classifyDocument to filter out dangerous files
+ */
+export function shouldExcludeDocument(file: VincereFile): ExclusionResult {
+  const filename = file.file_name || '';
+  const normalized = normalizeFilename(filename);
+
+  for (const { pattern, reason } of EXCLUSION_PATTERNS) {
+    if (pattern.test(normalized) || pattern.test(filename)) {
+      return {
+        excluded: true,
+        reason,
+        matchedPattern: pattern.source,
+      };
+    }
+  }
+
+  return { excluded: false };
 }
 
 /**

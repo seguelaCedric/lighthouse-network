@@ -58,12 +58,52 @@ import type { DocumentType } from "@/lib/validations/documents";
 
 // Extended type for candidate with additional fields that may exist in database but not in base type
 // Note: bio_full, bio_generated_at are now in base Candidate type
+// Note: highest_license is already in the base Candidate type
 interface ExtendedCandidate extends CandidateWithRelations {
   bio?: string | null;
   languages?: { language: string; proficiency: string }[];
   yacht_size_experience_min?: number | null;
   yacht_size_experience_max?: number | null;
   // Note: desired_salary_min, desired_salary_max, salary_currency are already in base type
+
+  // CV Extraction fields (JSONB columns not typed in base schema)
+  positions_held?: string[] | null;
+  positions_extracted?: Array<{
+    raw: string;
+    normalized: string;
+    category: string;
+  }> | null;
+  cv_skills?: string[] | null;
+  languages_extracted?: Array<{
+    language: string;
+    proficiency?: string;
+  }> | null;
+  yacht_experience_extracted?: Array<{
+    yacht_name?: string;
+    yacht_type?: string;
+    yacht_size_meters?: number;
+    role?: string;
+    start_date?: string;
+    end_date?: string;
+    duration_months?: number;
+    description?: string;
+  }> | null;
+  certifications_extracted?: Array<{
+    name: string;
+    issuer?: string;
+    date_obtained?: string;
+    expiry_date?: string;
+    is_required?: boolean;
+  }> | null;
+  licenses_extracted?: Array<{
+    name: string;
+    issuer?: string;
+    date_obtained?: string;
+    expiry_date?: string;
+    license_number?: string;
+  }> | null;
+  cv_extracted_at?: string | null;
+  extraction_confidence?: number | null;
 }
 
 // Helper functions
@@ -602,6 +642,31 @@ export default function CandidateProfilePage() {
                         <span className="text-gray-700">{candidate.secondary_position}</span>
                       </div>
                     )}
+
+                    {/* All positions from CV extraction */}
+                    {candidate.positions_extracted && candidate.positions_extracted.length > 0 && (
+                      <div className="mt-4 pt-4 border-t border-gray-100">
+                        <p className="text-xs text-gray-500 mb-3">All Positions Held</p>
+                        <div className="flex flex-wrap gap-2">
+                          {candidate.positions_extracted.map((pos, idx) => (
+                            <span
+                              key={idx}
+                              className={cn(
+                                "rounded-full px-3 py-1 text-sm font-medium capitalize",
+                                pos.category === 'deck' ? "bg-blue-100 text-blue-700" :
+                                pos.category === 'interior' ? "bg-pink-100 text-pink-700" :
+                                pos.category === 'engineering' ? "bg-orange-100 text-orange-700" :
+                                pos.category === 'galley' ? "bg-purple-100 text-purple-700" :
+                                "bg-gray-100 text-gray-700"
+                              )}
+                              title={`Category: ${pos.category}`}
+                            >
+                              {pos.normalized}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -671,6 +736,73 @@ export default function CandidateProfilePage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Yacht Experience - from CV extraction */}
+                {candidate.yacht_experience_extracted && candidate.yacht_experience_extracted.length > 0 && (
+                  <div className="rounded-xl border border-gray-200 bg-white p-6">
+                    <h2 className="mb-4 text-lg font-semibold text-navy-800">Yacht Experience</h2>
+                    <div className="space-y-4">
+                      {candidate.yacht_experience_extracted.map((exp, idx) => (
+                        <div key={idx} className="flex gap-4 p-4 bg-gray-50 rounded-lg">
+                          <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-navy-100">
+                            <Ship className="size-5 text-navy-600" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                <h3 className="font-semibold text-navy-900">
+                                  {exp.yacht_name || 'Yacht'}
+                                  {exp.yacht_size_meters && (
+                                    <span className="ml-2 text-sm font-normal text-gray-500">
+                                      {exp.yacht_size_meters}m
+                                    </span>
+                                  )}
+                                </h3>
+                                {exp.role && (
+                                  <p className="text-sm text-gray-600">{exp.role}</p>
+                                )}
+                              </div>
+                              {exp.yacht_type && (
+                                <span className="rounded-full bg-navy-100 px-2.5 py-0.5 text-xs font-medium text-navy-700 capitalize">
+                                  {exp.yacht_type}
+                                </span>
+                              )}
+                            </div>
+                            {(exp.start_date || exp.end_date || exp.duration_months) && (
+                              <p className="mt-1 text-xs text-gray-500">
+                                {exp.start_date && exp.end_date
+                                  ? `${exp.start_date} - ${exp.end_date}`
+                                  : exp.duration_months
+                                    ? `${exp.duration_months} months`
+                                    : exp.start_date || exp.end_date}
+                              </p>
+                            )}
+                            {exp.description && (
+                              <p className="mt-2 text-sm text-gray-600">{exp.description}</p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Skills - from CV extraction */}
+                {candidate.cv_skills && candidate.cv_skills.length > 0 && (
+                  <div className="rounded-xl border border-gray-200 bg-white p-6">
+                    <h2 className="mb-4 text-lg font-semibold text-navy-800">Skills</h2>
+                    <div className="flex flex-wrap gap-2">
+                      {candidate.cv_skills.map((skill, idx) => (
+                        <span
+                          key={idx}
+                          className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* CV Section */}
                 <div className="rounded-xl border border-gray-200 bg-white p-6">
@@ -847,9 +979,24 @@ export default function CandidateProfilePage() {
                   </div>
                 </div>
 
-                {/* Key Certifications */}
+                {/* Key Certifications & Licenses */}
                 <div className="rounded-xl border border-gray-200 bg-white p-6">
-                  <h2 className="mb-4 text-lg font-semibold text-navy-800">Key Certifications</h2>
+                  <h2 className="mb-4 text-lg font-semibold text-navy-800">Certifications & Licenses</h2>
+
+                  {/* Highest License */}
+                  {candidate.highest_license && (
+                    <div className="mb-4 p-3 bg-gold-50 rounded-lg border border-gold-200">
+                      <div className="flex items-center gap-2">
+                        <Award className="size-5 text-gold-600" />
+                        <div>
+                          <p className="text-xs text-gold-600 font-medium">Highest License</p>
+                          <p className="text-sm font-semibold text-navy-900">{candidate.highest_license}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Key Certs */}
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -874,27 +1021,75 @@ export default function CandidateProfilePage() {
                       )}
                     </div>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full mt-4"
-                    onClick={() => setActiveTab("certifications")}
-                  >
-                    View All Certifications
-                  </Button>
+
+                  {/* Extracted Certifications */}
+                  {candidate.certifications_extracted && candidate.certifications_extracted.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-gray-100">
+                      <p className="text-xs text-gray-500 mb-2">All Certifications ({candidate.certifications_extracted.length})</p>
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {candidate.certifications_extracted.map((cert, idx) => (
+                          <div key={idx} className="flex items-center justify-between text-sm">
+                            <span className="text-gray-700 truncate flex-1">{cert.name}</span>
+                            {cert.expiry_date && (
+                              <span className={cn(
+                                "text-xs ml-2",
+                                getCertStatus(cert.expiry_date) === 'expired' ? "text-error-500" :
+                                getCertStatus(cert.expiry_date) === 'expiring' ? "text-warning-500" : "text-gray-400"
+                              )}>
+                                {getCertStatus(cert.expiry_date) === 'expired' ? 'Expired' : formatDate(cert.expiry_date)}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Extracted Licenses */}
+                  {candidate.licenses_extracted && candidate.licenses_extracted.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-gray-100">
+                      <p className="text-xs text-gray-500 mb-2">Licenses ({candidate.licenses_extracted.length})</p>
+                      <div className="space-y-2">
+                        {candidate.licenses_extracted.map((lic, idx) => (
+                          <div key={idx} className="flex items-center justify-between text-sm">
+                            <span className="text-gray-700 truncate flex-1">{lic.name}</span>
+                            {lic.expiry_date && (
+                              <span className={cn(
+                                "text-xs ml-2",
+                                getCertStatus(lic.expiry_date) === 'expired' ? "text-error-500" :
+                                getCertStatus(lic.expiry_date) === 'expiring' ? "text-warning-500" : "text-gray-400"
+                              )}>
+                                {getCertStatus(lic.expiry_date) === 'expired' ? 'Expired' : formatDate(lic.expiry_date)}
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Languages */}
-                {languages.length > 0 && (
+                {(languages.length > 0 || (candidate.languages_extracted && candidate.languages_extracted.length > 0)) && (
                   <div className="rounded-xl border border-gray-200 bg-white p-6">
                     <h2 className="mb-4 text-lg font-semibold text-navy-800">Languages</h2>
                     <div className="space-y-2">
-                      {languages.map((lang: { language: string; proficiency: string }, idx: number) => (
-                        <div key={idx} className="flex items-center justify-between">
-                          <span className="text-sm text-navy-900">{lang.language}</span>
-                          <ProficiencyBadge level={lang.proficiency} />
-                        </div>
-                      ))}
+                      {/* Prefer languages_extracted from CV if available */}
+                      {candidate.languages_extracted && candidate.languages_extracted.length > 0 ? (
+                        candidate.languages_extracted.map((lang, idx: number) => (
+                          <div key={idx} className="flex items-center justify-between">
+                            <span className="text-sm text-navy-900">{lang.language}</span>
+                            {lang.proficiency && <ProficiencyBadge level={lang.proficiency} />}
+                          </div>
+                        ))
+                      ) : (
+                        languages.map((lang: { language: string; proficiency: string }, idx: number) => (
+                          <div key={idx} className="flex items-center justify-between">
+                            <span className="text-sm text-navy-900">{lang.language}</span>
+                            <ProficiencyBadge level={lang.proficiency} />
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
                 )}

@@ -156,6 +156,11 @@ function ClientCard({ client, onView, onEdit }: { client: Client; onView: () => 
         <span className="flex items-center gap-1.5 text-sm text-gray-600">
           <Users className="size-4 text-gray-400" />
           <span className="font-medium text-navy-900">{client.total_placements}</span> Placements
+          {client.total_jobs > 0 && (
+            <span className="text-success-600">
+              ({Math.round((client.total_placements / client.total_jobs) * 100)}%)
+            </span>
+          )}
         </span>
         <span className="flex items-center gap-1.5 text-sm">
           <TrendingUp className="size-4 text-gold-500" />
@@ -199,6 +204,17 @@ const statusOptions: { value: ClientStatus | ""; label: string }[] = [
   { value: "inactive", label: "Inactive" },
 ];
 
+type SortByOption = "created_at" | "name" | "total_jobs" | "total_placements" | "total_revenue" | "last_placement_at";
+
+const sortOptions: { value: SortByOption; label: string }[] = [
+  { value: "total_jobs", label: "Most Jobs" },
+  { value: "total_placements", label: "Most Placements" },
+  { value: "total_revenue", label: "Highest Revenue" },
+  { value: "last_placement_at", label: "Recent Placement" },
+  { value: "name", label: "Name (A-Z)" },
+  { value: "created_at", label: "Recently Added" },
+];
+
 // Main Component
 function ClientsContent() {
   const router = useRouter();
@@ -208,12 +224,14 @@ function ClientsContent() {
   const urlSearch = searchParams.get("q") || "";
   const urlType = (searchParams.get("type") as ClientType) || "";
   const urlStatus = (searchParams.get("status") as ClientStatus) || "";
+  const urlSort = (searchParams.get("sort") as SortByOption) || "total_jobs";
   const urlPage = searchParams.get("page") ? parseInt(searchParams.get("page")!, 10) : 1;
 
   // State
   const [searchQuery, setSearchQuery] = React.useState(urlSearch);
   const [typeFilter, setTypeFilter] = React.useState<ClientType | "">(urlType);
   const [statusFilter, setStatusFilter] = React.useState<ClientStatus | "">(urlStatus);
+  const [sortBy, setSortBy] = React.useState<SortByOption>(urlSort);
   const [currentPage, setCurrentPage] = React.useState(urlPage);
   const [addModalOpen, setAddModalOpen] = React.useState(false);
 
@@ -231,8 +249,8 @@ function ClientsContent() {
     status: statusFilter || undefined,
     page: currentPage,
     limit: 20,
-    sortBy: "created_at",
-    sortOrder: "desc",
+    sortBy: sortBy,
+    sortOrder: sortBy === "name" ? "asc" : "desc",
   });
 
   const clients = clientsData?.data ?? [];
@@ -245,16 +263,17 @@ function ClientsContent() {
     if (debouncedSearch) params.set("q", debouncedSearch);
     if (typeFilter) params.set("type", typeFilter);
     if (statusFilter) params.set("status", statusFilter);
+    if (sortBy !== "total_jobs") params.set("sort", sortBy);
     if (currentPage > 1) params.set("page", String(currentPage));
 
     const newUrl = params.toString() ? `?${params.toString()}` : "/clients";
     router.replace(newUrl, { scroll: false });
-  }, [debouncedSearch, typeFilter, statusFilter, currentPage, router]);
+  }, [debouncedSearch, typeFilter, statusFilter, sortBy, currentPage, router]);
 
   // Reset page when filters change
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearch, typeFilter, statusFilter]);
+  }, [debouncedSearch, typeFilter, statusFilter, sortBy]);
 
   const handleViewClient = (clientId: string) => {
     router.push(`/clients/${clientId}`);
@@ -268,9 +287,10 @@ function ClientsContent() {
     setSearchQuery("");
     setTypeFilter("");
     setStatusFilter("");
+    setSortBy("total_jobs");
   };
 
-  const hasActiveFilters = searchQuery || typeFilter || statusFilter;
+  const hasActiveFilters = searchQuery || typeFilter || statusFilter || sortBy !== "total_jobs";
 
   return (
     <>
@@ -327,6 +347,18 @@ function ClientsContent() {
                   className="h-10 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:border-gold-500 focus:outline-none focus:ring-1 focus:ring-gold-500"
                 >
                   {statusOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as SortByOption)}
+                  className="h-10 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:border-gold-500 focus:outline-none focus:ring-1 focus:ring-gold-500"
+                >
+                  {sortOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>

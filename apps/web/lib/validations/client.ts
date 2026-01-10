@@ -51,6 +51,7 @@ export const clientQuerySchema = z.object({
       "created_at",
       "updated_at",
       "name",
+      "total_jobs",
       "total_revenue",
       "total_placements",
       "last_placement_at",
@@ -135,6 +136,22 @@ export interface Client {
   portal_last_login: string | null;
 }
 
+// Contact associated with a client
+export interface ClientContact {
+  id: string;
+  client_id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  role: string | null;
+  is_primary: boolean;
+  is_active: boolean;
+  vincere_id: number | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 // Client with related data
 export interface ClientWithJobs extends Client {
   jobs?: Array<{
@@ -159,4 +176,5 @@ export interface ClientWithJobs extends Client {
       title: string;
     } | null;
   }>;
+  contacts?: ClientContact[];
 }

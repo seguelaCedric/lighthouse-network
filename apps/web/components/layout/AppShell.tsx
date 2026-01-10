@@ -21,6 +21,7 @@ import {
   Globe,
   BookOpen,
   Mail,
+  BarChart3,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { cn } from "@/lib/utils";
@@ -39,6 +40,7 @@ interface NavItem {
 
 const mainNavItems: NavItem[] = [
   { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard className="size-5" />, href: "/dashboard" },
+  { id: "analytics", label: "Analytics", icon: <BarChart3 className="size-5" />, href: "/dashboard/analytics" },
   { id: "briefs", label: "Briefs", icon: <FileText className="size-5" />, href: "/briefs" },
   { id: "jobs", label: "Jobs", icon: <Briefcase className="size-5" />, href: "/jobs" },
   { id: "candidates", label: "Candidates", icon: <Users className="size-5" />, href: "/candidates" },
@@ -69,6 +71,9 @@ export function AppShell({ children }: AppShellProps) {
   const isActive = (href: string) => {
     if (href === "/dashboard") {
       return pathname === "/dashboard";
+    }
+    if (href === "/dashboard/analytics") {
+      return pathname.startsWith("/dashboard/analytics");
     }
     if (href.startsWith("/admin")) {
       return pathname.startsWith("/admin");

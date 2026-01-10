@@ -1,9 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { notFound, redirect } from 'next/navigation'
 import { Metadata } from 'next'
+import { cookies, headers } from 'next/headers'
 import { HireLandingPage } from '@/components/seo/HireLandingPage'
 import { generateMetadata as genMeta } from '@/lib/seo/metadata'
 import { cache } from 'react'
+import { getLandingPageExperiments } from '@/lib/ab-testing/assignment.server'
+import type { LandingPageExperiments } from '@/lib/ab-testing/types'
 
 interface Props {
   params: Promise<{ catchAll: string[] }>
@@ -206,10 +209,34 @@ export default async function CatchAllPage({ params }: Props) {
     notFound()
   }
 
-  // Fetch related pages and content links in parallel
-  const [relatedPages, contentLinks] = await Promise.all([
+  // Get visitor ID for A/B testing (set by middleware)
+  const cookieStore = await cookies()
+  const visitorId = cookieStore.get('ab_visitor_id')?.value
+
+  // Get request headers for user agent
+  const headersList = await headers()
+  const userAgent = headersList.get('user-agent') || undefined
+  const pageUrl = `/${urlPath}`
+
+  // Build location string for experiments
+  const locationString = [page.city, page.state, page.country]
+    .filter(Boolean)
+    .join(', ')
+
+  // Fetch related pages, content links, and experiments in parallel
+  const [relatedPages, contentLinks, experiments] = await Promise.all([
     getRelatedPages(page.id),
     getContentLinks(page.id),
+    visitorId
+      ? getLandingPageExperiments(
+          visitorId,
+          'hire_landing',
+          page.position,
+          locationString,
+          pageUrl,
+          userAgent
+        )
+      : Promise.resolve({} as LandingPageExperiments),
   ])
 
   return (
@@ -218,6 +245,7 @@ export default async function CatchAllPage({ params }: Props) {
       relatedPositions={relatedPages.relatedPositions}
       relatedLocations={relatedPages.relatedLocations}
       contentLinks={contentLinks}
+      experiments={experiments}
     />
   )
 }

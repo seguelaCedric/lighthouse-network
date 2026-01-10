@@ -18,6 +18,7 @@ import {
   DocumentType,
   summarizeClassifications,
   ClassificationSummary,
+  shouldExcludeDocument,
 } from '../vincere/document-classifier';
 import { extractText, truncateForEmbedding, getFileTypeLabel, isExtractable } from './text-extraction';
 import { generateEmbedding } from '@lighthouse/ai';
@@ -87,9 +88,29 @@ export async function syncCandidateDocuments(
 
     console.log(`    Found ${files.length} files to classify and sync`);
 
-    // Classify all files
-    const classifications = new Map<number, ClassificationResult>();
+    // First, filter out excluded documents (verbal references, logo CVs, etc.)
+    const excludedFiles: VincereFile[] = [];
+    const allowedFiles: VincereFile[] = [];
+
     for (const file of files) {
+      const exclusion = shouldExcludeDocument(file);
+      if (exclusion.excluded) {
+        excludedFiles.push(file);
+        console.log(
+          `      ⛔ EXCLUDED: ${file.file_name || 'Unknown'} (reason: ${exclusion.reason})`
+        );
+      } else {
+        allowedFiles.push(file);
+      }
+    }
+
+    if (excludedFiles.length > 0) {
+      console.log(`    Excluded ${excludedFiles.length} dangerous documents (verbal references, logo CVs, etc.)`);
+    }
+
+    // Classify allowed files only
+    const classifications = new Map<number, ClassificationResult>();
+    for (const file of allowedFiles) {
       const classification = classifyDocument(file);
       classifications.set(file.id, classification);
       console.log(
@@ -97,8 +118,8 @@ export async function syncCandidateDocuments(
       );
     }
 
-    // Process each file based on classification
-    for (const file of files) {
+    // Process each allowed file based on classification
+    for (const file of allowedFiles) {
       const classification = classifications.get(file.id)!;
 
       try {

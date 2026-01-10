@@ -8,6 +8,7 @@ import {
   syncDocumentUpload,
   syncJobApplication,
 } from "@/lib/vincere/sync-service";
+import { triggerHydrationIfNeeded } from "@/lib/vincere/on-login-hydration";
 import { mapPositionToDatabaseValue } from "@/lib/utils/position-mapping";
 
 export type CandidateAuthResult = {
@@ -342,7 +343,7 @@ export async function signInCandidate(
   // Check if user record exists
   const { data: user } = await supabase
     .from("users")
-    .select("id, user_type")
+    .select("id, user_type, organization_id")
     .eq("auth_id", data.user.id)
     .single();
 
@@ -355,6 +356,11 @@ export async function signInCandidate(
     };
   }
 
+  // Default Lighthouse org ID for candidates
+  const DEFAULT_LIGHTHOUSE_ORG_ID = "c4e1e6ff-b71a-4fbd-bb31-dd282d981436";
+  let candidateId: string | null = null;
+  let organizationId = user?.organization_id || DEFAULT_LIGHTHOUSE_ORG_ID;
+
   // If no user record exists, check if there's a candidate with matching email
   // and create the user record if needed (for Vincere-imported candidates)
   if (!user) {
@@ -365,9 +371,9 @@ export async function signInCandidate(
       .single();
 
     if (candidate) {
-      // Create user record for this candidate
-      const DEFAULT_LIGHTHOUSE_ORG_ID = "00000000-0000-0000-0000-000000000001";
+      candidateId = candidate.id;
 
+      // Create user record for this candidate
       const { data: newUser, error: userError } = await supabase
         .from("users")
         .insert({
@@ -398,6 +404,46 @@ export async function signInCandidate(
         error: "No crew member profile found for this account. Please register first.",
       };
     }
+  } else {
+    // User exists - find their candidate record
+    const { data: candidate } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("user_id", user.id)
+      .single();
+
+    if (candidate) {
+      candidateId = candidate.id;
+    } else {
+      // Fallback to email lookup
+      const { data: candidateByEmail } = await supabase
+        .from("candidates")
+        .select("id")
+        .eq("email", email.toLowerCase())
+        .single();
+
+      if (candidateByEmail) {
+        candidateId = candidateByEmail.id;
+      }
+    }
+  }
+
+  // Trigger Vincere hydration if needed (fire-and-forget)
+  // This fetches data from Vincere for "email stub" candidates on first login
+  if (candidateId) {
+    triggerHydrationIfNeeded(candidateId, email.toLowerCase(), organizationId, supabase)
+      .then((result) => {
+        if (result?.hydrated) {
+          console.log(`[signInCandidate] Vincere hydration completed for ${candidateId}:`, {
+            cvProcessed: result.cvProcessed,
+            photoProcessed: result.photoProcessed,
+            fieldsUpdated: result.fieldsUpdated?.length,
+          });
+        }
+      })
+      .catch((err) => {
+        console.error(`[signInCandidate] Vincere hydration failed for ${candidateId}:`, err);
+      });
   }
 
   revalidatePath("/", "layout");

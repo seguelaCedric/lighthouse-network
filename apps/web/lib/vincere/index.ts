@@ -141,6 +141,7 @@ export {
   classifyDocuments,
   summarizeClassifications,
   getDocumentTypeLabel,
+  shouldExcludeDocument,
 } from './document-classifier';
 
 export type {
@@ -149,6 +150,7 @@ export type {
   ClassificationMethod,
   ClassificationResult,
   ClassificationSummary,
+  ExclusionResult,
 } from './document-classifier';
 
 // Webhook Management
@@ -165,9 +167,54 @@ export type { VincereWebhook } from './client';
 export {
   registerJobWebhook,
   registerCandidateWebhook,
+  registerPlacementWebhook,
   findWebhookByUrl,
   ensureJobWebhook,
   DEFAULT_JOB_WEBHOOK_EVENTS,
   JOB_WEBHOOK_EVENT,
   CANDIDATE_WEBHOOK_EVENT,
+  PLACEMENT_WEBHOOK_EVENT,
 } from './webhooks';
+
+// Contacts API
+export {
+  getContactById,
+  getContactsByIds,
+  getContactDisplayName,
+  getContactPhone,
+} from './contacts';
+
+export type { VincereContact } from './contacts';
+
+// Companies API
+export {
+  getCompanyById,
+  getCompaniesByIds,
+  getCompanyDisplayName,
+} from './companies';
+
+export type { VincereCompany } from './companies';
+
+// Placements API
+export {
+  getPlacementById,
+  getPlacementsForJob,
+  getPlacementWithContext,
+  mapPlacementStatus,
+  getPlacementFee,
+} from './placements';
+
+export type {
+  VincerePlacement,
+  VincerePlacementRef,
+  VincerePlacementWithContext,
+} from './placements';
+
+// On-Login Hydration Service
+export {
+  hydrateFromVincere,
+  needsVincereHydration,
+  triggerHydrationIfNeeded,
+} from './on-login-hydration';
+
+export type { HydrationResult } from './on-login-hydration';

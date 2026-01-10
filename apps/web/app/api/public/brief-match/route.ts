@@ -516,13 +516,13 @@ function calculateStructuredScore(
   }
 
   // AI-parsed soft requirements matching
-  if (aiParsedQuery) {
+  if (aiParsedQuery && aiParsedQuery.softRequirements) {
     const softReqs = aiParsedQuery.softRequirements;
     let softMatches = 0;
     let softTotal = 0;
 
     // Cuisine types
-    if (softReqs.cuisineTypes.length > 0) {
+    if (softReqs.cuisineTypes?.length > 0) {
       softTotal += softReqs.cuisineTypes.length;
       for (const cuisine of softReqs.cuisineTypes) {
         if (skills.some(s => s.includes(cuisine.toLowerCase())) ||
@@ -534,7 +534,7 @@ function calculateStructuredScore(
 
     // Special skills - check both cv_skills AND profile_summary for matches
     // CRITICAL: These are from the job brief and should have significant weight
-    if (softReqs.specialSkills.length > 0) {
+    if (softReqs.specialSkills?.length > 0) {
       softTotal += softReqs.specialSkills.length;
       const profileText = (candidate.profile_summary || '').toLowerCase();
 
@@ -722,13 +722,103 @@ const CAREER_LADDERS: string[][] = [
 // ----------------------------------------------------------------------------
 
 const DEPARTMENTS: Record<string, string[]> = {
-  deck: ['deckhand', 'deck hand', 'bosun', 'officer', 'captain', 'master', 'mate', 'skipper'],
-  interior: ['stewardess', 'stew', 'purser', 'butler', 'housekeeper', 'housemaid', 'laundress', 'valet', 'footman'],
-  engineering: ['engineer', 'eto', 'electrical', 'electro-technical'],
-  galley: ['chef', 'cook', 'culinary', 'galley'],
-  childcare: ['nanny', 'governess', 'tutor', 'childcare', 'nursery'],
-  security: ['security', 'protection', 'bodyguard', 'cpo', 'close protection'],
-  management: ['estate manager', 'house manager', 'property manager', 'household manager', 'personal assistant', 'pa'],
+  // ==========================================================================
+  // YACHT DEPARTMENTS
+  // ==========================================================================
+  deck: [
+    'captain', 'master', 'skipper',
+    'officer', 'mate', 'chief officer', 'first officer', 'second officer', 'third officer',
+    'bosun', 'boatswain',
+    'deckhand', 'deck hand', 'lead deckhand', 'senior deckhand', 'junior deckhand',
+    'deck/stew', 'deckstew',
+  ],
+  interior: [
+    'stewardess', 'stew', 'steward',
+    'chief stewardess', 'chief stew', 'head stewardess', 'head stew',
+    'second stewardess', '2nd stew', 'third stewardess', '3rd stew',
+    'junior stewardess', 'sole stewardess',
+    'purser', 'interior manager', 'head of interior',
+    'laundress', 'laundry', 'cabin stewardess', 'service stewardess',
+  ],
+  engineering: [
+    'engineer', 'chief engineer', 'second engineer', 'third engineer',
+    'junior engineer', 'sole engineer',
+    'eto', 'electro technical', 'electro-technical', 'electrical',
+    'av/it', 'av it', 'av technician',
+  ],
+  galley: [
+    'chef', 'cook', 'culinary', 'galley',
+    'head chef', 'executive chef', 'sous chef', 'second chef', 'junior chef',
+    'sole chef', 'crew chef', 'pastry chef', 'galley hand',
+  ],
+
+  // ==========================================================================
+  // VILLA/ESTATE DEPARTMENTS
+  // ==========================================================================
+  villa: [
+    // Management
+    'estate manager', 'house manager', 'villa manager', 'property manager',
+    'household manager', 'residence manager', 'chalet manager', 'lodge manager',
+    'chalet host', 'caretaker',
+    // Service
+    'butler', 'head butler', 'under butler', 'junior butler', 'valet',
+    'housekeeper', 'head housekeeper', 'executive housekeeper', 'housekeeping',
+    'housemaid', 'maid', 'houseman',
+    // Culinary (villa-specific)
+    'private chef', 'personal chef', 'family chef', 'estate chef', 'villa chef',
+    'chalet chef', 'private cook',
+    // Support
+    'chauffeur', 'driver', 'personal driver',
+    'gardener', 'head gardener', 'groundskeeper', 'grounds',
+    'pool technician', 'pool man', 'handyman', 'maintenance',
+    'estate worker', 'estate technician',
+    // Couples
+    'domestic couple', 'house couple', 'caretaker couple', 'couple',
+  ],
+
+  // ==========================================================================
+  // SPECIALIZED ROLES
+  // ==========================================================================
+  childcare: [
+    'nanny', 'head nanny', 'senior nanny', 'junior nanny',
+    'live-in nanny', 'live-out nanny', 'traveling nanny',
+    'governess', 'au pair', 'tutor', 'private tutor',
+    'maternity nurse', 'night nurse', 'newborn care specialist',
+    'mothers help', "mother's help", 'nursery', 'childcare',
+  ],
+  security: [
+    'security', 'security officer', 'security guard', 'security manager',
+    'head of security', 'cpo', 'close protection officer', 'close protection',
+    'bodyguard', 'personal protection',
+  ],
+  medical: [
+    'nurse', 'registered nurse', 'rn',
+    'medic', 'ship medic', 'yacht medic',
+    'paramedic', 'emt', 'doctor', 'physician',
+    'healthcare',
+  ],
+  management: [
+    'yacht manager', 'fleet manager',
+    'personal assistant', 'pa', 'executive pa', 'executive assistant', 'ea',
+    'family office manager', 'chief of staff', 'private secretary',
+  ],
+  wellness: [
+    'spa', 'spa therapist', 'spa manager',
+    'massage', 'massage therapist', 'masseuse',
+    'beauty', 'beautician', 'aesthetician',
+    'fitness', 'fitness instructor', 'personal trainer',
+    'yoga', 'yoga instructor', 'pilates', 'pilates instructor',
+    'wellness',
+  ],
+
+  // ==========================================================================
+  // OTHER SPECIALIZED ROLES
+  // ==========================================================================
+  other: [
+    'dive instructor', 'divemaster', 'dive master',
+    'water sports', 'watersports', 'jet ski',
+    'florist', 'photographer', 'hairdresser', 'hair stylist',
+  ],
 };
 
 /**
@@ -748,22 +838,83 @@ function getDepartment(role: string): string | null {
 
 /**
  * Check if two roles are in compatible departments.
- * Returns true if they're in the same department or if either role's department is unclear.
+ * STRICT: If we know the search role's department, only allow candidates from that department
+ * or explicitly compatible departments. Candidates with unknown departments are filtered out
+ * when the search role has a known department - we can't risk showing spa therapists for butler searches.
+ *
+ * @param searchRole - The role being searched for (e.g., "butler")
+ * @param candidateRole - The candidate's position string (e.g., "spa therapist")
+ * @param candidateCategory - Optional: The candidate's position_category from CV extraction (takes precedence)
  */
-function areDepartmentsCompatible(searchRole: string, candidateRole: string): boolean {
+function areDepartmentsCompatible(
+  searchRole: string,
+  candidateRole: string,
+  candidateCategory?: string | null
+): boolean {
   const searchDept = getDepartment(searchRole);
-  const candidateDept = getDepartment(candidateRole);
 
-  // If we can't determine department, allow the match (don't filter out)
-  if (!searchDept || !candidateDept) return true;
+  // Use candidate's stored position_category if available, otherwise infer from position string
+  // The position_category from CV extraction is more reliable as it's AI-classified
+  const candidateDept = candidateCategory || getDepartment(candidateRole);
+
+  // If search role has no known department, be lenient (allow any candidate)
+  if (!searchDept) return true;
+
+  // If search role HAS a known department but candidate doesn't, REJECT
+  // This prevents spa therapists from appearing in butler searches
+  if (!candidateDept) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`[Brief Match] Department filter: REJECT - candidate "${candidateRole}" has unknown department (category: ${candidateCategory}), search role "${searchRole}" is ${searchDept}`);
+    }
+    return false;
+  }
 
   // Same department is compatible
   if (searchDept === candidateDept) return true;
 
-  // Interior and management can overlap (e.g., butler can be house manager)
-  if ((searchDept === 'interior' && candidateDept === 'management') ||
-      (searchDept === 'management' && candidateDept === 'interior')) {
-    return true;
+  // ==========================================================================
+  // CROSS-DEPARTMENT OVERLAPS
+  // ==========================================================================
+  // Many crew transition between yacht and villa roles. Define valid overlaps.
+  // ==========================================================================
+
+  const compatiblePairs: [string, string][] = [
+    // INTERIOR overlaps
+    ['interior', 'villa'],      // Stewardess ↔ Housekeeper, Butler works both
+    ['interior', 'management'], // Chief Stew ↔ House Manager, PA works with interior
+
+    // VILLA overlaps
+    ['villa', 'management'],    // Estate Manager ↔ House Manager, PA
+    ['villa', 'galley'],        // Private Chef works yacht and villa
+    ['villa', 'childcare'],     // Nanny often part of villa household staff
+    ['villa', 'security'],      // Security often part of estate staff
+
+    // GALLEY overlaps
+    ['galley', 'villa'],        // Chef works yacht and private residence
+
+    // DECK overlaps (limited - very specialized)
+    // Deck crew rarely cross to other departments
+
+    // ENGINEERING overlaps (limited - very specialized)
+    // Engineers rarely cross to other departments
+
+    // CHILDCARE overlaps
+    ['childcare', 'villa'],     // Nanny/Governess part of household
+    ['childcare', 'interior'],  // Some stews have childcare duties
+
+    // MEDICAL overlaps
+    ['medical', 'childcare'],   // Maternity nurse, night nurse
+
+    // WELLNESS overlaps (limited - specialized)
+    // Wellness staff are specialists, don't overlap much
+  ];
+
+  // Check if the pair exists in either order
+  for (const [dept1, dept2] of compatiblePairs) {
+    if ((searchDept === dept1 && candidateDept === dept2) ||
+        (searchDept === dept2 && candidateDept === dept1)) {
+      return true;
+    }
   }
 
   return false;
@@ -1997,6 +2148,7 @@ export async function POST(request: NextRequest) {
         last_name,
         avatar_url,
         primary_position,
+        position_category,
         years_experience,
         nationality,
         availability_status,
@@ -2122,11 +2274,16 @@ export async function POST(request: NextRequest) {
 
       // HARD FILTER 1: Department compatibility
       // A deck role search should never return engineering candidates
-      const isDepartmentCompatible = areDepartmentsCompatible(primarySearchRole, candidatePosition);
+      // Use position_category from CV extraction if available (more reliable than string inference)
+      const isDepartmentCompatible = areDepartmentsCompatible(
+        primarySearchRole,
+        candidatePosition,
+        c.position_category // Pass the stored category from CV extraction
+      );
 
       if (!isDepartmentCompatible) {
         if (process.env.NODE_ENV === 'development') {
-          console.log(`[Brief Match] FILTERED OUT (department mismatch): ${c.first_name} ${c.last_name} - "${candidatePosition}" not compatible with search for "${primarySearchRole}"`);
+          console.log(`[Brief Match] FILTERED OUT (department mismatch): ${c.first_name} ${c.last_name} - "${candidatePosition}" (category: ${c.position_category}) not compatible with search for "${primarySearchRole}"`);
         }
         return false;
       }
@@ -2157,7 +2314,7 @@ export async function POST(request: NextRequest) {
 
     let hardRequirementsFilteredCandidates = departmentFilteredCandidates;
 
-    if (aiParsedQuery) {
+    if (aiParsedQuery && aiParsedQuery.hardRequirements) {
       const { hardRequirements } = aiParsedQuery;
 
       hardRequirementsFilteredCandidates = departmentFilteredCandidates.filter((c) => {
@@ -2193,7 +2350,7 @@ export async function POST(request: NextRequest) {
         }
 
         // 3. Required languages check (soft filter - at least one match)
-        if (hardRequirements.languages.length > 0) {
+        if (hardRequirements.languages?.length > 0) {
           const candidateLangs = (c.languages_extracted || []).map((l: string) => l.toLowerCase());
           const hasRequiredLanguage = hardRequirements.languages.some((reqLang) =>
             candidateLangs.some((candLang: string) =>
@@ -2476,11 +2633,11 @@ export async function POST(request: NextRequest) {
     // Determine if we should run AI judgment
     // Use AI judgment if: long requirements text OR AI parsed query found soft requirements
     const hasNuancedRequirements = (requirements && requirements.length > 20) ||
-      (aiParsedQuery && (
-        aiParsedQuery.softRequirements.cuisineTypes.length > 0 ||
-        aiParsedQuery.softRequirements.serviceStyle.length > 0 ||
-        aiParsedQuery.softRequirements.specialSkills.length > 0 ||
-        aiParsedQuery.softRequirements.dietaryExpertise.length > 0 ||
+      (aiParsedQuery && aiParsedQuery.softRequirements && aiParsedQuery.context && (
+        (aiParsedQuery.softRequirements.cuisineTypes?.length || 0) > 0 ||
+        (aiParsedQuery.softRequirements.serviceStyle?.length || 0) > 0 ||
+        (aiParsedQuery.softRequirements.specialSkills?.length || 0) > 0 ||
+        (aiParsedQuery.softRequirements.dietaryExpertise?.length || 0) > 0 ||
         aiParsedQuery.context.clientType !== null
       ));
 
@@ -2494,24 +2651,24 @@ export async function POST(request: NextRequest) {
 
       // Build enhanced requirements string with AI-parsed info
       let enhancedRequirements = requirements || '';
-      if (aiParsedQuery) {
+      if (aiParsedQuery && aiParsedQuery.softRequirements && aiParsedQuery.hardRequirements && aiParsedQuery.context) {
         const parsedReqParts: string[] = [];
-        if (aiParsedQuery.softRequirements.cuisineTypes.length > 0) {
+        if (aiParsedQuery.softRequirements.cuisineTypes?.length > 0) {
           parsedReqParts.push(`Cuisine expertise: ${aiParsedQuery.softRequirements.cuisineTypes.join(', ')}`);
         }
-        if (aiParsedQuery.softRequirements.serviceStyle.length > 0) {
+        if (aiParsedQuery.softRequirements.serviceStyle?.length > 0) {
           parsedReqParts.push(`Service style: ${aiParsedQuery.softRequirements.serviceStyle.join(', ')}`);
         }
-        if (aiParsedQuery.softRequirements.specialSkills.length > 0) {
+        if (aiParsedQuery.softRequirements.specialSkills?.length > 0) {
           parsedReqParts.push(`Special skills: ${aiParsedQuery.softRequirements.specialSkills.join(', ')}`);
         }
-        if (aiParsedQuery.softRequirements.dietaryExpertise.length > 0) {
+        if (aiParsedQuery.softRequirements.dietaryExpertise?.length > 0) {
           parsedReqParts.push(`Dietary expertise: ${aiParsedQuery.softRequirements.dietaryExpertise.join(', ')}`);
         }
         if (aiParsedQuery.context.clientType) {
           parsedReqParts.push(`Client type: ${aiParsedQuery.context.clientType}`);
         }
-        if (aiParsedQuery.hardRequirements.languages.length > 0) {
+        if (aiParsedQuery.hardRequirements.languages?.length > 0) {
           parsedReqParts.push(`Languages required: ${aiParsedQuery.hardRequirements.languages.join(', ')}`);
         }
         if (parsedReqParts.length > 0) {
@@ -2610,6 +2767,116 @@ export async function POST(request: NextRequest) {
           .slice(0, resultLimit)
       : candidatesForAIJudgment.slice(0, resultLimit);
 
+    // =========================================================================
+    // FALLBACK MATCHING - When no candidates pass strict filters
+    // =========================================================================
+    // For lead generation, showing relevant candidates (with honest scores) is
+    // better than showing an empty state. Use simplified scoring based on
+    // position fit + experience only, with a 40% minimum threshold.
+    // =========================================================================
+    let fallbackMode = false;
+    let candidatesToProcess = finalCandidates;
+
+    if (finalCandidates.length === 0 && departmentFilteredCandidates.length > 0) {
+      console.log(`[Brief Match] No exact matches - trying fallback with ${departmentFilteredCandidates.length} department-filtered candidates`);
+
+      // Score candidates using simplified fallback scoring
+      const fallbackScored = departmentFilteredCandidates
+        .map(c => {
+          const fallbackResult = calculateFallbackScore(
+            {
+              primary_position: c.primary_position,
+              positions_held: c.positions_held,
+              years_experience: c.years_experience,
+            },
+            originalRole
+          );
+
+          const fallbackStructuredScore: StructuredCandidateScore = {
+            passesHardFilters: true,
+            components: {
+              positionFit: fallbackResult.score * 0.6,
+              experienceQuality: fallbackResult.score * 0.4,
+              skillMatch: 0,
+              availability: 0,
+              verification: 0,
+              excellence: 0,
+            },
+            weights: {
+              positionFit: 0.60,
+              experienceQuality: 0.40,
+              skillMatch: 0,
+              availability: 0,
+              verification: 0,
+              excellence: 0,
+            },
+            totalScore: fallbackResult.score,
+            recommendation: fallbackResult.score >= 60 ? 'suitable' :
+                          fallbackResult.score >= 40 ? 'consider' : 'unlikely',
+            bonuses: {
+              exceedsYachtSize: false,
+              exceedsExperience: false,
+              hasPremiumCerts: false,
+              longTenure: false,
+              verifiedReferences: false,
+            },
+            reasoning: [fallbackResult.reasoning],
+          };
+
+          const fallbackRecruiterAssessment: RecruiterAssessment = {
+            suitability_score: fallbackResult.score / 100,
+            recommendation: fallbackResult.score >= 60 ? 'suitable' :
+                          fallbackResult.score >= 40 ? 'consider' : 'unlikely',
+            flags: {
+              overqualified: false,
+              underqualified: false,
+              missing_qualifications: false,
+              career_mismatch: false,
+              flight_risk: false,
+            },
+            missing_certs: [],
+            reasoning: fallbackResult.reasoning,
+          };
+
+          const fallbackStepUpReadiness: StepUpReadiness = {
+            isStepUp: false,
+            isReady: false,
+            currentLevel: c.primary_position || '',
+            targetLevel: originalRole,
+            qualifyingFactors: [],
+            gaps: [],
+          };
+
+          return {
+            ...c,
+            similarity: fallbackResult.score / 100, // Normalize to 0-1
+            vectorScore: fallbackResult.score / 100,
+            fallbackScore: fallbackResult.score,
+            fallbackReasoning: fallbackResult.reasoning,
+            structuredScore: fallbackStructuredScore,
+            recruiterAssessment: fallbackRecruiterAssessment,
+            stepUpReadiness: fallbackStepUpReadiness,
+            isStepUpCandidate: false,
+            isReadyToStepUp: false,
+            hasExcellenceBonus: false,
+          };
+        })
+        .filter(c => c.fallbackScore >= 40) // Minimum 40% threshold
+        .sort((a, b) => b.fallbackScore - a.fallbackScore)
+        .slice(0, resultLimit);
+
+      if (fallbackScored.length > 0) {
+        console.log(`[Brief Match] Fallback found ${fallbackScored.length} candidates with scores: ${fallbackScored.map(c => c.fallbackScore).join(', ')}`);
+        candidatesToProcess = fallbackScored;
+        fallbackMode = true;
+      } else {
+        console.log('[Brief Match] Fallback found no candidates meeting 40% threshold');
+      }
+    }
+
+    // Use candidatesToProcess for all subsequent operations
+    const processedCandidates = candidatesToProcess;
+
     // Build search context for personalized matching explanations
     const searchContext = {
       role: originalRole, // Use the original role from user input
@@ -2622,19 +2889,19 @@ export async function POST(request: NextRequest) {
     // AI-POWERED CANDIDATE PRESENTATIONS
     // Generate compelling, personalized descriptions using Claude
     // =========================================================================
-    console.log('[Brief Match] Generating AI presentations for', finalCandidates.length, 'candidates...');
+    console.log('[Brief Match] Generating AI presentations for', processedCandidates.length, 'candidates...');
     const presentationStartTime = Date.now();
 
     // Generate AI presentations for all candidates in parallel
     const aiPresentations = await generateAIPresentationsForCandidates(
-      finalCandidates,
+      processedCandidates,
       searchContext
     );
 
     console.log('[Brief Match] AI generation completed in', Date.now() - presentationStartTime, 'ms');
 
     // Anonymize results with AI-generated content
-    const anonymizedResults: AnonymizedCandidate[] = finalCandidates.map((c, index) => {
+    const anonymizedResults: AnonymizedCandidate[] = processedCandidates.map((c, index) => {
       try {
         // Generate obfuscated ID (hash-like, not the real ID)
         const obfuscatedId = `match_${Date.now()}_${index}`;
@@ -2764,6 +3031,7 @@ export async function POST(request: NextRequest) {
     // - search_quality: How well the results match the query
     // - search_notes: Explanations of what's missing
     // - alternative_suggestions: Related roles that might have more candidates
+    // - fallback_mode: Whether we're showing fallback candidates
     // =========================================================================
 
     // Assess search quality based on candidate scores and count
@@ -2771,13 +3039,13 @@ export async function POST(request: NextRequest) {
     const searchNotes: string[] = [];
     const alternativeSuggestions: string[] = [];
 
-    const topCandidate = finalCandidates[0];
-    const avgStructuredScore = finalCandidates.length > 0
-      ? finalCandidates.reduce((sum, c) => sum + (c.structuredScore?.totalScore || 0), 0) / finalCandidates.length
+    const topCandidate = processedCandidates[0];
+    const avgStructuredScore = processedCandidates.length > 0
+      ? processedCandidates.reduce((sum, c) => sum + (c.structuredScore?.totalScore || 0), 0) / processedCandidates.length
       : 0;
 
     // Determine search quality
-    if (finalCandidates.length === 0) {
+    if (processedCandidates.length === 0) {
       searchQuality = 'no_exact_matches';
       searchNotes.push(`No candidates found matching "${originalRole}" with your specified requirements.`);
 
@@ -2790,12 +3058,16 @@ export async function POST(request: NextRequest) {
       } else if (searchDept === 'interior') {
         alternativeSuggestions.push('Consider Second Stewardesses if looking for Chief Stews', 'Try expanding location preferences');
       }
-    } else if (finalCandidates.length < 3 || avgStructuredScore < 50) {
+    } else if (fallbackMode) {
+      // Fallback mode: showing candidates with relaxed matching
+      searchQuality = 'limited';
+      searchNotes.push(`Showing candidates with relevant ${originalRole} experience. Scores reflect position fit and experience level.`);
+    } else if (processedCandidates.length < 3 || avgStructuredScore < 50) {
       searchQuality = 'limited';
       searchNotes.push('Limited exact matches found. Results include candidates who may need some development for this role.');
 
       // Check for step-up candidates
-      const stepUpCount = finalCandidates.filter(c => c.isStepUpCandidate).length;
+      const stepUpCount = processedCandidates.filter(c => c.isStepUpCandidate).length;
       if (stepUpCount > 0) {
         searchNotes.push(`${stepUpCount} candidate(s) are in progression toward this role and may be ready to step up.`);
       }
@@ -2804,7 +3076,7 @@ export async function POST(request: NextRequest) {
       if (parsedRequirements.min_yacht_size_experience_meters && parsedRequirements.min_yacht_size_experience_meters >= 80) {
         searchNotes.push('Large yacht experience (80m+) is a specialized requirement that limits the candidate pool.');
       }
-      if (aiParsedQuery?.softRequirements.cuisineTypes.length) {
+      if (aiParsedQuery?.softRequirements?.cuisineTypes?.length) {
         searchNotes.push(`Specialized cuisine requirements (${aiParsedQuery.softRequirements.cuisineTypes.join(', ')}) may limit matches.`);
       }
     } else if (topCandidate && topCandidate.structuredScore?.recommendation === 'excellent') {
@@ -2814,22 +3086,24 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Add notes about step-up candidates in the results
-    const readyStepUpCount = finalCandidates.filter(c => c.isReadyToStepUp).length;
-    if (readyStepUpCount > 0 && searchQuality !== 'no_exact_matches') {
-      searchNotes.push(`${readyStepUpCount} candidate(s) are experienced professionals ready to step up to this role.`);
-    }
+    // Add notes about step-up candidates in the results (only for non-fallback mode)
+    if (!fallbackMode) {
+      const readyStepUpCount = processedCandidates.filter(c => c.isReadyToStepUp).length;
+      if (readyStepUpCount > 0 && searchQuality !== 'no_exact_matches') {
+        searchNotes.push(`${readyStepUpCount} candidate(s) are experienced professionals ready to step up to this role.`);
+      }
 
-    // Add notes about excellence bonus candidates
-    const excellenceCount = finalCandidates.filter(c => c.hasExcellenceBonus).length;
-    if (excellenceCount > 0 && searchQuality !== 'no_exact_matches') {
-      searchNotes.push(`${excellenceCount} candidate(s) have demonstrated excellence in their career.`);
+      // Add notes about excellence bonus candidates
+      const excellenceCount = processedCandidates.filter(c => c.hasExcellenceBonus).length;
+      if (excellenceCount > 0 && searchQuality !== 'no_exact_matches') {
+        searchNotes.push(`${excellenceCount} candidate(s) have demonstrated excellence in their career.`);
+      }
     }
 
     return NextResponse.json({
       candidates: anonymizedResults,
-      total_matches: totalMatches,
-      total_found: candidatesWithScores.length,
+      total_matches: fallbackMode ? processedCandidates.length : totalMatches,
+      total_found: fallbackMode ? departmentFilteredCandidates.length : candidatesWithScores.length,
       search_criteria: {
         query: searchQuery,  // Preserve the full original query
         role: originalRole,
@@ -2840,6 +3114,7 @@ export async function POST(request: NextRequest) {
       search_quality: searchQuality,
       search_notes: searchNotes.length > 0 ? searchNotes : undefined,
       alternative_suggestions: alternativeSuggestions.length > 0 ? alternativeSuggestions : undefined,
+      fallback_mode: fallbackMode, // NEW: Indicates relaxed matching was used
       // Summary stats for debugging/transparency
       result_stats: {
         total_candidates_considered: candidates.length,
@@ -2847,8 +3122,9 @@ export async function POST(request: NextRequest) {
         after_hard_requirements: hardRequirementsFilteredCandidates.length,
         after_vector_scoring: candidatesWithScores.length,
         final_returned: anonymizedResults.length,
-        step_up_candidates: finalCandidates.filter(c => c.isStepUpCandidate).length,
-        excellence_bonus_candidates: excellenceCount,
+        fallback_used: fallbackMode,
+        step_up_candidates: processedCandidates.filter(c => c.isStepUpCandidate).length,
+        excellence_bonus_candidates: processedCandidates.filter(c => c.hasExcellenceBonus).length,
         average_structured_score: Math.round(avgStructuredScore),
       },
     });
@@ -2868,7 +3144,7 @@ export async function POST(request: NextRequest) {
 // ----------------------------------------------------------------------------
 
 function cosineSimilarity(a: number[], b: number[]): number {
-  if (a.length !== b.length) return 0;
+  if (!a || !b || a.length !== b.length) return 0;
 
   let dotProduct = 0;
   let normA = 0;
@@ -2882,6 +3158,76 @@ function cosineSimilarity(a: number[], b: number[]): number {
 
   if (normA === 0 || normB === 0) return 0;
   return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+}
+
+/**
+ * Calculate a simplified fallback score based on position fit + experience only.
+ * Used when no candidates pass hard requirements - we still want to show
+ * relevant candidates with honest scores.
+ */
+function calculateFallbackScore(
+  candidate: {
+    primary_position: string | null;
+    positions_held: string[] | null;
+    years_experience: number | null;
+  },
+  searchRole: string
+): { score: number; reasoning: string } {
+  let score = 0;
+  const reasoning: string[] = [];
+
+  // Position fit (60% weight in fallback)
+  const positionLower = (candidate.primary_position || '').toLowerCase();
+  const searchRoleLower = searchRole.toLowerCase();
+  const positionsHeld = (candidate.positions_held || []).map(p => p.toLowerCase());
+
+  if (positionLower.includes(searchRoleLower) || searchRoleLower.includes(positionLower)) {
+    score += 60;
+    reasoning.push('Exact position match');
+  } else if (positionsHeld.some(p => p.includes(searchRoleLower) || searchRoleLower.includes(p))) {
+    score += 45;
+    reasoning.push('Has held related position');
+  } else {
+    // Check if in same general category (e.g., interior roles)
+    const candidateDept = getDepartment(candidate.primary_position || '');
+    const searchDept = getDepartment(searchRole);
+
+    // Unknown department = 0 points (should have been filtered, but be safe)
+    if (!candidateDept || !searchDept) {
+      score += 0;
+      reasoning.push('Unknown department - no position fit score');
+    } else if (candidateDept === searchDept) {
+      score += 30;
+      reasoning.push('Same department, different role');
+    } else {
+      score += 15;
+      reasoning.push('Different department');
+    }
+  }
+
+  // Experience (40% weight in fallback)
+  const yearsExp = candidate.years_experience || 0;
+  if (yearsExp >= 10) {
+    score += 40;
+    reasoning.push('Extensive experience (10+ years)');
+  } else if (yearsExp >= 7) {
+    score += 35;
+    reasoning.push('Strong experience (7+ years)');
+  } else if (yearsExp >= 5) {
+    score += 30;
+    reasoning.push('Solid experience (5+ years)');
+  } else if (yearsExp >= 3) {
+    score += 25;
+    reasoning.push('Moderate experience (3+ years)');
+  } else if (yearsExp >= 1) {
+    score += 20;
+    reasoning.push('Some experience (1+ years)');
+  } else {
+    score += 10;
+    reasoning.push('Entry level');
+  }
+
+  return { score, reasoning: reasoning.join('; ') };
 }
 
 // NOTE: WorkHistoryEntry and generateWorkHistory removed for lead gen

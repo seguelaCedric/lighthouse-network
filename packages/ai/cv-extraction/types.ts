@@ -20,6 +20,7 @@ export const positionCategorySchema = z.enum([
   'security',
   'management',
   'villa',
+  'wellness', // spa therapists, massage, fitness, yoga, beauty professionals
   'other',
 ]);
 
@@ -56,6 +57,7 @@ export const certificationCategorySchema = z.enum([
   'childcare',
   'maritime',  // General maritime certs (AEC, radio, etc.)
   'engineering', // Engineering certificates
+  'galley', // Chef/cooking certifications (culinary, ship's cook, etc.)
   'other',
 ]);
 
@@ -213,16 +215,9 @@ export type YachtExperience = z.infer<typeof yachtExperienceSchema>;
 // VILLA/ESTATE EXPERIENCE
 // ----------------------------------------------------------------------------
 
-export const propertyTypeSchema = z.enum([
-  'villa',
-  'estate',
-  'private_residence',
-  'chalet',
-  'penthouse',
-  'palace',
-  'castle',
-  'other',
-]);
+const validPropertyTypes = ['villa', 'estate', 'private_residence', 'chalet', 'penthouse', 'palace', 'castle', 'other'] as const;
+export const propertyTypeSchema = z.enum(validPropertyTypes)
+  .or(z.string().transform(() => 'other' as const)); // Convert invalid types (hotel, resort, etc.) to 'other'
 
 export type PropertyType = z.infer<typeof propertyTypeSchema>;
 
@@ -265,7 +260,7 @@ export const cvExtractionResultSchema = z.object({
   // Primary position (most recent/main role)
   primary_position: z.string().nullable().describe('Normalized primary position'),
   primary_position_raw: z.string().nullable().describe('Raw primary position from CV'),
-  position_category: positionCategorySchema.nullable(),
+  position_category: positionCategorySchema.describe('REQUIRED - must always assign a category. Use "other" if truly uncertain, never leave null'),
 
   // Certifications with details
   certifications: z.array(certificationDetailSchema),
@@ -293,13 +288,14 @@ export const cvExtractionResultSchema = z.object({
   references: z.array(referenceDetailSchema).describe('Reference contacts from CV'),
 
   // Derived boolean flags (for backwards compatibility with existing filters)
-  has_stcw: z.boolean(),
-  has_eng1: z.boolean(),
-  has_yachtmaster: z.boolean(),
-  has_powerboat: z.boolean(),
+  // Boolean flags with defaults (AI sometimes forgets these)
+  has_stcw: z.boolean().default(false),
+  has_eng1: z.boolean().default(false),
+  has_yachtmaster: z.boolean().default(false),
+  has_powerboat: z.boolean().default(false),
 
-  // Confidence score for the extraction
-  extraction_confidence: z.number().min(0).max(1).describe('0-1 confidence in extraction quality'),
+  // Confidence score for the extraction (default to 0.7 if AI forgets)
+  extraction_confidence: z.number().min(0).max(1).default(0.7).describe('0-1 confidence in extraction quality'),
 
   // Any extraction notes/warnings
   extraction_notes: z.array(z.string()).optional().describe('Warnings or notes about extraction'),

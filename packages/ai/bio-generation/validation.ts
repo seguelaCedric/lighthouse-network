@@ -28,8 +28,8 @@
  */
 export function validateAnonymizedBio(
   bio: string,
-  firstName: string,
-  lastName: string,
+  firstName: string | null | undefined,
+  lastName: string | null | undefined,
   yachtNames?: string[] | null,
   propertyNames?: string[] | null
 ): string[] {
@@ -41,26 +41,32 @@ export function validateAnonymizedBio(
 
   const bioLower = bio.toLowerCase();
 
+  // Guard against null/undefined names
+  const safeFirstName = firstName || '';
+  const safeLastName = lastName || '';
+
   // Check for candidate full name
-  const fullName = `${firstName} ${lastName}`.toLowerCase();
-  if (bioLower.includes(fullName)) {
-    warnings.push(`LEAK: Candidate full name "${firstName} ${lastName}" detected`);
+  if (safeFirstName && safeLastName) {
+    const fullName = `${safeFirstName} ${safeLastName}`.toLowerCase();
+    if (bioLower.includes(fullName)) {
+      warnings.push(`LEAK: Candidate full name "${safeFirstName} ${safeLastName}" detected`);
+    }
   }
 
   // Check for first name alone (if distinctive enough)
-  if (firstName.length > 3 && bioLower.includes(firstName.toLowerCase())) {
+  if (safeFirstName.length > 3 && bioLower.includes(safeFirstName.toLowerCase())) {
     // Check it's not part of a common word
-    const firstNamePattern = new RegExp(`\\b${firstName}\\b`, 'i');
+    const firstNamePattern = new RegExp(`\\b${safeFirstName}\\b`, 'i');
     if (firstNamePattern.test(bio)) {
-      warnings.push(`LEAK: Candidate first name "${firstName}" detected`);
+      warnings.push(`LEAK: Candidate first name "${safeFirstName}" detected`);
     }
   }
 
   // Check for last name alone
-  if (lastName.length > 3 && bioLower.includes(lastName.toLowerCase())) {
-    const lastNamePattern = new RegExp(`\\b${lastName}\\b`, 'i');
+  if (safeLastName.length > 3 && bioLower.includes(safeLastName.toLowerCase())) {
+    const lastNamePattern = new RegExp(`\\b${safeLastName}\\b`, 'i');
     if (lastNamePattern.test(bio)) {
-      warnings.push(`LEAK: Candidate last name "${lastName}" detected`);
+      warnings.push(`LEAK: Candidate last name "${safeLastName}" detected`);
     }
   }
 
@@ -143,8 +149,8 @@ export function validateAnonymizedBio(
  */
 export function validateAnonymizedBioSafe(
   bio: string,
-  firstName: string,
-  lastName: string,
+  firstName: string | null | undefined,
+  lastName: string | null | undefined,
   yachtNames?: string[] | null,
   propertyNames?: string[] | null
 ): void {
@@ -176,8 +182,8 @@ export function validateAnonymizedBioSafe(
  */
 export function bioNeedsAnonymization(
   bio: string,
-  firstName: string,
-  lastName: string
+  firstName: string | null | undefined,
+  lastName: string | null | undefined
 ): boolean {
   if (!bio || bio.trim().length === 0) {
     return false;
@@ -185,10 +191,12 @@ export function bioNeedsAnonymization(
 
   const bioLower = bio.toLowerCase();
 
-  // Check for candidate name
-  const fullName = `${firstName} ${lastName}`.toLowerCase();
-  if (bioLower.includes(fullName)) {
-    return true;
+  // Check for candidate name (if names provided)
+  if (firstName && lastName) {
+    const fullName = `${firstName} ${lastName}`.toLowerCase();
+    if (bioLower.includes(fullName)) {
+      return true;
+    }
   }
 
   // Check for yacht/vessel patterns (M/Y, M/V, S/Y, etc.)

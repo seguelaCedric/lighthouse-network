@@ -9,7 +9,7 @@
 // ============================================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createServiceRoleClient } from '@/lib/supabase/server';
 import { z } from 'zod';
 import {
   generateEmbedding,
@@ -53,17 +53,20 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
 
   try {
-    const supabase = await createClient();
-
-    // Check authentication
+    // Use regular client for authentication check
+    const authClient = await createClient();
     const {
       data: { user },
       error: authError,
-    } = await supabase.auth.getUser();
+    } = await authClient.auth.getUser();
 
     if (authError || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // Use service role client for database queries (bypasses RLS)
+    // This is safe because we've already verified authentication above
+    const supabase = createServiceRoleClient();
 
     // Parse and validate request body
     let body: unknown = {};
@@ -116,7 +119,24 @@ export async function POST(request: NextRequest) {
 
     console.log(`[V4 Search] After hard filters: ${candidatesAfterFilters.length} candidates`);
 
-    // Check if we have no candidates after hard filters
+    // =========================================================================
+    // STAGE 2.5: KEYWORD SEARCH (inclusive, not exclusive)
+    // =========================================================================
+    // AI search should ENHANCE results, not EXCLUDE them
+    // Always include exact name/email matches regardless of vector similarity
+    console.log('[V4 Search] Stage 2.5: Keyword search for name matches...');
+    const keywordMatches = await findKeywordMatches(supabase, query, 50);
+    console.log(`[V4 Search] Found ${keywordMatches.length} keyword matches`);
+
+    // Merge keyword matches with vector matches (deduplicate)
+    const allCandidateIds = new Set(candidatesAfterFilters.map(c => c.candidate_id));
+    const keywordOnlyMatches = keywordMatches.filter(c => !allCandidateIds.has(c.candidate_id));
+
+    // Add keyword-only matches to the pool
+    candidatesAfterFilters.push(...keywordOnlyMatches);
+    pipelineStats.afterHardFilters = candidatesAfterFilters.length;
+
+    // Check if we have no candidates after all searches
     if (candidatesAfterFilters.length === 0) {
       const noResultsResponse: V4SearchResponse = {
         results: [],
@@ -124,7 +144,7 @@ export async function POST(request: NextRequest) {
         processing_time_ms: Date.now() - startTime,
         parsedQuery,
         pipelineStats,
-        noResultsReason: 'No candidates match the hard filter requirements',
+        noResultsReason: 'No candidates match the search criteria',
         suggestions: await getPositionSuggestions(supabase, query),
       };
       return NextResponse.json(noResultsResponse);
@@ -303,7 +323,7 @@ interface YachtExperienceExtracted {
 }
 
 async function applyHardFiltersAndVectorSearch(
-  supabase: ReturnType<typeof createClient> extends Promise<infer T> ? T : never,
+  supabase: ReturnType<typeof createServiceRoleClient>,
   parsedQuery: ParsedQuery,
   queryEmbedding: number[],
   maxResults: number
@@ -504,7 +524,7 @@ function buildCertificationsList(candidate: CandidateWithVector): string[] {
 // ----------------------------------------------------------------------------
 
 async function getPositionSuggestions(
-  supabase: ReturnType<typeof createClient> extends Promise<infer T> ? T : never,
+  supabase: ReturnType<typeof createServiceRoleClient>,
   query: string
 ): Promise<string[]> {
   const { data, error } = await supabase
@@ -555,4 +575,104 @@ async function getPositionSuggestions(
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5)
     .map(([pos]) => pos);
+}
+
+// ----------------------------------------------------------------------------
+// HELPER: Find Keyword Matches (inclusive search)
+// ----------------------------------------------------------------------------
+// AI search should enhance, not exclude. This ensures name/email matches
+// are always found regardless of semantic similarity scores.
+
+async function findKeywordMatches(
+  supabase: ReturnType<typeof createServiceRoleClient>,
+  query: string,
+  maxResults: number
+): Promise<CandidateWithVector[]> {
+  // Split query into terms for multi-word searches
+  const searchTerms = query.trim().split(/\s+/).filter(Boolean);
+
+  // Build OR conditions for each term matching name, email, or position
+  let keywordQuery = supabase
+    .from('candidates')
+    .select(`
+      id,
+      first_name,
+      last_name,
+      primary_position,
+      years_experience,
+      position_category,
+      verification_tier,
+      availability_status,
+      nationality,
+      current_location,
+      avatar_url,
+      has_stcw,
+      has_eng1,
+      has_schengen,
+      has_b1b2,
+      search_keywords,
+      profile_summary,
+      positions_held,
+      cv_skills,
+      certifications_extracted,
+      licenses_extracted,
+      languages_extracted,
+      yacht_experience_extracted
+    `)
+    .is('deleted_at', null);
+
+  // Build search filter
+  if (searchTerms.length === 1) {
+    keywordQuery = keywordQuery.or(
+      `first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%,primary_position.ilike.%${query}%`
+    );
+  } else {
+    // For multi-word searches, require each term to match somewhere
+    for (const term of searchTerms) {
+      keywordQuery = keywordQuery.or(
+        `first_name.ilike.%${term}%,last_name.ilike.%${term}%,email.ilike.%${term}%,primary_position.ilike.%${term}%`
+      );
+    }
+  }
+
+  const { data: candidates, error } = await keywordQuery.limit(maxResults);
+
+  if (error) {
+    console.error('[V4 Search] Keyword search error:', error);
+    return [];
+  }
+
+  if (!candidates || candidates.length === 0) {
+    return [];
+  }
+
+  // Convert to CandidateWithVector format with a baseline vector score
+  // Keyword matches get a moderate score so they appear in results but
+  // are ranked below strong semantic matches
+  return candidates.map((c): CandidateWithVector => ({
+    candidate_id: c.id,
+    first_name: c.first_name,
+    last_name: c.last_name,
+    primary_position: c.primary_position,
+    years_experience: c.years_experience,
+    position_category: c.position_category,
+    verification_tier: c.verification_tier,
+    availability_status: c.availability_status,
+    nationality: c.nationality,
+    current_location: c.current_location,
+    avatar_url: c.avatar_url,
+    has_stcw: c.has_stcw,
+    has_eng1: c.has_eng1,
+    has_schengen: c.has_schengen,
+    has_b1b2: c.has_b1b2,
+    skills: c.search_keywords || [],
+    positions_held: c.positions_held || [],
+    cv_skills: c.cv_skills || [],
+    certifications_extracted: c.certifications_extracted || [],
+    licenses_extracted: c.licenses_extracted || [],
+    languages_extracted: c.languages_extracted || [],
+    yacht_experience_extracted: c.yacht_experience_extracted || [],
+    bio: c.profile_summary,
+    vectorScore: 0.5, // Moderate score for keyword matches
+  }));
 }

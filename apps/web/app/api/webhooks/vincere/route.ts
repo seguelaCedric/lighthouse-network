@@ -4,7 +4,47 @@ import {
   getVincereClient,
   getJobWithCustomFields,
   mapVincereToJob,
+  getPlacementWithContext,
+  mapPlacementStatus,
+  getPlacementFee,
 } from "@/lib/vincere";
+
+/**
+ * Vincere user ID to name mapping for job owners and placement placed_by
+ */
+const VINCERE_USER_NAMES: Record<number, string> = {
+  28955: 'Milica Seguela',
+  28957: 'Catherine Coulibaly',
+  28959: 'Admin',
+  28960: 'Kiera Cavanagh',
+  28961: 'Francesca Zanfagna',
+  28963: 'Kate Burns',
+  28964: 'Debbie Blazy',
+  28965: 'Ivana Novakovic',
+  28966: 'Tracy Gueli',
+  28967: 'Sonia Szostok',
+  28968: 'Laura Cubie',
+  28969: 'Kaoutar Zahouane',
+  28970: 'Charles Cartledge',
+  28971: 'Pamela Moyes',
+  28973: 'Marc Stevens',
+  28974: 'Shelley Viljoen',
+  28975: 'Ornela Grmusa',
+  28976: 'Phil Richards',
+  28977: 'India Thomson-Virtue',
+  28978: 'Joaneen Botha',
+  29011: 'Laura Hayes',
+  29044: 'Britt McBride',
+  29077: 'Tiffany Hutton',
+  29110: 'Waldi Coetzee',
+  29143: 'Svetlana Blake',
+  [-1]: 'Company Admin',
+  [-10]: 'System Admin',
+};
+
+function getVincereUserName(userId: number): string {
+  return VINCERE_USER_NAMES[userId] || `Unknown (${userId})`;
+}
 
 /**
  * Vincere webhook event payload
@@ -91,6 +131,17 @@ export async function POST(request: NextRequest) {
           // DELETE is not supported for JOB, but handle gracefully if received
           console.log(`[VincereWebhook] DELETE action received for JOB ${event.data.id} - marking as cancelled`);
           await handleJobDeleted(event.data.id, supabase);
+          break;
+
+        default:
+          console.log(`[VincereWebhook] Unhandled action type: ${event.action_type} for ${event.entity_type}`);
+          return NextResponse.json({ received: true, event: `${event.entity_type}.${event.action_type}` });
+      }
+    } else if (event.entity_type === "PLACEMENT") {
+      switch (event.action_type) {
+        case "CREATE":
+        case "UPDATE":
+          await handlePlacementCreatedOrUpdated(event.data.id, supabase);
           break;
 
         default:
@@ -286,8 +337,213 @@ async function handleJobDeleted(
 }
 
 /**
+ * Handle placement created or updated event
+ */
+async function handlePlacementCreatedOrUpdated(
+  vincerePlacementId: number,
+  supabase: ReturnType<typeof createServiceRoleClient>
+) {
+  try {
+    // Fetch placement with context (includes candidate_id from job)
+    const placementData = await getPlacementWithContext(vincerePlacementId);
+
+    if (!placementData) {
+      console.error(`[VincereWebhook] Placement ${vincerePlacementId} not found in Vincere`);
+      return;
+    }
+
+    // Map IDs from Vincere to our database
+    // 1. Find job by external_id
+    const { data: job } = await supabase
+      .from("jobs")
+      .select("id, client_id")
+      .eq("external_id", placementData.position_id.toString())
+      .eq("external_source", "vincere")
+      .single();
+
+    if (!job) {
+      console.error(
+        `[VincereWebhook] Job ${placementData.position_id} not found for placement ${vincerePlacementId}`
+      );
+      return;
+    }
+
+    // 2. Find candidate by vincere_id
+    const { data: candidate } = await supabase
+      .from("candidates")
+      .select("id")
+      .eq("vincere_id", placementData._candidate_id.toString())
+      .single();
+
+    if (!candidate) {
+      console.error(
+        `[VincereWebhook] Candidate ${placementData._candidate_id} not found for placement ${vincerePlacementId}`
+      );
+      return;
+    }
+
+    // 3. Get client_id from job (should already be linked)
+    if (!job.client_id) {
+      console.warn(
+        `[VincereWebhook] Job ${placementData.position_id} has no client_id - placement may be incomplete`
+      );
+    }
+
+    // Lighthouse Careers organization ID
+    const LIGHTHOUSE_ORG_ID = "00000000-0000-0000-0000-000000000001";
+
+    // Check if placement already exists
+    const { data: existingPlacement } = await supabase
+      .from("placements")
+      .select("id")
+      .eq("vincere_id", vincerePlacementId)
+      .single();
+
+    // Calculate fee
+    const totalFee = getPlacementFee(placementData);
+
+    // Get placed_by info from the application (not the placement)
+    // placement.placed_by is just the admin who recorded it
+    // application.application_user_id is the actual consultant who made the placement
+    let placedById: number | null = null;
+    let placedByName: string | null = null;
+
+    if (placementData.application_id) {
+      try {
+        const vincereClient = (await import("@/lib/vincere")).getVincereClient();
+        const application = await vincereClient.get<{ application_user_id?: number }>(
+          `/application/${placementData.application_id}`
+        );
+        if (application?.application_user_id) {
+          placedById = application.application_user_id;
+          placedByName = getVincereUserName(placedById);
+        }
+      } catch (err) {
+        console.warn(
+          `[VincereWebhook] Could not fetch application ${placementData.application_id} for placed_by info`
+        );
+      }
+    }
+
+    // Prepare placement data
+    const placementRecord = {
+      vincere_id: vincerePlacementId,
+      job_id: job.id,
+      candidate_id: candidate.id,
+      client_id: job.client_id,
+      placing_agency_id: LIGHTHOUSE_ORG_ID,
+      start_date: placementData.start_date ? placementData.start_date.split("T")[0] : null,
+      end_date: placementData.end_date ? placementData.end_date.split("T")[0] : null,
+      salary_agreed: placementData.annual_salary ? Math.round(placementData.annual_salary) : null,
+      salary_currency: placementData.currency?.toUpperCase() || "EUR",
+      total_fee: totalFee,
+      fee_currency: placementData.currency?.toUpperCase() || "EUR",
+      placing_agency_fee: totalFee,
+      status: mapPlacementStatus(placementData.placement_status),
+      // Track who made the placement
+      vincere_placed_by_id: placedById || null,
+      placed_by_name: placedByName,
+    };
+
+    if (existingPlacement) {
+      // Update existing placement
+      const { error: updateError } = await supabase
+        .from("placements")
+        .update(placementRecord)
+        .eq("id", existingPlacement.id);
+
+      if (updateError) {
+        console.error(
+          `[VincereWebhook] Failed to update placement ${vincerePlacementId}:`,
+          updateError.message
+        );
+        throw updateError;
+      }
+
+      console.log(
+        `[VincereWebhook] Successfully updated placement ${vincerePlacementId} (DB ID: ${existingPlacement.id})`
+      );
+    } else {
+      // Create new placement
+      const { data: newPlacement, error: insertError } = await supabase
+        .from("placements")
+        .insert({
+          ...placementRecord,
+          created_at: placementData.insert_timestamp || new Date().toISOString(),
+        })
+        .select("id")
+        .single();
+
+      if (insertError) {
+        console.error(
+          `[VincereWebhook] Failed to create placement ${vincerePlacementId}:`,
+          insertError.message
+        );
+        throw insertError;
+      }
+
+      console.log(
+        `[VincereWebhook] Successfully created placement ${vincerePlacementId} (DB ID: ${newPlacement.id})`
+      );
+    }
+
+    // Update client totals
+    if (job.client_id) {
+      await updateClientTotals(job.client_id, supabase);
+    }
+  } catch (error) {
+    console.error(
+      `[VincereWebhook] Error handling placement created/updated for ${vincerePlacementId}:`,
+      error
+    );
+    throw error;
+  }
+}
+
+/**
+ * Update client total_revenue and total_placements
+ */
+async function updateClientTotals(
+  clientId: string,
+  supabase: ReturnType<typeof createServiceRoleClient>
+) {
+  try {
+    // Get placement totals for this client
+    const { data: stats, error: statsError } = await supabase
+      .from("placements")
+      .select("total_fee")
+      .eq("client_id", clientId);
+
+    if (statsError) {
+      console.error(`[VincereWebhook] Failed to get placement stats for client ${clientId}:`, statsError.message);
+      return;
+    }
+
+    const totalPlacements = stats?.length || 0;
+    const totalRevenue = stats?.reduce((sum, p) => sum + (parseFloat(p.total_fee) || 0), 0) || 0;
+
+    // Update client
+    const { error: updateError } = await supabase
+      .from("clients")
+      .update({
+        total_placements: totalPlacements,
+        total_revenue: totalRevenue,
+      })
+      .eq("id", clientId);
+
+    if (updateError) {
+      console.error(`[VincereWebhook] Failed to update client totals for ${clientId}:`, updateError.message);
+    } else {
+      console.log(`[VincereWebhook] Updated client ${clientId} totals: ${totalPlacements} placements, EUR ${totalRevenue}`);
+    }
+  } catch (error) {
+    console.error(`[VincereWebhook] Error updating client totals for ${clientId}:`, error);
+  }
+}
+
+/**
  * GET /api/webhooks/vincere
- * 
+ *
  * Health check endpoint for webhook URL verification
  */
 export async function GET() {

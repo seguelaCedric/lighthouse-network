@@ -40,17 +40,20 @@ Normalize all positions to standard forms. Examples:
 - "2nd stew" → "Second Stewardess"
 - "bosun" → "Bosun"
 
-## Standard Position Categories
-- deck: Captain, Officers, Bosun, Deckhands
-- interior: Stewardesses, Purser, Housekeeping
-- engineering: Engineers, ETO
-- galley: Chefs, Cooks
-- villa: Estate Manager, Butler, Housekeeper, Chauffeur, Gardener
-- childcare: Nanny, Governess, Au Pair
-- security: Security Officer, CPO
-- medical: Nurse, Medic
-- management: Yacht Manager, PA
-- other: Massage Therapist, Dive Instructor, etc.
+## Standard Position Categories - MUST ALWAYS ASSIGN ONE (never null)
+- deck: Captain, Officers (Chief Officer, First Officer, Second Officer), Bosun, Deckhands, Navigation Officer, Watch Officer
+- interior: Stewardesses (all levels), Purser, Housekeeping, Laundry, Interior crew
+- engineering: ALL engineers (Chief Engineer, Second Engineer, Third Engineer, Junior Engineer, ETO, Electrician, AV Tech, IT)
+- galley: Chefs (all levels), Cooks, Sous Chef, CDP
+- villa: Estate Manager, Butler, Housekeeper, Chauffeur, Gardener, PA, House Manager
+- childcare: Nanny, Governess, Au Pair, Tutor
+- security: Security Officer, CPO, Bodyguard
+- medical: Nurse, Medic, Doctor
+- management: Yacht Manager, Fleet Manager, Shore-based Manager
+- wellness: Spa Therapist, Massage Therapist, Beauty Therapist, Aesthetician, Fitness Trainer, Personal Trainer, Yoga Instructor, Pilates Instructor
+- other: ONLY use for positions that truly don't fit ANY above category (e.g., Dive Instructor, Marketing, Sales, etc.)
+
+IMPORTANT: You MUST assign a position_category. Never return null. When in doubt, use "other".
 
 ## License Hierarchy (highest to lowest)
 Master Unlimited > Master 3000GT > Master 500GT > Chief Mate > OOW > Yachtmaster Ocean > Yachtmaster Offshore > Yachtmaster Coastal

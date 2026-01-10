@@ -95,7 +95,8 @@ export class CVExtractionService {
         // Core fields
         years_experience: extraction.years_experience,
         primary_position: extraction.primary_position,
-        position_category: extraction.position_category,
+        // Ensure position_category is never null - default to 'other' if AI returned null
+        position_category: extraction.position_category || 'other',
         highest_license: extraction.highest_license,
 
         // Boolean flags (derived from extraction)

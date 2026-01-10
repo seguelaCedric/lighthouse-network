@@ -77,11 +77,21 @@ export async function GET(
       .order("created_at", { ascending: false })
       .limit(10);
 
+    // Fetch contacts for this client
+    const { data: contacts } = await supabase
+      .from("client_contacts")
+      .select("*")
+      .eq("client_id", id)
+      .eq("is_active", true)
+      .order("is_primary", { ascending: false })
+      .order("name", { ascending: true });
+
     return NextResponse.json({
       data: {
         ...client,
         jobs: jobs ?? [],
         placements: placements ?? [],
+        contacts: contacts ?? [],
       },
     });
   } catch (error) {
