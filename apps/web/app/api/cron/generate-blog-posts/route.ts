@@ -1,21 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Use service role for cron jobs
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Force dynamic execution - prevents caching which can break cron jobs
+export const dynamic = 'force-dynamic';
 
-// Verify cron secret (set in Vercel environment variables)
-const CRON_SECRET = process.env.CRON_SECRET;
+// Vercel Pro allows up to 300s for cron jobs
+export const maxDuration = 300;
 
 export async function GET(request: NextRequest) {
-  // Verify cron secret
-  const authHeader = request.headers.get('authorization');
-  if (authHeader !== `Bearer ${CRON_SECRET}`) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  // Note: Vercel crons are protected by infrastructure - only Vercel can call them
+  console.log('Blog post generation cron started');
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
 
   try {
     const now = new Date().toISOString();

@@ -4,6 +4,9 @@ import { createClient } from '@supabase/supabase-js';
 // Vercel Pro allows up to 300s for cron jobs
 export const maxDuration = 300;
 
+// Force dynamic execution - prevents caching which can break cron jobs
+export const dynamic = 'force-dynamic';
+
 const BATCH_SIZE = 10; // Process 10 pages per cron run (every 10 mins)
 const CONCURRENCY = 2; // Process 2 pages in parallel to avoid rate limits
 
