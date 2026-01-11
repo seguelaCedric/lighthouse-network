@@ -1,19 +1,19 @@
 {
   "crons": [
     {
-      "path": "/api/cron/invoice-fees",
+      "path": "/api/cron/invoice-fees/",
       "schedule": "0 6 1 * *"
     },
     {
-      "path": "/api/cron/generate-seo-content",
+      "path": "/api/cron/generate-seo-content/",
       "schedule": "*/10 * * * *"
     },
     {
-      "path": "/api/cron/generate-blog-posts",
+      "path": "/api/cron/generate-blog-posts/",
       "schedule": "*/15 * * * *"
     },
     {
-      "path": "/api/cron/publish-blog-posts",
+      "path": "/api/cron/publish-blog-posts/",
       "schedule": "*/10 * * * *"
     }
   ]
