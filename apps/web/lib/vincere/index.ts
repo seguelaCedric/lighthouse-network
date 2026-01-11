@@ -222,16 +222,14 @@ export type { HydrationResult } from './on-login-hydration';
 // Activities API
 export {
   getAllVincereUsers,
-  getUserActivities,
-  getUserStatistics,
-  countUserActivities,
+  getActivitiesInRange,
+  countActivitiesByUser,
   syncAllUserActivities,
   getPreviousDayRange,
 } from './activities';
 
 export type {
   VincereActivity,
-  VincereUserStatistics,
   VincereUserSummary,
   UserActivityCounts,
 } from './activities';
