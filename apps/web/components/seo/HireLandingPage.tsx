@@ -10,6 +10,7 @@ import { StructuredData } from "./StructuredData";
 import { InquiryForm } from "./InquiryForm";
 import { MatchPreview } from "./MatchPreview";
 import { InternalLinking } from "./InternalLinking";
+import { AnswerCapsuleWithLinks } from "./AnswerCapsule";
 import { analytics, initScrollDepthTracking } from "@/lib/analytics/seo-tracking";
 import { useExperiments } from "@/lib/ab-testing/hooks/useExperiment";
 import type { LandingPageExperiments } from "@/lib/ab-testing/types";
@@ -144,6 +145,11 @@ interface SeoLandingPageData {
   content_sections?: ContentSection[];
   primary_keywords?: string[];
   secondary_keywords?: string[];
+  // Answer capsule fields for AI/LLM optimization
+  answer_capsule?: string | null;
+  answer_capsule_question?: string | null;
+  key_facts?: string[] | null;
+  last_reviewed_at?: string | null;
 }
 
 interface RelatedPage {
@@ -259,6 +265,34 @@ export function HireLandingPage({
     <div className="min-h-screen bg-white">
       <StructuredData data={data} />
       <PublicHeader />
+
+      {/* Answer Capsule - Above the fold for AI/LLM citations */}
+      {/* This section is link-free for easy extraction, with links below */}
+      {data.answer_capsule && (
+        <section className="border-b border-gray-200 bg-gradient-to-b from-gray-50 to-white py-6">
+          <div className="mx-auto max-w-4xl px-4 sm:px-6">
+            <AnswerCapsuleWithLinks
+              question={data.answer_capsule_question || `How do I hire a ${data.position} in ${locationString}?`}
+              answer={data.answer_capsule}
+              keyFacts={data.key_facts || []}
+              lastUpdated={data.last_reviewed_at ?? undefined}
+              audienceType="employer"
+              position={data.position}
+              location={locationString}
+              relatedPages={[...relatedPositions, ...relatedLocations].slice(0, 4).map(page => ({
+                url: page.original_url_path,
+                title: page.hero_headline,
+                position: page.position,
+                location: page.city || page.state || page.country,
+              }))}
+              positionHubLink={`/hire-a-${data.position_slug}`}
+              locationHubLink={data.city ? `/hire-in-${data.city.toLowerCase().replace(/\s+/g, '-')}` : undefined}
+              ctaText="See Matched Candidates"
+              ctaLink={`/match?position=${encodeURIComponent(data.position)}&location=${encodeURIComponent(locationString)}`}
+            />
+          </div>
+        </section>
+      )}
 
       <article itemScope itemType="https://schema.org/Service">
         {/* Hero Section - Centered layout matching yacht-crew */}

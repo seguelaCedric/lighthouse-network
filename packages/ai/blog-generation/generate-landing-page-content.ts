@@ -6,11 +6,17 @@
 // ============================================================================
 
 import { generateObject } from 'ai';
-import { anthropic } from '@ai-sdk/anthropic';
+import { createAnthropic } from '@ai-sdk/anthropic';
 import { z } from 'zod';
 
-// Use Claude Sonnet 4 for high-quality content generation
-const contentModel = anthropic('claude-sonnet-4-20250514');
+// Create model lazily to ensure env vars are available at runtime
+// (module-level initialization can fail in serverless environments)
+function getContentModel() {
+  const anthropic = createAnthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+  });
+  return anthropic('claude-sonnet-4-20250514');
+}
 
 // ============================================================================
 // TYPES
@@ -110,7 +116,7 @@ async function generateAboutPosition(
   });
 
   const result = await generateObject({
-    model: contentModel,
+    model: getContentModel(),
     schema,
     prompt: `You are writing SEO content for Lighthouse Careers, a luxury private staffing agency that places high-end domestic staff for ultra-high-net-worth individuals and families.
 
@@ -159,7 +165,7 @@ async function generateLocationInfo(
   });
 
   const result = await generateObject({
-    model: contentModel,
+    model: getContentModel(),
     schema,
     prompt: `You are writing SEO content for Lighthouse Careers, a luxury private staffing agency.
 
@@ -205,7 +211,7 @@ async function generateServiceDescription(
   });
 
   const result = await generateObject({
-    model: contentModel,
+    model: getContentModel(),
     schema,
     prompt: `You are writing SEO content for Lighthouse Careers, a luxury private staffing agency.
 
@@ -254,7 +260,7 @@ async function generateProcessDetails(
   });
 
   const result = await generateObject({
-    model: contentModel,
+    model: getContentModel(),
     schema,
     prompt: `You are writing SEO content for Lighthouse Careers, a luxury private staffing agency.
 
@@ -310,7 +316,7 @@ async function generateFAQContent(
   });
 
   const result = await generateObject({
-    model: contentModel,
+    model: getContentModel(),
     schema,
     prompt: `You are writing SEO content for Lighthouse Careers, a luxury private staffing agency.
 
@@ -376,7 +382,7 @@ async function generateKeywords(
   });
 
   const result = await generateObject({
-    model: contentModel,
+    model: getContentModel(),
     schema,
     prompt: `Generate SEO keywords for a landing page about hiring a ${position} in ${location}.
 

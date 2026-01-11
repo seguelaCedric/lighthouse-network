@@ -225,14 +225,49 @@ def normalize_url(url: str) -> str:
         return f"https:{url}"
     return url
 
+def sanitize_filename(filename: str) -> str:
+    """Remove or replace characters that cause storage key issues"""
+    import re
+    import unicodedata
+
+    # Normalize unicode (convert accented chars to ASCII equivalents where possible)
+    filename = unicodedata.normalize('NFKD', filename)
+    filename = filename.encode('ascii', 'ignore').decode('ascii')
+
+    # Remove emojis and other problematic unicode
+    filename = re.sub(r'[^\x00-\x7F]+', '', filename)
+
+    # Replace apostrophes and quotes with nothing
+    filename = filename.replace("'", "").replace('"', "").replace("'", "").replace("'", "")
+
+    # Replace spaces and other problematic chars with underscores
+    filename = re.sub(r'[\s]+', '_', filename)
+
+    # Remove any remaining problematic characters (keep alphanumeric, dots, underscores, hyphens)
+    filename = re.sub(r'[^a-zA-Z0-9._-]', '', filename)
+
+    # Remove multiple consecutive underscores or dots
+    filename = re.sub(r'_+', '_', filename)
+    filename = re.sub(r'\.+', '.', filename)
+
+    # Ensure it has content
+    if not filename or filename in ['.', '_', '-']:
+        filename = f"document_{uuid.uuid4().hex[:8]}"
+
+    return filename
+
 def get_filename_from_url(url: str) -> str:
-    """Extract filename from URL"""
+    """Extract and sanitize filename from URL"""
     parsed = urlparse(url)
     path = unquote(parsed.path)
     filename = path.split("/")[-1]
     # Remove query params from filename
     if "?" in filename:
         filename = filename.split("?")[0]
+
+    # Sanitize the filename for storage
+    filename = sanitize_filename(filename)
+
     return filename or f"document_{uuid.uuid4().hex[:8]}"
 
 def get_content_type(filename: str) -> str:

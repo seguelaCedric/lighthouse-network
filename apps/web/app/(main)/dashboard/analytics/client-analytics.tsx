@@ -18,6 +18,7 @@ import {
   BarChart3,
   PieChart,
   UserCheck,
+  Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DateRangeSelector } from "@/components/ui/date-range-selector";
@@ -53,6 +54,7 @@ interface TeamMemberStats {
   placements_made: number;      // Actual placements they made (as placed_by)
   revenue: number;              // Revenue from placements they made
   conversion_rate: number;
+  activities_count: number;     // Tasks + meetings from Vincere sync
 }
 
 interface AnalyticsData {
@@ -64,6 +66,7 @@ interface AnalyticsData {
     total_revenue: number;
     avg_conversion_rate: number;
     avg_placement_value: number;
+    monthly_run_rate: number;
   };
   top_clients_by_revenue: ClientStats[];
   top_clients_by_placements: ClientStats[];
@@ -454,14 +457,14 @@ function RecentPlacements({
 function TeamPerformance({ members }: { members: TeamMemberStats[] }) {
   const maxJobs = Math.max(...members.map((m) => m.jobs_count), 1);
   const maxPlacements = Math.max(...members.map((m) => m.placements_made), 1);
-  const maxRevenue = Math.max(...members.map((m) => m.revenue), 1);
+  const maxActivities = Math.max(...members.map((m) => m.activities_count), 1);
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-6">
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h3 className="font-semibold text-navy-900">Team Performance</h3>
-          <p className="text-sm text-gray-500">Jobs brought vs placements made by team member</p>
+          <p className="text-sm text-gray-500">Jobs brought, placements made, and activities by team member</p>
         </div>
         <UserCheck className="size-5 text-gray-400" />
       </div>
@@ -479,6 +482,7 @@ function TeamPerformance({ members }: { members: TeamMemberStats[] }) {
               <tr className="border-b border-gray-200 text-left text-xs font-medium uppercase text-gray-500">
                 <th className="pb-3 pr-4">#</th>
                 <th className="pb-3 pr-4">Team Member</th>
+                <th className="pb-3 pr-4 text-right">Activities</th>
                 <th className="pb-3 pr-4 text-right">Jobs Brought</th>
                 <th className="pb-3 pr-4 text-right">Placements Made</th>
                 <th className="pb-3 pr-4 text-right">Revenue</th>
@@ -495,6 +499,19 @@ function TeamPerformance({ members }: { members: TeamMemberStats[] }) {
                   </td>
                   <td className="py-3 pr-4">
                     <span className="font-medium text-navy-900">{member.name}</span>
+                  </td>
+                  <td className="py-3 pr-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <div className="h-2 w-16 overflow-hidden rounded-full bg-gray-100">
+                        <div
+                          className="h-full rounded-full bg-purple-500"
+                          style={{ width: maxActivities > 0 ? `${(member.activities_count / maxActivities) * 100}%` : '0%' }}
+                        />
+                      </div>
+                      <span className="w-10 text-sm font-semibold text-purple-600">
+                        {member.activities_count > 0 ? member.activities_count : '—'}
+                      </span>
+                    </div>
                   </td>
                   <td className="py-3 pr-4 text-right">
                     <div className="flex items-center justify-end gap-2">
@@ -543,7 +560,11 @@ function TeamPerformance({ members }: { members: TeamMemberStats[] }) {
           </table>
 
           {/* Legend */}
-          <div className="mt-4 flex gap-6 border-t border-gray-100 pt-4 text-xs text-gray-500">
+          <div className="mt-4 flex flex-wrap gap-6 border-t border-gray-100 pt-4 text-xs text-gray-500">
+            <span className="flex items-center gap-2">
+              <span className="size-2 rounded-full bg-purple-500" />
+              Activities: Tasks & meetings (synced daily)
+            </span>
             <span className="flex items-center gap-2">
               <span className="size-2 rounded-full bg-navy-400" />
               Jobs Brought: Enquiries brought by this person
@@ -669,9 +690,7 @@ export function ClientAnalyticsDashboard({
             </div>
             <div>
               <p className="text-2xl font-bold text-navy-900">
-                {data.totals.total_placements > 0
-                  ? formatCurrency(data.totals.total_revenue / data.totals.total_placements / 12)
-                  : "€0"}
+                {formatCurrency(data.totals.monthly_run_rate)}
               </p>
               <p className="text-sm text-gray-500">Monthly Run Rate (avg)</p>
             </div>

@@ -218,3 +218,20 @@ export {
 } from './on-login-hydration';
 
 export type { HydrationResult } from './on-login-hydration';
+
+// Activities API
+export {
+  getAllVincereUsers,
+  getUserActivities,
+  getUserStatistics,
+  countUserActivities,
+  syncAllUserActivities,
+  getPreviousDayRange,
+} from './activities';
+
+export type {
+  VincereActivity,
+  VincereUserStatistics,
+  VincereUserSummary,
+  UserActivityCounts,
+} from './activities';

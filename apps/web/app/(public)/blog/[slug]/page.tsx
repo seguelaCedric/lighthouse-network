@@ -4,7 +4,8 @@ import { notFound } from 'next/navigation';
 import { PublicHeader } from '@/components/pricing/PublicHeader';
 import { PublicFooter } from '@/components/pricing/PublicFooter';
 import { InternalLinking } from '@/components/seo/InternalLinking';
-import { Calendar, User, ArrowLeft } from 'lucide-react';
+import { AnswerCapsuleWithLinks, getAnswerCapsuleSchema } from '@/components/seo/AnswerCapsule';
+import { Calendar, User, ArrowLeft, Clock } from 'lucide-react';
 import Link from 'next/link';
 // Content is stored as Markdown or HTML - render as HTML for now
 
@@ -112,6 +113,19 @@ export default async function BlogPostPage({ params }: Props) {
                 </time>
               </div>
             )}
+            {/* Visible freshness signal - critical for AI citations */}
+            {(post.last_updated_display || post.updated_at) && (
+              <div className="flex items-center gap-1.5">
+                <Clock className="h-4 w-4" />
+                <time dateTime={post.last_updated_display || post.updated_at}>
+                  Updated: {new Date(post.last_updated_display || post.updated_at).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                  })}
+                </time>
+              </div>
+            )}
             {post.target_audience && (
               <div className="flex items-center gap-1.5">
                 <User className="h-4 w-4" />
@@ -130,6 +144,50 @@ export default async function BlogPostPage({ params }: Props) {
             )}
           </div>
         </header>
+
+        {/* Answer Capsule - Critical for AI/LLM Citations */}
+        {/* Shows above main content, link-free for easy extraction */}
+        {post.answer_capsule && (
+          <div className="mb-10">
+            <AnswerCapsuleWithLinks
+              question={post.answer_capsule_question}
+              answer={post.answer_capsule}
+              keyFacts={post.key_facts || []}
+              lastUpdated={post.last_updated_display || post.updated_at}
+              audienceType={post.target_audience as 'employer' | 'candidate' | 'both'}
+              position={post.target_position}
+              location={post.target_location}
+              relatedPages={relatedPages.slice(0, 4).map(page => ({
+                url: page.original_url_path,
+                title: page.hero_headline || `Hire a ${page.position} in ${page.city || page.state || page.country}`,
+                position: page.position,
+                location: page.city || page.state || page.country,
+              }))}
+              positionHubLink={post.target_position ? `/hire-a-${post.target_position.toLowerCase().replace(/\s+/g, '-')}` : undefined}
+              locationHubLink={post.target_location ? `/hire-in-${post.target_location.toLowerCase().replace(/\s+/g, '-')}` : undefined}
+              ctaText={post.target_audience === 'candidate' ? 'View Open Positions' : 'See Matched Candidates'}
+              ctaLink={post.target_audience === 'candidate' ? '/job-board' : '/match'}
+            />
+          </div>
+        )}
+
+        {/* Structured Data for Answer Capsule */}
+        {post.answer_capsule && post.answer_capsule_question && (
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "FAQPage",
+                mainEntity: [getAnswerCapsuleSchema({
+                  question: post.answer_capsule_question,
+                  answer: post.answer_capsule,
+                  dateModified: (post.last_updated_display || post.updated_at)?.split('T')[0],
+                })],
+              }),
+            }}
+          />
+        )}
 
         <div
           className="prose prose-lg max-w-none"

@@ -56,6 +56,10 @@ export interface GeneratedBlogPost {
   metaDescription: string;
   targetKeywords: string[];
   relatedLandingPageUrls: string[];
+  // Answer capsule fields for AI/LLM optimization
+  answerCapsule: string;
+  answerCapsuleQuestion: string;
+  keyFacts: string[];
 }
 
 // ============================================================================
@@ -228,12 +232,12 @@ export async function generateBlogPost(
   // Get template prompt
   const templatePrompt = TEMPLATE_PROMPTS[contentType] || TEMPLATE_PROMPTS.hiring_guide;
 
-  // Build the prompt
+  // Build the prompt with answer capsule instructions for AI/LLM optimization
   const systemPrompt = `You are an expert content writer specializing in recruitment and staffing for high-end yacht crew and private household staff.
 
 Your task is to write a comprehensive, SEO-optimized blog post that:
 1. Provides valuable, actionable information
-2. Is optimized for search engines (especially AI/LLM search)
+2. Is optimized for search engines (especially AI/LLM search like ChatGPT, Perplexity, Claude)
 3. Includes natural keyword usage (primary keyword: "${primaryKeyword}")
 4. Has proper structure with headings (H2, H3)
 5. Includes internal linking opportunities
@@ -242,7 +246,40 @@ Your task is to write a comprehensive, SEO-optimized blog post that:
 
 ${customInstructions ? `Additional instructions: ${customInstructions}` : ''}
 
-Format the content in Markdown with proper headings, lists, and formatting.`;
+## CRITICAL: AI/LLM OPTIMIZATION REQUIREMENTS
+
+At the START of your response (before the main article), you MUST include an "Answer Capsule" section.
+This is essential for AI search citations. Follow these requirements EXACTLY:
+
+### Answer Capsule Requirements:
+1. Start with a clear, direct answer to the main question in 2-3 sentences
+2. Use simple, declarative sentences (no qualifiers like "it depends")
+3. Include NO links in the capsule - it must be completely self-contained
+4. Make it quotable and attributable
+5. Keep under 100 words
+6. Follow with 3-5 "Key Facts" as bullet points
+
+### REQUIRED FORMAT (follow exactly):
+
+---ANSWER_CAPSULE_START---
+QUESTION: [The main question this article answers, e.g., "How much does a butler earn in London?"]
+ANSWER: [Your direct, link-free answer in 2-3 sentences. Under 100 words. Simple, declarative sentences.]
+KEY_FACTS:
+- [Fact 1 - specific, quotable]
+- [Fact 2 - specific, quotable]
+- [Fact 3 - specific, quotable]
+- [Fact 4 - specific, quotable (optional)]
+- [Fact 5 - specific, quotable (optional)]
+---ANSWER_CAPSULE_END---
+
+Then continue with the full article content in Markdown format with proper headings, lists, and formatting.
+
+## CONTENT STRUCTURE FOR AI CITATIONS:
+- Start each section with clear definitions: "X is..." or "X refers to..."
+- Use numbered lists for processes, bullets for features
+- Use H2 as questions, answer immediately below
+- Define terms when first introduced
+- Avoid ambiguous pronouns - repeat subject names instead of "it/they"`;
 
   const userPrompt = templatePrompt
     .replace(/{position}/g, position || 'the position')
@@ -258,7 +295,10 @@ Format the content in Markdown with proper headings, lists, and formatting.`;
     maxTokens: Math.min(targetWordCount * 3, 8000), // Rough estimate: 3 tokens per word
   });
 
-  const content = result.text;
+  const fullContent = result.text;
+
+  // Parse answer capsule from content
+  const { answerCapsule, answerCapsuleQuestion, keyFacts, content } = parseAnswerCapsule(fullContent);
 
   // Generate title and excerpt
   const titleResult = await generateText({
@@ -302,12 +342,91 @@ Format the content in Markdown with proper headings, lists, and formatting.`;
     metaDescription,
     targetKeywords: keywords,
     relatedLandingPageUrls,
+    // Answer capsule fields for AI/LLM optimization
+    answerCapsule,
+    answerCapsuleQuestion,
+    keyFacts,
   };
 }
 
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
+
+/**
+ * Parses the answer capsule section from AI-generated content
+ * Extracts the question, answer, and key facts for AI/LLM optimization
+ */
+function parseAnswerCapsule(fullContent: string): {
+  answerCapsule: string;
+  answerCapsuleQuestion: string;
+  keyFacts: string[];
+  content: string;
+} {
+  // Default values if parsing fails
+  let answerCapsule = '';
+  let answerCapsuleQuestion = '';
+  let keyFacts: string[] = [];
+  let content = fullContent;
+
+  // Look for the answer capsule section
+  const capsuleStartMarker = '---ANSWER_CAPSULE_START---';
+  const capsuleEndMarker = '---ANSWER_CAPSULE_END---';
+
+  const startIndex = fullContent.indexOf(capsuleStartMarker);
+  const endIndex = fullContent.indexOf(capsuleEndMarker);
+
+  if (startIndex !== -1 && endIndex !== -1 && endIndex > startIndex) {
+    // Extract the capsule section
+    const capsuleSection = fullContent.substring(
+      startIndex + capsuleStartMarker.length,
+      endIndex
+    ).trim();
+
+    // Parse question (use [\s\S] instead of . with /s flag for compatibility)
+    const questionMatch = capsuleSection.match(/QUESTION:\s*([\s\S]+?)(?=\nANSWER:)/);
+    if (questionMatch) {
+      answerCapsuleQuestion = questionMatch[1].trim();
+    }
+
+    // Parse answer (use [\s\S] instead of . with /s flag for compatibility)
+    const answerMatch = capsuleSection.match(/ANSWER:\s*([\s\S]+?)(?=KEY_FACTS:|$)/);
+    if (answerMatch) {
+      answerCapsule = answerMatch[1].trim();
+    }
+
+    // Parse key facts
+    const factsMatch = capsuleSection.match(/KEY_FACTS:\s*([\s\S]*?)$/);
+    if (factsMatch) {
+      const factsText = factsMatch[1].trim();
+      // Extract bullet points
+      keyFacts = factsText
+        .split('\n')
+        .map(line => line.replace(/^[-*]\s*/, '').trim())
+        .filter(line => line.length > 0);
+    }
+
+    // Remove capsule section from main content
+    content = fullContent.substring(endIndex + capsuleEndMarker.length).trim();
+  } else {
+    // Fallback: try to generate capsule from content if not found
+    // This handles cases where the AI didn't follow the exact format
+    console.warn('Answer capsule section not found in expected format. Using fallback extraction.');
+
+    // Try to extract first paragraph as answer (use [\s\S] instead of . with /s flag for compatibility)
+    const firstParagraphMatch = content.match(/^(?:#.*\n+)?([\s\S]+?)(?:\n\n|$)/);
+    if (firstParagraphMatch) {
+      answerCapsule = firstParagraphMatch[1].replace(/^#+\s*/, '').trim();
+    }
+  }
+
+  return {
+    answerCapsule,
+    answerCapsuleQuestion,
+    keyFacts,
+    content,
+  };
+}
 
 function extractKeywords(content: string, primaryKeyword: string): string[] {
   const keywords = [primaryKeyword];

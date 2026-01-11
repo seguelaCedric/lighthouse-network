@@ -41,6 +41,7 @@ interface TeamMemberStats {
   placements_made: number;      // Actual placements where they are the placed_by
   revenue: number;              // Revenue from placements they made
   conversion_rate: number;
+  activities_count: number;     // Tasks + meetings from Vincere sync
 }
 
 interface AnalyticsData {
@@ -52,6 +53,7 @@ interface AnalyticsData {
     total_revenue: number;
     avg_conversion_rate: number;
     avg_placement_value: number;
+    monthly_run_rate: number;
   };
   top_clients_by_revenue: ClientStats[];
   top_clients_by_placements: ClientStats[];
@@ -165,6 +167,16 @@ async function getAnalyticsData(
     return query;
   };
 
+  // Build activities query - filter by activity_date
+  const buildActivitiesQuery = () => {
+    let query = supabase
+      .from("recruiter_activities")
+      .select("user_name, tasks_count, meetings_count, activity_date");
+    if (startDateStr) query = query.gte("activity_date", startDateStr);
+    if (endDateStr) query = query.lte("activity_date", endDateStr);
+    return query;
+  };
+
   // Run queries in parallel
   const [
     clientsResult,
@@ -176,6 +188,8 @@ async function getAnalyticsData(
     placementsByPlacedByResult,
     // Additional query for client stats calculation when filtering
     placementsWithClientResult,
+    // Activities from Vincere sync
+    activitiesResult,
   ] = await Promise.all([
     // Get all clients (base info)
     supabase
@@ -212,6 +226,9 @@ async function getAnalyticsData(
           return query;
         })()
       : Promise.resolve({ data: null }),
+
+    // Get activities for team members
+    buildActivitiesQuery(),
   ]);
 
   const clients = (clientsResult.data || []) as ClientStats[];
@@ -359,35 +376,18 @@ async function getAnalyticsData(
     });
   }
 
-  if (hasDateFilter && startDate && endDate) {
-    // Show months within the filtered range
-    const rangeStart = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
-    const rangeEnd = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
-
-    let current = new Date(rangeStart);
-    while (current <= rangeEnd) {
-      const monthKey = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}`;
-      const data = monthlyMap.get(monthKey) || { revenue: 0, placements: 0 };
-      monthlyRevenue.push({
-        month: monthKey,
-        revenue: data.revenue,
-        placements: data.placements,
-      });
-      current = new Date(current.getFullYear(), current.getMonth() + 1, 1);
-    }
-  } else {
-    // Get last 12 months (default view)
-    const now = new Date();
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-      const data = monthlyMap.get(monthKey) || { revenue: 0, placements: 0 };
-      monthlyRevenue.push({
-        month: monthKey,
-        revenue: data.revenue,
-        placements: data.placements,
-      });
-    }
+  // Always show last 12 months - the data within reflects the filter
+  // (filtered placements will only have data for months within the filter range)
+  const now = new Date();
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const data = monthlyMap.get(monthKey) || { revenue: 0, placements: 0 };
+    monthlyRevenue.push({
+      month: monthKey,
+      revenue: data.revenue,
+      placements: data.placements,
+    });
   }
 
   if (placementTrendsResult.data) {
@@ -401,16 +401,44 @@ async function getAnalyticsData(
     }));
   }
 
+  // Calculate monthly run rate based on actual time period
+  let monthlyRunRate = 0;
+  if (totalRevenue > 0) {
+    if (hasDateFilter && startDate && endDate) {
+      // Calculate months in the filtered period
+      const msInMonth = 30.44 * 24 * 60 * 60 * 1000; // Average days in a month
+      const periodMs = endDate.getTime() - startDate.getTime();
+      const periodMonths = Math.max(periodMs / msInMonth, 0.25); // Minimum 1 week = 0.25 months
+      monthlyRunRate = totalRevenue / periodMonths;
+    } else {
+      // For all-time, use last 12 months average from monthly data
+      const last12MonthsRevenue = monthlyRevenue.reduce((sum, m) => sum + m.revenue, 0);
+      monthlyRunRate = last12MonthsRevenue / 12;
+    }
+  }
+
   // Calculate team member stats from jobs (who brought the job)
   const jobsByOwner = jobsByOwnerResult.data || [];
   const placementsByPlacedBy = placementsByPlacedByResult.data || [];
+  const activities = activitiesResult.data || [];
 
-  // Map: name -> { jobs brought, filled jobs (they own), placements made, revenue }
+  // Aggregate activities by user name (sum tasks + meetings)
+  const activitiesByUser = new Map<string, number>();
+  for (const activity of activities as any[]) {
+    const userName = activity.user_name;
+    if (!userName) continue;
+    const existing = activitiesByUser.get(userName) || 0;
+    const count = (activity.tasks_count || 0) + (activity.meetings_count || 0);
+    activitiesByUser.set(userName, existing + count);
+  }
+
+  // Map: name -> { jobs brought, filled jobs (they own), placements made, revenue, activities }
   const teamMemberMap = new Map<string, {
     jobs: number;
     filled: number;
     placementsMade: number;
     revenue: number;
+    activities: number;
   }>();
 
   // Count jobs by owner (who brought the job)
@@ -418,7 +446,7 @@ async function getAnalyticsData(
     const ownerName = job.job_owner_name;
     if (!ownerName) continue;
 
-    const existing = teamMemberMap.get(ownerName) || { jobs: 0, filled: 0, placementsMade: 0, revenue: 0 };
+    const existing = teamMemberMap.get(ownerName) || { jobs: 0, filled: 0, placementsMade: 0, revenue: 0, activities: 0 };
     teamMemberMap.set(ownerName, {
       ...existing,
       jobs: existing.jobs + 1,
@@ -431,11 +459,20 @@ async function getAnalyticsData(
     const placedByName = placement.placed_by_name;
     if (!placedByName) continue;
 
-    const existing = teamMemberMap.get(placedByName) || { jobs: 0, filled: 0, placementsMade: 0, revenue: 0 };
+    const existing = teamMemberMap.get(placedByName) || { jobs: 0, filled: 0, placementsMade: 0, revenue: 0, activities: 0 };
     teamMemberMap.set(placedByName, {
       ...existing,
       placementsMade: existing.placementsMade + 1,
       revenue: existing.revenue + (parseFloat(placement.total_fee) || 0),
+    });
+  }
+
+  // Add activities counts to team members (merge with existing entries or create new ones)
+  for (const [userName, activityCount] of activitiesByUser.entries()) {
+    const existing = teamMemberMap.get(userName) || { jobs: 0, filled: 0, placementsMade: 0, revenue: 0, activities: 0 };
+    teamMemberMap.set(userName, {
+      ...existing,
+      activities: activityCount,
     });
   }
 
@@ -448,6 +485,7 @@ async function getAnalyticsData(
       placements_made: data.placementsMade, // Placements they actually made
       revenue: data.revenue,
       conversion_rate: data.jobs > 0 ? (data.filled / data.jobs) * 100 : 0,
+      activities_count: data.activities,  // Tasks + meetings from Vincere
     }))
     .sort((a, b) => b.jobs_count - a.jobs_count);
 
@@ -460,6 +498,7 @@ async function getAnalyticsData(
       total_revenue: totalRevenue,
       avg_conversion_rate: avgConversionRate,
       avg_placement_value: avgPlacementValue,
+      monthly_run_rate: monthlyRunRate,
     },
     top_clients_by_revenue: topClientsByRevenue,
     top_clients_by_placements: topClientsByPlacements,

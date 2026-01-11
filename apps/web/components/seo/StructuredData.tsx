@@ -33,6 +33,11 @@ interface SeoLandingPageData {
   service_description?: string | null;
   faq_content?: FAQItem[];
   testimonials?: Testimonial[];
+  // Answer capsule fields for AI/LLM optimization
+  answer_capsule?: string | null;
+  answer_capsule_question?: string | null;
+  key_facts?: string[] | null;
+  last_reviewed_at?: string | null;
 }
 
 interface Props {
@@ -441,6 +446,41 @@ export function StructuredData({ data }: Props) {
     },
   };
 
+  // Answer Capsule Schema - Critical for AI/LLM Citations
+  // When answer_capsule is available, create a dedicated Question/Answer schema
+  // This appears at the top of the page and is designed to be easily extracted by AI systems
+  const answerCapsuleSchema = data.answer_capsule
+    ? {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: [
+          {
+            "@type": "Question",
+            name:
+              data.answer_capsule_question ||
+              `How do I hire a ${data.position} in ${locationString}?`,
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: data.answer_capsule,
+              // Include date for freshness signal
+              ...(data.last_reviewed_at && {
+                dateModified: data.last_reviewed_at.split("T")[0],
+              }),
+            },
+          },
+        ],
+        // Add key facts as additional structured context
+        ...(data.key_facts &&
+          data.key_facts.length > 0 && {
+            about: {
+              "@type": "Thing",
+              name: `Hiring a ${data.position} in ${locationString}`,
+              description: data.key_facts.join(". "),
+            },
+          }),
+      }
+    : null;
+
   // BreadcrumbList Schema
   const breadcrumbSchema = {
     "@context": "https://schema.org",
@@ -524,6 +564,13 @@ export function StructuredData({ data }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
+      {/* Answer Capsule Schema - Only rendered when answer_capsule is available */}
+      {answerCapsuleSchema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(answerCapsuleSchema) }}
+        />
+      )}
     </>
   );
 }

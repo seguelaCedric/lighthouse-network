@@ -38,6 +38,11 @@ interface BlogPost {
   related_landing_page_urls: string[] | null;
   scheduled_generate_at: string | null;
   scheduled_publish_at: string | null;
+  // Answer capsule fields for AI/LLM optimization
+  answer_capsule: string | null;
+  answer_capsule_question: string | null;
+  key_facts: string[] | null;
+  last_updated_display: string | null;
 }
 
 export default function BlogEditorPage({ params }: { params: Promise<{ id: string }> }) {
@@ -61,6 +66,11 @@ export default function BlogEditorPage({ params }: { params: Promise<{ id: strin
     primary_keyword: "",
     scheduled_generate_at: "",
     scheduled_publish_at: "",
+    // Answer capsule fields for AI/LLM optimization
+    answer_capsule: "",
+    answer_capsule_question: "",
+    key_facts: [] as string[],
+    last_updated_display: "",
   });
 
   useEffect(() => {
@@ -90,6 +100,13 @@ export default function BlogEditorPage({ params }: { params: Promise<{ id: strin
         scheduled_publish_at: data.scheduled_publish_at
           ? new Date(data.scheduled_publish_at).toISOString().slice(0, 16)
           : "",
+        // Answer capsule fields for AI/LLM optimization
+        answer_capsule: data.answer_capsule || "",
+        answer_capsule_question: data.answer_capsule_question || "",
+        key_facts: data.key_facts || [],
+        last_updated_display: data.last_updated_display
+          ? new Date(data.last_updated_display).toISOString().slice(0, 16)
+          : "",
       });
     } catch (error) {
       console.error("Failed to fetch post:", error);
@@ -113,6 +130,10 @@ export default function BlogEditorPage({ params }: { params: Promise<{ id: strin
         scheduled_publish_at: formData.scheduled_publish_at
           ? new Date(formData.scheduled_publish_at).toISOString()
           : null,
+        last_updated_display: formData.last_updated_display
+          ? new Date(formData.last_updated_display).toISOString()
+          : null,
+        key_facts: formData.key_facts.length > 0 ? formData.key_facts : null,
       };
 
       const response = await fetch(`/api/blog-posts/${postId}`, {
@@ -308,6 +329,89 @@ export default function BlogEditorPage({ params }: { params: Promise<{ id: strin
                 placeholder="Brief summary of the post..."
               />
               <p className="mt-1 text-xs text-gray-500">{formData.excerpt.length}/160 characters</p>
+            </div>
+
+            {/* Answer Capsule - Critical for AI/LLM Citations */}
+            <div className="rounded-xl border-2 border-gold-200 bg-gold-50/30 p-6 shadow-sm">
+              <div className="mb-4 flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold-100">
+                  <CheckCircle2 className="h-4 w-4 text-gold-600" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900">Answer Capsule</h3>
+                  <p className="text-xs text-gray-500">Critical for AI/LLM search citations (ChatGPT, Perplexity, etc.)</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {/* Question */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900">Question</label>
+                  <p className="mt-0.5 mb-2 text-xs text-gray-500">The main question this article answers</p>
+                  <input
+                    type="text"
+                    value={formData.answer_capsule_question}
+                    onChange={(e) => setFormData({ ...formData, answer_capsule_question: e.target.value })}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-1 focus:ring-gold-500"
+                    placeholder="e.g., How much does a butler earn in London?"
+                  />
+                </div>
+
+                {/* Answer */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900">Direct Answer</label>
+                  <p className="mt-0.5 mb-2 text-xs text-gray-500">2-3 sentences, under 100 words. NO LINKS - must be quotable.</p>
+                  <textarea
+                    value={formData.answer_capsule}
+                    onChange={(e) => setFormData({ ...formData, answer_capsule: e.target.value })}
+                    rows={4}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-1 focus:ring-gold-500"
+                    placeholder="A butler in London typically earns between £45,000 and £80,000 per year, depending on experience and the employer. Senior butlers at prestigious estates can earn over £100,000 annually."
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    {formData.answer_capsule.split(/\s+/).filter(Boolean).length} words (aim for under 100)
+                  </p>
+                </div>
+
+                {/* Key Facts */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900">Key Facts</label>
+                  <p className="mt-0.5 mb-2 text-xs text-gray-500">3-5 bullet points for quick scanning (one per line)</p>
+                  <textarea
+                    value={formData.key_facts.join("\n")}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      key_facts: e.target.value.split("\n").filter(line => line.trim())
+                    })}
+                    rows={5}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-1 focus:ring-gold-500"
+                    placeholder="Entry-level butlers earn £35,000-45,000&#10;Experienced butlers earn £50,000-70,000&#10;Top estates pay £80,000-100,000+&#10;Live-in positions include accommodation&#10;London salaries are 20% higher than average"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">{formData.key_facts.length}/5 facts</p>
+                </div>
+
+                {/* Last Updated */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900">Last Updated Display</label>
+                  <p className="mt-0.5 mb-2 text-xs text-gray-500">Visible freshness date - critical for AI citations</p>
+                  <input
+                    type="datetime-local"
+                    value={formData.last_updated_display}
+                    onChange={(e) => setFormData({ ...formData, last_updated_display: e.target.value })}
+                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-gold-500 focus:outline-none focus:ring-1 focus:ring-gold-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setFormData({
+                      ...formData,
+                      last_updated_display: new Date().toISOString().slice(0, 16)
+                    })}
+                    className="mt-2 text-xs text-gold-600 hover:text-gold-700"
+                  >
+                    Set to now
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Content */}
