@@ -54,36 +54,47 @@ export async function generateLandingPageContent(
     .join(', ');
 
   // Generate content sections SEQUENTIALLY to avoid rate limits
-  // Each section is a separate API call, so sequential prevents hitting rate limits
   console.log(`Generating content for ${params.position} in ${locationString}`);
 
-  const aboutPosition = await generateAboutPosition(params.position, locationString);
-  console.log('Generated aboutPosition');
+  try {
+    const aboutPosition = await generateAboutPosition(params.position, locationString);
+    console.log('Generated aboutPosition');
 
-  const locationInfo = await generateLocationInfo(params.position, locationString);
-  console.log('Generated locationInfo');
+    const locationInfo = await generateLocationInfo(params.position, locationString);
+    console.log('Generated locationInfo');
 
-  const serviceDescription = await generateServiceDescription(params.position, locationString);
-  console.log('Generated serviceDescription');
+    const serviceDescription = await generateServiceDescription(params.position, locationString);
+    console.log('Generated serviceDescription');
 
-  const processDetails = await generateProcessDetails(params.position, locationString);
-  console.log('Generated processDetails');
+    const processDetails = await generateProcessDetails(params.position, locationString);
+    console.log('Generated processDetails');
 
-  const faqContent = await generateFAQContent(params.position, locationString);
-  console.log('Generated faqContent');
+    const faqContent = await generateFAQContent(params.position, locationString);
+    console.log('Generated faqContent');
 
-  const keywords = await generateKeywords(params.position, locationString);
-  console.log('Generated keywords');
+    const keywords = await generateKeywords(params.position, locationString);
+    console.log('Generated keywords');
 
-  return {
-    about_position: aboutPosition,
-    location_info: locationInfo,
-    service_description: serviceDescription,
-    process_details: processDetails,
-    faq_content: faqContent,
-    primary_keywords: keywords.primary,
-    secondary_keywords: keywords.secondary,
-  };
+    return {
+      about_position: aboutPosition,
+      location_info: locationInfo,
+      service_description: serviceDescription,
+      process_details: processDetails,
+      faq_content: faqContent,
+      primary_keywords: keywords.primary,
+      secondary_keywords: keywords.secondary,
+    };
+  } catch (error) {
+    // Log the full error details for debugging
+    console.error('Content generation error details:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      cause: error instanceof Error ? (error as Error & { cause?: unknown }).cause : undefined,
+      position: params.position,
+      location: locationString,
+    });
+    throw error;
+  }
 }
 
 /**

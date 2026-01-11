@@ -6,7 +6,7 @@
 
 export type ConversionPath = 'match_preview_view_more' | 'match_preview_get_profiles' | 'form_submit' | 'direct_form' | 'landing_to_match' | 'hero_cta';
 
-export type InternalLinkType = 'related_position' | 'related_location' | 'content_hub' | 'position_hub' | 'location_hub';
+export type InternalLinkType = 'related_position' | 'related_location' | 'content_hub' | 'position_hub' | 'location_hub' | 'answer_capsule_related' | 'answer_capsule_hub' | 'answer_capsule_cta';
 
 export type ScrollDepthMilestone = 25 | 50 | 75 | 100;
 
