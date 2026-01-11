@@ -7,8 +7,8 @@ export const maxDuration = 300;
 // Force dynamic execution - prevents caching which can break cron jobs
 export const dynamic = 'force-dynamic';
 
-const BATCH_SIZE = 10; // Process 10 pages per cron run (every 10 mins)
-const CONCURRENCY = 2; // Process 2 pages in parallel to avoid rate limits
+const BATCH_SIZE = 5; // Process 5 pages per cron run (every 10 mins)
+const CONCURRENCY = 1; // Process 1 page at a time to avoid API rate limits
 
 export async function GET(request: NextRequest) {
   try {

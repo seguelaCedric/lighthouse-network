@@ -53,36 +53,27 @@ export async function generateLandingPageContent(
     .filter(Boolean)
     .join(', ');
 
-  // Generate all content sections in parallel for efficiency
-  // Wrap each in try-catch to handle individual failures gracefully
-  const results = await Promise.allSettled([
-    generateAboutPosition(params.position, locationString),
-    generateLocationInfo(params.position, locationString),
-    generateServiceDescription(params.position, locationString),
-    generateProcessDetails(params.position, locationString),
-    generateFAQContent(params.position, locationString),
-    generateKeywords(params.position, locationString),
-  ]);
+  // Generate content sections SEQUENTIALLY to avoid rate limits
+  // Each section is a separate API call, so sequential prevents hitting rate limits
+  console.log(`Generating content for ${params.position} in ${locationString}`);
 
-  // Extract results or use fallbacks
-  const aboutPosition = results[0].status === 'fulfilled' ? results[0].value : '';
-  const locationInfo = results[1].status === 'fulfilled' ? results[1].value : '';
-  const serviceDescription = results[2].status === 'fulfilled' ? results[2].value : '';
-  const processDetails = results[3].status === 'fulfilled' ? results[3].value : '';
-  const faqContent = results[4].status === 'fulfilled' ? results[4].value : [];
-  const keywords = results[5].status === 'fulfilled' ? results[5].value : { primary: [], secondary: [] };
+  const aboutPosition = await generateAboutPosition(params.position, locationString);
+  console.log('Generated aboutPosition');
 
-  // Log any failures
-  results.forEach((result, index) => {
-    if (result.status === 'rejected') {
-      console.error(`Content generation failed for section ${index}:`, result.reason);
-    }
-  });
+  const locationInfo = await generateLocationInfo(params.position, locationString);
+  console.log('Generated locationInfo');
 
-  // If all failed, throw an error
-  if (results.every(r => r.status === 'rejected')) {
-    throw new Error('All content generation sections failed. Please check your API key and try again.');
-  }
+  const serviceDescription = await generateServiceDescription(params.position, locationString);
+  console.log('Generated serviceDescription');
+
+  const processDetails = await generateProcessDetails(params.position, locationString);
+  console.log('Generated processDetails');
+
+  const faqContent = await generateFAQContent(params.position, locationString);
+  console.log('Generated faqContent');
+
+  const keywords = await generateKeywords(params.position, locationString);
+  console.log('Generated keywords');
 
   return {
     about_position: aboutPosition,
