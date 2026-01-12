@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
       </div>
 
       <p><strong>Ready to find your next role?</strong></p>
-      <p>Browse our <a href="${baseUrl}/job-board" style="color: #c9a962; text-decoration: underline;">open positions</a> or <a href="${baseUrl}/join" style="color: #c9a962; text-decoration: underline;">create your profile</a> to get matched with opportunities that fit your experience and salary expectations.</p>
+      <p>Browse our <a href="${baseUrl}/job-board" style="color: #c9a962; text-decoration: underline;">open positions</a> or <a href="${baseUrl}/auth/register" style="color: #c9a962; text-decoration: underline;">create your profile</a> to get matched with opportunities that fit your experience and salary expectations.</p>
 
       <p>If you have any questions about salary ranges or career opportunities, feel free to reply to this email.</p>
 
@@ -124,7 +124,7 @@ What's included:
 
 Ready to find your next role?
 Browse our open positions: ${baseUrl}/job-board
-Create your profile: ${baseUrl}/join
+Create your profile: ${baseUrl}/auth/register
 
 If you have any questions, feel free to reply to this email.
 

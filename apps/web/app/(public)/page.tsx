@@ -638,7 +638,7 @@ export default function HomePage() {
               {/* Right side - CTA Cards */}
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
                 {/* For Candidates */}
-                <Link href="/join" className="group">
+                <Link href="/job-board" className="group">
                   <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-gold-500/50 hover:-translate-y-1">
                     <div className="absolute top-0 right-0 h-24 w-24 translate-x-8 -translate-y-8 rounded-full bg-gold-500/10 transition-transform group-hover:scale-150" aria-hidden="true" />
                     <div className="relative">

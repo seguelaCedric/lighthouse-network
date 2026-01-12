@@ -161,7 +161,7 @@ export default function AffiliatesPCCPPage() {
             </p>
 
             <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-              <Link href="/join">
+              <Link href="/auth/register">
                 <Button size="lg">
                   Apply Now
                   <ArrowRight className="ml-2 h-5 w-5" />
@@ -452,7 +452,7 @@ export default function AffiliatesPCCPPage() {
             career on the world&apos;s finest superyachts.
           </p>
           <div className="mt-10 flex flex-col justify-center gap-4 sm:flex-row">
-            <Link href="/join">
+            <Link href="/auth/register">
               <Button
                 size="lg"
                 className="min-w-[200px] bg-navy-900 text-white hover:bg-navy-800"

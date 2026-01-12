@@ -1120,7 +1120,7 @@ export default function SalaryGuidePage({ searchParams }: SalaryGuidePageProps) 
                 </p>
                 <div className="space-y-3 print:space-y-3">
                   <Link
-                    href="/join"
+                    href="/auth/register"
                     className="block rounded-lg bg-gold-500 px-6 py-3.5 text-center text-base font-semibold text-navy-900 transition-colors hover:bg-gold-400 print:border-2 print:border-gold-600 print:bg-white print:py-3 print:text-gold-700 print:hover:bg-gold-50"
                   >
                     Create Your Profile →
@@ -1227,7 +1227,7 @@ export default function SalaryGuidePage({ searchParams }: SalaryGuidePageProps) 
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <Link href="/join">
+            <Link href="/auth/register">
               <Button variant="secondary" size="lg" className="min-w-[220px]">
                 Create Your Profile
                 <ArrowRight className="ml-2 h-5 w-5" />

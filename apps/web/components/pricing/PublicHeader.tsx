@@ -125,7 +125,7 @@ export function PublicHeader() {
                     Log in
                   </Button>
                 </Link>
-                <Link href="/join" onClick={() => setMobileMenuOpen(false)}>
+                <Link href="/auth/register" onClick={() => setMobileMenuOpen(false)}>
                   <Button variant="primary" className="w-full">
                     Register
                   </Button>

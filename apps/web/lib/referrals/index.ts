@@ -587,7 +587,7 @@ export async function cancelReward(rewardId: string, reason?: string): Promise<b
  */
 export function generateReferralUrl(code: string, source?: ReferralSource): string {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://lighthouse-careers.com'
-  const url = new URL('/join', baseUrl)
+  const url = new URL('/auth/register', baseUrl)
   url.searchParams.set('ref', code)
   if (source) {
     url.searchParams.set('src', source)

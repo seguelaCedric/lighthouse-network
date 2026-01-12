@@ -121,7 +121,7 @@ export function AuthMenu() {
           Log in
         </Button>
       </Link>
-      <Link href="/join">
+      <Link href="/auth/register">
         <Button variant="primary" size="sm">
           Register
         </Button>

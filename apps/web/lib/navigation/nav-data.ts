@@ -154,7 +154,7 @@ export const CONTENT_CATEGORIES = {
   forCandidates: {
     label: "For Candidates",
     items: [
-      { href: "/join", label: "Find a Job", icon: "Users" },
+      { href: "/job-board", label: "Find a Job", icon: "Users" },
       { href: "/blog?audience=candidate", label: "Career Resources", icon: "BookOpen" },
       { href: "/job-board", label: "Job Board", icon: "Briefcase" },
     ],

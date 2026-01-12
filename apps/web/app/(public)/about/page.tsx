@@ -183,7 +183,7 @@ export default async function AboutPage() {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <Link href="/join">
+            <Link href="/job-board">
               <Button
                 variant="secondary"
                 size="lg"
