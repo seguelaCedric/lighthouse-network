@@ -17,7 +17,7 @@ interface TestimonialsProps {
   subtitle?: string;
   testimonials: Testimonial[];
   variant?: "light" | "dark";
-  pattern?: "none" | "diamond" | "louis-vuitton";
+  pattern?: "none" | "diamond";
   showStats?: boolean;
   stats?: Array<{ value: string; label: string }>;
   className?: string;
@@ -44,41 +44,6 @@ export function Testimonials({
       )}
     >
       {/* Pattern Backgrounds */}
-      {pattern === "louis-vuitton" && (
-        <>
-          {/* LV-inspired Damier pattern (checkered luxury pattern) */}
-          <div className="absolute inset-0 opacity-[0.06]">
-            <div
-              className="absolute inset-0"
-              style={{
-                backgroundImage: `
-                  linear-gradient(45deg, rgba(180, 142, 67, 0.3) 25%, transparent 25%),
-                  linear-gradient(-45deg, rgba(180, 142, 67, 0.3) 25%, transparent 25%),
-                  linear-gradient(45deg, transparent 75%, rgba(180, 142, 67, 0.3) 75%),
-                  linear-gradient(-45deg, transparent 75%, rgba(180, 142, 67, 0.3) 75%)
-                `,
-                backgroundSize: '60px 60px',
-                backgroundPosition: '0 0, 0 30px, 30px -30px, -30px 0px'
-              }}
-            />
-          </div>
-
-          {/* Monogram-inspired subtle circles pattern */}
-          <div className="absolute inset-0 opacity-[0.04]">
-            <div
-              className="absolute inset-0"
-              style={{
-                backgroundImage: `
-                  radial-gradient(circle at 25% 25%, rgba(212, 175, 55, 0.2) 2px, transparent 2px),
-                  radial-gradient(circle at 75% 75%, rgba(212, 175, 55, 0.2) 2px, transparent 2px)
-                `,
-                backgroundSize: '80px 80px'
-              }}
-            />
-          </div>
-        </>
-      )}
-
       {pattern === "diamond" && (
         <>
           {/* Warm champagne/gold glow from top */}
@@ -116,15 +81,7 @@ export function Testimonials({
         </div>
       )}
 
-      {/* Elegant border accents for LV pattern */}
-      {pattern === "louis-vuitton" && (
-        <>
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gold-500/30 to-transparent" />
-          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gold-500/30 to-transparent" />
-        </>
-      )}
-
-      <div className={cn("mx-auto px-4 sm:px-6 relative z-10", pattern === "louis-vuitton" ? "max-w-7xl" : "max-w-6xl")}>
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 relative z-10">
         {/* Stats Section */}
         {showStats && stats && (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-20">
@@ -162,37 +119,21 @@ export function Testimonials({
         </div>
 
         {/* Testimonials Grid */}
-        <div className={cn("grid gap-8 md:grid-cols-2 lg:grid-cols-3", pattern === "louis-vuitton" && "lg:gap-10")}>
+        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
           {testimonials.map((testimonial, index) => (
             <div
               key={index}
               className={cn(
-                "group relative rounded-2xl p-6 transition-all duration-500",
+                "rounded-2xl p-6 transition-shadow hover:shadow-lg",
                 isDark
-                  ? "border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.03] backdrop-blur-sm hover:from-white/[0.12] hover:to-white/[0.06] hover:border-gold-500/40 hover:shadow-2xl hover:shadow-gold-500/20 hover:scale-[1.02] overflow-hidden"
-                  : "border border-gray-200 bg-white hover:shadow-lg"
+                  ? "border border-white/10 bg-white/5"
+                  : "border border-gray-200 bg-white"
               )}
             >
-              {/* Luxury corner accents for LV pattern */}
-              {pattern === "louis-vuitton" && isDark && (
-                <>
-                  <div className="absolute top-0 right-0 w-16 h-16 opacity-30 group-hover:opacity-50 transition-opacity duration-500 rounded-tr-2xl overflow-hidden">
-                    <div className="absolute top-0 right-0 w-full h-[1.5px] bg-gradient-to-l from-gold-400 via-gold-500 to-transparent" />
-                    <div className="absolute top-0 right-0 h-full w-[1.5px] bg-gradient-to-b from-gold-400 via-gold-500 to-transparent" />
-                  </div>
-                  <div className="absolute bottom-0 left-0 w-16 h-16 opacity-30 group-hover:opacity-50 transition-opacity duration-500 rounded-bl-2xl overflow-hidden">
-                    <div className="absolute bottom-0 left-0 w-full h-[1.5px] bg-gradient-to-r from-gold-400 via-gold-500 to-transparent" />
-                    <div className="absolute bottom-0 left-0 h-full w-[1.5px] bg-gradient-to-t from-gold-400 via-gold-500 to-transparent" />
-                  </div>
-
-                  {/* Subtle inner glow */}
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-gold-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-                </>
-              )}
 
               {/* Rating Stars */}
               {testimonial.rating && (
-                <div className="mb-4 flex gap-1 relative z-10">
+                <div className="mb-4 flex gap-1">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <Star
                       key={i}
@@ -210,7 +151,7 @@ export function Testimonials({
               {/* Quote */}
               <blockquote
                 className={cn(
-                  "mb-6 text-base leading-relaxed relative z-10",
+                  "mb-6 text-base leading-relaxed",
                   isDark ? "text-gray-300" : "text-gray-700"
                 )}
               >
@@ -218,7 +159,7 @@ export function Testimonials({
               </blockquote>
 
               {/* Author */}
-              <div className="flex items-center gap-3 relative z-10">
+              <div className="flex items-center gap-3">
                 {testimonial.image ? (
                   <img
                     src={testimonial.image}

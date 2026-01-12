@@ -307,20 +307,31 @@ Then continue with the full article content in Markdown format with proper headi
 
 The title must be 60-70 characters and include: "${primaryKeyword}"`,
     prompt: `Blog content:\n\n${content.substring(0, 500)}\n\nWrite one single title line (60-70 characters, includes "${primaryKeyword}"):`,
-    temperature: 0.7,
-    maxTokens: 50,
+    temperature: 0.5,
+    maxTokens: 30,
   });
 
   const excerptResult = await generateText({
     model: blogModel,
     system: `You are an SEO expert. Return ONLY the meta description text, nothing else. No explanations. The description must be 150-160 characters and include the primary keyword.`,
     prompt: `Based on this blog post content, generate a meta description:\n\n${content.substring(0, 500)}\n\nReturn ONLY the meta description text, nothing else.`,
-    temperature: 0.7,
-    maxTokens: 200,
+    temperature: 0.5,
+    maxTokens: 80,
   });
 
-  const title = titleResult.text.trim().replace(/^["']|["']$/g, '');
-  const excerpt = excerptResult.text.trim().replace(/^["']|["']$/g, '').substring(0, 160);
+  // Extract clean title - take only the first line before any explanation
+  let title = titleResult.text.trim();
+  // Remove markdown formatting (**, *, etc.)
+  title = title.replace(/\*+/g, '').trim();
+  // Take only the first line (before \n or period followed by space)
+  const firstLine = title.split(/\n|(?<=\.)\s+/)[0];
+  title = firstLine.replace(/^["']|["']$/g, '').trim();
+
+  // Extract clean excerpt - take first 160 chars
+  let excerpt = excerptResult.text.trim();
+  excerpt = excerpt.replace(/\*+/g, '').trim();
+  const excerptFirstLine = excerpt.split(/\n/)[0];
+  excerpt = excerptFirstLine.replace(/^["']|["']$/g, '').substring(0, 160).trim();
 
   // Generate slug from title
   const slug = title

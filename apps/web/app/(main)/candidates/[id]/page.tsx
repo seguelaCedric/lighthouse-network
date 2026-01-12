@@ -55,6 +55,7 @@ import DocumentCard from "@/components/documents/DocumentCard";
 import { DocumentUploadModal } from "@/components/documents/DocumentUploadModal";
 import type { Document } from "@/lib/services/document-service";
 import type { DocumentType } from "@/lib/validations/documents";
+import { licenseOptions } from "@/components/profile/constants";
 
 // Extended type for candidate with additional fields that may exist in database but not in base type
 // Note: bio_full, bio_generated_at are now in base Candidate type
@@ -990,7 +991,7 @@ export default function CandidateProfilePage() {
                         <Award className="size-5 text-gold-600" />
                         <div>
                           <p className="text-xs text-gold-600 font-medium">Highest License</p>
-                          <p className="text-sm font-semibold text-navy-900">{candidate.highest_license}</p>
+                          <p className="text-sm font-semibold text-navy-900">{formatLicenseLabel(candidate.highest_license)}</p>
                         </div>
                       </div>
                     </div>
