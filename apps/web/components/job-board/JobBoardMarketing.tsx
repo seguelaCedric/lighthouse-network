@@ -562,11 +562,40 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
 
       {/* Social Proof Section */}
       <section className="py-20 bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 relative overflow-hidden">
+        {/* Luxury diagonal pattern overlay */}
+        <div className="absolute inset-0 opacity-[0.03]">
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 35px,
+                rgba(255, 215, 0, 0.1) 35px,
+                rgba(255, 215, 0, 0.1) 70px
+              )`
+            }}
+          />
+        </div>
+
         {/* Background decorative elements */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 left-10 w-72 h-72 bg-gold-500 rounded-full filter blur-3xl" />
           <div className="absolute bottom-20 right-10 w-96 h-96 bg-gold-400 rounded-full filter blur-3xl" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gold-500 rounded-full filter blur-[100px] opacity-20" />
         </div>
+
+        {/* Subtle grid pattern */}
+        <div
+          className="absolute inset-0 opacity-[0.02]"
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(255, 215, 0, 0.1) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(255, 215, 0, 0.1) 1px, transparent 1px)
+            `,
+            backgroundSize: '50px 50px'
+          }}
+        />
 
         <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           {/* Stats */}
@@ -594,8 +623,13 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
             {testimonials.map((testimonial, idx) => (
               <div
                 key={idx}
-                className="rounded-2xl p-6 border border-white/10 bg-white/5 hover:bg-white/10 hover:border-gold-500/30 transition-all duration-300 hover:shadow-2xl hover:scale-[1.02]"
+                className="group relative rounded-2xl p-6 border border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 hover:border-gold-500/30 transition-all duration-300 hover:shadow-2xl hover:shadow-gold-500/10 hover:scale-[1.02]"
               >
+                {/* Luxury corner accent */}
+                <div className="absolute top-0 right-0 w-16 h-16 opacity-20 group-hover:opacity-40 transition-opacity">
+                  <div className="absolute top-0 right-0 w-full h-0.5 bg-gradient-to-l from-gold-400 to-transparent" />
+                  <div className="absolute top-0 right-0 h-full w-0.5 bg-gradient-to-b from-gold-400 to-transparent" />
+                </div>
                 {/* Rating stars */}
                 {testimonial.rating && (
                   <div className="mb-4 flex gap-1">
