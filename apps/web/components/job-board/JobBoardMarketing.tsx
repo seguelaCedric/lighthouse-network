@@ -563,16 +563,16 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
       {/* Social Proof Section */}
       <section className="py-20 bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 relative overflow-hidden">
         {/* Luxury diagonal pattern overlay */}
-        <div className="absolute inset-0 opacity-[0.03]">
+        <div className="absolute inset-0 opacity-[0.08]">
           <div
             className="absolute inset-0"
             style={{
               backgroundImage: `repeating-linear-gradient(
                 45deg,
                 transparent,
-                transparent 35px,
-                rgba(255, 215, 0, 0.1) 35px,
-                rgba(255, 215, 0, 0.1) 70px
+                transparent 40px,
+                rgba(255, 215, 0, 0.15) 40px,
+                rgba(255, 215, 0, 0.15) 80px
               )`
             }}
           />
@@ -587,13 +587,13 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
 
         {/* Subtle grid pattern */}
         <div
-          className="absolute inset-0 opacity-[0.02]"
+          className="absolute inset-0 opacity-[0.05]"
           style={{
             backgroundImage: `
-              linear-gradient(rgba(255, 215, 0, 0.1) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255, 215, 0, 0.1) 1px, transparent 1px)
+              linear-gradient(rgba(255, 215, 0, 0.15) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(255, 215, 0, 0.15) 1px, transparent 1px)
             `,
-            backgroundSize: '50px 50px'
+            backgroundSize: '60px 60px'
           }}
         />
 
