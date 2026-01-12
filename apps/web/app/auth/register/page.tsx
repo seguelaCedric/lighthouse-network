@@ -17,7 +17,6 @@ import {
   User,
   Phone,
   Briefcase,
-  Clock,
   CheckCircle2,
   Check,
   ChevronDown,
@@ -353,8 +352,6 @@ function Step3({
     candidateType: string;
     primaryPosition: string;
     otherRoleDetails: string;
-    yearsExperience: string;
-    currentStatus: string;
   };
   onChange: (field: string, value: string) => void;
   errors: Record<string, string>;
@@ -437,21 +434,6 @@ function Step3({
 
   const showOtherRoleDetails = data.candidateType === "other";
 
-  const experienceLevels = [
-    "Entry Level (0-1 years)",
-    "Junior (1-3 years)",
-    "Mid-Level (3-5 years)",
-    "Senior (5-10 years)",
-    "Expert (10+ years)",
-  ];
-
-  const statuses = [
-    "Actively seeking",
-    "Open to opportunities",
-    "Currently employed - looking",
-    "Just exploring",
-  ];
-
   return (
     <div className="space-y-4">
       <div className="mb-6 text-center">
@@ -469,24 +451,28 @@ function Step3({
             <label
               key={role.value}
               className={cn(
-                "flex cursor-pointer flex-col gap-0.5 rounded-lg border p-3 transition-colors",
+                "flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-all",
                 data.candidateType === role.value
-                  ? "border-gold-400 bg-gold-50"
-                  : "border-gray-200 hover:border-gray-300"
+                  ? "border-gold-400 bg-gold-50 shadow-sm"
+                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
               )}
             >
-              <span className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="candidateType"
-                  value={role.value}
-                  checked={data.candidateType === role.value}
-                  onChange={(e) => onChange("candidateType", e.target.value)}
-                  className="size-4 border-gray-300 text-gold-600 focus:ring-gold-500"
-                />
-                <span className="text-sm font-medium text-navy-900">{role.label}</span>
-              </span>
-              <span className="text-xs text-gray-500">{role.description}</span>
+              <input
+                type="radio"
+                name="candidateType"
+                value={role.value}
+                checked={data.candidateType === role.value}
+                onChange={(e) => onChange("candidateType", e.target.value)}
+                className="mt-0.5 size-4 shrink-0 border-gray-300 accent-gold-600 focus:ring-gold-500"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-semibold text-navy-900 mb-1">
+                  {role.label}
+                </div>
+                <div className="text-xs text-gray-600 leading-relaxed">
+                  {role.description}
+                </div>
+              </div>
             </label>
           ))}
         </div>
@@ -546,60 +532,6 @@ function Step3({
           )}
         </div>
       )}
-
-      {/* Years of Experience */}
-      <div>
-        <label htmlFor="experience" className="mb-1.5 block text-sm font-medium text-navy-900">
-          Years of Experience
-        </label>
-        <div className="relative">
-          <Clock className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
-          <select
-            id="experience"
-            value={data.yearsExperience}
-            onChange={(e) => onChange("yearsExperience", e.target.value)}
-            className="w-full appearance-none rounded-lg border border-gray-200 bg-white py-2.5 pl-10 pr-10 text-navy-900 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/20"
-          >
-            <option value="">Select experience level</option>
-            {experienceLevels.map((level) => (
-              <option key={level} value={level}>
-                {level}
-              </option>
-            ))}
-          </select>
-          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-5 -translate-y-1/2 text-gray-400" />
-        </div>
-      </div>
-
-      {/* Current Status */}
-      <div>
-        <label className="mb-1.5 block text-sm font-medium text-navy-900">
-          Current Job Search Status
-        </label>
-        <div className="space-y-2">
-          {statuses.map((status) => (
-            <label
-              key={status}
-              className={cn(
-                "flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors",
-                data.currentStatus === status
-                  ? "border-gold-400 bg-gold-50"
-                  : "border-gray-200 hover:border-gray-300"
-              )}
-            >
-              <input
-                type="radio"
-                name="status"
-                value={status}
-                checked={data.currentStatus === status}
-                onChange={(e) => onChange("currentStatus", e.target.value)}
-                className="size-4 border-gray-300 text-gold-600 focus:ring-gold-500"
-              />
-              <span className="text-sm text-navy-900">{status}</span>
-            </label>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
@@ -639,8 +571,6 @@ function RegisterContent() {
     candidateType: "",
     primaryPosition: "",
     otherRoleDetails: "",
-    yearsExperience: "",
-    currentStatus: "",
   });
 
   // Check for referral code on mount
@@ -782,8 +712,6 @@ function RegisterContent() {
           candidate_type: step3Data.candidateType,
           other_role_details: step3Data.otherRoleDetails,
           primary_position: step3Data.primaryPosition,
-          years_experience: step3Data.yearsExperience,
-          current_status: step3Data.currentStatus,
           // Pass referral ID if present (will be used after email verification)
           referral_id: referralId,
         },
