@@ -345,7 +345,7 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
             
             {/* Job Stats */}
             <p className="mx-auto max-w-2xl text-base text-gold-300 sm:text-lg mb-10 font-medium">
-              {totalCount > 0 ? `${totalCount} Active Listings / ${postedToday} Posted Today` : "Elite Positions Available"}
+              100+ Active Jobs / {postedToday > 0 ? `${postedToday}` : "10+"} Posted Today
             </p>
 
             {/* CTAs */}
@@ -416,33 +416,167 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
       </section>
 
       {/* Value Proposition Section */}
-      <section className="py-20 bg-gradient-to-b from-white to-gray-50">
-        <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-20 bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 relative overflow-hidden">
+        {/* Background decorative elements */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-gold-500 rounded-full filter blur-3xl" />
+          <div className="absolute bottom-20 right-10 w-96 h-96 bg-gold-400 rounded-full filter blur-3xl" />
+        </div>
+
+        <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-16">
-            <h2 className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl mb-4">
+            <div className="inline-flex items-center gap-2 rounded-full border border-gold-500/30 bg-gold-500/10 px-5 py-2 text-sm font-medium text-gold-300 mb-6 backdrop-blur-sm">
+              <Star className="h-4 w-4" />
+              Premium Features
+            </div>
+            <h2 className="font-serif text-3xl font-semibold text-white sm:text-4xl lg:text-5xl mb-4">
               Why Choose Lighthouse Careers?
             </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <p className="text-lg text-gray-300 max-w-2xl mx-auto">
               Everything you need to find your next elite position, all in one place
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {benefits.map((benefit, idx) => {
-              const Icon = benefit.icon;
-              return (
-                <div
-                  key={idx}
-                  className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-200 hover:shadow-lg transition-shadow"
-                >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold-100 mb-4">
-                    <Icon className="h-6 w-6 text-gold-600" />
+          {/* Asymmetric Feature Grid */}
+          <div className="grid md:grid-cols-12 gap-6 lg:gap-8">
+            {/* Featured card - AI Matching (spans 2 columns, larger) */}
+            <div className="md:col-span-12 lg:col-span-6 group">
+              <div className="relative h-full bg-gradient-to-br from-navy-800 to-navy-900 rounded-3xl p-8 lg:p-10 border-2 border-gold-500/20 hover:border-gold-500/40 transition-all duration-300 hover:scale-[1.02] shadow-2xl">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gold-500/10 rounded-full filter blur-2xl" />
+                <div className="relative">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-gold-500 to-gold-600 mb-6 group-hover:scale-110 transition-transform">
+                    <Zap className="h-8 w-8 text-white" />
                   </div>
-                  <h3 className="font-semibold text-navy-900 text-lg mb-2">{benefit.title}</h3>
-                  <p className="text-gray-600">{benefit.description}</p>
+                  <h3 className="font-bold text-white text-2xl mb-3">AI-Powered Matching</h3>
+                  <p className="text-gray-300 leading-relaxed text-lg">
+                    Get personalized job recommendations based on your skills, experience, and preferences. Our intelligent system learns what you're looking for and surfaces the best opportunities.
+                  </p>
+                  <div className="mt-6 flex items-center gap-2 text-gold-400 font-medium group-hover:gap-3 transition-all">
+                    <span>Learn more</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </div>
                 </div>
-              );
-            })}
+              </div>
+            </div>
+
+            {/* 2x2 Grid of smaller cards */}
+            <div className="md:col-span-12 lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-6 lg:gap-8">
+              {/* Verified Employers */}
+              <div className="group">
+                <div className="h-full bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-gold-500/30 hover:bg-white/10 transition-all duration-300">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold-500/20 mb-4 group-hover:scale-110 transition-transform">
+                    <Shield className="h-6 w-6 text-gold-400" />
+                  </div>
+                  <h3 className="font-semibold text-white text-lg mb-2">Verified Employers</h3>
+                  <p className="text-gray-400 text-sm leading-relaxed">
+                    Every employer verified and trusted by top agencies.
+                  </p>
+                </div>
+              </div>
+
+              {/* Direct Application */}
+              <div className="group">
+                <div className="h-full bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-gold-500/30 hover:bg-white/10 transition-all duration-300">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold-500/20 mb-4 group-hover:scale-110 transition-transform">
+                    <Target className="h-6 w-6 text-gold-400" />
+                  </div>
+                  <h3 className="font-semibold text-white text-lg mb-2">Direct Application</h3>
+                  <p className="text-gray-400 text-sm leading-relaxed">
+                    Apply directly to agencies. Skip the middleman.
+                  </p>
+                </div>
+              </div>
+
+              {/* Match Score */}
+              <div className="group">
+                <div className="h-full bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-gold-500/30 hover:bg-white/10 transition-all duration-300">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold-500/20 mb-4 group-hover:scale-110 transition-transform">
+                    <TrendingUp className="h-6 w-6 text-gold-400" />
+                  </div>
+                  <h3 className="font-semibold text-white text-lg mb-2">Match Score</h3>
+                  <p className="text-gray-400 text-sm leading-relaxed">
+                    See compatibility before applying. Focus on the best fits.
+                  </p>
+                </div>
+              </div>
+
+              {/* Career Tracking */}
+              <div className="group">
+                <div className="h-full bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-gold-500/30 hover:bg-white/10 transition-all duration-300">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold-500/20 mb-4 group-hover:scale-110 transition-transform">
+                    <FileText className="h-6 w-6 text-gold-400" />
+                  </div>
+                  <h3 className="font-semibold text-white text-lg mb-2">Career Tracking</h3>
+                  <p className="text-gray-400 text-sm leading-relaxed">
+                    Track applications and monitor your progress.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom row - 3 columns */}
+            <div className="md:col-span-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+              {/* Free Forever - Emphasized */}
+              <div className="group">
+                <div className="relative h-full bg-gradient-to-br from-gold-500/10 to-gold-600/5 rounded-2xl p-6 border-2 border-gold-500/30 hover:border-gold-500/50 transition-all duration-300 overflow-hidden">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-gold-500/20 rounded-full filter blur-xl" />
+                  <div className="relative">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-gold-500 to-gold-600 mb-4 group-hover:scale-110 transition-transform">
+                      <Users className="h-6 w-6 text-white" />
+                    </div>
+                    <div className="inline-block px-3 py-1 bg-gold-500/20 rounded-full text-gold-300 text-xs font-bold mb-2">
+                      100% FREE
+                    </div>
+                    <h3 className="font-semibold text-white text-lg mb-2">Free Forever</h3>
+                    <p className="text-gray-300 text-sm leading-relaxed">
+                      No hidden fees, no subscriptions. All features free for candidates.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 20+ Years */}
+              <div className="group">
+                <div className="h-full bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-gold-500/30 hover:bg-white/10 transition-all duration-300">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold-500/20 mb-4 group-hover:scale-110 transition-transform">
+                    <Star className="h-6 w-6 text-gold-400" />
+                  </div>
+                  <div className="inline-block px-3 py-1 bg-white/10 rounded-full text-gold-300 text-xs font-bold mb-2">
+                    SINCE 2002
+                  </div>
+                  <h3 className="font-semibold text-white text-lg mb-2">20+ Years of Trust</h3>
+                  <p className="text-gray-400 text-sm leading-relaxed">
+                    Hundreds placed in top positions worldwide.
+                  </p>
+                </div>
+              </div>
+
+              {/* CTA Card */}
+              <div className="group">
+                <Link
+                  href={signUpUrl}
+                  className="block h-full"
+                >
+                  <div className="h-full bg-gradient-to-br from-gold-500 to-gold-600 rounded-2xl p-6 hover:from-gold-600 hover:to-gold-700 transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl">
+                    <div className="flex flex-col items-start h-full justify-between">
+                      <div>
+                        <div className="inline-block px-3 py-1 bg-white/20 rounded-full text-white text-xs font-bold mb-3">
+                          GET STARTED
+                        </div>
+                        <h3 className="font-bold text-white text-xl mb-2">Ready to find your next role?</h3>
+                        <p className="text-white/90 text-sm mb-4">
+                          Join thousands of professionals today.
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 text-white font-semibold group-hover:gap-3 transition-all">
+                        <span>Sign up free</span>
+                        <ArrowRight className="h-5 w-5" />
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </section>
