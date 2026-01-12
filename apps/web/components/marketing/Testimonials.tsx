@@ -17,6 +17,9 @@ interface TestimonialsProps {
   subtitle?: string;
   testimonials: Testimonial[];
   variant?: "light" | "dark";
+  pattern?: "none" | "diamond" | "louis-vuitton";
+  showStats?: boolean;
+  stats?: Array<{ value: string; label: string }>;
   className?: string;
 }
 
@@ -25,6 +28,9 @@ export function Testimonials({
   subtitle,
   testimonials,
   variant = "light",
+  pattern = "none",
+  showStats = false,
+  stats,
   className,
 }: TestimonialsProps) {
   const isDark = variant === "dark";
@@ -32,16 +38,112 @@ export function Testimonials({
   return (
     <section
       className={cn(
-        "py-20 sm:py-28",
-        isDark ? "bg-navy-900" : "bg-gray-50",
+        "relative py-20 sm:py-28 overflow-hidden",
+        isDark ? "bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900" : "bg-gray-50",
         className
       )}
     >
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+      {/* Pattern Backgrounds */}
+      {pattern === "louis-vuitton" && (
+        <>
+          {/* LV-inspired Damier pattern (checkered luxury pattern) */}
+          <div className="absolute inset-0 opacity-[0.06]">
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage: `
+                  linear-gradient(45deg, rgba(180, 142, 67, 0.3) 25%, transparent 25%),
+                  linear-gradient(-45deg, rgba(180, 142, 67, 0.3) 25%, transparent 25%),
+                  linear-gradient(45deg, transparent 75%, rgba(180, 142, 67, 0.3) 75%),
+                  linear-gradient(-45deg, transparent 75%, rgba(180, 142, 67, 0.3) 75%)
+                `,
+                backgroundSize: '60px 60px',
+                backgroundPosition: '0 0, 0 30px, 30px -30px, -30px 0px'
+              }}
+            />
+          </div>
+
+          {/* Monogram-inspired subtle circles pattern */}
+          <div className="absolute inset-0 opacity-[0.04]">
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage: `
+                  radial-gradient(circle at 25% 25%, rgba(212, 175, 55, 0.2) 2px, transparent 2px),
+                  radial-gradient(circle at 75% 75%, rgba(212, 175, 55, 0.2) 2px, transparent 2px)
+                `,
+                backgroundSize: '80px 80px'
+              }}
+            />
+          </div>
+        </>
+      )}
+
+      {pattern === "diamond" && (
+        <>
+          {/* Warm champagne/gold glow from top */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_120%_40%_at_50%_0%,rgba(195,165,120,0.08),transparent_60%)]" aria-hidden="true" />
+
+          {/* Geometric diamond pattern */}
+          <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+            <svg className="absolute inset-0 h-full w-full" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <pattern id="testimonial-diamond-pattern" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
+                  <path
+                    d="M30 0L60 30L30 60L0 30Z"
+                    fill="none"
+                    stroke="rgba(195, 165, 120, 0.06)"
+                    strokeWidth="0.5"
+                  />
+                  <circle cx="30" cy="30" r="1" fill="rgba(195, 165, 120, 0.08)" />
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#testimonial-diamond-pattern)" />
+            </svg>
+          </div>
+
+          {/* Subtle vignette */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(10,20,35,0.4)_100%)]" aria-hidden="true" />
+        </>
+      )}
+
+      {/* Background decorative elements for dark variant */}
+      {isDark && (
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-gold-500 rounded-full filter blur-3xl" />
+          <div className="absolute bottom-20 right-10 w-96 h-96 bg-gold-400 rounded-full filter blur-3xl" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gold-500 rounded-full filter blur-[100px] opacity-20" />
+        </div>
+      )}
+
+      {/* Elegant border accents for LV pattern */}
+      {pattern === "louis-vuitton" && (
+        <>
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gold-500/30 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gold-500/30 to-transparent" />
+        </>
+      )}
+
+      <div className={cn("mx-auto px-4 sm:px-6 relative z-10", pattern === "louis-vuitton" ? "max-w-7xl" : "max-w-6xl")}>
+        {/* Stats Section */}
+        {showStats && stats && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-20">
+            {stats.map((stat, idx) => (
+              <div key={idx} className="text-center">
+                <div className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-gold-400 to-gold-500 bg-clip-text text-transparent mb-2">
+                  {stat.value}
+                </div>
+                <div className="text-gray-300 font-medium">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Header */}
         <div className="mb-16 text-center">
           <h2
             className={cn(
-              "font-serif text-3xl font-semibold sm:text-4xl",
+              "font-serif text-3xl font-semibold sm:text-4xl mb-4",
               isDark ? "text-white" : "text-navy-900"
             )}
           >
@@ -50,8 +152,8 @@ export function Testimonials({
           {subtitle && (
             <p
               className={cn(
-                "mx-auto mt-4 max-w-2xl",
-                isDark ? "text-gray-400" : "text-gray-600"
+                "mx-auto max-w-2xl",
+                isDark ? "text-gray-300" : "text-gray-600"
               )}
             >
               {subtitle}
@@ -59,20 +161,38 @@ export function Testimonials({
           )}
         </div>
 
-        <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+        {/* Testimonials Grid */}
+        <div className={cn("grid gap-8 md:grid-cols-2 lg:grid-cols-3", pattern === "louis-vuitton" && "lg:gap-10")}>
           {testimonials.map((testimonial, index) => (
             <div
               key={index}
               className={cn(
-                "rounded-2xl p-6 transition-shadow hover:shadow-lg",
+                "group relative rounded-2xl p-6 transition-all duration-500",
                 isDark
-                  ? "border border-white/10 bg-white/5"
-                  : "border border-gray-200 bg-white"
+                  ? "border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.03] backdrop-blur-sm hover:from-white/[0.12] hover:to-white/[0.06] hover:border-gold-500/40 hover:shadow-2xl hover:shadow-gold-500/20 hover:scale-[1.02] overflow-hidden"
+                  : "border border-gray-200 bg-white hover:shadow-lg"
               )}
             >
+              {/* Luxury corner accents for LV pattern */}
+              {pattern === "louis-vuitton" && isDark && (
+                <>
+                  <div className="absolute top-0 right-0 w-16 h-16 opacity-30 group-hover:opacity-50 transition-opacity duration-500 rounded-tr-2xl overflow-hidden">
+                    <div className="absolute top-0 right-0 w-full h-[1.5px] bg-gradient-to-l from-gold-400 via-gold-500 to-transparent" />
+                    <div className="absolute top-0 right-0 h-full w-[1.5px] bg-gradient-to-b from-gold-400 via-gold-500 to-transparent" />
+                  </div>
+                  <div className="absolute bottom-0 left-0 w-16 h-16 opacity-30 group-hover:opacity-50 transition-opacity duration-500 rounded-bl-2xl overflow-hidden">
+                    <div className="absolute bottom-0 left-0 w-full h-[1.5px] bg-gradient-to-r from-gold-400 via-gold-500 to-transparent" />
+                    <div className="absolute bottom-0 left-0 h-full w-[1.5px] bg-gradient-to-t from-gold-400 via-gold-500 to-transparent" />
+                  </div>
+
+                  {/* Subtle inner glow */}
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-gold-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                </>
+              )}
+
               {/* Rating Stars */}
               {testimonial.rating && (
-                <div className="mb-4 flex gap-1">
+                <div className="mb-4 flex gap-1 relative z-10">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <Star
                       key={i}
@@ -80,7 +200,7 @@ export function Testimonials({
                         "h-4 w-4",
                         i < testimonial.rating!
                           ? "fill-gold-400 text-gold-400"
-                          : "fill-gray-200 text-gray-200"
+                          : isDark ? "fill-gray-600 text-gray-600" : "fill-gray-200 text-gray-200"
                       )}
                     />
                   ))}
@@ -90,7 +210,7 @@ export function Testimonials({
               {/* Quote */}
               <blockquote
                 className={cn(
-                  "mb-6 text-base leading-relaxed",
+                  "mb-6 text-base leading-relaxed relative z-10",
                   isDark ? "text-gray-300" : "text-gray-700"
                 )}
               >
@@ -98,7 +218,7 @@ export function Testimonials({
               </blockquote>
 
               {/* Author */}
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 relative z-10">
                 {testimonial.image ? (
                   <img
                     src={testimonial.image}

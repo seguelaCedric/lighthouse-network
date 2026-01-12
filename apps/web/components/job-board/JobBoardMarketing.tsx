@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { PublicHeader } from "@/components/pricing/PublicHeader";
 import { Logo } from "@/components/ui/Logo";
-import type { Testimonial } from "@/components/marketing/Testimonials";
+import { Testimonials, type Testimonial } from "@/components/marketing/Testimonials";
 import { FAQSection, type FAQItem } from "@/components/marketing/FAQSection";
 import { ExitIntent } from "@/components/marketing/ExitIntent";
 import { StickyCTA } from "@/components/marketing/StickyCTA";
@@ -560,142 +560,16 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
 
       </section>
 
-      {/* Social Proof Section */}
-      <section className="py-20 bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 relative overflow-hidden">
-        {/* LV-inspired Damier pattern (checkered luxury pattern) */}
-        <div className="absolute inset-0 opacity-[0.06]">
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `
-                linear-gradient(45deg, rgba(180, 142, 67, 0.3) 25%, transparent 25%),
-                linear-gradient(-45deg, rgba(180, 142, 67, 0.3) 25%, transparent 25%),
-                linear-gradient(45deg, transparent 75%, rgba(180, 142, 67, 0.3) 75%),
-                linear-gradient(-45deg, transparent 75%, rgba(180, 142, 67, 0.3) 75%)
-              `,
-              backgroundSize: '60px 60px',
-              backgroundPosition: '0 0, 0 30px, 30px -30px, -30px 0px'
-            }}
-          />
-        </div>
-
-        {/* Monogram-inspired subtle circles pattern */}
-        <div className="absolute inset-0 opacity-[0.04]">
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `
-                radial-gradient(circle at 25% 25%, rgba(212, 175, 55, 0.2) 2px, transparent 2px),
-                radial-gradient(circle at 75% 75%, rgba(212, 175, 55, 0.2) 2px, transparent 2px)
-              `,
-              backgroundSize: '80px 80px'
-            }}
-          />
-        </div>
-
-        {/* Background decorative elements */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-10 w-72 h-72 bg-gold-500 rounded-full filter blur-3xl" />
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-gold-400 rounded-full filter blur-3xl" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gold-500 rounded-full filter blur-[100px] opacity-20" />
-        </div>
-
-        {/* Elegant border accents - top and bottom */}
-        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gold-500/30 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gold-500/30 to-transparent" />
-
-        <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-20">
-            {stats.map((stat, idx) => (
-              <div key={idx} className="text-center">
-                <div className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-gold-400 to-gold-500 bg-clip-text text-transparent mb-2">{stat.value}</div>
-                <div className="text-gray-300 font-medium">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Testimonials header */}
-          <div className="mb-16 text-center">
-            <h2 className="font-serif text-3xl font-semibold text-white sm:text-4xl mb-4">
-              What Our Candidates Say
-            </h2>
-            <p className="text-gray-300 max-w-2xl mx-auto">
-              Join thousands of professionals who found their dream role through Lighthouse Careers
-            </p>
-          </div>
-
-          {/* Testimonial grid - directly integrated */}
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 lg:gap-10">
-            {testimonials.map((testimonial, idx) => (
-              <div
-                key={idx}
-                className="group relative rounded-2xl p-6 border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.03] backdrop-blur-sm hover:from-white/[0.12] hover:to-white/[0.06] hover:border-gold-500/40 transition-all duration-500 hover:shadow-2xl hover:shadow-gold-500/20 hover:scale-[1.02] overflow-hidden"
-              >
-                {/* Luxury corner accents - respecting rounded corners */}
-                <div className="absolute top-0 right-0 w-16 h-16 opacity-30 group-hover:opacity-50 transition-opacity duration-500 rounded-tr-2xl overflow-hidden">
-                  <div className="absolute top-0 right-0 w-full h-[1.5px] bg-gradient-to-l from-gold-400 via-gold-500 to-transparent" />
-                  <div className="absolute top-0 right-0 h-full w-[1.5px] bg-gradient-to-b from-gold-400 via-gold-500 to-transparent" />
-                </div>
-                <div className="absolute bottom-0 left-0 w-16 h-16 opacity-30 group-hover:opacity-50 transition-opacity duration-500 rounded-bl-2xl overflow-hidden">
-                  <div className="absolute bottom-0 left-0 w-full h-[1.5px] bg-gradient-to-r from-gold-400 via-gold-500 to-transparent" />
-                  <div className="absolute bottom-0 left-0 h-full w-[1.5px] bg-gradient-to-t from-gold-400 via-gold-500 to-transparent" />
-                </div>
-
-                {/* Subtle inner glow */}
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-gold-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-                {/* Rating stars */}
-                {testimonial.rating && (
-                  <div className="mb-4 flex gap-1">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star
-                        key={i}
-                        className={cn(
-                          "h-4 w-4",
-                          i < testimonial.rating!
-                            ? "fill-gold-400 text-gold-400"
-                            : "fill-gray-600 text-gray-600"
-                        )}
-                      />
-                    ))}
-                  </div>
-                )}
-
-                {/* Quote */}
-                <blockquote className="mb-6 text-base leading-relaxed text-gray-300">
-                  &ldquo;{testimonial.quote}&rdquo;
-                </blockquote>
-
-                {/* Author */}
-                <div className="flex items-center gap-3">
-                  {testimonial.image ? (
-                    <img
-                      src={testimonial.image}
-                      alt={testimonial.author}
-                      className="h-10 w-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gold-500/20 text-gold-400 text-sm font-semibold">
-                      {testimonial.author
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")
-                        .slice(0, 2)}
-                    </div>
-                  )}
-                  <div>
-                    <div className="font-medium text-white">{testimonial.author}</div>
-                    <div className="text-sm text-gray-400">{testimonial.role}</div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Wave separator for smooth transition */}
-        <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-b from-transparent to-white/5" />
-      </section>
+      {/* Social Proof Section - Testimonials with Stats */}
+      <Testimonials
+        title="What Our Candidates Say"
+        subtitle="Join thousands of professionals who found their dream role through Lighthouse Careers"
+        testimonials={testimonials}
+        variant="dark"
+        pattern="diamond"
+        showStats={true}
+        stats={stats}
+      />
 
       {/* How It Works Section */}
       <section className="py-20 bg-gradient-to-b from-navy-900/5 via-navy-800/5 to-white relative">
