@@ -6,15 +6,16 @@
 const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://lighthouse-careers.com";
 
 interface Testimonial {
-  readonly quote: string;
-  readonly name: string;
-  readonly role: string;
-  readonly image: string;
-  readonly type: "client" | "candidate";
+  quote: string;
+  author: string;
+  role: string;
+  company?: string;
+  rating?: number;
+  image?: string;
 }
 
 interface HomePageStructuredDataProps {
-  testimonials: readonly Testimonial[];
+  testimonials: Testimonial[];
 }
 
 export function HomePageStructuredData({ testimonials }: HomePageStructuredDataProps) {
@@ -206,7 +207,7 @@ export function HomePageStructuredData({ testimonials }: HomePageStructuredDataP
       position: index + 1,
       author: {
         "@type": "Person",
-        name: testimonial.name,
+        name: testimonial.author,
         jobTitle: testimonial.role,
       },
       reviewBody: testimonial.quote,

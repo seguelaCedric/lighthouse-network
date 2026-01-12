@@ -47,7 +47,7 @@ const CONTENT_TABS: Tab[] = [
 
 interface ContentLayoutProps {
   children: React.ReactNode;
-  title?: string;
+  title?: React.ReactNode;
   description?: string;
   actions?: React.ReactNode;
 }

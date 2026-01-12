@@ -277,7 +277,7 @@ export default function HomePage() {
                     See Open Positions
                   </Button>
                 </Link>
-                <Link href="/contact">
+                <Link href="/match">
                   <Button variant="secondary" size="lg" className="w-full min-w-[220px] border-white/20 text-white hover:bg-white/10 sm:w-auto">
                     <Zap className="mr-2 h-5 w-5" aria-hidden="true" />
                     Get Staff Today
@@ -409,7 +409,7 @@ export default function HomePage() {
                       <ArrowRight className="ml-2 h-4 w-4" aria-hidden="true" />
                     </Button>
                   </Link>
-                  <Link href="/contact">
+                  <Link href="/hire">
                     <Button variant="secondary">Brief Us Now</Button>
                   </Link>
                 </div>

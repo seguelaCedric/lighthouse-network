@@ -104,13 +104,13 @@ export function AudienceSplit() {
 
             {/* CTA buttons */}
             <div className="flex flex-col gap-3 sm:flex-row">
-              <Link href="/contact" className="flex-1">
+              <Link href="/match" className="flex-1">
                 <Button className="w-full">
                   Get Staff Today
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
-              <Link href="/contact" className="flex-1">
+              <Link href="/hire" className="flex-1">
                 <Button variant="secondary" className="w-full">
                   <FileText className="mr-2 h-4 w-4" />
                   Submit a Brief

@@ -159,7 +159,7 @@ export function ExitIntent() {
             </div>
 
             <div className="space-y-4">
-              <Link href="/contact" onClick={handleClose}>
+              <Link href="/hire" onClick={handleClose}>
                 <Button className="w-full" size="lg">
                   Submit a Brief
                   <ArrowRight className="ml-2 h-4 w-4" />

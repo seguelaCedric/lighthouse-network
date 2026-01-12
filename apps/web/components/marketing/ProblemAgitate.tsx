@@ -153,7 +153,7 @@ export function ProblemAgitate() {
             </div>
 
             <div className="mt-auto pt-6">
-              <Link href="/contact">
+              <Link href="/match">
                 <Button className="w-full">
                   Get Staff Today
                   <ArrowRight className="ml-2 h-4 w-4" />
