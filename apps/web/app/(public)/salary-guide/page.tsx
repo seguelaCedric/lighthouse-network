@@ -5,7 +5,6 @@ import { PublicHeader } from "@/components/pricing/PublicHeader";
 import { PublicFooter } from "@/components/pricing/PublicFooter";
 import { Button } from "@/components/ui/button";
 import { LeadCapture } from "@/components/marketing/LeadCapture";
-import { SalaryGuidePDFDownload } from "@/components/marketing/SalaryGuidePDFDownload";
 import {
   Ship,
   Users,
@@ -927,7 +926,6 @@ export default function SalaryGuidePage({ searchParams }: SalaryGuidePageProps) 
                     Household Salaries
                   </Button>
                 </a>
-                <SalaryGuidePDFDownload />
               </>
             )}
           </div>
@@ -1110,10 +1108,10 @@ export default function SalaryGuidePage({ searchParams }: SalaryGuidePageProps) 
 
             <div className="mt-10 grid gap-8 sm:grid-cols-2 print:grid-cols-2 print:gap-8">
               {/* For Candidates */}
-              <div className="flex flex-col rounded-2xl border-2 border-white/20 bg-white/5 p-8 print:border-2 print:border-gray-200 print:bg-white print:shadow-lg print:p-8">
-                <div className="mb-6 flex items-center gap-4 print:mb-6">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gold-500/20 print:bg-gold-100 print:h-16 print:w-16">
-                    <Users className="h-7 w-7 text-gold-300 print:text-gold-600 print:h-8 print:w-8" />
+              <div className="flex flex-col p-2 print:border-2 print:border-gray-200 print:bg-white print:shadow-lg print:p-8 print:rounded-2xl">
+                <div className="mb-4 flex items-center gap-4 print:mb-6">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold-500/20 print:bg-gold-100 print:h-16 print:w-16">
+                    <Users className="h-6 w-6 text-gold-300 print:text-gold-600 print:h-8 print:w-8" />
                   </div>
                   <h3 className="text-xl font-semibold text-white print:text-xl print:text-navy-900">For Candidates</h3>
                 </div>
@@ -1121,26 +1119,26 @@ export default function SalaryGuidePage({ searchParams }: SalaryGuidePageProps) 
                   Create your profile and get matched with opportunities that fit your experience and salary expectations.
                 </p>
                 <div className="space-y-3 print:space-y-3">
-                  <a
-                    href="https://lighthouse-careers.com/join"
+                  <Link
+                    href="/join"
                     className="block rounded-lg bg-gold-500 px-6 py-3.5 text-center text-base font-semibold text-navy-900 transition-colors hover:bg-gold-400 print:border-2 print:border-gold-600 print:bg-white print:py-3 print:text-gold-700 print:hover:bg-gold-50"
                   >
                     Create Your Profile →
-                  </a>
-                  <a
-                    href="https://lighthouse-careers.com/job-board"
-                    className="block rounded-lg border-2 border-white/30 bg-white/10 px-6 py-3.5 text-center text-base font-semibold text-white transition-colors hover:bg-white/20 print:border-2 print:border-gray-300 print:bg-white print:text-navy-900 print:hover:bg-gray-50"
+                  </Link>
+                  <Link
+                    href="/job-board"
+                    className="block rounded-lg bg-white/10 px-6 py-3.5 text-center text-base font-semibold text-white transition-colors hover:bg-white/20 print:border-2 print:border-gray-300 print:bg-white print:text-navy-900 print:hover:bg-gray-50"
                   >
                     Browse Open Positions →
-                  </a>
+                  </Link>
                 </div>
               </div>
 
               {/* For Employers */}
-              <div className="flex flex-col rounded-2xl border-2 border-white/20 bg-white/5 p-8 print:border-2 print:border-gray-200 print:bg-white print:shadow-lg print:p-8">
-                <div className="mb-6 flex items-center gap-4 print:mb-6">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gold-500/20 print:bg-gold-100 print:h-16 print:w-16">
-                    <Briefcase className="h-7 w-7 text-gold-300 print:text-gold-600 print:h-8 print:w-8" />
+              <div className="flex flex-col p-2 print:border-2 print:border-gray-200 print:bg-white print:shadow-lg print:p-8 print:rounded-2xl">
+                <div className="mb-4 flex items-center gap-4 print:mb-6">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold-500/20 print:bg-gold-100 print:h-16 print:w-16">
+                    <Briefcase className="h-6 w-6 text-gold-300 print:text-gold-600 print:h-8 print:w-8" />
                   </div>
                   <h3 className="text-xl font-semibold text-white print:text-xl print:text-navy-900">For Employers</h3>
                 </div>
@@ -1148,32 +1146,32 @@ export default function SalaryGuidePage({ searchParams }: SalaryGuidePageProps) 
                   Looking to hire yacht crew or private household staff? Get in touch with our team.
                 </p>
                 <div className="space-y-3 print:space-y-3">
-                  <a
-                    href="https://lighthouse-careers.com/contact"
+                  <Link
+                    href="/contact"
                     className="block rounded-lg bg-gold-500 px-6 py-3.5 text-center text-base font-semibold text-navy-900 transition-colors hover:bg-gold-400 print:border-2 print:border-gold-600 print:bg-white print:py-3 print:text-gold-700 print:hover:bg-gold-50"
                   >
                     Contact Us →
-                  </a>
-                  <a
-                    href="https://lighthouse-careers.com/employer/register"
-                    className="block rounded-lg border-2 border-white/30 bg-white/10 px-6 py-3.5 text-center text-base font-semibold text-white transition-colors hover:bg-white/20 print:border-2 print:border-gray-300 print:bg-white print:text-navy-900 print:hover:bg-gray-50"
+                  </Link>
+                  <Link
+                    href="/hire"
+                    className="block rounded-lg bg-white/10 px-6 py-3.5 text-center text-base font-semibold text-white transition-colors hover:bg-white/20 print:border-2 print:border-gray-300 print:bg-white print:text-navy-900 print:hover:bg-gray-50"
                   >
                     Register as Employer →
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>
 
-            <div className="mt-10 text-center print:mt-8">
+            <div className="mt-8 text-center print:mt-8">
               <p className="text-base text-gray-400 print:text-base print:text-gray-700">
-                Visit us at{" "}
-                <span className="inline-block rounded-lg border-2 border-white/20 bg-white/5 px-4 py-2 font-semibold text-gold-300 print:border-gray-300 print:bg-white print:text-gold-600">
-                  lighthouse-careers.com
-                </span>
-                {" "}or email{" "}
-                <span className="inline-block rounded-lg border-2 border-white/20 bg-white/5 px-4 py-2 font-semibold text-gold-300 print:border-gray-300 print:bg-white print:text-gold-600">
-                  info@lighthouse-careers.com
-                </span>
+                Questions?{" "}
+                <a href="tel:+33676410299" className="font-semibold text-gold-300 hover:text-gold-200 print:text-gold-600">
+                  Call us
+                </a>
+                {" "}or{" "}
+                <a href="mailto:admin@lighthouse-careers.com" className="font-semibold text-gold-300 hover:text-gold-200 print:text-gold-600">
+                  send an email
+                </a>
               </p>
             </div>
           </div>
