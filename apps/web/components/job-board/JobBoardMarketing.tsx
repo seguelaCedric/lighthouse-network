@@ -393,23 +393,23 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
       </section>
 
       {/* Value Proposition Section */}
-      <section className="py-24 lg:py-32 bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 relative overflow-hidden">
+      <section className="py-24 lg:py-32 bg-gradient-to-b from-white via-gray-50 to-white relative overflow-hidden">
         {/* Background decorative elements */}
-        <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0 opacity-5">
           <div className="absolute top-20 left-10 w-72 h-72 bg-gold-500 rounded-full filter blur-3xl" />
-          <div className="absolute bottom-20 right-10 w-96 h-96 bg-gold-400 rounded-full filter blur-3xl" />
+          <div className="absolute bottom-20 right-10 w-96 h-96 bg-navy-800 rounded-full filter blur-3xl" />
         </div>
 
         <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-20">
-            <div className="inline-flex items-center gap-2 rounded-full border border-gold-500/30 bg-gold-500/10 px-5 py-2 text-sm font-medium text-gold-300 mb-6 backdrop-blur-sm">
+            <div className="inline-flex items-center gap-2 rounded-full border border-gold-500/30 bg-gold-500/10 px-5 py-2 text-sm font-medium text-gold-600 mb-6 backdrop-blur-sm">
               <Star className="h-4 w-4" />
               Premium Features
             </div>
-            <h2 className="font-serif text-3xl font-semibold text-white sm:text-4xl lg:text-5xl mb-4">
+            <h2 className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl lg:text-5xl mb-4">
               Why Choose Lighthouse Careers?
             </h2>
-            <p className="text-lg text-gray-300 max-w-2xl mx-auto">
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Everything you need to find your next elite position, all in one place
             </p>
           </div>
@@ -418,17 +418,17 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
           <div className="grid md:grid-cols-12 gap-6 lg:gap-8 mb-8">
             {/* Featured card - AI Matching (spans 2 columns, larger) */}
             <div className="md:col-span-12 lg:col-span-6 group">
-              <div className="relative h-full bg-gradient-to-br from-navy-800 to-navy-900 rounded-3xl p-8 lg:p-10 border-2 border-gold-500/20 hover:border-gold-500/40 transition-all duration-300 hover:scale-[1.02] shadow-2xl">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gold-500/10 rounded-full filter blur-2xl" />
+              <div className="relative h-full bg-white rounded-3xl p-8 lg:p-10 border-2 border-gray-200 hover:border-gold-500/40 transition-all duration-300 hover:scale-[1.02] shadow-xl hover:shadow-2xl">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-gold-500/5 rounded-full filter blur-2xl" />
                 <div className="relative">
                   <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-gold-500 to-gold-600 mb-6 group-hover:scale-110 transition-transform">
                     <Zap className="h-8 w-8 text-white" />
                   </div>
-                  <h3 className="font-bold text-white text-2xl mb-3">AI-Powered Matching</h3>
-                  <p className="text-gray-300 leading-relaxed text-lg">
+                  <h3 className="font-bold text-navy-900 text-2xl mb-3">AI-Powered Matching</h3>
+                  <p className="text-gray-600 leading-relaxed text-lg">
                     Get personalized job recommendations based on your skills, experience, and preferences. Our intelligent system learns what you're looking for and surfaces the best opportunities.
                   </p>
-                  <div className="mt-6 flex items-center gap-2 text-gold-400 font-medium group-hover:gap-3 transition-all">
+                  <div className="mt-6 flex items-center gap-2 text-gold-600 font-medium group-hover:gap-3 transition-all">
                     <span>Learn more</span>
                     <ArrowRight className="h-4 w-4" />
                   </div>
@@ -440,12 +440,12 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
             <div className="md:col-span-12 lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-6 lg:gap-8">
               {/* Expert Recruitment */}
               <div className="group">
-                <div className="h-full bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-gold-500/30 hover:bg-white/10 transition-all duration-300">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold-500/20 mb-4 group-hover:scale-110 transition-transform">
-                    <Shield className="h-6 w-6 text-gold-400" />
+                <div className="h-full bg-white rounded-2xl p-6 border border-gray-200 hover:border-gold-500/30 hover:shadow-lg transition-all duration-300">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold-500/10 mb-4 group-hover:scale-110 transition-transform">
+                    <Shield className="h-6 w-6 text-gold-600" />
                   </div>
-                  <h3 className="font-semibold text-white text-lg mb-2">Expert Recruitment</h3>
-                  <p className="text-gray-400 text-sm leading-relaxed">
+                  <h3 className="font-semibold text-navy-900 text-lg mb-2">Expert Recruitment</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">
                     We personally vet every opportunity and employer.
                   </p>
                 </div>
@@ -453,12 +453,12 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
 
               {/* Personal Matching */}
               <div className="group">
-                <div className="h-full bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-gold-500/30 hover:bg-white/10 transition-all duration-300">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold-500/20 mb-4 group-hover:scale-110 transition-transform">
-                    <Target className="h-6 w-6 text-gold-400" />
+                <div className="h-full bg-white rounded-2xl p-6 border border-gray-200 hover:border-gold-500/30 hover:shadow-lg transition-all duration-300">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold-500/10 mb-4 group-hover:scale-110 transition-transform">
+                    <Target className="h-6 w-6 text-gold-600" />
                   </div>
-                  <h3 className="font-semibold text-white text-lg mb-2">Personal Matching</h3>
-                  <p className="text-gray-400 text-sm leading-relaxed">
+                  <h3 className="font-semibold text-navy-900 text-lg mb-2">Personal Matching</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">
                     We match you with the right roles and introduce you directly.
                   </p>
                 </div>
@@ -466,12 +466,12 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
 
               {/* Exclusive Access */}
               <div className="group">
-                <div className="h-full bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-gold-500/30 hover:bg-white/10 transition-all duration-300">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold-500/20 mb-4 group-hover:scale-110 transition-transform">
-                    <TrendingUp className="h-6 w-6 text-gold-400" />
+                <div className="h-full bg-white rounded-2xl p-6 border border-gray-200 hover:border-gold-500/30 hover:shadow-lg transition-all duration-300">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold-500/10 mb-4 group-hover:scale-110 transition-transform">
+                    <TrendingUp className="h-6 w-6 text-gold-600" />
                   </div>
-                  <h3 className="font-semibold text-white text-lg mb-2">Exclusive Access</h3>
-                  <p className="text-gray-400 text-sm leading-relaxed">
+                  <h3 className="font-semibold text-navy-900 text-lg mb-2">Exclusive Access</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">
                     Get access to positions not advertised elsewhere.
                   </p>
                 </div>
@@ -479,12 +479,12 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
 
               {/* Career Support */}
               <div className="group">
-                <div className="h-full bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-gold-500/30 hover:bg-white/10 transition-all duration-300">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold-500/20 mb-4 group-hover:scale-110 transition-transform">
-                    <FileText className="h-6 w-6 text-gold-400" />
+                <div className="h-full bg-white rounded-2xl p-6 border border-gray-200 hover:border-gold-500/30 hover:shadow-lg transition-all duration-300">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold-500/10 mb-4 group-hover:scale-110 transition-transform">
+                    <FileText className="h-6 w-6 text-gold-600" />
                   </div>
-                  <h3 className="font-semibold text-white text-lg mb-2">Career Support</h3>
-                  <p className="text-gray-400 text-sm leading-relaxed">
+                  <h3 className="font-semibold text-navy-900 text-lg mb-2">Career Support</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">
                     Ongoing guidance throughout your job search and placement.
                   </p>
                 </div>
@@ -495,17 +495,17 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
             <div className="md:col-span-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mt-6">
               {/* Free Forever - Emphasized */}
               <div className="group">
-                <div className="relative h-full min-h-[200px] bg-gradient-to-br from-gold-500/10 to-gold-600/5 rounded-2xl p-8 border-2 border-gold-500/30 hover:border-gold-500/50 transition-all duration-300 overflow-hidden hover:shadow-2xl hover:shadow-gold-500/10">
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-gold-500/20 rounded-full filter blur-xl" />
+                <div className="relative h-full min-h-[200px] bg-gradient-to-br from-gold-50 to-gold-100/50 rounded-2xl p-8 border-2 border-gold-300 hover:border-gold-400 transition-all duration-300 overflow-hidden hover:shadow-xl">
+                  <div className="absolute top-0 right-0 w-24 h-24 bg-gold-500/10 rounded-full filter blur-xl" />
                   <div className="relative">
                     <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-gold-500 to-gold-600 mb-5 group-hover:scale-110 transition-transform shadow-lg">
                       <Users className="h-7 w-7 text-white" />
                     </div>
-                    <div className="inline-block px-3 py-1 bg-gold-500/20 rounded-full text-gold-300 text-xs font-bold mb-3">
+                    <div className="inline-block px-3 py-1 bg-gold-500/20 rounded-full text-gold-700 text-xs font-bold mb-3">
                       100% FREE
                     </div>
-                    <h3 className="font-bold text-white text-xl mb-3">Free Forever</h3>
-                    <p className="text-gray-200 text-sm leading-relaxed">
+                    <h3 className="font-bold text-navy-900 text-xl mb-3">Free Forever</h3>
+                    <p className="text-gray-700 text-sm leading-relaxed">
                       No hidden fees, no subscriptions. All features free for candidates.
                     </p>
                   </div>
@@ -514,15 +514,15 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
 
               {/* 20+ Years */}
               <div className="group">
-                <div className="h-full min-h-[200px] bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 hover:border-gold-500/30 hover:bg-white/10 transition-all duration-300 hover:shadow-xl">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gold-500/20 mb-5 group-hover:scale-110 transition-transform">
-                    <Star className="h-7 w-7 text-gold-400" />
+                <div className="h-full min-h-[200px] bg-white rounded-2xl p-8 border border-gray-200 hover:border-gold-500/30 hover:shadow-xl transition-all duration-300">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gold-500/10 mb-5 group-hover:scale-110 transition-transform">
+                    <Star className="h-7 w-7 text-gold-600" />
                   </div>
-                  <div className="inline-block px-3 py-1 bg-white/10 rounded-full text-gold-300 text-xs font-bold mb-3">
+                  <div className="inline-block px-3 py-1 bg-gray-100 rounded-full text-gold-700 text-xs font-bold mb-3">
                     SINCE 2002
                   </div>
-                  <h3 className="font-bold text-white text-xl mb-3">20+ Years of Trust</h3>
-                  <p className="text-gray-300 text-sm leading-relaxed">
+                  <h3 className="font-bold text-navy-900 text-xl mb-3">20+ Years of Trust</h3>
+                  <p className="text-gray-600 text-sm leading-relaxed">
                     Hundreds placed in top positions worldwide.
                   </p>
                 </div>
@@ -556,21 +556,24 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
             </div>
           </div>
         </div>
-        {/* Wave separator for smooth transition */}
-        <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-b from-transparent to-white/5" />
+
       </section>
 
       {/* Social Proof Section */}
-      <section className="py-20 bg-gradient-to-b from-white via-gray-50 to-white relative">
-        {/* Subtle top gradient for seamless transition */}
-        <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-gray-50 to-transparent" />
-        <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-20 bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 relative overflow-hidden">
+        {/* Background decorative elements */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-gold-500 rounded-full filter blur-3xl" />
+          <div className="absolute bottom-20 right-10 w-96 h-96 bg-gold-400 rounded-full filter blur-3xl" />
+        </div>
+
+        <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16">
             {stats.map((stat, idx) => (
               <div key={idx} className="text-center">
-                <div className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-gold-600 to-gold-500 bg-clip-text text-transparent mb-2">{stat.value}</div>
-                <div className="text-gray-600 font-medium">{stat.label}</div>
+                <div className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-gold-400 to-gold-500 bg-clip-text text-transparent mb-2">{stat.value}</div>
+                <div className="text-gray-300 font-medium">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -580,9 +583,12 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
             title="What Our Candidates Say"
             subtitle="Join thousands of professionals who found their dream role through Lighthouse Careers"
             testimonials={testimonials}
-            variant="light"
+            variant="dark"
           />
         </div>
+
+        {/* Wave separator for smooth transition */}
+        <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-b from-transparent to-white/5" />
       </section>
 
       {/* How It Works Section */}
