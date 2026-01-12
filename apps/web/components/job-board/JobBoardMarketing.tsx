@@ -340,7 +340,7 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
             </h1>
 
             <p className="mx-auto max-w-2xl text-lg text-white/90 sm:text-xl mb-6">
-              Become one of our top talents. AI-powered matching, verified employers, and access to exclusive roles. Free forever.
+              Connect with top employers through our expert recruitment service. AI-powered matching, exclusive positions, personal support. Free forever.
             </p>
             
             {/* Job Stats */}
