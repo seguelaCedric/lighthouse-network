@@ -392,29 +392,6 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
         </div>
       </section>
 
-      {/* Job Stats Section */}
-      <section className="py-12 bg-white border-b border-gray-100">
-        <div className="container max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
-            <div className="text-center">
-              <div className="text-5xl font-bold text-gold-600 mb-2">
-                {totalCount > 0 ? `${totalCount}+` : "1000+"}
-              </div>
-              <div className="text-lg font-semibold text-navy-900">Active Job Listings</div>
-              <div className="text-sm text-gray-600 mt-1">Growing daily</div>
-            </div>
-            <div className="hidden sm:block w-px h-16 bg-gray-200" />
-            <div className="text-center">
-              <div className="text-5xl font-bold text-gold-600 mb-2">
-                {postedToday > 0 ? postedToday : "10+"}
-              </div>
-              <div className="text-lg font-semibold text-navy-900">Posted Today</div>
-              <div className="text-sm text-gray-600 mt-1">Apply before they're filled</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Value Proposition Section */}
       <section className="py-24 lg:py-32 bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 relative overflow-hidden">
         {/* Background decorative elements */}
