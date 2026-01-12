@@ -208,6 +208,7 @@ function LoginForm() {
     },
   });
 
+
   const onSubmit = async (data: LoginFormData) => {
     const result = await signIn(data.email, data.password);
 
@@ -394,7 +395,7 @@ function LoginForm() {
             </div>
 
             {loginMode === "password" ? (
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+              <form key="password-form" onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 {/* Email Input */}
                 <div>
                   <label
@@ -408,6 +409,7 @@ function LoginForm() {
                     <input
                       id="email"
                       type="email"
+                      autoComplete="email"
                       {...register("email")}
                       placeholder="you@example.com"
                       className={cn(
@@ -521,7 +523,7 @@ function LoginForm() {
                 </Button>
               </form>
             ) : (
-              <form onSubmit={handleMagicLinkSubmit} className="space-y-4">
+              <form key="magic-link-form" onSubmit={handleMagicLinkSubmit} className="space-y-4">
                 {/* Magic Link Email Input */}
                 <div>
                   <label
