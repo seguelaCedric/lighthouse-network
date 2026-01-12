@@ -43,33 +43,62 @@ export function Testimonials({
         className
       )}
     >
-      {/* Pattern Backgrounds */}
+      {/* Pattern Backgrounds - z-0 to stay behind content */}
       {pattern === "diamond" && (
-        <>
+        <div className="absolute inset-0 z-0 pointer-events-none">
           {/* Warm champagne/gold glow from top */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_120%_40%_at_50%_0%,rgba(195,165,120,0.08),transparent_60%)]" aria-hidden="true" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_120%_50%_at_50%_0%,rgba(195,165,120,0.12),transparent_70%)]" aria-hidden="true" />
 
-          {/* Geometric diamond pattern */}
-          <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+          {/* Secondary glow from bottom corners */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_0%_100%,rgba(195,165,120,0.06),transparent_50%)]" aria-hidden="true" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_100%_100%,rgba(195,165,120,0.06),transparent_50%)]" aria-hidden="true" />
+
+          {/* Geometric diamond pattern - layered for depth */}
+          <div className="absolute inset-0" aria-hidden="true">
             <svg className="absolute inset-0 h-full w-full" xmlns="http://www.w3.org/2000/svg">
               <defs>
-                <pattern id="testimonial-diamond-pattern" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
+                {/* Primary diamond pattern */}
+                <pattern id="testimonial-diamond-primary" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
+                  {/* Outer diamond */}
                   <path
-                    d="M30 0L60 30L30 60L0 30Z"
+                    d="M40 4L76 40L40 76L4 40Z"
                     fill="none"
-                    stroke="rgba(195, 165, 120, 0.06)"
+                    stroke="rgba(195, 165, 120, 0.12)"
+                    strokeWidth="0.75"
+                  />
+                  {/* Inner diamond */}
+                  <path
+                    d="M40 16L64 40L40 64L16 40Z"
+                    fill="none"
+                    stroke="rgba(195, 165, 120, 0.08)"
                     strokeWidth="0.5"
                   />
-                  <circle cx="30" cy="30" r="1" fill="rgba(195, 165, 120, 0.08)" />
+                  {/* Center accent dot */}
+                  <circle cx="40" cy="40" r="1.5" fill="rgba(195, 165, 120, 0.15)" />
+                  {/* Corner accent dots */}
+                  <circle cx="40" cy="4" r="1" fill="rgba(195, 165, 120, 0.1)" />
+                  <circle cx="76" cy="40" r="1" fill="rgba(195, 165, 120, 0.1)" />
+                  <circle cx="40" cy="76" r="1" fill="rgba(195, 165, 120, 0.1)" />
+                  <circle cx="4" cy="40" r="1" fill="rgba(195, 165, 120, 0.1)" />
+                </pattern>
+                {/* Secondary offset pattern for depth */}
+                <pattern id="testimonial-diamond-secondary" x="40" y="40" width="80" height="80" patternUnits="userSpaceOnUse">
+                  <path
+                    d="M40 20L60 40L40 60L20 40Z"
+                    fill="none"
+                    stroke="rgba(195, 165, 120, 0.05)"
+                    strokeWidth="0.5"
+                  />
                 </pattern>
               </defs>
-              <rect width="100%" height="100%" fill="url(#testimonial-diamond-pattern)" />
+              <rect width="100%" height="100%" fill="url(#testimonial-diamond-primary)" />
+              <rect width="100%" height="100%" fill="url(#testimonial-diamond-secondary)" />
             </svg>
           </div>
 
-          {/* Subtle vignette */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(10,20,35,0.4)_100%)]" aria-hidden="true" />
-        </>
+          {/* Refined vignette with softer edges */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,transparent_40%,rgba(10,20,35,0.35)_100%)]" aria-hidden="true" />
+        </div>
       )}
 
       {/* Background decorative elements for dark variant */}
@@ -124,10 +153,10 @@ export function Testimonials({
             <div
               key={index}
               className={cn(
-                "rounded-2xl p-6 transition-shadow hover:shadow-lg",
+                "rounded-2xl p-6 transition-all duration-300",
                 isDark
-                  ? "border border-white/10 bg-white/5"
-                  : "border border-gray-200 bg-white"
+                  ? "border border-white/10 bg-navy-800/95 backdrop-blur-sm hover:border-gold-500/30 hover:shadow-[0_8px_30px_-6px_rgba(195,165,120,0.25)]"
+                  : "border border-gray-200 bg-white hover:shadow-lg"
               )}
             >
 
