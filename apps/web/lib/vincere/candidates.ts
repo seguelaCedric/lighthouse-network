@@ -232,6 +232,9 @@ export async function updateCustomFields(
 
 /**
  * Create a new candidate in Vincere
+ *
+ * This function checks if a candidate with the given email already exists.
+ * If found, it returns the existing candidate's ID instead of creating a duplicate.
  */
 export async function createCandidate(
   data: {
@@ -248,8 +251,16 @@ export async function createCandidate(
     summary?: string;
   },
   client?: VincereClient
-): Promise<{ id: number }> {
+): Promise<{ id: number; existed: boolean }> {
   const vincere = client ?? getVincereClient();
+
+  // Check if candidate with this email already exists
+  const existingCandidate = await searchByEmail(data.email, vincere);
+
+  if (existingCandidate) {
+    console.log(`[createCandidate] Candidate with email ${data.email} already exists (ID: ${existingCandidate.id})`);
+    return { id: existingCandidate.id, existed: true };
+  }
 
   // Note: nationality and job_title must be set separately via update/custom fields
   // as the create endpoint has strict validation that rejects free-text values
@@ -264,7 +275,8 @@ export async function createCandidate(
     registration_date: new Date().toISOString(), // ISO 8601 format: 2025-03-05T15:35:00.000Z
   });
 
-  return result;
+  console.log(`[createCandidate] Created new candidate with email ${data.email} (ID: ${result.id})`);
+  return { ...result, existed: false };
 }
 
 /**

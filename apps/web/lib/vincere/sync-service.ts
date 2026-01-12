@@ -217,17 +217,35 @@ export async function syncCandidateCreation(
 
     const vincere = getVincereClient();
     let vincereId: number;
+    let isNewCandidate = false;
 
-    // Search for existing candidate by email to avoid duplicates
-    const existingCandidate = await searchByEmail(candidate.email, vincere);
+    // Create candidate (createCandidate now handles duplicate checking internally)
+    const result = await createCandidate(
+      {
+        firstName: candidate.first_name,
+        lastName: candidate.last_name,
+        email: candidate.email,
+        phone: candidate.phone || undefined,
+        mobile: candidate.whatsapp || undefined,
+        dateOfBirth: candidate.date_of_birth || undefined,
+        gender: candidate.gender || undefined,
+        nationality: candidate.nationality || undefined,
+        currentLocation: candidate.current_location || undefined,
+        jobTitle: candidate.primary_position || undefined,
+        summary: candidate.profile_summary || undefined,
+      },
+      vincere
+    );
 
-    if (existingCandidate) {
-      // Link to existing Vincere candidate
-      vincereId = existingCandidate.id;
+    vincereId = result.id;
+    isNewCandidate = !result.existed;
+
+    if (result.existed) {
       console.log(`[VincereSync] Found existing Vincere candidate ${vincereId} for email ${candidate.email}`);
-    } else {
-      // Create new candidate in Vincere with all available basic data
-      const result = await createCandidate(
+
+      // Update existing candidate with latest data from our database
+      await updateCandidate(
+        vincereId,
         {
           firstName: candidate.first_name,
           lastName: candidate.last_name,
@@ -237,49 +255,47 @@ export async function syncCandidateCreation(
           dateOfBirth: candidate.date_of_birth || undefined,
           gender: candidate.gender || undefined,
           nationality: candidate.nationality || undefined,
-          currentLocation: candidate.current_location || undefined,
-          jobTitle: candidate.primary_position || undefined,
           summary: candidate.profile_summary || undefined,
         },
         vincere
       );
+      console.log(`[VincereSync] Updated existing candidate ${vincereId} with latest data`);
+    } else {
+      console.log(`[VincereSync] Created new Vincere candidate ${vincereId} for ${candidate.email}`);
+    }
 
-      vincereId = result.id;
-      console.log(`[VincereSync] Created Vincere candidate ${vincereId} for ${candidate.email}`);
+    // Update custom fields and functional expertise for both new and existing candidates
+    // This ensures all data is synced regardless of whether candidate already existed
+    const { basicData: _, customFields } = mapCandidateToVincere(candidate);
+    console.log(`[VincereSync] Candidate data keys with values:`,
+      Object.entries(candidate)
+        .filter(([, v]) => v !== null && v !== undefined)
+        .map(([k]) => k)
+    );
+    console.log(`[VincereSync] Custom fields to sync:`,
+      customFields.map(cf => ({
+        fieldKey: cf.fieldKey.substring(0, 8) + '...',
+        hasFieldValue: cf.fieldValue !== undefined,
+        hasFieldValues: cf.fieldValues !== undefined,
+        hasDateValue: cf.dateValue !== undefined,
+      }))
+    );
+    if (customFields.length > 0) {
+      await updateCustomFields(vincereId, customFields, vincere);
+      console.log(`[VincereSync] Updated ${customFields.length} custom fields for candidate ${vincereId}`);
+    } else {
+      console.log(`[VincereSync] No custom fields to sync for candidate ${vincereId}`);
+    }
 
-      // After creation, update custom fields if any are available
-      // This ensures all custom field data is synced during registration
-      const { basicData: _, customFields } = mapCandidateToVincere(candidate);
-      console.log(`[VincereSync] Candidate data keys with values:`,
-        Object.entries(candidate)
-          .filter(([, v]) => v !== null && v !== undefined)
-          .map(([k]) => k)
-      );
-      console.log(`[VincereSync] Custom fields to sync:`,
-        customFields.map(cf => ({
-          fieldKey: cf.fieldKey.substring(0, 8) + '...',
-          hasFieldValue: cf.fieldValue !== undefined,
-          hasFieldValues: cf.fieldValues !== undefined,
-          hasDateValue: cf.dateValue !== undefined,
-        }))
-      );
-      if (customFields.length > 0) {
-        await updateCustomFields(vincereId, customFields, vincere);
-        console.log(`[VincereSync] Updated ${customFields.length} custom fields for new candidate ${vincereId}`);
-      } else {
-        console.log(`[VincereSync] No custom fields to sync for candidate ${vincereId}`);
-      }
-
-      // Set functional expertise based on position
-      const expertiseId = getVincereFunctionalExpertiseId(candidate.primary_position);
-      if (expertiseId) {
-        try {
-          await setFunctionalExpertises(vincereId, [expertiseId], vincere);
-          console.log(`[VincereSync] Set functional expertise ${expertiseId} for candidate ${vincereId} (position: ${candidate.primary_position})`);
-        } catch (err) {
-          // Log but don't fail the whole sync for functional expertise errors
-          console.error(`[VincereSync] Failed to set functional expertise for candidate ${vincereId}:`, err);
-        }
+    // Set functional expertise based on position
+    const expertiseId = getVincereFunctionalExpertiseId(candidate.primary_position);
+    if (expertiseId) {
+      try {
+        await setFunctionalExpertises(vincereId, [expertiseId], vincere);
+        console.log(`[VincereSync] Set functional expertise ${expertiseId} for candidate ${vincereId} (position: ${candidate.primary_position})`);
+      } catch (err) {
+        // Log but don't fail the whole sync for functional expertise errors
+        console.error(`[VincereSync] Failed to set functional expertise for candidate ${vincereId}:`, err);
       }
     }
 
