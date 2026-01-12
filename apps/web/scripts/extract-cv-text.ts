@@ -121,10 +121,15 @@ async function getCVDocumentsNeedingExtraction(): Promise<CVDocument[]> {
 
 function extractStoragePath(fileUrl: string): { bucket: string; path: string } | null {
   // Extract bucket and path from Supabase storage URL
-  // Format: https://xxx.supabase.co/storage/v1/object/public/BUCKET/PATH
-  const match = fileUrl.match(/storage\/v1\/object\/public\/([^/]+)\/(.+)$/);
-  if (match) {
-    return { bucket: match[1], path: decodeURIComponent(match[2]) };
+  // Format: https://xxx.supabase.co/storage/v1/object/public/BUCKET/PATH (public)
+  //      or https://xxx.supabase.co/storage/v1/object/BUCKET/PATH (private)
+  const publicMatch = fileUrl.match(/storage\/v1\/object\/public\/([^/]+)\/(.+)$/);
+  if (publicMatch) {
+    return { bucket: publicMatch[1], path: decodeURIComponent(publicMatch[2]) };
+  }
+  const privateMatch = fileUrl.match(/storage\/v1\/object\/([^/]+)\/(.+)$/);
+  if (privateMatch) {
+    return { bucket: privateMatch[1], path: decodeURIComponent(privateMatch[2]) };
   }
   return null;
 }

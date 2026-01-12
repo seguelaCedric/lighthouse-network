@@ -1,13 +1,13 @@
 {
-  "last_processed_row": 8250,
-  "uploaded_count": 3228,
-  "skipped_count": 4911,
-  "error_count": 111,
+  "last_processed_row": 38500,
+  "uploaded_count": 4418,
+  "skipped_count": 33829,
+  "error_count": 253,
   "started_at": "2026-01-10T12:39:55.535Z",
   "skipped_no_candidate_email": 0,
   "skipped_no_url": 0,
   "skipped_expired_s3": 0,
   "skipped_candidate_not_found": 0,
-  "updated_at": "2026-01-11T09:41:29.652510",
-  "completed_at": "2026-01-10T20:47:29.779052"
+  "updated_at": "2026-01-11T18:39:28.882874",
+  "completed_at": "2026-01-11T14:51:24.811823"
 }

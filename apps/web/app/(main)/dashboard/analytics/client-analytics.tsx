@@ -54,7 +54,9 @@ interface TeamMemberStats {
   placements_made: number;      // Actual placements they made (as placed_by)
   revenue: number;              // Revenue from placements they made
   conversion_rate: number;
-  activities_count: number;     // Tasks + meetings from Vincere sync
+  activities_count: number;     // Total activities from Vincere sync
+  vincere_placements: number;   // Placements logged in Vincere
+  vincere_applications: number; // Applications processed in Vincere
 }
 
 interface AnalyticsData {
@@ -563,7 +565,7 @@ function TeamPerformance({ members }: { members: TeamMemberStats[] }) {
           <div className="mt-4 flex flex-wrap gap-6 border-t border-gray-100 pt-4 text-xs text-gray-500">
             <span className="flex items-center gap-2">
               <span className="size-2 rounded-full bg-purple-500" />
-              Activities: Tasks & meetings (synced daily)
+              Activities: Vincere activity count (synced daily at 5PM)
             </span>
             <span className="flex items-center gap-2">
               <span className="size-2 rounded-full bg-navy-400" />

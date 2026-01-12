@@ -17,6 +17,10 @@
 //   OPENAI_API_KEY
 // ============================================================================
 
+import * as dotenv from 'dotenv';
+import * as path from 'path';
+dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
+
 import { createClient } from '@supabase/supabase-js';
 import {
   extractFromCV,

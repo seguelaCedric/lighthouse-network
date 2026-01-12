@@ -1,12 +1,11 @@
 /**
  * Vincere Activities Service
  *
- * Fetches recruiter activities (tasks and meetings) from Vincere API
+ * Fetches recruiter activities (placements and applications) from Vincere API
  * for CEO visibility into team performance.
  *
  * API Endpoints:
  * - POST /user/activities - Search activities linked to a user
- * - GET /report/statistics - Get user statistics for a period
  */
 
 import { getVincereClient, VincereClient } from './client';
@@ -57,36 +56,34 @@ function getUserName(userId: number, apiName?: string): string {
  */
 export interface VincereActivity {
   id: number;
-  type: 'TASK' | 'MEETING';
+  activity_type: 'PLACEMENT' | 'APPLICATION' | 'TASK' | 'MEETING' | string;
   subject?: string;
   content?: string;
-  due_date?: string;
-  completed?: boolean;
-  assignee_id?: number;
-  creator_id?: number;
-  created_date?: string;
   insert_timestamp?: string;
+  creator?: {
+    id: number;
+    email?: string;
+    full_name?: string;
+  };
+  assignee?: {
+    id: number;
+    email?: string;
+    full_name?: string;
+  } | null;
+  main_entity_type?: string;
+  main_candidate_id?: number;
+  main_position_id?: number;
+  completed?: boolean;
 }
 
 /**
  * Response from POST /user/activities
  */
 interface ActivitiesSearchResponse {
-  result?: VincereActivity[];
-  index: number;
-  is_last_slice: boolean;
-}
-
-/**
- * User statistics from GET /report/statistics
- */
-export interface VincereUserStatistics {
-  consultant_id: number;
-  period: string;
-  // Add more fields as needed based on API response
-  placements_count?: number;
-  submissions_count?: number;
-  interviews_count?: number;
+  content?: VincereActivity[];
+  slice_index: number;
+  num_of_elements: number;
+  last: boolean;
 }
 
 /**
@@ -107,8 +104,8 @@ export interface VincereUserSummary {
 export interface UserActivityCounts {
   vincereUserId: number;
   userName: string;
-  tasksCount: number;
-  meetingsCount: number;
+  placementsCount: number;
+  applicationsCount: number;
   totalCount: number;
 }
 
@@ -124,115 +121,103 @@ export async function getAllVincereUsers(
 }
 
 /**
- * Search activities for a user within a date range
+ * Search activities within a date range
  *
  * Uses POST /user/activities with pagination (max 25 per slice)
+ * Filters by creator_id to get activities created by a specific user
  */
-export async function getUserActivities(
-  userId: number,
+export async function getActivitiesInRange(
   fromDate: Date,
   toDate: Date,
-  options?: {
-    includeTasks?: boolean;
-    includeMeetings?: boolean;
-    completedOnly?: boolean;
-  },
   client?: VincereClient
 ): Promise<VincereActivity[]> {
   const vincere = client ?? getVincereClient();
   const allActivities: VincereActivity[] = [];
 
-  const {
-    includeTasks = true,
-    includeMeetings = true,
-    completedOnly = false,
-  } = options ?? {};
-
   let index = 0;
-  let isLastSlice = false;
+  let isLast = false;
 
-  while (!isLastSlice) {
+  while (!isLast) {
     const response = await vincere.post<ActivitiesSearchResponse>(
       '/user/activities',
       {
-        assignee_id: userId,
-        include_task: includeTasks,
-        include_meeting: includeMeetings,
-        completed: completedOnly ? true : null,
-        from_date: fromDate.toISOString(),
-        to_date: toDate.toISOString(),
         index,
       }
     );
 
-    if (response.result && Array.isArray(response.result)) {
-      allActivities.push(...response.result);
+    if (response.content && Array.isArray(response.content)) {
+      // Filter by date on client side since API doesn't seem to support date filtering reliably
+      const filtered = response.content.filter((activity) => {
+        if (!activity.insert_timestamp) return false;
+        const activityDate = new Date(activity.insert_timestamp);
+        return activityDate >= fromDate && activityDate <= toDate;
+      });
+      allActivities.push(...filtered);
     }
 
-    isLastSlice = response.is_last_slice;
+    isLast = response.last;
     index++;
 
     // Safety limit to prevent infinite loops
     if (index > 100) {
-      console.warn(`[activities] Reached pagination limit for user ${userId}`);
+      console.warn(`[activities] Reached pagination limit`);
       break;
     }
+
+    // Rate limiting
+    await new Promise((resolve) => setTimeout(resolve, 50));
   }
 
   return allActivities;
 }
 
 /**
- * Get user statistics for a period
+ * Count activities by type and user within a date range
  */
-export async function getUserStatistics(
-  userId: number,
-  period: 'CURRENT_MONTH' | 'LAST_MONTH',
-  client?: VincereClient
-): Promise<VincereUserStatistics | null> {
-  const vincere = client ?? getVincereClient();
-
-  try {
-    const stats = await vincere.get<VincereUserStatistics>(
-      `/report/statistics?consultant_id=${userId}&period=${period}`
-    );
-    return stats;
-  } catch (error) {
-    console.error(`[activities] Failed to get statistics for user ${userId}:`, error);
-    return null;
-  }
-}
-
-/**
- * Count activities by type for a user within a date range
- */
-export async function countUserActivities(
-  userId: number,
-  userName: string,
+export async function countActivitiesByUser(
   fromDate: Date,
   toDate: Date,
   client?: VincereClient
-): Promise<UserActivityCounts> {
-  const activities = await getUserActivities(userId, fromDate, toDate, {}, client);
+): Promise<UserActivityCounts[]> {
+  const vincere = client ?? getVincereClient();
 
-  let tasksCount = 0;
-  let meetingsCount = 0;
+  // Get all activities in range
+  const activities = await getActivitiesInRange(fromDate, toDate, vincere);
+
+  // Group by creator
+  const userCounts: Record<number, { placements: number; applications: number; name: string }> = {};
 
   for (const activity of activities) {
-    if (activity.type === 'TASK') {
-      tasksCount++;
-    } else if (activity.type === 'MEETING') {
-      meetingsCount++;
+    // Use creator as the person who did the activity
+    const creatorId = activity.creator?.id;
+    if (!creatorId) continue;
+
+    if (!userCounts[creatorId]) {
+      const apiName = activity.creator?.full_name;
+      userCounts[creatorId] = {
+        placements: 0,
+        applications: 0,
+        name: getUserName(creatorId, apiName),
+      };
+    }
+
+    if (activity.activity_type === 'PLACEMENT') {
+      userCounts[creatorId].placements++;
+    } else if (activity.activity_type === 'APPLICATION') {
+      userCounts[creatorId].applications++;
     }
   }
 
-  return {
-    vincereUserId: userId,
-    userName,
-    tasksCount,
-    meetingsCount,
-    totalCount: tasksCount + meetingsCount,
-  };
+  // Convert to array
+  const results: UserActivityCounts[] = Object.entries(userCounts).map(([id, counts]) => ({
+    vincereUserId: parseInt(id),
+    userName: counts.name,
+    placementsCount: counts.placements,
+    applicationsCount: counts.applications,
+    totalCount: counts.placements + counts.applications,
+  }));
+
+  return results;
 }
 
 /**
@@ -247,43 +232,30 @@ export async function syncAllUserActivities(
 ): Promise<UserActivityCounts[]> {
   const vincere = client ?? getVincereClient();
 
-  // Get all Vincere users
-  const users = await getAllVincereUsers(vincere);
+  console.log(`[activities] Syncing activities from ${fromDate.toISOString()} to ${toDate.toISOString()}`);
 
-  if (users.length === 0) {
-    console.log('[activities] No Vincere users found');
-    return [];
-  }
+  const results = await countActivitiesByUser(fromDate, toDate, vincere);
 
-  console.log(`[activities] Syncing activities for ${users.length} users from ${fromDate.toISOString()} to ${toDate.toISOString()}`);
+  console.log(`[activities] Found activities for ${results.length} users`);
 
-  const results: UserActivityCounts[] = [];
+  // Also get all users to include those with 0 activities
+  const allUsers = await getAllVincereUsers(vincere);
 
-  for (const user of users) {
-    try {
-      // Use the mapping for proper names, fallback to API response
+  // Add users with 0 activities
+  const existingUserIds = new Set(results.map(r => r.vincereUserId));
+
+  for (const user of allUsers) {
+    if (!existingUserIds.has(user.id)) {
       const apiName = user.name || `${user.first_name || ''} ${user.last_name || ''}`.trim();
-      const userName = getUserName(user.id, apiName || undefined);
-
-      const counts = await countUserActivities(
-        user.id,
-        userName,
-        fromDate,
-        toDate,
-        vincere
-      );
-
-      results.push(counts);
-
-      // Rate limiting - 100ms between API calls to avoid hitting limits
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    } catch (error) {
-      console.error(`[activities] Failed to sync activities for user ${user.id}:`, error);
-      // Continue with other users even if one fails
+      results.push({
+        vincereUserId: user.id,
+        userName: getUserName(user.id, apiName || undefined),
+        placementsCount: 0,
+        applicationsCount: 0,
+        totalCount: 0,
+      });
     }
   }
-
-  console.log(`[activities] Synced activities for ${results.length} users`);
 
   return results;
 }

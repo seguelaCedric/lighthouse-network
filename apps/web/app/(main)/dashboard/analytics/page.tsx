@@ -41,7 +41,9 @@ interface TeamMemberStats {
   placements_made: number;      // Actual placements where they are the placed_by
   revenue: number;              // Revenue from placements they made
   conversion_rate: number;
-  activities_count: number;     // Tasks + meetings from Vincere sync
+  activities_count: number;     // Total activities from Vincere sync
+  vincere_placements: number;   // Placements logged in Vincere
+  vincere_applications: number; // Applications processed in Vincere
 }
 
 interface AnalyticsData {
@@ -171,7 +173,7 @@ async function getAnalyticsData(
   const buildActivitiesQuery = () => {
     let query = supabase
       .from("recruiter_activities")
-      .select("user_name, tasks_count, meetings_count, activity_date");
+      .select("user_name, placements_count, applications_count, activity_date");
     if (startDateStr) query = query.gte("activity_date", startDateStr);
     if (endDateStr) query = query.lte("activity_date", endDateStr);
     return query;
@@ -422,14 +424,19 @@ async function getAnalyticsData(
   const placementsByPlacedBy = placementsByPlacedByResult.data || [];
   const activities = activitiesResult.data || [];
 
-  // Aggregate activities by user name (sum tasks + meetings)
-  const activitiesByUser = new Map<string, number>();
+  // Aggregate activities by user name (track placements and applications separately)
+  const activitiesByUser = new Map<string, { total: number; placements: number; applications: number }>();
   for (const activity of activities as any[]) {
     const userName = activity.user_name;
     if (!userName) continue;
-    const existing = activitiesByUser.get(userName) || 0;
-    const count = (activity.tasks_count || 0) + (activity.meetings_count || 0);
-    activitiesByUser.set(userName, existing + count);
+    const existing = activitiesByUser.get(userName) || { total: 0, placements: 0, applications: 0 };
+    const placementsCount = activity.placements_count || 0;
+    const applicationsCount = activity.applications_count || 0;
+    activitiesByUser.set(userName, {
+      total: existing.total + placementsCount + applicationsCount,
+      placements: existing.placements + placementsCount,
+      applications: existing.applications + applicationsCount,
+    });
   }
 
   // Map: name -> { jobs brought, filled jobs (they own), placements made, revenue, activities }
@@ -439,6 +446,8 @@ async function getAnalyticsData(
     placementsMade: number;
     revenue: number;
     activities: number;
+    vincerePlacements: number;
+    vincereApplications: number;
   }>();
 
   // Count jobs by owner (who brought the job)
@@ -446,7 +455,7 @@ async function getAnalyticsData(
     const ownerName = job.job_owner_name;
     if (!ownerName) continue;
 
-    const existing = teamMemberMap.get(ownerName) || { jobs: 0, filled: 0, placementsMade: 0, revenue: 0, activities: 0 };
+    const existing = teamMemberMap.get(ownerName) || { jobs: 0, filled: 0, placementsMade: 0, revenue: 0, activities: 0, vincerePlacements: 0, vincereApplications: 0 };
     teamMemberMap.set(ownerName, {
       ...existing,
       jobs: existing.jobs + 1,
@@ -459,7 +468,7 @@ async function getAnalyticsData(
     const placedByName = placement.placed_by_name;
     if (!placedByName) continue;
 
-    const existing = teamMemberMap.get(placedByName) || { jobs: 0, filled: 0, placementsMade: 0, revenue: 0, activities: 0 };
+    const existing = teamMemberMap.get(placedByName) || { jobs: 0, filled: 0, placementsMade: 0, revenue: 0, activities: 0, vincerePlacements: 0, vincereApplications: 0 };
     teamMemberMap.set(placedByName, {
       ...existing,
       placementsMade: existing.placementsMade + 1,
@@ -468,11 +477,13 @@ async function getAnalyticsData(
   }
 
   // Add activities counts to team members (merge with existing entries or create new ones)
-  for (const [userName, activityCount] of activitiesByUser.entries()) {
-    const existing = teamMemberMap.get(userName) || { jobs: 0, filled: 0, placementsMade: 0, revenue: 0, activities: 0 };
+  for (const [userName, activityData] of activitiesByUser.entries()) {
+    const existing = teamMemberMap.get(userName) || { jobs: 0, filled: 0, placementsMade: 0, revenue: 0, activities: 0, vincerePlacements: 0, vincereApplications: 0 };
     teamMemberMap.set(userName, {
       ...existing,
-      activities: activityCount,
+      activities: activityData.total,
+      vincerePlacements: activityData.placements,
+      vincereApplications: activityData.applications,
     });
   }
 
@@ -485,7 +496,9 @@ async function getAnalyticsData(
       placements_made: data.placementsMade, // Placements they actually made
       revenue: data.revenue,
       conversion_rate: data.jobs > 0 ? (data.filled / data.jobs) * 100 : 0,
-      activities_count: data.activities,  // Tasks + meetings from Vincere
+      activities_count: data.activities,
+      vincere_placements: data.vincerePlacements,
+      vincere_applications: data.vincereApplications,
     }))
     .sort((a, b) => b.jobs_count - a.jobs_count);
 

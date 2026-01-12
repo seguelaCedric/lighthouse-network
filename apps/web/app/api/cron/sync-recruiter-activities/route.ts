@@ -80,8 +80,8 @@ export async function GET(request: NextRequest) {
       vincere_user_id: counts.vincereUserId,
       user_name: counts.userName,
       activity_date: activityDate,
-      tasks_count: counts.tasksCount,
-      meetings_count: counts.meetingsCount,
+      placements_count: counts.placementsCount,
+      applications_count: counts.applicationsCount,
       synced_at: new Date().toISOString(),
     }));
 
@@ -120,9 +120,9 @@ export async function GET(request: NextRequest) {
       metadata: {
         date: activityDate,
         users_processed: activityCounts.length,
-        total_tasks: activityCounts.reduce((sum, c) => sum + c.tasksCount, 0),
-        total_meetings: activityCounts.reduce(
-          (sum, c) => sum + c.meetingsCount,
+        total_placements: activityCounts.reduce((sum, c) => sum + c.placementsCount, 0),
+        total_applications: activityCounts.reduce(
+          (sum, c) => sum + c.applicationsCount,
           0
         ),
         duration_ms: duration,
