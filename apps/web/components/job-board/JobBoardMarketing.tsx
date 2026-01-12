@@ -461,54 +461,54 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
 
             {/* 2x2 Grid of smaller cards */}
             <div className="md:col-span-12 lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-6 lg:gap-8">
-              {/* Verified Employers */}
+              {/* Expert Recruitment */}
               <div className="group">
                 <div className="h-full bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-gold-500/30 hover:bg-white/10 transition-all duration-300">
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold-500/20 mb-4 group-hover:scale-110 transition-transform">
                     <Shield className="h-6 w-6 text-gold-400" />
                   </div>
-                  <h3 className="font-semibold text-white text-lg mb-2">Verified Employers</h3>
+                  <h3 className="font-semibold text-white text-lg mb-2">Expert Recruitment</h3>
                   <p className="text-gray-400 text-sm leading-relaxed">
-                    Every employer verified and trusted by top agencies.
+                    We personally vet every opportunity and employer.
                   </p>
                 </div>
               </div>
 
-              {/* Direct Application */}
+              {/* Personal Matching */}
               <div className="group">
                 <div className="h-full bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-gold-500/30 hover:bg-white/10 transition-all duration-300">
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold-500/20 mb-4 group-hover:scale-110 transition-transform">
                     <Target className="h-6 w-6 text-gold-400" />
                   </div>
-                  <h3 className="font-semibold text-white text-lg mb-2">Direct Application</h3>
+                  <h3 className="font-semibold text-white text-lg mb-2">Personal Matching</h3>
                   <p className="text-gray-400 text-sm leading-relaxed">
-                    Apply directly to agencies. Skip the middleman.
+                    We match you with the right roles and introduce you directly.
                   </p>
                 </div>
               </div>
 
-              {/* Match Score */}
+              {/* Exclusive Access */}
               <div className="group">
                 <div className="h-full bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-gold-500/30 hover:bg-white/10 transition-all duration-300">
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold-500/20 mb-4 group-hover:scale-110 transition-transform">
                     <TrendingUp className="h-6 w-6 text-gold-400" />
                   </div>
-                  <h3 className="font-semibold text-white text-lg mb-2">Match Score</h3>
+                  <h3 className="font-semibold text-white text-lg mb-2">Exclusive Access</h3>
                   <p className="text-gray-400 text-sm leading-relaxed">
-                    See compatibility before applying. Focus on the best fits.
+                    Get access to positions not advertised elsewhere.
                   </p>
                 </div>
               </div>
 
-              {/* Career Tracking */}
+              {/* Career Support */}
               <div className="group">
                 <div className="h-full bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-gold-500/30 hover:bg-white/10 transition-all duration-300">
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold-500/20 mb-4 group-hover:scale-110 transition-transform">
                     <FileText className="h-6 w-6 text-gold-400" />
                   </div>
-                  <h3 className="font-semibold text-white text-lg mb-2">Career Tracking</h3>
+                  <h3 className="font-semibold text-white text-lg mb-2">Career Support</h3>
                   <p className="text-gray-400 text-sm leading-relaxed">
-                    Track applications and monitor your progress.
+                    Ongoing guidance throughout your job search and placement.
                   </p>
                 </div>
               </div>
