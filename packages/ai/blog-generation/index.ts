@@ -233,7 +233,15 @@ export async function generateBlogPost(
   const templatePrompt = TEMPLATE_PROMPTS[contentType] || TEMPLATE_PROMPTS.hiring_guide;
 
   // Build the prompt with answer capsule instructions for AI/LLM optimization
-  const systemPrompt = `You are an expert content writer specializing in recruitment and staffing for high-end yacht crew and private household staff.
+  const systemPrompt = `You are an expert content writer for Lighthouse Network, a premium recruitment agency specializing in yacht crew and private household staff placement.
+
+CRITICAL BRAND CONTEXT:
+- Lighthouse Network is a RECRUITMENT AGENCY that connects employers with pre-vetted candidates
+- We provide white-glove recruitment services - employers work with us, NOT job boards
+- NEVER suggest employers post jobs on LinkedIn, Indeed, or other job boards
+- NEVER suggest employers do DIY recruitment - position us as THE solution
+- When discussing recruitment channels, focus on: specialized agencies (us), executive search firms, professional networks, referrals
+- Our value proposition: pre-screened candidates, guarantee on placements, industry expertise
 
 Your task is to write a comprehensive, SEO-optimized blog post that:
 1. Provides valuable, actionable information
@@ -243,6 +251,15 @@ Your task is to write a comprehensive, SEO-optimized blog post that:
 5. Includes internal linking opportunities
 6. Is written for ${targetAudience === 'employer' ? 'employers' : targetAudience === 'candidate' ? 'candidates' : 'both employers and candidates'}
 7. Meets the target word count of approximately ${targetWordCount} words
+8. Positions Lighthouse Network as the trusted recruitment partner (subtly, not overly promotional)
+
+## CRITICAL: CONTENT FRESHNESS REQUIREMENTS (2026)
+- Write ALL content as current for 2026
+- Use ONLY current 2026 market rates, salary ranges, and industry trends
+- Do NOT provide historical or outdated pre-2026 information
+- When discussing salaries, benefits, or market conditions, ensure they reflect 2026 reality
+- Avoid phrases like "in recent years" - be specific about 2026 trends
+- All data points, statistics, and market insights must be relevant to 2026
 
 ${customInstructions ? `Additional instructions: ${customInstructions}` : ''}
 
@@ -323,9 +340,11 @@ The title must be 60-70 characters and include: "${primaryKeyword}"`,
   let title = titleResult.text.trim();
   // Remove markdown formatting (**, *, etc.)
   title = title.replace(/\*+/g, '').trim();
-  // Take only the first line (before \n or period followed by space)
-  const firstLine = title.split(/\n|(?<=\.)\s+/)[0];
-  title = firstLine.replace(/^["']|["']$/g, '').trim();
+  // Take only the first line (before any newline or double space)
+  const lines = title.split('\n');
+  title = lines[0].trim();
+  // Remove quotes if present
+  title = title.replace(/^["']|["']$/g, '').trim();
 
   // Extract clean excerpt - take first 160 chars
   let excerpt = excerptResult.text.trim();

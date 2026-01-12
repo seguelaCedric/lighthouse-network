@@ -26,8 +26,10 @@ async function testGeneration() {
     });
 
     console.log('✅ Generation successful!\n');
+    console.log('===== TITLE =====');
     console.log('Title:', result.title);
     console.log('Title length:', result.title.length);
+    console.log('Title (JSON):', JSON.stringify(result.title));
     console.log('\nSlug:', result.slug);
     console.log('\nExcerpt:', result.excerpt);
     console.log('Excerpt length:', result.excerpt.length);

@@ -57,6 +57,12 @@ import type { Document } from "@/lib/services/document-service";
 import type { DocumentType } from "@/lib/validations/documents";
 import { licenseOptions } from "@/components/profile/constants";
 
+// Helper function to format license value to display label
+function formatLicenseLabel(licenseValue: string): string {
+  const option = licenseOptions.find((opt) => opt.value === licenseValue);
+  return option?.label || licenseValue.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 // Extended type for candidate with additional fields that may exist in database but not in base type
 // Note: bio_full, bio_generated_at are now in base Candidate type
 // Note: highest_license is already in the base Candidate type

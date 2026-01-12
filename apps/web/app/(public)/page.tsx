@@ -10,6 +10,7 @@ import { ExitIntent } from "@/components/marketing/ExitIntent";
 import { StickyCTA } from "@/components/marketing/StickyCTA";
 import { HomeVideoHero } from "@/components/marketing/HomeVideoHero";
 import { HomePageStructuredData } from "@/components/seo/HomePageStructuredData";
+import { Testimonials, type Testimonial } from "@/components/marketing/Testimonials";
 import { Button } from "@/components/ui/button";
 import {
   Anchor,
@@ -27,7 +28,6 @@ import {
   Briefcase,
   UserPlus,
   Search,
-  Quote,
   Phone,
   Check,
   Zap,
@@ -82,122 +82,122 @@ const steps = [
   },
 ];
 
-const testimonials = [
+const testimonials: Testimonial[] = [
   // Client testimonials (hiring managers)
   {
     quote: "I wanted to say a few words of thanks for your all your time and efforts over the past few years, working on behalf of Axioma and indeed the other vessels I have worked on. You and your team has always been a massive help in trying to help find us the right candidate for the right job in this ever expanding and delicate industry.",
-    name: "Tom Filby",
+    author: "Tom Filby",
     role: "Captain M/Y Axioma",
     image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Capture-decran-2020-02-23-a-12.27.53-150x150-1.png",
-    type: "client",
+    rating: 5,
   },
   {
     quote: "I've had the pleasure of knowing Milica, and using her recruitment services for many years. Her attention to what I'm looking for in a crew member, fast response and flexibility and understanding of feedback has always impressed me, and I look forward to continuing working with her and Lighthouse Careers.",
-    name: "Carl Westerlund",
+    author: "Carl Westerlund",
     role: "Captain 101m M/Y",
     image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Carl-Westerlund.png",
-    type: "client",
+    rating: 5,
   },
   {
     quote: "Milica is always my first call when looking for new crew. Milica helped me get my first command 3 years ago and ever since has supplied me with great candidates for all positions onboard. I can always rely on her judgement and honesty on potential crew and to act fast when I need. I wish her luck with this new venture and look forward to a continued professional affiliation.",
-    name: "Mark Sinnatt",
+    author: "Mark Sinnatt",
     role: "Captain M/Y GLOBAL",
     image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Mark-Sinnatt.png",
-    type: "client",
+    rating: 5,
   },
   {
     quote: "Milica and I have known each other for several years. She never dropped her standards of recruitment over the time. Due to her industry knowledge, great candidates she has provided over the years and great sense of urgency and limitations a yacht can have, I decided to reintroduce and appoint Milica's agency to represent our fleet of yachts in the yacht recruitment world. In no time she gained a thorough understanding of our new management structure and fleet needs. Having closely monitored her interactions with my on board teams before and during the summer season, it has certainly proved to be a great partnership.",
-    name: "Alina C.",
+    author: "Alina C.",
     role: "Owner's Fleet Representative",
     image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Alina-C.png",
-    type: "client",
+    rating: 5,
   },
   {
     quote: "I have known Milica for over a decade. In that time I have come to value her judgement and advice on Crew Recruitment. She has placed a number of candidates on my commands and she has also helped me secure my dream job! We have always had an excellent working relationship and I feel if I was more of an Antibes based Captain we would have been very good friends. I feel that she is discreet, honest and professional and that she will take this new venture on to become a reliable Crew Recruitment tool for any professional Captain.",
-    name: "Dùghall MacLachlainn",
+    author: "Dùghall MacLachlainn",
     role: "Captain",
     image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Milica.jpeg",
-    type: "client",
+    rating: 5,
   },
   {
     quote: "Milica and I go back for nearly 7 years to the times when I started my journey in the yachting industry. During this time, we have been able to assist each other on various cases and tables have turned few times, depending on me looking for a new challenge or recruiting my own team. Milica has always treated my staff requests with uttermost confidence and care. Not only she has found me some fantastic people to work with but we have also managed to handle sensitive situations with respect and dignity.",
-    name: "Meeli Lepik",
+    author: "Meeli Lepik",
     role: "Interior Manager, Project ENZO",
     image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Meeli-Lepik.png",
-    type: "client",
+    rating: 5,
   },
   // Candidate testimonials (yacht crew professionals)
   {
     quote: "Milica and Lighthouse Careers offers an excellent, personable and professional service. Following our initial interview, Milica worked tirelessly to secure me rotational Masters role on a SuperYacht, and I wouldn't hesitate in recommending her to fellow Captains.",
-    name: "Adam Virik",
+    author: "Adam Virik",
     role: "Captain 60m+ MY",
     image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/decran.png",
-    type: "candidate",
+    rating: 5,
   },
   {
     quote: "I had been looking for the right rotational Captain position for a while, and Milica helped me secure it, thank you Milica!",
-    name: "Rick DuBois",
+    author: "Rick DuBois",
     role: "Captain 70m+ MY",
     image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Rick-DuBois.png",
-    type: "candidate",
+    rating: 5,
   },
   {
     quote: "I just wanted you to send you a little message to say that I am the happiest I have ever been on a boat, and in 8 years that is saying something! So thank you very much for how honest you were with me when my options were in front of me and for helping me secure my dream job, you have made all the difference!",
-    name: "Laura O'Keeffe",
+    author: "Laura O'Keeffe",
     role: "SPA Therapist",
     image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Laura.png",
-    type: "candidate",
+    rating: 5,
   },
   {
     quote: "During current times where communication has become more and more technology-centric, Lighthouse Careers approach to call and speak one-on-one made them stand out from other recruitment services. Their genuine approach and time took to sincerely listen and understand both candidates' individual career goals, history and skillset, and the Employer's needs, requirements and onboard crew culture resulted in a very successful match on all fronts. After securing me a new Chief stewardess role, Lighthouse Careers attention and care for detail were further reflected in presenting only high calibre candidates that satisfied our search criteria.",
-    name: "Brianna Stenhouse",
+    author: "Brianna Stenhouse",
     role: "Chief Stewardess M/Y GLOBAL",
     image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Brianna.png",
-    type: "candidate",
+    rating: 5,
   },
   {
     quote: "Throughout my 11 years in yachting, I have found Milica to be my go-to agent for jobs. Not only because she has a great reputation in the industry and great boats in her books but also for her care, kindness and professionalism. Very grateful to Milica for my placement onboard a very successful charter yacht during these uncertain times!",
-    name: "Vesna Coklo",
+    author: "Vesna Coklo",
     role: "Chief Stewardess 70m+ MY",
     image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Vesna-Coklo.jpeg",
-    type: "candidate",
+    rating: 5,
   },
   {
     quote: "Thank you for thinking of us for the position as private island managers. We were very pleased when we got offered the position as it's been a long time dream of ours!",
-    name: "Dean And Jen",
+    author: "Dean And Jen",
     role: "Private Island Managers",
     image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Capture-decran-2019-12-12-a-07.26.59-150x150-1.png",
-    type: "candidate",
+    rating: 5,
   },
   {
     quote: "I wanted to thank Milica for her help in finding me the perfect role. I feel like I can contact her anytime and she is very supportive and helpful. She listens and understands the role you are looking for. I would highly recommend her to anyone from starting out in the industry to experienced candidates. I am now using Milica to help me find my team and it's always a pleasure to work with her. A big thank you to her and her team at Lighthouse careers.",
-    name: "Megan Brooksby",
+    author: "Megan Brooksby",
     role: "Chief Stewardess 65m MY",
     image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Megan-Brooksby.png",
-    type: "candidate",
+    rating: 5,
   },
   {
     quote: "Thank you for helping me secure great rotational Chief Officer position on 100m+ MY, I could not be happier!",
-    name: "Jaksa Sain",
+    author: "Jaksa Sain",
     role: "Chief Officer 100m+ MY",
     image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Jaksa-Sain.png",
-    type: "candidate",
+    rating: 5,
   },
   {
     quote: "Milica placed me on my first yacht when I joined the industry, matching my land-based experience perfectly with the vessel. Since then, she has supported my career and seen me move to Chief Stewardess working within larger operations. She can always be relied on to send well-vetted, position-appropriate candidates. Her experience with, and knowledge of the 100m+ market, along with her focus on quality means she is the first person I call when I am looking for a role or crew.",
-    name: "Stephanie Wells",
+    author: "Stephanie Wells",
     role: "Chief Stewardess 100m+ M/Y",
     image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Stephanie-Wells.png",
-    type: "candidate",
+    rating: 5,
   },
   {
     quote: "I would like to express mine at most gratitude for the placement of my current position as Interior Manager on a 100+ m yacht. All was well organised and monitored from your side. Great communication between the yacht, yourself and me. Everything was handled with confidentiality on every level. Therefore, I would like to continue working with you for all current and future crew hiring. I always get a quick response at any time of the day, evenings and on weekends. Very professional, fast, and efficient service! Many thanks for the past few years and many more to come.",
-    name: "Mathieu Barbe",
+    author: "Mathieu Barbe",
     role: "Interior Manager, Project ENZO",
     image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Mathieu-Barbe.png",
-    type: "candidate" as const,
+    rating: 5,
   },
-] as const;
+];
 
 export default function HomePage() {
   return (
@@ -572,149 +572,21 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Testimonials Section - Luxurious navy background with elegant pattern */}
-        <section
-          className="relative py-20 sm:py-28 overflow-hidden"
-          aria-labelledby="testimonials-heading"
-        >
-          {/* Navy gradient background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-navy-900 via-navy-800 to-[#0c1525]" aria-hidden="true" />
-
-          {/* Warm champagne/gold glow from top */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_120%_40%_at_50%_0%,rgba(195,165,120,0.08),transparent_60%)]" aria-hidden="true" />
-
-          {/* Geometric diamond pattern - matching hire page */}
-          <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-            <svg className="absolute inset-0 h-full w-full" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <pattern id="home-diamond-pattern" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
-                  <path
-                    d="M30 0L60 30L30 60L0 30Z"
-                    fill="none"
-                    stroke="rgba(195, 165, 120, 0.06)"
-                    strokeWidth="0.5"
-                  />
-                  <circle cx="30" cy="30" r="1" fill="rgba(195, 165, 120, 0.08)" />
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#home-diamond-pattern)" />
-            </svg>
-          </div>
-
-          {/* Subtle vignette */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(10,20,35,0.4)_100%)]" aria-hidden="true" />
-
-          <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
-            <div className="mb-16 text-center">
-              <div className="inline-flex items-center gap-2 rounded-full border border-gold-500/40 bg-gold-500/10 px-5 py-2 text-sm font-medium text-gold-400 backdrop-blur-sm mb-6">
-                <Star className="h-4 w-4 fill-gold-400" aria-hidden="true" />
-                Client Success Stories
-              </div>
-              <h2 id="testimonials-heading" className="font-serif text-3xl font-semibold text-white sm:text-4xl">
-                Trusted by Industry Professionals
-              </h2>
-              <p className="mx-auto mt-4 max-w-2xl text-gray-300">
-                See what our clients and candidates say about working with us.
-              </p>
-            </div>
-
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {/* Show first 6 testimonials - mix of clients and candidates */}
-              {testimonials.slice(0, 6).map((testimonial, index) => (
-                <article
-                  key={index}
-                  className="group relative bg-white/[0.03] backdrop-blur-sm rounded-2xl border border-white/10 p-8 hover:bg-white/[0.06] hover:border-gold-500/30 transition-all duration-300"
-                  itemScope
-                  itemType="https://schema.org/Review"
-                >
-                  {/* Quote Icon */}
-                  <div className="absolute -top-4 left-8">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gold-500 shadow-lg shadow-gold-500/20">
-                      <Quote className="h-4 w-4 text-navy-900" aria-hidden="true" />
-                    </div>
-                  </div>
-
-                  {/* Rating */}
-                  <div
-                    className="flex mb-4 mt-2"
-                    itemProp="reviewRating"
-                    itemScope
-                    itemType="https://schema.org/Rating"
-                  >
-                    <meta itemProp="ratingValue" content="5" />
-                    <meta itemProp="bestRating" content="5" />
-                    {[...Array(5)].map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-gold-400 text-gold-400" aria-hidden="true" />
-                    ))}
-                  </div>
-
-                  {/* Quote */}
-                  <blockquote
-                    className="text-gray-300 leading-relaxed mb-6 line-clamp-4"
-                    itemProp="reviewBody"
-                  >
-                    &ldquo;{testimonial.quote}&rdquo;
-                  </blockquote>
-
-                  {/* Author */}
-                  <div
-                    className="flex items-center gap-3"
-                    itemProp="author"
-                    itemScope
-                    itemType="https://schema.org/Person"
-                  >
-                    <div className="relative h-12 w-12 overflow-hidden rounded-full ring-2 ring-white/10">
-                      <Image
-                        src={testimonial.image}
-                        alt={testimonial.name}
-                        fill
-                        className="object-cover"
-                        itemProp="image"
-                      />
-                    </div>
-                    <div>
-                      <div className="font-medium text-white" itemProp="name">{testimonial.name}</div>
-                      <div className="text-sm text-gray-400" itemProp="jobTitle">{testimonial.role}</div>
-                    </div>
-                  </div>
-
-                  {/* Type Badge */}
-                  <div className="absolute top-6 right-6">
-                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                      testimonial.type === 'client'
-                        ? 'bg-white/10 text-gray-300'
-                        : 'bg-gold-500/20 text-gold-400'
-                    }`}>
-                      {testimonial.type === 'client' ? 'Employer' : 'Placed Candidate'}
-                    </span>
-                  </div>
-                </article>
-              ))}
-            </div>
-
-            {/* Bottom stats bar */}
-            <div className="mt-16 rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-sm">
-              <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
-                <div className="text-center">
-                  <div className="font-serif text-2xl font-bold text-gold-400 sm:text-3xl">4.9★</div>
-                  <div className="mt-1 text-sm text-gray-400">Client Rating</div>
-                </div>
-                <div className="text-center">
-                  <div className="font-serif text-2xl font-bold text-white sm:text-3xl">500+</div>
-                  <div className="mt-1 text-sm text-gray-400">Satisfied Clients</div>
-                </div>
-                <div className="text-center">
-                  <div className="font-serif text-2xl font-bold text-white sm:text-3xl">300+</div>
-                  <div className="mt-1 text-sm text-gray-400">Placements/Year</div>
-                </div>
-                <div className="text-center">
-                  <div className="font-serif text-2xl font-bold text-white sm:text-3xl">20+</div>
-                  <div className="mt-1 text-sm text-gray-400">Years Experience</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* Testimonials Section - Unified component showing all 16 testimonials */}
+        <Testimonials
+          title="Trusted by Industry Professionals"
+          subtitle="See what our clients and candidates say about working with us."
+          testimonials={testimonials}
+          variant="dark"
+          pattern="diamond"
+          showStats={true}
+          stats={[
+            { value: "4.9★", label: "Client Rating" },
+            { value: "500+", label: "Satisfied Clients" },
+            { value: "300+", label: "Placements/Year" },
+            { value: "20+", label: "Years Experience" },
+          ]}
+        />
 
         {/* Lead Capture Section */}
         <LeadCapture />

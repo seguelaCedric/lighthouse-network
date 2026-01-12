@@ -51,7 +51,9 @@ export function InternalLinking({
     (link) =>
       link.content_type === "hiring_guide" ||
       link.content_type === "salary_guide" ||
-      link.content_type === "interview_questions"
+      link.content_type === "interview_questions" ||
+      link.content_type === "what_to_look_for" ||
+      link.content_type === "onboarding_guide"
   );
   const candidateContent = contentLinks.filter(
     (link) =>

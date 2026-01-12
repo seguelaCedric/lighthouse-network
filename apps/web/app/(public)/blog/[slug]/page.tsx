@@ -8,9 +8,10 @@ import { AnswerCapsuleWithLinks } from '@/components/seo/AnswerCapsule';
 import { getAnswerCapsuleSchema } from '@/lib/seo/answer-capsule-schema';
 import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 import { getBlogPostBreadcrumbs } from '@/lib/navigation/breadcrumb-helpers';
+import { FloatingCTA, FloatingDualCTA } from '@/components/blog/FloatingCTA';
 import { Calendar, User, ArrowLeft, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
-// Content is stored as Markdown or HTML - render as HTML for now
+import MarkdownIt from 'markdown-it';
 
 export const revalidate = 3600; // Revalidate every hour
 
@@ -119,6 +120,14 @@ export default async function BlogPostPage({ params, searchParams }: Props) {
   // Generate breadcrumbs
   const breadcrumbItems = getBlogPostBreadcrumbs(post.title);
 
+  // Convert Markdown to HTML
+  const md = new MarkdownIt({
+    html: true,
+    linkify: true,
+    typographer: true,
+  });
+  const htmlContent = md.render(post.content || '');
+
   return (
     <div className="min-h-screen bg-white">
       <PublicHeader />
@@ -180,7 +189,13 @@ export default async function BlogPostPage({ params, searchParams }: Props) {
             {post.target_audience && (
               <div className="flex items-center gap-1.5">
                 <User className="h-4 w-4" />
-                <span className="capitalize">For {post.target_audience}</span>
+                <span>
+                  {post.target_audience === 'employer'
+                    ? 'Hiring Guide'
+                    : post.target_audience === 'candidate'
+                    ? 'Career Guide'
+                    : 'Expert Guide'}
+                </span>
               </div>
             )}
             {post.target_position && (
@@ -241,13 +256,13 @@ export default async function BlogPostPage({ params, searchParams }: Props) {
         )}
 
         <div
-          className="prose prose-lg max-w-none"
-          dangerouslySetInnerHTML={{ __html: post.content }}
+          className="prose prose-lg max-w-none prose-pre:whitespace-pre-wrap prose-pre:break-words prose-img:max-w-full prose-headings:break-words prose-p:break-words prose-code:break-words"
+          dangerouslySetInnerHTML={{ __html: htmlContent }}
         />
 
         {/* Previous/Next Post Navigation */}
         {(previousPost || nextPost) && (
-          <nav className="border-t border-gray-200 mt-12 pt-8" aria-label="Post navigation">
+          <nav className="border-t border-gray-200 mt-12 pt-8 mb-12" aria-label="Post navigation">
             <div className="flex items-center justify-between gap-8">
               {/* Previous Post */}
               {previousPost ? (
@@ -293,7 +308,7 @@ export default async function BlogPostPage({ params, searchParams }: Props) {
         )}
 
         {/* Internal Linking Section */}
-        {relatedPages.length > 0 && (
+        {(relatedPages.length > 0 || (contentLinks && contentLinks.length > 0)) && (
           <InternalLinking
             currentPage={{
               id: '',
@@ -310,6 +325,23 @@ export default async function BlogPostPage({ params, searchParams }: Props) {
           />
         )}
       </article>
+
+      {/* Floating CTA based on target audience */}
+      {post.target_audience === 'employer' && (
+        <FloatingCTA
+          text="Find Pre-Vetted Candidates"
+          href="/match"
+          variant="employer"
+        />
+      )}
+      {post.target_audience === 'candidate' && (
+        <FloatingCTA
+          text="View Open Positions"
+          href="/job-board"
+          variant="candidate"
+        />
+      )}
+      {post.target_audience === 'both' && <FloatingDualCTA />}
 
       <PublicFooter />
     </div>

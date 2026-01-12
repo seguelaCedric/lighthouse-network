@@ -64,21 +64,21 @@ export function AnswerCapsule({
   const audienceConfig = {
     employer: {
       icon: Briefcase,
-      label: "For Employers",
+      label: "Hiring Guide",
       borderColor: "border-l-gold-500",
       bgColor: "bg-gold-50",
       iconColor: "text-gold-600",
     },
     candidate: {
       icon: User,
-      label: "For Candidates",
+      label: "Career Guide",
       borderColor: "border-l-navy-500",
       bgColor: "bg-navy-50",
       iconColor: "text-navy-600",
     },
     both: {
       icon: CheckCircle2,
-      label: "Quick Answer",
+      label: "Expert Guide",
       borderColor: "border-l-burgundy-500",
       bgColor: "bg-gray-50",
       iconColor: "text-burgundy-600",
