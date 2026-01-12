@@ -24,11 +24,12 @@ import {
 } from "lucide-react";
 import { PublicHeader } from "@/components/pricing/PublicHeader";
 import { Logo } from "@/components/ui/Logo";
-import { Testimonials, type Testimonial } from "@/components/marketing/Testimonials";
+import type { Testimonial } from "@/components/marketing/Testimonials";
 import { FAQSection, type FAQItem } from "@/components/marketing/FAQSection";
 import { ExitIntent } from "@/components/marketing/ExitIntent";
 import { StickyCTA } from "@/components/marketing/StickyCTA";
 import type { PublicJob } from "./JobBoardCard";
+import { cn } from "@/lib/utils";
 
 interface FilterOptions {
   positions: string[];
@@ -569,7 +570,7 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
 
         <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-20">
             {stats.map((stat, idx) => (
               <div key={idx} className="text-center">
                 <div className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-gold-400 to-gold-500 bg-clip-text text-transparent mb-2">{stat.value}</div>
@@ -578,13 +579,70 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
             ))}
           </div>
 
-          {/* Testimonials */}
-          <Testimonials
-            title="What Our Candidates Say"
-            subtitle="Join thousands of professionals who found their dream role through Lighthouse Careers"
-            testimonials={testimonials}
-            variant="dark"
-          />
+          {/* Testimonials header */}
+          <div className="mb-16 text-center">
+            <h2 className="font-serif text-3xl font-semibold text-white sm:text-4xl mb-4">
+              What Our Candidates Say
+            </h2>
+            <p className="text-gray-300 max-w-2xl mx-auto">
+              Join thousands of professionals who found their dream role through Lighthouse Careers
+            </p>
+          </div>
+
+          {/* Testimonial grid - directly integrated */}
+          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3 lg:gap-10">
+            {testimonials.map((testimonial, idx) => (
+              <div
+                key={idx}
+                className="rounded-2xl p-6 border border-white/10 bg-white/5 hover:bg-white/10 hover:border-gold-500/30 transition-all duration-300 hover:shadow-2xl hover:scale-[1.02]"
+              >
+                {/* Rating stars */}
+                {testimonial.rating && (
+                  <div className="mb-4 flex gap-1">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star
+                        key={i}
+                        className={cn(
+                          "h-4 w-4",
+                          i < testimonial.rating!
+                            ? "fill-gold-400 text-gold-400"
+                            : "fill-gray-600 text-gray-600"
+                        )}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {/* Quote */}
+                <blockquote className="mb-6 text-base leading-relaxed text-gray-300">
+                  &ldquo;{testimonial.quote}&rdquo;
+                </blockquote>
+
+                {/* Author */}
+                <div className="flex items-center gap-3">
+                  {testimonial.image ? (
+                    <img
+                      src={testimonial.image}
+                      alt={testimonial.author}
+                      className="h-10 w-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gold-500/20 text-gold-400 text-sm font-semibold">
+                      {testimonial.author
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .slice(0, 2)}
+                    </div>
+                  )}
+                  <div>
+                    <div className="font-medium text-white">{testimonial.author}</div>
+                    <div className="text-sm text-gray-400">{testimonial.role}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Wave separator for smooth transition */}
