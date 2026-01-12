@@ -1,5 +1,6 @@
 "use client";
 
+import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -22,12 +23,14 @@ import {
   Search,
   FileText,
 } from "lucide-react";
-import { PublicHeader } from "@/components/pricing/PublicHeader";
+import { PublicHeader, PublicFooter } from "@/components/pricing";
 import { Logo } from "@/components/ui/Logo";
 import { Testimonials, type Testimonial } from "@/components/marketing/Testimonials";
 import { FAQSection, type FAQItem } from "@/components/marketing/FAQSection";
 import { ExitIntent } from "@/components/marketing/ExitIntent";
 import { StickyCTA } from "@/components/marketing/StickyCTA";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import type { PublicJob } from "./JobBoardCard";
 import { cn } from "@/lib/utils";
 
@@ -49,6 +52,180 @@ const stats = [
   { value: "48hrs", label: "Avg. Response Time" },
   { value: "2-4wks", label: "Avg. Time to Hire" },
 ];
+
+// Feature dialog content for "Why Choose" cards
+const featureDialogContent: Record<string, {
+  title: string;
+  icon: typeof Zap;
+  iconColor: string;
+  description: string;
+  details: Array<{
+    heading: string;
+    content?: string;
+    bullets?: string[];
+  }>;
+}> = {
+  "ai-matching": {
+    title: "AI-Powered Matching",
+    icon: Zap,
+    iconColor: "purple",
+    description: "Our intelligent matching system analyzes your profile to find the perfect opportunities.",
+    details: [
+      {
+        heading: "How It Works",
+        content: "Our AI analyzes your skills, experience, preferences, and career goals to match you with relevant positions. The more you interact with the platform, the smarter the recommendations become."
+      },
+      {
+        heading: "What We Analyze",
+        bullets: [
+          "Your professional experience and skills",
+          "Desired location and mobility preferences",
+          "Salary expectations and benefits requirements",
+          "Career trajectory and growth goals",
+          "Work style and cultural fit indicators"
+        ]
+      },
+      {
+        heading: "Benefits",
+        bullets: [
+          "Save time - see only relevant opportunities",
+          "Discover positions you might have missed",
+          "Get better matches as the system learns",
+          "Receive instant notifications for new matches"
+        ]
+      }
+    ]
+  },
+  "expert-recruitment": {
+    title: "Expert Recruitment",
+    icon: Shield,
+    iconColor: "emerald",
+    description: "Every opportunity and employer is personally vetted by our experienced recruitment team.",
+    details: [
+      {
+        heading: "Our Vetting Process",
+        content: "Before any position appears on our board, our team conducts thorough verification to ensure legitimacy, quality, and safety for our candidates."
+      },
+      {
+        heading: "What We Verify",
+        bullets: [
+          "Employer identity and business credentials",
+          "Job posting accuracy and legitimacy",
+          "Compensation fairness and market rates",
+          "Workplace conditions and safety standards",
+          "Employer reputation in the industry"
+        ]
+      },
+      {
+        heading: "Your Protection",
+        bullets: [
+          "No fake or scam job postings",
+          "Verified employer contact information",
+          "Accurate job descriptions and requirements",
+          "Fair compensation packages",
+          "Safe and professional work environments"
+        ]
+      }
+    ]
+  },
+  "personal-matching": {
+    title: "Personal Matching & Introduction",
+    icon: Target,
+    iconColor: "blue",
+    description: "We don't just show you jobs - we personally introduce you to the right employers.",
+    details: [
+      {
+        heading: "How Personal Matching Works",
+        content: "Our recruitment specialists review your profile and actively match you with suitable positions, then personally introduce you to employers with a warm referral."
+      },
+      {
+        heading: "What We Do",
+        bullets: [
+          "Review your profile with expert eyes",
+          "Identify opportunities that fit your goals",
+          "Contact employers on your behalf",
+          "Provide warm introductions with context",
+          "Facilitate initial conversations"
+        ]
+      },
+      {
+        heading: "Your Advantage",
+        bullets: [
+          "Skip the 'cold apply' process",
+          "Get noticed faster by employers",
+          "Professional representation",
+          "Insider advocacy for your candidacy",
+          "Higher response and interview rates"
+        ]
+      }
+    ]
+  },
+  "exclusive-access": {
+    title: "Exclusive Access to Hidden Opportunities",
+    icon: TrendingUp,
+    iconColor: "rose",
+    description: "Access elite positions that aren't advertised publicly.",
+    details: [
+      {
+        heading: "Why Jobs Aren't Always Public",
+        content: "Many premium employers prefer discretion when hiring. They work exclusively with trusted recruiters to find candidates without public job postings."
+      },
+      {
+        heading: "What You'll Access",
+        bullets: [
+          "Confidential searches for high-profile vessels",
+          "Private household positions for UHNW families",
+          "Executive crew roles on superyachts",
+          "Replacement positions before they're vacant",
+          "Off-market opportunities shared only with us"
+        ]
+      },
+      {
+        heading: "Your Competitive Edge",
+        bullets: [
+          "Less competition - positions not on job boards",
+          "First access to premium opportunities",
+          "Access to UHNW and celebrity employers",
+          "Early notification before market saturation",
+          "Exclusive consideration for top roles"
+        ]
+      }
+    ]
+  },
+  "career-support": {
+    title: "Comprehensive Career Support",
+    icon: FileText,
+    iconColor: "amber",
+    description: "Ongoing guidance throughout your job search and beyond.",
+    details: [
+      {
+        heading: "What Support You Get",
+        content: "Our team provides personalized support at every stage of your career journey, from initial search through onboarding and beyond."
+      },
+      {
+        heading: "Services Included",
+        bullets: [
+          "Resume and CV optimization for yacht/private sector",
+          "Interview preparation and coaching",
+          "Salary negotiation guidance",
+          "Reference checking support",
+          "Contract review assistance",
+          "Onboarding guidance"
+        ]
+      },
+      {
+        heading: "Long-Term Partnership",
+        bullets: [
+          "Career development advice",
+          "Industry insights and trends",
+          "Professional growth recommendations",
+          "Alumni network access",
+          "Ongoing support for your next move"
+        ]
+      }
+    ]
+  }
+};
 
 const benefits = [
   {
@@ -234,6 +411,9 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
   const signUpUrl = `/auth/register?redirect=${encodeURIComponent(redirectPath)}`;
   const signInUrl = `/auth/login?redirect=${encodeURIComponent(redirectPath)}`;
 
+  // State for feature dialog
+  const [openDialog, setOpenDialog] = useState<string | null>(null);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       <ExitIntent />
@@ -332,11 +512,11 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
             {/* Elegant badge */}
             <div className="inline-flex items-center gap-2 rounded-full border border-gold-500/30 bg-gold-500/10 px-5 py-2.5 text-sm font-medium text-gold-300 mb-8 backdrop-blur-sm">
               <Sparkles className="h-4 w-4" />
-              {totalCount > 0 ? `${totalCount}+ Open Positions` : "Elite Positions Available"}
+              Premium Job Board
             </div>
 
             <h1 className="font-cormorant text-5xl sm:text-6xl lg:text-7xl font-semibold tracking-tight text-white mb-6">
-              Access Elite Yacht & Private
+              Access Elite <span className="text-gradient-gold">Yacht</span> & Private
               <span className="block text-gradient-gold">Household Jobs</span>
             </h1>
 
@@ -415,149 +595,132 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
             </p>
           </div>
 
-          {/* Asymmetric Feature Grid */}
-          <div className="grid md:grid-cols-12 gap-6 lg:gap-8 mb-8">
-            {/* Featured card - AI Matching (spans 2 columns, larger) */}
-            <div className="md:col-span-12 lg:col-span-6 group">
-              <div className="relative h-full bg-white rounded-3xl p-8 lg:p-10 border-2 border-gray-200 hover:border-gold-500/40 transition-all duration-300 hover:scale-[1.02] shadow-xl hover:shadow-2xl">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gold-500/5 rounded-full filter blur-2xl" />
+          {/* Feature Cards Grid - matching homepage style */}
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {/* AI-Powered Matching - Dialog */}
+            <div
+              onClick={() => setOpenDialog('ai-matching')}
+              className="group cursor-pointer"
+            >
+              <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-purple-500/50 hover:-translate-y-1">
+                <div className="absolute top-0 right-0 h-24 w-24 translate-x-8 -translate-y-8 rounded-full bg-purple-500/10 transition-transform group-hover:scale-150" aria-hidden="true" />
                 <div className="relative">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-gold-500 to-gold-600 mb-6 group-hover:scale-110 transition-transform">
-                    <Zap className="h-8 w-8 text-white" />
+                  <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/10">
+                    <Zap className="h-6 w-6 text-purple-600" aria-hidden="true" />
                   </div>
-                  <h3 className="font-bold text-navy-900 text-2xl mb-3">AI-Powered Matching</h3>
-                  <p className="text-gray-600 leading-relaxed text-lg">
-                    Get personalized job recommendations based on your skills, experience, and preferences. Our intelligent system learns what you're looking for and surfaces the best opportunities.
-                  </p>
-                  <div className="mt-6 flex items-center gap-2 text-gold-600 font-medium group-hover:gap-3 transition-all">
+                  <h3 className="font-serif text-xl font-semibold text-navy-900 mb-2">AI-Powered Matching</h3>
+                  <p className="text-gray-600 text-sm mb-4">Get personalized job recommendations based on your skills and experience.</p>
+                  <div className="flex items-center text-purple-600 font-medium text-sm group-hover:gap-2 transition-all">
                     <span>Learn more</span>
-                    <ArrowRight className="h-4 w-4" />
+                    <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* 2x2 Grid of smaller cards */}
-            <div className="md:col-span-12 lg:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-6 lg:gap-8">
-              {/* Expert Recruitment */}
-              <div className="group">
-                <div className="h-full bg-white rounded-2xl p-6 border border-gray-200 hover:border-gold-500/30 hover:shadow-lg transition-all duration-300">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold-500/10 mb-4 group-hover:scale-110 transition-transform">
-                    <Shield className="h-6 w-6 text-gold-600" />
+            {/* Expert Recruitment - Dialog */}
+            <div
+              onClick={() => setOpenDialog('expert-recruitment')}
+              className="group cursor-pointer"
+            >
+              <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-emerald-500/50 hover:-translate-y-1">
+                <div className="absolute top-0 right-0 h-24 w-24 translate-x-8 -translate-y-8 rounded-full bg-emerald-500/10 transition-transform group-hover:scale-150" aria-hidden="true" />
+                <div className="relative">
+                  <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10">
+                    <Shield className="h-6 w-6 text-emerald-600" aria-hidden="true" />
                   </div>
-                  <h3 className="font-semibold text-navy-900 text-lg mb-2">Expert Recruitment</h3>
-                  <p className="text-gray-600 text-sm leading-relaxed">
-                    We personally vet every opportunity and employer.
-                  </p>
-                </div>
-              </div>
-
-              {/* Personal Matching */}
-              <div className="group">
-                <div className="h-full bg-white rounded-2xl p-6 border border-gray-200 hover:border-gold-500/30 hover:shadow-lg transition-all duration-300">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold-500/10 mb-4 group-hover:scale-110 transition-transform">
-                    <Target className="h-6 w-6 text-gold-600" />
+                  <h3 className="font-serif text-xl font-semibold text-navy-900 mb-2">Expert Recruitment</h3>
+                  <p className="text-gray-600 text-sm mb-4">We personally vet every opportunity and employer for your peace of mind.</p>
+                  <div className="flex items-center text-emerald-600 font-medium text-sm group-hover:gap-2 transition-all">
+                    <span>Learn more</span>
+                    <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
                   </div>
-                  <h3 className="font-semibold text-navy-900 text-lg mb-2">Personal Matching</h3>
-                  <p className="text-gray-600 text-sm leading-relaxed">
-                    We match you with the right roles and introduce you directly.
-                  </p>
-                </div>
-              </div>
-
-              {/* Exclusive Access */}
-              <div className="group">
-                <div className="h-full bg-white rounded-2xl p-6 border border-gray-200 hover:border-gold-500/30 hover:shadow-lg transition-all duration-300">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold-500/10 mb-4 group-hover:scale-110 transition-transform">
-                    <TrendingUp className="h-6 w-6 text-gold-600" />
-                  </div>
-                  <h3 className="font-semibold text-navy-900 text-lg mb-2">Exclusive Access</h3>
-                  <p className="text-gray-600 text-sm leading-relaxed">
-                    Get access to positions not advertised elsewhere.
-                  </p>
-                </div>
-              </div>
-
-              {/* Career Support */}
-              <div className="group">
-                <div className="h-full bg-white rounded-2xl p-6 border border-gray-200 hover:border-gold-500/30 hover:shadow-lg transition-all duration-300">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold-500/10 mb-4 group-hover:scale-110 transition-transform">
-                    <FileText className="h-6 w-6 text-gold-600" />
-                  </div>
-                  <h3 className="font-semibold text-navy-900 text-lg mb-2">Career Support</h3>
-                  <p className="text-gray-600 text-sm leading-relaxed">
-                    Ongoing guidance throughout your job search and placement.
-                  </p>
                 </div>
               </div>
             </div>
 
-            {/* Bottom row - 3 columns */}
-            <div className="md:col-span-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mt-6">
-              {/* Free Forever - Emphasized */}
-              <div className="group">
-                <div className="relative h-full min-h-[200px] bg-gradient-to-br from-gold-50 to-gold-100/50 rounded-2xl p-8 border-2 border-gold-300 hover:border-gold-400 transition-all duration-300 overflow-hidden hover:shadow-xl">
-                  <div className="absolute top-0 right-0 w-24 h-24 bg-gold-500/10 rounded-full filter blur-xl" />
-                  <div className="relative">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-gold-500 to-gold-600 mb-5 group-hover:scale-110 transition-transform shadow-lg">
-                      <Users className="h-7 w-7 text-white" />
-                    </div>
-                    <div className="inline-block px-3 py-1 bg-gold-500/20 rounded-full text-gold-700 text-xs font-bold mb-3">
-                      100% FREE
-                    </div>
-                    <h3 className="font-bold text-navy-900 text-xl mb-3">Free Forever</h3>
-                    <p className="text-gray-700 text-sm leading-relaxed">
-                      No hidden fees, no subscriptions. All features free for candidates.
-                    </p>
+            {/* Personal Matching - Dialog */}
+            <div
+              onClick={() => setOpenDialog('personal-matching')}
+              className="group cursor-pointer"
+            >
+              <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-blue-500/50 hover:-translate-y-1">
+                <div className="absolute top-0 right-0 h-24 w-24 translate-x-8 -translate-y-8 rounded-full bg-blue-500/10 transition-transform group-hover:scale-150" aria-hidden="true" />
+                <div className="relative">
+                  <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10">
+                    <Target className="h-6 w-6 text-blue-600" aria-hidden="true" />
+                  </div>
+                  <h3 className="font-serif text-xl font-semibold text-navy-900 mb-2">Personal Matching</h3>
+                  <p className="text-gray-600 text-sm mb-4">We match you with the right roles and introduce you directly to employers.</p>
+                  <div className="flex items-center text-blue-600 font-medium text-sm group-hover:gap-2 transition-all">
+                    <span>Learn more</span>
+                    <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
                   </div>
                 </div>
-              </div>
-
-              {/* 20+ Years */}
-              <div className="group">
-                <div className="h-full min-h-[200px] bg-white rounded-2xl p-8 border border-gray-200 hover:border-gold-500/30 hover:shadow-xl transition-all duration-300">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gold-500/10 mb-5 group-hover:scale-110 transition-transform">
-                    <Star className="h-7 w-7 text-gold-600" />
-                  </div>
-                  <div className="inline-block px-3 py-1 bg-gray-100 rounded-full text-gold-700 text-xs font-bold mb-3">
-                    SINCE 2002
-                  </div>
-                  <h3 className="font-bold text-navy-900 text-xl mb-3">20+ Years of Trust</h3>
-                  <p className="text-gray-600 text-sm leading-relaxed">
-                    Hundreds placed in top positions worldwide.
-                  </p>
-                </div>
-              </div>
-
-              {/* CTA Card */}
-              <div className="group sm:col-span-2 lg:col-span-1">
-                <Link
-                  href={signUpUrl}
-                  className="block h-full"
-                >
-                  <div className="h-full min-h-[200px] bg-gradient-to-br from-gold-500 to-gold-600 rounded-2xl p-8 hover:from-gold-600 hover:to-gold-700 transition-all duration-300 transform hover:scale-[1.03] shadow-2xl hover:shadow-gold-500/30">
-                    <div className="flex flex-col items-start h-full justify-between">
-                      <div>
-                        <div className="inline-block px-3 py-1 bg-white/20 rounded-full text-white text-xs font-bold mb-4">
-                          GET STARTED
-                        </div>
-                        <h3 className="font-bold text-white text-2xl mb-3 leading-tight">Ready to find your next role?</h3>
-                        <p className="text-white/95 text-base mb-4 leading-relaxed">
-                          Join thousands of professionals today.
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 text-white font-bold group-hover:gap-3 transition-all text-lg">
-                        <span>Sign up free</span>
-                        <ArrowRight className="h-5 w-5" />
-                      </div>
-                    </div>
-                  </div>
-                </Link>
               </div>
             </div>
+
+            {/* Exclusive Access - Dialog */}
+            <div
+              onClick={() => setOpenDialog('exclusive-access')}
+              className="group cursor-pointer"
+            >
+              <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-rose-500/50 hover:-translate-y-1">
+                <div className="absolute top-0 right-0 h-24 w-24 translate-x-8 -translate-y-8 rounded-full bg-rose-500/10 transition-transform group-hover:scale-150" aria-hidden="true" />
+                <div className="relative">
+                  <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-rose-500/10">
+                    <TrendingUp className="h-6 w-6 text-rose-600" aria-hidden="true" />
+                  </div>
+                  <h3 className="font-serif text-xl font-semibold text-navy-900 mb-2">Exclusive Access</h3>
+                  <p className="text-gray-600 text-sm mb-4">Get access to elite positions not advertised anywhere else.</p>
+                  <div className="flex items-center text-rose-600 font-medium text-sm group-hover:gap-2 transition-all">
+                    <span>Learn more</span>
+                    <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Career Support - Dialog */}
+            <div
+              onClick={() => setOpenDialog('career-support')}
+              className="group cursor-pointer"
+            >
+              <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-amber-500/50 hover:-translate-y-1">
+                <div className="absolute top-0 right-0 h-24 w-24 translate-x-8 -translate-y-8 rounded-full bg-amber-500/10 transition-transform group-hover:scale-150" aria-hidden="true" />
+                <div className="relative">
+                  <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-amber-500/10">
+                    <FileText className="h-6 w-6 text-amber-600" aria-hidden="true" />
+                  </div>
+                  <h3 className="font-serif text-xl font-semibold text-navy-900 mb-2">Career Support</h3>
+                  <p className="text-gray-600 text-sm mb-4">Ongoing guidance throughout your job search and placement journey.</p>
+                  <div className="flex items-center text-amber-600 font-medium text-sm group-hover:gap-2 transition-all">
+                    <span>Learn more</span>
+                    <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Free Forever - Emphasized */}
+            <Link href={signUpUrl} className="group">
+              <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-lg hover:border-gold-500/50 hover:-translate-y-1">
+                <div className="absolute top-0 right-0 h-24 w-24 translate-x-8 -translate-y-8 rounded-full bg-gold-500/10 transition-transform group-hover:scale-150" aria-hidden="true" />
+                <div className="relative">
+                  <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gold-500/10">
+                    <Users className="h-6 w-6 text-gold-600" aria-hidden="true" />
+                  </div>
+                  <h3 className="font-serif text-xl font-semibold text-navy-900 mb-2">Free Forever</h3>
+                  <p className="text-gray-600 text-sm mb-4">No hidden fees, no subscriptions. All features free for candidates.</p>
+                  <div className="flex items-center text-gold-600 font-medium text-sm group-hover:gap-2 transition-all">
+                    <span>Get started</span>
+                    <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+                  </div>
+                </div>
+              </div>
+            </Link>
           </div>
         </div>
-
       </section>
 
       {/* Social Proof Section - Testimonials with Stats */}
@@ -647,28 +810,87 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-gray-200 bg-white py-12">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col items-center justify-between gap-6 sm:flex-row">
-            <Logo size="sm" />
-            <p className="text-sm text-gray-500">
-              &copy; {new Date().getFullYear()} Lighthouse Crew Network. All rights reserved.
-            </p>
-            <div className="flex items-center gap-6">
-              <Link href="/privacy" className="text-sm text-gray-500 hover:text-navy-600 transition-colors">
-                Privacy
-              </Link>
-              <Link href="/terms" className="text-sm text-gray-500 hover:text-navy-600 transition-colors">
-                Terms
-              </Link>
-              <Link href="/contact" className="text-sm text-gray-500 hover:text-navy-600 transition-colors">
-                Contact
-              </Link>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <PublicFooter />
       <StickyCTA />
+
+      {/* Feature Information Dialog */}
+      <Dialog open={openDialog !== null} onOpenChange={(open) => !open && setOpenDialog(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          {openDialog && featureDialogContent[openDialog] && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className={cn(
+                    "inline-flex h-12 w-12 items-center justify-center rounded-xl",
+                    featureDialogContent[openDialog].iconColor === "purple" && "bg-purple-500/10",
+                    featureDialogContent[openDialog].iconColor === "emerald" && "bg-emerald-500/10",
+                    featureDialogContent[openDialog].iconColor === "blue" && "bg-blue-500/10",
+                    featureDialogContent[openDialog].iconColor === "rose" && "bg-rose-500/10",
+                    featureDialogContent[openDialog].iconColor === "amber" && "bg-amber-500/10"
+                  )}>
+                    {React.createElement(featureDialogContent[openDialog].icon, {
+                      className: cn(
+                        "h-6 w-6",
+                        featureDialogContent[openDialog].iconColor === "purple" && "text-purple-600",
+                        featureDialogContent[openDialog].iconColor === "emerald" && "text-emerald-600",
+                        featureDialogContent[openDialog].iconColor === "blue" && "text-blue-600",
+                        featureDialogContent[openDialog].iconColor === "rose" && "text-rose-600",
+                        featureDialogContent[openDialog].iconColor === "amber" && "text-amber-600"
+                      )
+                    })}
+                  </div>
+                  <DialogTitle className="text-2xl font-serif">
+                    {featureDialogContent[openDialog].title}
+                  </DialogTitle>
+                </div>
+                <DialogDescription className="text-base text-gray-600">
+                  {featureDialogContent[openDialog].description}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-6 py-4">
+                {featureDialogContent[openDialog].details.map((section, idx) => (
+                  <div key={idx}>
+                    <h3 className="font-semibold text-lg text-navy-900 mb-2">
+                      {section.heading}
+                    </h3>
+                    {section.content && (
+                      <p className="text-gray-600 leading-relaxed">
+                        {section.content}
+                      </p>
+                    )}
+                    {section.bullets && (
+                      <ul className="space-y-2 mt-2">
+                        {section.bullets.map((bullet, bidx) => (
+                          <li key={bidx} className="flex items-start gap-2">
+                            <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                            <span className="text-gray-700">{bullet}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <DialogFooter className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setOpenDialog(null)}
+                >
+                  Close
+                </Button>
+                <Link href={signUpUrl}>
+                  <Button className="bg-gradient-to-r from-gold-500 to-gold-600 hover:from-gold-600 hover:to-gold-700">
+                    Sign Up Free
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
