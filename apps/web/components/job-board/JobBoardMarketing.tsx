@@ -26,6 +26,8 @@ import { PublicHeader } from "@/components/pricing/PublicHeader";
 import { Logo } from "@/components/ui/Logo";
 import { Testimonials, type Testimonial } from "@/components/marketing/Testimonials";
 import { FAQSection, type FAQItem } from "@/components/marketing/FAQSection";
+import { ExitIntent } from "@/components/marketing/ExitIntent";
+import { StickyCTA } from "@/components/marketing/StickyCTA";
 import type { PublicJob } from "./JobBoardCard";
 
 interface FilterOptions {
@@ -43,6 +45,8 @@ interface JobBoardMarketingProps {
 const stats = [
   { value: "300+", label: "Placements/Year" },
   { value: "500+", label: "Satisfied Clients" },
+  { value: "48hrs", label: "Avg. Response Time" },
+  { value: "2-4wks", label: "Avg. Time to Hire" },
 ];
 
 const benefits = [
@@ -75,6 +79,11 @@ const benefits = [
     icon: Users,
     title: "Free Forever",
     description: "No hidden fees, no subscriptions. Access all features completely free as a candidate.",
+  },
+  {
+    icon: Star,
+    title: "20+ Years of Trust",
+    description: "Since 2002, we've placed hundreds of professionals in top positions worldwide. Our reputation is built on results.",
   },
 ];
 
@@ -196,6 +205,26 @@ const faqs: FAQItem[] = [
     answer:
       "Response times vary by employer, but most respond within 48-72 hours. Our direct application system ensures your profile reaches the right people quickly, and you can track the status of all your applications in your dashboard.",
   },
+  {
+    question: "How do I know if I'm qualified for these positions?",
+    answer:
+      "Each job listing shows clear requirements and our AI matching system provides a compatibility score when you create a profile. You'll see which positions best match your experience, skills, and preferences. Don't worry about being perfect - we work with candidates at all experience levels, from entry positions to senior leadership roles.",
+  },
+  {
+    question: "What happens after I apply?",
+    answer:
+      "Within 24-48 hours, the hiring agency will review your profile. If it's a good match, they'll reach out directly for an interview. You can track all your application statuses in your dashboard and receive email notifications for any updates.",
+  },
+  {
+    question: "Can I browse jobs while still employed?",
+    answer:
+      "Absolutely! Your profile is completely confidential. You control who sees your information, and we never share your details without your explicit permission. Many of our candidates search while employed, especially those looking for rotational positions.",
+  },
+  {
+    question: "How long does it typically take to get hired?",
+    answer:
+      "Most successful placements happen within 2-4 weeks, though urgent positions can be filled in days. Our average response time from application to first interview is 48 hours. The timeline depends on the role, your availability, and the employer's needs.",
+  },
 ];
 
 export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday }: JobBoardMarketingProps) {
@@ -206,6 +235,7 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
+      <ExitIntent />
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 border-b border-gray-200/80 bg-white/95 backdrop-blur-sm">
         <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
@@ -315,7 +345,7 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
             
             {/* Job Stats */}
             <p className="mx-auto max-w-2xl text-base text-gold-300 sm:text-lg mb-10 font-medium">
-              100+ Job listings / 10+ posted today
+              {totalCount > 0 ? `${totalCount} Active Listings / ${postedToday} Posted Today` : "Elite Positions Available"}
             </p>
 
             {/* CTAs */}
@@ -336,25 +366,25 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
             </div>
 
             {/* Trust indicators */}
-            <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-gray-400">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-gold-400" />
+            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-sm text-gray-400">
+              <div className="flex items-center gap-2 whitespace-nowrap">
+                <CheckCircle className="h-4 w-4 text-gold-400 flex-shrink-0" />
                 <span>Verified Employers</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Ship className="h-4 w-4 text-gold-400" />
+              <div className="flex items-center gap-2 whitespace-nowrap">
+                <Ship className="h-4 w-4 text-gold-400 flex-shrink-0" />
                 <span>Yacht Positions</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Home className="h-4 w-4 text-gold-400" />
+              <div className="flex items-center gap-2 whitespace-nowrap">
+                <Home className="h-4 w-4 text-gold-400 flex-shrink-0" />
                 <span>Private Estates</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Globe className="h-4 w-4 text-gold-400" />
+              <div className="flex items-center gap-2 whitespace-nowrap">
+                <Globe className="h-4 w-4 text-gold-400 flex-shrink-0" />
                 <span>Global Opportunities</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Briefcase className="h-4 w-4 text-gold-400" />
+              <div className="flex items-center gap-2 whitespace-nowrap">
+                <Briefcase className="h-4 w-4 text-gold-400 flex-shrink-0" />
                 <span>Direct Apply</span>
               </div>
             </div>
@@ -371,6 +401,7 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
                 {totalCount > 0 ? `${totalCount}+` : "1000+"}
               </div>
               <div className="text-lg font-semibold text-navy-900">Active Job Listings</div>
+              <div className="text-sm text-gray-600 mt-1">Growing daily</div>
             </div>
             <div className="hidden sm:block w-px h-16 bg-gray-200" />
             <div className="text-center">
@@ -378,6 +409,7 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
                 {postedToday > 0 ? postedToday : "10+"}
               </div>
               <div className="text-lg font-semibold text-navy-900">Posted Today</div>
+              <div className="text-sm text-gray-600 mt-1">Apply before they're filled</div>
             </div>
           </div>
         </div>
@@ -395,13 +427,13 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
             {benefits.map((benefit, idx) => {
               const Icon = benefit.icon;
               return (
                 <div
                   key={idx}
-                  className="bg-white rounded-2xl p-8 border border-gray-200 hover:shadow-lg transition-shadow"
+                  className="bg-white rounded-2xl p-6 sm:p-8 border border-gray-200 hover:shadow-lg transition-shadow"
                 >
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold-100 mb-4">
                     <Icon className="h-6 w-6 text-gold-600" />
@@ -452,22 +484,18 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
 
           <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {steps.map((step, idx) => {
-              const Icon = step.icon;
               return (
                 <div key={idx} className="relative">
                   {/* Connector line */}
                   {idx < steps.length - 1 && (
-                    <div className="hidden md:block absolute top-16 left-full w-full h-0.5 bg-gradient-to-r from-gold-400 to-gold-300 -z-10" />
+                    <div className="hidden md:block absolute top-8 left-[calc(50%+2rem)] w-[calc(100%-4rem)] h-0.5 bg-gradient-to-r from-gold-400 to-gold-300 -z-10" />
                   )}
-                  <div className="bg-gradient-to-br from-navy-50 to-gray-50 rounded-2xl p-8 border border-gray-200 text-center">
-                    <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-gold-500 to-gold-600 text-white font-bold text-xl mb-4">
+                  <div className="bg-gradient-to-br from-navy-50 to-gray-50 rounded-2xl p-8 border border-gray-200 text-center hover:shadow-md transition-shadow">
+                    <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-gold-500 to-gold-600 text-white font-bold text-2xl mb-6">
                       {step.number}
                     </div>
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold-100 mx-auto mb-4">
-                      <Icon className="h-6 w-6 text-gold-600" />
-                    </div>
-                    <h3 className="font-semibold text-navy-900 text-lg mb-2">{step.title}</h3>
-                    <p className="text-gray-600">{step.description}</p>
+                    <h3 className="font-semibold text-navy-900 text-lg mb-3">{step.title}</h3>
+                    <p className="text-gray-600 leading-relaxed">{step.description}</p>
                   </div>
                 </div>
               );
@@ -537,6 +565,7 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
           </div>
         </div>
       </footer>
+      <StickyCTA />
     </div>
   );
 }
