@@ -562,18 +562,33 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
 
       {/* Social Proof Section */}
       <section className="py-20 bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 relative overflow-hidden">
-        {/* Luxury diagonal pattern overlay */}
-        <div className="absolute inset-0 opacity-[0.08]">
+        {/* LV-inspired Damier pattern (checkered luxury pattern) */}
+        <div className="absolute inset-0 opacity-[0.06]">
           <div
             className="absolute inset-0"
             style={{
-              backgroundImage: `repeating-linear-gradient(
-                45deg,
-                transparent,
-                transparent 40px,
-                rgba(255, 215, 0, 0.15) 40px,
-                rgba(255, 215, 0, 0.15) 80px
-              )`
+              backgroundImage: `
+                linear-gradient(45deg, rgba(180, 142, 67, 0.3) 25%, transparent 25%),
+                linear-gradient(-45deg, rgba(180, 142, 67, 0.3) 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, rgba(180, 142, 67, 0.3) 75%),
+                linear-gradient(-45deg, transparent 75%, rgba(180, 142, 67, 0.3) 75%)
+              `,
+              backgroundSize: '60px 60px',
+              backgroundPosition: '0 0, 0 30px, 30px -30px, -30px 0px'
+            }}
+          />
+        </div>
+
+        {/* Monogram-inspired subtle circles pattern */}
+        <div className="absolute inset-0 opacity-[0.04]">
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `
+                radial-gradient(circle at 25% 25%, rgba(212, 175, 55, 0.2) 2px, transparent 2px),
+                radial-gradient(circle at 75% 75%, rgba(212, 175, 55, 0.2) 2px, transparent 2px)
+              `,
+              backgroundSize: '80px 80px'
             }}
           />
         </div>
@@ -585,17 +600,9 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gold-500 rounded-full filter blur-[100px] opacity-20" />
         </div>
 
-        {/* Subtle grid pattern */}
-        <div
-          className="absolute inset-0 opacity-[0.05]"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(255, 215, 0, 0.15) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255, 215, 0, 0.15) 1px, transparent 1px)
-            `,
-            backgroundSize: '60px 60px'
-          }}
-        />
+        {/* Elegant border accents - top and bottom */}
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gold-500/30 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-gold-500/30 to-transparent" />
 
         <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           {/* Stats */}
@@ -623,13 +630,20 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
             {testimonials.map((testimonial, idx) => (
               <div
                 key={idx}
-                className="group relative rounded-2xl p-6 border border-white/10 bg-white/5 backdrop-blur-sm hover:bg-white/10 hover:border-gold-500/30 transition-all duration-300 hover:shadow-2xl hover:shadow-gold-500/10 hover:scale-[1.02]"
+                className="group relative rounded-2xl p-6 border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.03] backdrop-blur-sm hover:from-white/[0.12] hover:to-white/[0.06] hover:border-gold-500/40 transition-all duration-500 hover:shadow-2xl hover:shadow-gold-500/20 hover:scale-[1.02]"
               >
-                {/* Luxury corner accent */}
-                <div className="absolute top-0 right-0 w-16 h-16 opacity-20 group-hover:opacity-40 transition-opacity">
-                  <div className="absolute top-0 right-0 w-full h-0.5 bg-gradient-to-l from-gold-400 to-transparent" />
-                  <div className="absolute top-0 right-0 h-full w-0.5 bg-gradient-to-b from-gold-400 to-transparent" />
+                {/* Luxury corner accents - all four corners */}
+                <div className="absolute top-0 right-0 w-12 h-12 opacity-30 group-hover:opacity-50 transition-opacity duration-500">
+                  <div className="absolute top-0 right-0 w-full h-[1px] bg-gradient-to-l from-gold-400 via-gold-500 to-transparent" />
+                  <div className="absolute top-0 right-0 h-full w-[1px] bg-gradient-to-b from-gold-400 via-gold-500 to-transparent" />
                 </div>
+                <div className="absolute bottom-0 left-0 w-12 h-12 opacity-30 group-hover:opacity-50 transition-opacity duration-500">
+                  <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-gold-400 via-gold-500 to-transparent" />
+                  <div className="absolute bottom-0 left-0 h-full w-[1px] bg-gradient-to-t from-gold-400 via-gold-500 to-transparent" />
+                </div>
+
+                {/* Subtle inner glow */}
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-gold-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 {/* Rating stars */}
                 {testimonial.rating && (
                   <div className="mb-4 flex gap-1">
