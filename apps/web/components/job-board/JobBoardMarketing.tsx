@@ -416,7 +416,7 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
       </section>
 
       {/* Value Proposition Section */}
-      <section className="py-20 bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 relative overflow-hidden">
+      <section className="py-24 lg:py-32 bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 relative overflow-hidden">
         {/* Background decorative elements */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 left-10 w-72 h-72 bg-gold-500 rounded-full filter blur-3xl" />
@@ -424,7 +424,7 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
         </div>
 
         <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-16">
+          <div className="text-center mb-20">
             <div className="inline-flex items-center gap-2 rounded-full border border-gold-500/30 bg-gold-500/10 px-5 py-2 text-sm font-medium text-gold-300 mb-6 backdrop-blur-sm">
               <Star className="h-4 w-4" />
               Premium Features
@@ -438,7 +438,7 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
           </div>
 
           {/* Asymmetric Feature Grid */}
-          <div className="grid md:grid-cols-12 gap-6 lg:gap-8">
+          <div className="grid md:grid-cols-12 gap-6 lg:gap-8 mb-8">
             {/* Featured card - AI Matching (spans 2 columns, larger) */}
             <div className="md:col-span-12 lg:col-span-6 group">
               <div className="relative h-full bg-gradient-to-br from-navy-800 to-navy-900 rounded-3xl p-8 lg:p-10 border-2 border-gold-500/20 hover:border-gold-500/40 transition-all duration-300 hover:scale-[1.02] shadow-2xl">
@@ -515,20 +515,20 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
             </div>
 
             {/* Bottom row - 3 columns */}
-            <div className="md:col-span-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+            <div className="md:col-span-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mt-6">
               {/* Free Forever - Emphasized */}
               <div className="group">
-                <div className="relative h-full bg-gradient-to-br from-gold-500/10 to-gold-600/5 rounded-2xl p-6 border-2 border-gold-500/30 hover:border-gold-500/50 transition-all duration-300 overflow-hidden">
+                <div className="relative h-full min-h-[200px] bg-gradient-to-br from-gold-500/10 to-gold-600/5 rounded-2xl p-8 border-2 border-gold-500/30 hover:border-gold-500/50 transition-all duration-300 overflow-hidden hover:shadow-2xl hover:shadow-gold-500/10">
                   <div className="absolute top-0 right-0 w-24 h-24 bg-gold-500/20 rounded-full filter blur-xl" />
                   <div className="relative">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-gold-500 to-gold-600 mb-4 group-hover:scale-110 transition-transform">
-                      <Users className="h-6 w-6 text-white" />
+                    <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br from-gold-500 to-gold-600 mb-5 group-hover:scale-110 transition-transform shadow-lg">
+                      <Users className="h-7 w-7 text-white" />
                     </div>
-                    <div className="inline-block px-3 py-1 bg-gold-500/20 rounded-full text-gold-300 text-xs font-bold mb-2">
+                    <div className="inline-block px-3 py-1 bg-gold-500/20 rounded-full text-gold-300 text-xs font-bold mb-3">
                       100% FREE
                     </div>
-                    <h3 className="font-semibold text-white text-lg mb-2">Free Forever</h3>
-                    <p className="text-gray-300 text-sm leading-relaxed">
+                    <h3 className="font-bold text-white text-xl mb-3">Free Forever</h3>
+                    <p className="text-gray-200 text-sm leading-relaxed">
                       No hidden fees, no subscriptions. All features free for candidates.
                     </p>
                   </div>
@@ -537,38 +537,38 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
 
               {/* 20+ Years */}
               <div className="group">
-                <div className="h-full bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 hover:border-gold-500/30 hover:bg-white/10 transition-all duration-300">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gold-500/20 mb-4 group-hover:scale-110 transition-transform">
-                    <Star className="h-6 w-6 text-gold-400" />
+                <div className="h-full min-h-[200px] bg-white/5 backdrop-blur-sm rounded-2xl p-8 border border-white/10 hover:border-gold-500/30 hover:bg-white/10 transition-all duration-300 hover:shadow-xl">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-gold-500/20 mb-5 group-hover:scale-110 transition-transform">
+                    <Star className="h-7 w-7 text-gold-400" />
                   </div>
-                  <div className="inline-block px-3 py-1 bg-white/10 rounded-full text-gold-300 text-xs font-bold mb-2">
+                  <div className="inline-block px-3 py-1 bg-white/10 rounded-full text-gold-300 text-xs font-bold mb-3">
                     SINCE 2002
                   </div>
-                  <h3 className="font-semibold text-white text-lg mb-2">20+ Years of Trust</h3>
-                  <p className="text-gray-400 text-sm leading-relaxed">
+                  <h3 className="font-bold text-white text-xl mb-3">20+ Years of Trust</h3>
+                  <p className="text-gray-300 text-sm leading-relaxed">
                     Hundreds placed in top positions worldwide.
                   </p>
                 </div>
               </div>
 
               {/* CTA Card */}
-              <div className="group">
+              <div className="group sm:col-span-2 lg:col-span-1">
                 <Link
                   href={signUpUrl}
                   className="block h-full"
                 >
-                  <div className="h-full bg-gradient-to-br from-gold-500 to-gold-600 rounded-2xl p-6 hover:from-gold-600 hover:to-gold-700 transition-all duration-300 transform hover:scale-105 shadow-xl hover:shadow-2xl">
+                  <div className="h-full min-h-[200px] bg-gradient-to-br from-gold-500 to-gold-600 rounded-2xl p-8 hover:from-gold-600 hover:to-gold-700 transition-all duration-300 transform hover:scale-[1.03] shadow-2xl hover:shadow-gold-500/30">
                     <div className="flex flex-col items-start h-full justify-between">
                       <div>
-                        <div className="inline-block px-3 py-1 bg-white/20 rounded-full text-white text-xs font-bold mb-3">
+                        <div className="inline-block px-3 py-1 bg-white/20 rounded-full text-white text-xs font-bold mb-4">
                           GET STARTED
                         </div>
-                        <h3 className="font-bold text-white text-xl mb-2">Ready to find your next role?</h3>
-                        <p className="text-white/90 text-sm mb-4">
+                        <h3 className="font-bold text-white text-2xl mb-3 leading-tight">Ready to find your next role?</h3>
+                        <p className="text-white/95 text-base mb-4 leading-relaxed">
                           Join thousands of professionals today.
                         </p>
                       </div>
-                      <div className="flex items-center gap-2 text-white font-semibold group-hover:gap-3 transition-all">
+                      <div className="flex items-center gap-2 text-white font-bold group-hover:gap-3 transition-all text-lg">
                         <span>Sign up free</span>
                         <ArrowRight className="h-5 w-5" />
                       </div>
@@ -579,17 +579,21 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
             </div>
           </div>
         </div>
+        {/* Wave separator for smooth transition */}
+        <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-b from-transparent to-white/5" />
       </section>
 
       {/* Social Proof Section */}
-      <section className="py-20 bg-navy-900">
+      <section className="py-20 bg-gradient-to-b from-white via-gray-50 to-white relative">
+        {/* Subtle top gradient for seamless transition */}
+        <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-gray-50 to-transparent" />
         <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16">
             {stats.map((stat, idx) => (
               <div key={idx} className="text-center">
-                <div className="text-4xl md:text-5xl font-bold text-gold-400 mb-2">{stat.value}</div>
-                <div className="text-gray-300">{stat.label}</div>
+                <div className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-gold-600 to-gold-500 bg-clip-text text-transparent mb-2">{stat.value}</div>
+                <div className="text-gray-600 font-medium">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -599,7 +603,7 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
             title="What Our Candidates Say"
             subtitle="Join thousands of professionals who found their dream role through Lighthouse Careers"
             testimonials={testimonials}
-            variant="dark"
+            variant="light"
           />
         </div>
       </section>
