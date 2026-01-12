@@ -586,8 +586,10 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
       </section>
 
       {/* How It Works Section */}
-      <section className="py-20 bg-white">
-        <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-20 bg-gradient-to-b from-navy-900/5 via-navy-800/5 to-white relative">
+        {/* Subtle top gradient for seamless transition */}
+        <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-white to-transparent" />
+        <div className="container max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center mb-16">
             <h2 className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl mb-4">
               How It Works
