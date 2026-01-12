@@ -303,16 +303,18 @@ Then continue with the full article content in Markdown format with proper headi
   // Generate title and excerpt
   const titleResult = await generateText({
     model: blogModel,
-    system: `You are an SEO expert. Generate a compelling, keyword-optimized blog post title (60-70 characters) that includes the primary keyword: "${primaryKeyword}".`,
-    prompt: `Based on this blog post content, generate a title:\n\n${content.substring(0, 500)}`,
-    temperature: 0.8,
-    maxTokens: 100,
+    system: `You must return EXACTLY ONE LINE of text - the blog post title only. No formatting, no quotes, no asterisks, no options, no explanations. Just: Title Text Here
+
+The title must be 60-70 characters and include: "${primaryKeyword}"`,
+    prompt: `Blog content:\n\n${content.substring(0, 500)}\n\nWrite one single title line (60-70 characters, includes "${primaryKeyword}"):`,
+    temperature: 0.7,
+    maxTokens: 50,
   });
 
   const excerptResult = await generateText({
     model: blogModel,
-    system: `You are an SEO expert. Generate a compelling meta description (150-160 characters) that summarizes the blog post and includes the primary keyword.`,
-    prompt: `Based on this blog post content, generate a meta description:\n\n${content.substring(0, 500)}`,
+    system: `You are an SEO expert. Return ONLY the meta description text, nothing else. No explanations. The description must be 150-160 characters and include the primary keyword.`,
+    prompt: `Based on this blog post content, generate a meta description:\n\n${content.substring(0, 500)}\n\nReturn ONLY the meta description text, nothing else.`,
     temperature: 0.7,
     maxTokens: 200,
   });

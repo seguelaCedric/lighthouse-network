@@ -11,6 +11,9 @@ import { InquiryForm } from "./InquiryForm";
 import { MatchPreview } from "./MatchPreview";
 import { InternalLinking } from "./InternalLinking";
 import { AnswerCapsuleWithLinks } from "./AnswerCapsule";
+import { Breadcrumbs } from "@/components/navigation/Breadcrumbs";
+import { LateralNavigation } from "@/components/navigation/LateralNavigation";
+import { getLandingPageBreadcrumbs } from "@/lib/navigation/breadcrumb-helpers";
 import { analytics, initScrollDepthTracking } from "@/lib/analytics/seo-tracking";
 import { useExperiments } from "@/lib/ab-testing/hooks/useExperiment";
 import type { LandingPageExperiments } from "@/lib/ab-testing/types";
@@ -261,10 +264,32 @@ export function HireLandingPage({
     router.push(`/match?${params.toString()}`);
   };
 
+  // Generate breadcrumbs
+  const breadcrumbItems = getLandingPageBreadcrumbs(
+    data.position_slug,
+    data.position,
+    data.city,
+    data.state,
+    data.country
+  );
+
   return (
     <div className="min-h-screen bg-white">
       <StructuredData data={data} />
       <PublicHeader />
+
+      {/* Lateral Navigation - Quick links to related positions/locations */}
+      <LateralNavigation
+        currentPage={{
+          position: data.position,
+          position_slug: data.position_slug,
+          city: data.city,
+          state: data.state,
+          country: data.country,
+        }}
+        relatedPositions={relatedPositions}
+        relatedLocations={relatedLocations}
+      />
 
       {/* Answer Capsule - Above the fold for AI/LLM citations */}
       {/* This section is link-free for easy extraction, with links below */}
@@ -419,6 +444,11 @@ export function HireLandingPage({
 
         {/* Spacer to prevent overlap */}
         <div className="h-8 sm:h-12"></div>
+
+        {/* Breadcrumbs - After stats section, provides navigation context */}
+        <div className="container mx-auto px-4 py-4">
+          <Breadcrumbs items={breadcrumbItems} />
+        </div>
 
         {/* Value Proposition Section with Images - Moved before MatchPreview for better conversion flow */}
         <section className="py-20 sm:py-28 bg-white overflow-hidden">

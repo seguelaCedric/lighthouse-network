@@ -630,20 +630,20 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
             {testimonials.map((testimonial, idx) => (
               <div
                 key={idx}
-                className="group relative rounded-2xl p-6 border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.03] backdrop-blur-sm hover:from-white/[0.12] hover:to-white/[0.06] hover:border-gold-500/40 transition-all duration-500 hover:shadow-2xl hover:shadow-gold-500/20 hover:scale-[1.02]"
+                className="group relative rounded-2xl p-6 border border-white/10 bg-gradient-to-br from-white/[0.07] to-white/[0.03] backdrop-blur-sm hover:from-white/[0.12] hover:to-white/[0.06] hover:border-gold-500/40 transition-all duration-500 hover:shadow-2xl hover:shadow-gold-500/20 hover:scale-[1.02] overflow-hidden"
               >
-                {/* Luxury corner accents - all four corners */}
-                <div className="absolute top-0 right-0 w-12 h-12 opacity-30 group-hover:opacity-50 transition-opacity duration-500">
-                  <div className="absolute top-0 right-0 w-full h-[1px] bg-gradient-to-l from-gold-400 via-gold-500 to-transparent" />
-                  <div className="absolute top-0 right-0 h-full w-[1px] bg-gradient-to-b from-gold-400 via-gold-500 to-transparent" />
+                {/* Luxury corner accents - respecting rounded corners */}
+                <div className="absolute top-0 right-0 w-16 h-16 opacity-30 group-hover:opacity-50 transition-opacity duration-500 rounded-tr-2xl overflow-hidden">
+                  <div className="absolute top-0 right-0 w-full h-[1.5px] bg-gradient-to-l from-gold-400 via-gold-500 to-transparent" />
+                  <div className="absolute top-0 right-0 h-full w-[1.5px] bg-gradient-to-b from-gold-400 via-gold-500 to-transparent" />
                 </div>
-                <div className="absolute bottom-0 left-0 w-12 h-12 opacity-30 group-hover:opacity-50 transition-opacity duration-500">
-                  <div className="absolute bottom-0 left-0 w-full h-[1px] bg-gradient-to-r from-gold-400 via-gold-500 to-transparent" />
-                  <div className="absolute bottom-0 left-0 h-full w-[1px] bg-gradient-to-t from-gold-400 via-gold-500 to-transparent" />
+                <div className="absolute bottom-0 left-0 w-16 h-16 opacity-30 group-hover:opacity-50 transition-opacity duration-500 rounded-bl-2xl overflow-hidden">
+                  <div className="absolute bottom-0 left-0 w-full h-[1.5px] bg-gradient-to-r from-gold-400 via-gold-500 to-transparent" />
+                  <div className="absolute bottom-0 left-0 h-full w-[1.5px] bg-gradient-to-t from-gold-400 via-gold-500 to-transparent" />
                 </div>
 
                 {/* Subtle inner glow */}
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-gold-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-gold-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
                 {/* Rating stars */}
                 {testimonial.rating && (
                   <div className="mb-4 flex gap-1">

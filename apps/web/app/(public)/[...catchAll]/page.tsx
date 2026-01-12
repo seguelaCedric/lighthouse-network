@@ -202,6 +202,12 @@ export default async function CatchAllPage({ params }: Props) {
     notFound()
   }
 
+  // Hub pages (single segment like /hire-a-butler/) are handled by hire-a-[position] route
+  // This catch-all only handles specific landing pages with locations (e.g., /hire-a-butler/london/)
+  if (catchAll.length === 1) {
+    notFound() // Let the hire-a-[position] route handle this
+  }
+
   const urlPath = buildUrlPath(catchAll)
   const page = await getPage(urlPath)
 

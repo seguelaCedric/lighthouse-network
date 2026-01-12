@@ -13,6 +13,7 @@ import {
   Send,
 } from "lucide-react";
 import Link from "next/link";
+import { ContentLayout } from "@/components/dashboard/ContentLayout";
 
 interface ScheduledPost {
   id: string;
@@ -90,16 +91,11 @@ export default function ScheduledPostsPage() {
   }
 
   return (
-    <div className="p-6">
-      <div className="mx-auto max-w-7xl space-y-6">
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-4xl font-serif font-semibold text-navy-800">Scheduled Posts</h1>
-            <p className="mt-1 text-gray-600">Manage scheduled generation and publishing</p>
-          </div>
-        </div>
-
+    <ContentLayout
+      title="Scheduled Posts"
+      description="Manage scheduled generation and publishing"
+    >
+      <div className="space-y-6">
         {/* Scheduled Posts */}
         <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
           {posts.length === 0 ? (
@@ -174,6 +170,6 @@ export default function ScheduledPostsPage() {
           )}
         </div>
       </div>
-    </div>
+    </ContentLayout>
   );
 }

@@ -1104,17 +1104,40 @@ export default function CandidateProfilePage() {
                         {candidate.is_smoker === true ? "Yes" : candidate.is_smoker === false ? "No" : "Not set"}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-500">Visible Tattoos</span>
-                      <span className="text-sm font-medium text-navy-900">
-                        {candidate.has_visible_tattoos === true ? "Yes" : candidate.has_visible_tattoos === false ? "No" : "Not set"}
-                      </span>
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-500">Visible Tattoos</span>
+                        <span className="text-sm font-medium text-navy-900">
+                          {candidate.has_visible_tattoos === true ? "Yes" : candidate.has_visible_tattoos === false ? "No" : "Not set"}
+                        </span>
+                      </div>
+                      {candidate.has_visible_tattoos === true && candidate.tattoo_description && (
+                        <div className="mt-2 rounded-lg bg-gray-50 px-3 py-2">
+                          <p className="text-xs text-gray-600">{candidate.tattoo_description}</p>
+                        </div>
+                      )}
                     </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-500">Part of Couple</span>
-                      <span className="text-sm font-medium text-navy-900">
-                        {candidate.is_couple === true ? "Yes" : candidate.is_couple === false ? "No" : "Not set"}
-                      </span>
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-500">Part of Couple</span>
+                        <span className="text-sm font-medium text-navy-900">
+                          {candidate.is_couple === true ? "Yes" : candidate.is_couple === false ? "No" : "Not set"}
+                        </span>
+                      </div>
+                      {candidate.is_couple === true && (candidate.partner_name || candidate.partner_position) && (
+                        <div className="mt-2 rounded-lg bg-gray-50 px-3 py-2 space-y-1">
+                          {candidate.partner_name && (
+                            <p className="text-xs text-gray-600">
+                              <span className="font-medium">Partner:</span> {candidate.partner_name}
+                            </p>
+                          )}
+                          {candidate.partner_position && (
+                            <p className="text-xs text-gray-600">
+                              <span className="font-medium">Position:</span> {candidate.partner_position}
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

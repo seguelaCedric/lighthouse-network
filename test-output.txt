@@ -1,0 +1,64 @@
+
+Running 1 test using 1 worker
+
+Step 1: Navigating to login page...
+Login submitted
+
+Step 2: Navigating to content page...
+Current URL: http://localhost:3004/dashboard/content/
+
+DEBUG: Checking page content...
+Found 39 visible links
+Found 6 visible buttons
+Found 29 elements matching: nav a
+  - About
+  - Yacht Crew
+  - Private Staff
+  - Job Board
+  - Resources
+  - Contact
+  - Hire Staff
+  - Yacht Crew Recruitment
+  - Household Staff Recruitment
+  - Job Board
+
+Screenshot saved: content-page-debug.png
+
+
+===========================================
+STEP 3: Searching for tabs...
+===========================================
+  Blog Posts: ✗ NOT FOUND
+  Landing Pages: ✗ NOT FOUND
+  Suggestions: ✗ NOT FOUND
+  Scheduled: ✗ NOT FOUND
+  Bulk Operations: ✗ NOT FOUND
+
+Found 0 out of 5 tabs
+
+ERROR: No tabs found. The page structure might be different.
+Check content-page-debug.png to see the actual page.
+  ✘  1 [chromium] › e2e-tests/content-hub-navigation.spec.ts:4:7 › Content Hub Navigation › should navigate through all content tabs and verify visibility (12.1s)
+
+
+  1) [chromium] › e2e-tests/content-hub-navigation.spec.ts:4:7 › Content Hub Navigation › should navigate through all content tabs and verify visibility 
+
+    Error: No tabs found on content page
+
+      104 |       console.log('\nERROR: No tabs found. The page structure might be different.');
+      105 |       console.log('Check content-page-debug.png to see the actual page.');
+    > 106 |       throw new Error('No tabs found on content page');
+          |             ^
+      107 |     }
+      108 |     
+      109 |     // Continue with found tabs
+        at /Users/cedricseguela/Documents/code/lighthouse-network/e2e-tests/content-hub-navigation.spec.ts:106:13
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/content-hub-navigation-Con-ab796--tabs-and-verify-visibility-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/content-hub-navigation-Con-ab796--tabs-and-verify-visibility-chromium/error-context.md
+
+  1 failed
+    [chromium] › e2e-tests/content-hub-navigation.spec.ts:4:7 › Content Hub Navigation › should navigate through all content tabs and verify visibility 

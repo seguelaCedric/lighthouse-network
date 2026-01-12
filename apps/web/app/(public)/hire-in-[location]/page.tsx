@@ -5,12 +5,21 @@ import { PublicHeader } from '@/components/pricing/PublicHeader';
 import { PublicFooter } from '@/components/pricing/PublicFooter';
 import Link from 'next/link';
 import { Briefcase, ArrowRight } from 'lucide-react';
+import { getAllLocations } from '@/lib/navigation/nav-data';
 
 interface Props {
   params: Promise<{ location: string }>;
 }
 
 export const revalidate = 3600; // Revalidate every hour
+
+// Generate static params for all locations
+export async function generateStaticParams() {
+  const locations = getAllLocations();
+  return locations.map((loc) => ({
+    location: loc,
+  }));
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { location } = await params;

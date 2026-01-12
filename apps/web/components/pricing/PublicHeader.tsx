@@ -13,8 +13,9 @@ import { useAuth } from "@/providers/AuthProvider";
 const navItems = [
   { href: "/about", label: "About" },
   { href: "/yacht-crew", label: "Yacht Crew" },
-  { href: "/private-staff", label: "Household staff" },
-  { href: "/job-board", label: "Job board" },
+  { href: "/private-staff", label: "Private Staff" },
+  { href: "/job-board", label: "Job Board" },
+  { href: "/blog", label: "Resources" },
   { href: "/contact", label: "Contact" },
 ];
 

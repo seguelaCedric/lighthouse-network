@@ -5,12 +5,21 @@ import { PublicHeader } from '@/components/pricing/PublicHeader';
 import { PublicFooter } from '@/components/pricing/PublicFooter';
 import Link from 'next/link';
 import { MapPin, ArrowRight } from 'lucide-react';
+import { getAllPositions } from '@/lib/navigation/nav-data';
 
 interface Props {
   params: Promise<{ position: string }>;
 }
 
 export const revalidate = 3600; // Revalidate every hour
+
+// Generate static params for all positions
+export async function generateStaticParams() {
+  const positions = getAllPositions();
+  return positions.map((pos) => ({
+    position: pos.slug,
+  }));
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { position } = await params;
@@ -29,6 +38,8 @@ export default async function PositionHubPage({ params }: Props) {
   const { position } = await params;
   const supabase = await createClient();
 
+  console.log('🔍 Hub page route hit for position:', position);
+
   // Find all active landing pages for this position
   const { data: pages, error } = await supabase
     .from('seo_landing_pages')
@@ -39,12 +50,20 @@ export default async function PositionHubPage({ params }: Props) {
     .order('state', { ascending: true })
     .order('city', { ascending: true });
 
+  console.log('📊 Query results:', {
+    position,
+    pageCount: pages?.length || 0,
+    error: error?.message,
+    hasPages: !!pages && pages.length > 0
+  });
+
   if (error) {
     console.error('Position hub fetch error:', error);
     return notFound();
   }
 
   if (!pages || pages.length === 0) {
+    console.log('❌ No pages found for position:', position);
     return notFound();
   }
 

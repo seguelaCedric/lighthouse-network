@@ -1,14 +1,52 @@
 {
-  "startedAt": "2026-01-09T09:17:16.275Z",
+  "startedAt": "2026-01-12T09:39:25.115Z",
   "csvPath": "scripts/data/bubble-candidates.csv",
   "totalRows": 45521,
   "vincereMapComplete": false,
   "vincereTotalCandidates": 0,
-  "lastProcessedRow": 0,
-  "importedCount": 0,
-  "updatedCount": 0,
-  "skippedCount": 0,
-  "errorCount": 0,
-  "documentsProcessed": 0,
-  "errors": []
+  "lastProcessedRow": 32650,
+  "importedCount": 69,
+  "updatedCount": 4740,
+  "skippedCount": 27834,
+  "errorCount": 7,
+  "documentsProcessed": 3110,
+  "cvsExtracted": 49,
+  "embeddingsGenerated": 49,
+  "errors": [
+    {
+      "row": 4299,
+      "email": "ramiroalvarez910@gmail.com",
+      "error": "{\"code\":\"23505\",\"details\":\"Key (lower(email))=(ramiroalvarez910@gmail.com) already exists.\",\"hint\":null,\"message\":\"duplicate key value violates unique constraint \\\"candidates_email_unique_idx\\\"\"}"
+    },
+    {
+      "row": 10585,
+      "email": "parleysavvy01@gmail.com",
+      "error": "{\"code\":\"22003\",\"details\":null,\"hint\":null,\"message\":\"value \\\"33766751439\\\" is out of range for type integer\"}"
+    },
+    {
+      "row": 24085,
+      "email": "antonio.pilepic@gmail.com",
+      "error": "{\"message\":\"TypeError: fetch failed\",\"details\":\"TypeError: fetch failed\\n\\nCaused by: Error: read ECONNRESET (ECONNRESET)\\nError: read ECONNRESET\\n    at TLSWrap.onStreamRead (node:internal/stream_base_commons:216:20)\",\"hint\":\"\",\"code\":\"\"}"
+    },
+    {
+      "row": 24667,
+      "email": "tom_winter89@hotmail.com",
+      "error": "{\"code\":\"23505\",\"details\":\"Key (lower(email))=(tom_winter89@hotmail.com) already exists.\",\"hint\":null,\"message\":\"duplicate key value violates unique constraint \\\"candidates_email_unique_idx\\\"\"}"
+    },
+    {
+      "row": 26233,
+      "email": "cinthyazepeda8@gmail.com",
+      "error": "{\"message\":\"TypeError: fetch failed\",\"details\":\"TypeError: fetch failed\\n\\nCaused by: Error: read ECONNRESET (ECONNRESET)\\nError: read ECONNRESET\\n    at TLSWrap.onStreamRead (node:internal/stream_base_commons:216:20)\",\"hint\":\"\",\"code\":\"\"}"
+    },
+    {
+      "row": 26276,
+      "email": "chanelvberg@gmail.com",
+      "error": "{\"message\":\"TypeError: fetch failed\",\"details\":\"TypeError: fetch failed\\n\\nCaused by: Error: read ECONNRESET (ECONNRESET)\\nError: read ECONNRESET\\n    at TLSWrap.onStreamRead (node:internal/stream_base_commons:216:20)\",\"hint\":\"\",\"code\":\"\"}"
+    },
+    {
+      "row": 26803,
+      "email": "cptclaudio5@gmail.com",
+      "error": "{\"message\":\"TypeError: fetch failed\",\"details\":\"TypeError: fetch failed\\n\\nCaused by: Error: read ECONNRESET (ECONNRESET)\\nError: read ECONNRESET\\n    at TLSWrap.onStreamRead (node:internal/stream_base_commons:216:20)\",\"hint\":\"\",\"code\":\"\"}"
+    }
+  ]
 }

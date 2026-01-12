@@ -25,12 +25,6 @@ export async function POST(
 
     const validated = generateSchema.parse(body);
 
-    // Get current user for generated_by
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     // Map to landing pages if position and location provided
     let relatedLandingPageUrls: string[] = [];
     if (validated.position && validated.location) {
@@ -65,11 +59,15 @@ export async function POST(
         meta_description: generated.metaDescription,
         target_keywords: generated.targetKeywords,
         related_landing_page_urls: generated.relatedLandingPageUrls,
+        // CRITICAL: Save answer capsule fields for AI/LLM optimization
+        answer_capsule: generated.answerCapsule,
+        answer_capsule_question: generated.answerCapsuleQuestion,
+        key_facts: generated.keyFacts,
         status: 'ai_generated',
         ai_model: 'claude-sonnet-4-20250514',
         generated_at: new Date().toISOString(),
-        generated_by: user.id,
         updated_at: new Date().toISOString(),
+        // Note: generated_by is omitted - will remain NULL or unchanged
       })
       .eq('id', id)
       .select()

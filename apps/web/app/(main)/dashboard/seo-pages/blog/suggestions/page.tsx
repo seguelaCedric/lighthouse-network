@@ -22,6 +22,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
+import { ContentLayout } from "@/components/dashboard/ContentLayout";
 
 const CONTENT_TYPES = {
   employer: [
@@ -310,42 +311,31 @@ export default function ContentSuggestionsPage() {
   };
 
   return (
-    <div className="p-6">
-      <div className="mx-auto max-w-7xl space-y-6">
-        {/* Toast Notifications */}
-        {error && (
-          <div className="fixed right-6 top-6 z-50 flex items-center gap-3 rounded-lg border border-error-200 bg-error-50 px-4 py-3 shadow-lg">
-            <AlertCircle className="h-5 w-5 text-error-600" />
-            <p className="text-sm font-medium text-error-800">{error}</p>
-            <button onClick={() => setError(null)} className="ml-2 text-error-600 hover:text-error-800">
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        )}
-        {success && (
-          <div className="fixed right-6 top-6 z-50 flex items-center gap-3 rounded-lg border border-success-200 bg-success-50 px-4 py-3 shadow-lg">
-            <CheckCircle2 className="h-5 w-5 text-success-600" />
-            <p className="text-sm font-medium text-success-800">{success}</p>
-            <button onClick={() => setSuccess(null)} className="ml-2 text-success-600 hover:text-success-800">
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        )}
-
-        {/* Header */}
-        <div className="flex items-center gap-4">
-          <Link href="/dashboard/seo-pages/blog">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Button>
-          </Link>
-          <div className="flex-1">
-            <h1 className="text-4xl font-serif font-semibold text-navy-800">Content Suggestions</h1>
-            <p className="mt-1 text-gray-600">AI-powered blog post ideas based on your SEO landing pages and content gaps</p>
-          </div>
+    <ContentLayout
+      title="Content Suggestions"
+      description="AI-powered blog post ideas based on your SEO landing pages and content gaps"
+    >
+      {/* Toast Notifications */}
+      {error && (
+        <div className="fixed right-6 top-6 z-50 flex items-center gap-3 rounded-lg border border-error-200 bg-error-50 px-4 py-3 shadow-lg">
+          <AlertCircle className="h-5 w-5 text-error-600" />
+          <p className="text-sm font-medium text-error-800">{error}</p>
+          <button onClick={() => setError(null)} className="ml-2 text-error-600 hover:text-error-800">
+            <X className="h-4 w-4" />
+          </button>
         </div>
+      )}
+      {success && (
+        <div className="fixed right-6 top-6 z-50 flex items-center gap-3 rounded-lg border border-success-200 bg-success-50 px-4 py-3 shadow-lg">
+          <CheckCircle2 className="h-5 w-5 text-success-600" />
+          <p className="text-sm font-medium text-success-800">{success}</p>
+          <button onClick={() => setSuccess(null)} className="ml-2 text-success-600 hover:text-success-800">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
+      <div className="space-y-6">
         {/* Filters */}
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <div className="mb-4 flex items-center gap-2">
@@ -624,6 +614,6 @@ export default function ContentSuggestionsPage() {
           </div>
         )}
       </div>
-    </div>
+    </ContentLayout>
   );
 }

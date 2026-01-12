@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { ContentLayout } from "@/components/dashboard/ContentLayout";
 import {
   Plus,
   Search,
@@ -40,6 +41,8 @@ export default function BlogListPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [audienceFilter, setAudienceFilter] = useState<string>("all");
   const [contentTypeFilter, setContentTypeFilter] = useState<string>("all");
+  const [selectedPosts, setSelectedPosts] = useState<string[]>([]);
+  const [bulkGenerating, setBulkGenerating] = useState(false);
 
   useEffect(() => {
     fetchPosts();
@@ -96,6 +99,68 @@ export default function BlogListPage() {
     );
   };
 
+  const handleSelectAll = () => {
+    if (selectedPosts.length === posts.length) {
+      setSelectedPosts([]);
+    } else {
+      setSelectedPosts(posts.map((p) => p.id));
+    }
+  };
+
+  const handleSelectPost = (postId: string) => {
+    if (selectedPosts.includes(postId)) {
+      setSelectedPosts(selectedPosts.filter((id) => id !== postId));
+    } else {
+      setSelectedPosts([...selectedPosts, postId]);
+    }
+  };
+
+  const handleBulkGenerate = async () => {
+    if (selectedPosts.length === 0) return;
+
+    setBulkGenerating(true);
+    try {
+      // Generate content for each selected post
+      const results = await Promise.allSettled(
+        selectedPosts.map(async (postId) => {
+          const post = posts.find((p) => p.id === postId);
+          if (!post) return;
+
+          const response = await fetch(`/api/blog-posts/${postId}/generate`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contentType: post.content_type || "hiring_guide",
+              targetAudience: post.target_audience,
+              position: post.target_position,
+              location: post.target_location,
+              primaryKeyword: `${post.target_position} ${post.target_location}`,
+            }),
+          });
+
+          if (!response.ok) throw new Error(`Failed to generate content for post ${postId}`);
+          return response.json();
+        })
+      );
+
+      const successful = results.filter((r) => r.status === "fulfilled").length;
+      const failed = results.filter((r) => r.status === "rejected").length;
+
+      alert(
+        `Bulk generation complete!\n${successful} posts generated successfully\n${failed} posts failed`
+      );
+
+      // Refresh the posts list
+      await fetchPosts();
+      setSelectedPosts([]);
+    } catch (error) {
+      console.error("Bulk generation error:", error);
+      alert("Failed to generate content for selected posts. Please try again.");
+    } finally {
+      setBulkGenerating(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex h-96 items-center justify-center">
@@ -108,22 +173,18 @@ export default function BlogListPage() {
   }
 
   return (
-    <div className="p-6">
-      <div className="mx-auto max-w-7xl space-y-6">
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-4xl font-serif font-semibold text-navy-800">Blog Posts</h1>
-            <p className="mt-1 text-gray-600">
-              Manage AI-generated blog content for SEO and lead generation
-            </p>
-          </div>
-          <Link href="/dashboard/seo-pages/blog/new">
-            <Button variant="primary" leftIcon={<Sparkles className="size-4" />}>
-              Generate New Post
-            </Button>
-          </Link>
-        </div>
+    <ContentLayout
+      title="Blog Posts"
+      description="Manage AI-generated blog content for SEO and lead generation"
+      actions={
+        <Link href="/dashboard/seo-pages/blog/new">
+          <Button variant="primary" leftIcon={<Sparkles className="size-4" />}>
+            Generate New Post
+          </Button>
+        </Link>
+      }
+    >
+      <div className="space-y-6">
 
         {/* Filters */}
         <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
@@ -188,6 +249,14 @@ export default function BlogListPage() {
             <table className="w-full">
               <thead className="border-b border-gray-200 bg-gray-50">
                 <tr>
+                  <th className="px-4 py-4 text-left">
+                    <input
+                      type="checkbox"
+                      checked={selectedPosts.length === posts.length && posts.length > 0}
+                      onChange={handleSelectAll}
+                      className="h-4 w-4 rounded border-gray-300 text-gold-600 focus:ring-gold-500"
+                    />
+                  </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-700">
                     Title
                   </th>
@@ -214,7 +283,7 @@ export default function BlogListPage() {
               <tbody className="divide-y divide-gray-100 bg-white">
                 {posts.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-16 text-center">
+                    <td colSpan={8} className="px-6 py-16 text-center">
                       <div className="mx-auto max-w-md">
                         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gold-100">
                           <FileText className="h-8 w-8 text-gold-600" />
@@ -238,6 +307,14 @@ export default function BlogListPage() {
                 ) : (
                   posts.map((post) => (
                     <tr key={post.id} className="transition-colors hover:bg-gray-50">
+                      <td className="px-4 py-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedPosts.includes(post.id)}
+                          onChange={() => handleSelectPost(post.id)}
+                          className="h-4 w-4 rounded border-gray-300 text-gold-600 focus:ring-gold-500"
+                        />
+                      </td>
                       <td className="px-6 py-4">
                         <div className="font-semibold text-navy-900">{post.title}</div>
                         <div className="mt-1 font-mono text-xs text-gray-500">/{post.slug}</div>
@@ -298,7 +375,40 @@ export default function BlogListPage() {
             </table>
           </div>
         </div>
+
+        {/* Floating Bulk Actions Bar */}
+        {selectedPosts.length > 0 && (
+          <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2">
+            <div className="flex items-center gap-3 rounded-lg border border-gray-200 bg-white px-6 py-3 shadow-lg">
+              <span className="text-sm font-medium text-navy-900">
+                {selectedPosts.length} post{selectedPosts.length !== 1 ? "s" : ""} selected
+              </span>
+              <div className="h-4 w-px bg-gray-200" />
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleBulkGenerate}
+                disabled={bulkGenerating}
+              >
+                {bulkGenerating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Generate Content
+                  </>
+                )}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setSelectedPosts([])}>
+                Clear Selection
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
-    </div>
+    </ContentLayout>
   );
 }

@@ -17,8 +17,11 @@ import {
   AlertCircle,
   X,
   Calendar,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
+import { ContentLayout } from "@/components/dashboard/ContentLayout";
+import { DashboardBreadcrumbs, getBlogBreadcrumbs } from "@/components/dashboard/DashboardBreadcrumbs";
 
 interface BlogPost {
   id: string;
@@ -52,6 +55,7 @@ export default function BlogEditorPage({ params }: { params: Promise<{ id: strin
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
@@ -181,6 +185,72 @@ export default function BlogEditorPage({ params }: { params: Promise<{ id: strin
     }
   };
 
+  const handleGenerate = async () => {
+    if (!postId || !post) return;
+
+    // Validate primary keyword exists
+    const primaryKeyword = post.primary_keyword || formData.primary_keyword;
+    if (!primaryKeyword) {
+      setError("Primary keyword is required for content generation");
+      setTimeout(() => setError(null), 5000);
+      return;
+    }
+
+    setGenerating(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/blog-posts/${postId}/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contentType: post.content_type || "hiring_guide",
+          targetAudience: post.target_audience,
+          position: post.target_position || undefined,
+          location: post.target_location || undefined,
+          primaryKeyword,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to generate content");
+      }
+
+      const updated = await response.json();
+      setPost(updated);
+      setFormData({
+        title: updated.title || "",
+        slug: updated.slug || "",
+        excerpt: updated.excerpt || "",
+        content: updated.content || "",
+        meta_title: updated.meta_title || updated.title || "",
+        meta_description: updated.meta_description || updated.excerpt || "",
+        status: updated.status || "draft",
+        primary_keyword: updated.primary_keyword || "",
+        scheduled_generate_at: updated.scheduled_generate_at
+          ? new Date(updated.scheduled_generate_at).toISOString().slice(0, 16)
+          : "",
+        scheduled_publish_at: updated.scheduled_publish_at
+          ? new Date(updated.scheduled_publish_at).toISOString().slice(0, 16)
+          : "",
+        answer_capsule: updated.answer_capsule || "",
+        answer_capsule_question: updated.answer_capsule_question || "",
+        key_facts: updated.key_facts || [],
+        last_updated_display: updated.last_updated_display
+          ? new Date(updated.last_updated_display).toISOString().slice(0, 16)
+          : "",
+      });
+      setSuccess("Content generated successfully!");
+      setTimeout(() => setSuccess(null), 5000);
+    } catch (error) {
+      console.error("Generate error:", error);
+      setError("Failed to generate content. Please try again.");
+      setTimeout(() => setError(null), 5000);
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const badges = {
       draft: { icon: FileText, color: "bg-gray-100 text-gray-700", label: "Draft" },
@@ -230,61 +300,90 @@ export default function BlogEditorPage({ params }: { params: Promise<{ id: strin
   }
 
   return (
-    <div className="p-6">
-      <div className="mx-auto max-w-7xl space-y-6">
-        {/* Toast Notifications */}
-        {error && (
-          <div className="fixed right-6 top-6 z-50 flex items-center gap-3 rounded-lg border border-error-200 bg-error-50 px-4 py-3 shadow-lg">
-            <AlertCircle className="h-5 w-5 text-error-600" />
-            <p className="text-sm font-medium text-error-800">{error}</p>
-            <button
-              onClick={() => setError(null)}
-              className="ml-2 text-error-600 hover:text-error-800"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        )}
-        {success && (
-          <div className="fixed right-6 top-6 z-50 flex items-center gap-3 rounded-lg border border-success-200 bg-success-50 px-4 py-3 shadow-lg">
-            <CheckCircle2 className="h-5 w-5 text-success-600" />
-            <p className="text-sm font-medium text-success-800">{success}</p>
-            <button
-              onClick={() => setSuccess(null)}
-              className="ml-2 text-success-600 hover:text-success-800"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        )}
-
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard/seo-pages/blog">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-4xl font-serif font-semibold text-navy-800">Edit Blog Post</h1>
-              <p className="mt-1 text-gray-600">Edit and manage your blog post content</p>
+    <ContentLayout
+      title={
+        <div className="flex items-center gap-3">
+          <Link href="/dashboard/seo-pages/blog">
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-navy-900">{post.title}</h1>
+              {getStatusBadge(post.status)}
             </div>
-          </div>
-          <div className="flex items-center gap-3">
-            {getStatusBadge(post.status)}
-            {post.status === "published" && (
-              <Link href={`/blog/${post.slug}`} target="_blank">
-                <Button variant="secondary">
-                  <Eye className="mr-2 h-4 w-4" />
-                  View Live
-                </Button>
-              </Link>
-            )}
+            <p className="mt-1 text-sm text-gray-500">
+              {post.content_type && (
+                <span className="capitalize">{post.content_type.replace(/_/g, ' ')}</span>
+              )}
+              {post.target_position && post.content_type && " • "}
+              {post.target_position}
+              {post.target_location && " in " + post.target_location}
+            </p>
           </div>
         </div>
+      }
+      description=""
+      actions={
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={handleGenerate}
+            disabled={generating}
+            className="border-gold-200 bg-gold-50 text-gold-700 hover:bg-gold-100 hover:text-gold-800"
+          >
+            {generating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Generating...
+              </>
+            ) : (
+              <>
+                <Sparkles className="mr-2 h-4 w-4" />
+                Generate Content
+              </>
+            )}
+          </Button>
+          <Link href={`/blog/${post.slug}?preview=true`} target="_blank">
+            <Button variant="outline">
+              <Eye className="mr-2 h-4 w-4" />
+              {post.status === "published" ? "View Live" : "Preview"}
+            </Button>
+          </Link>
+        </div>
+      }
+    >
+      {/* Toast Notifications */}
+      {error && (
+        <div className="fixed right-6 top-6 z-50 flex items-center gap-3 rounded-lg border border-error-200 bg-error-50 px-4 py-3 shadow-lg">
+          <AlertCircle className="h-5 w-5 text-error-600" />
+          <p className="text-sm font-medium text-error-800">{error}</p>
+          <button
+            onClick={() => setError(null)}
+            className="ml-2 text-error-600 hover:text-error-800"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+      {success && (
+        <div className="fixed right-6 top-6 z-50 flex items-center gap-3 rounded-lg border border-success-200 bg-success-50 px-4 py-3 shadow-lg">
+          <CheckCircle2 className="h-5 w-5 text-success-600" />
+          <p className="text-sm font-medium text-success-800">{success}</p>
+          <button
+            onClick={() => setSuccess(null)}
+            className="ml-2 text-success-600 hover:text-success-800"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
+      {/* Breadcrumbs */}
+      <DashboardBreadcrumbs items={getBlogBreadcrumbs(post.title)} />
+
+      <div className="space-y-6">
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Main Editor */}
           <div className="lg:col-span-2 space-y-6">
@@ -634,6 +733,6 @@ export default function BlogEditorPage({ params }: { params: Promise<{ id: strin
           </div>
         </div>
       </div>
-    </div>
+    </ContentLayout>
   );
 }

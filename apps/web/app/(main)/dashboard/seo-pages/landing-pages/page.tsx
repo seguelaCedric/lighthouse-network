@@ -15,6 +15,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import Link from "next/link";
+import { ContentLayout } from "@/components/dashboard/ContentLayout";
 
 interface SeoLandingPage {
   id: string;
@@ -108,16 +109,11 @@ export default function SeoLandingPagesPage() {
   }
 
   return (
-    <div className="p-6">
-      <div className="mx-auto max-w-7xl space-y-6">
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-4xl font-serif font-semibold text-navy-800">SEO Landing Pages</h1>
-            <p className="mt-1 text-gray-600">Manage lead generation pages and track inquiries</p>
-          </div>
-        </div>
-
+    <ContentLayout
+      title="SEO Landing Pages"
+      description="Manage lead generation pages and track inquiries"
+    >
+      <div className="space-y-6">
         {/* Filters */}
         <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
           <div className="flex flex-wrap items-center gap-4">
@@ -325,6 +321,6 @@ export default function SeoLandingPagesPage() {
           </div>
         )}
       </div>
-    </div>
+    </ContentLayout>
   );
 }

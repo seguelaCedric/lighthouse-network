@@ -37,6 +37,13 @@ import {
   POSITION_MAPPING,
   VINCERE_LICENSE_IDS,
 } from "../lib/vincere/constants";
+import { extractText } from "../lib/services/text-extraction";
+import {
+  extractFromCVSafe,
+  buildSearchKeywords,
+  generateEmbedding,
+  buildUnifiedCandidateEmbeddingText,
+} from "@lighthouse/ai";
 
 // ============================================================================
 // ENV LOADING
@@ -111,7 +118,7 @@ if (!existsSync(candidatesCsvPath)) {
 // CONSTANTS
 // ============================================================================
 
-const DEFAULT_ORG_ID = process.env.VINCERE_ORG_ID || "c4e1e6ff-b71a-4fbd-bb31-dd282d981436";
+const DEFAULT_ORG_ID = process.env.VINCERE_ORG_ID || "00000000-0000-0000-0000-000000000001"; // Lighthouse Careers
 const PROGRESS_FILE = resolve(__dirname, ".bubble-import-progress.json");
 const VINCERE_MAP_FILE = resolve(__dirname, ".bubble-import-vincere-map.json");
 
@@ -168,6 +175,8 @@ interface ImportProgress {
   skippedCount: number;
   errorCount: number;
   documentsProcessed: number;
+  cvsExtracted: number;
+  embeddingsGenerated: number;
   errors: Array<{ row: number; email: string; error: string }>;
 }
 
@@ -476,24 +485,19 @@ function normalizeYachtTypes(value: string): string[] {
 }
 
 function normalizeAvailabilityStatus(value: string): string {
-  if (!value) return "unknown";
+  // Valid values in DB: 'available', 'not_looking' (only 2 values)
+  // Default to 'available' - candidates are available unless they toggle off
+  if (!value) return "available";
 
   const lower = value.toLowerCase().trim();
 
-  if (lower.includes("available") || lower === "yes" || lower === "active") {
-    return "available";
-  }
-  if (lower.includes("notice")) {
-    return "notice_period";
-  }
-  if (lower.includes("not looking") || lower === "no") {
+  // Map to 'not_looking' only for explicit "no" values
+  if (lower === "no" || lower.includes("not looking")) {
     return "not_looking";
   }
-  if (lower.includes("contract") || lower.includes("employed")) {
-    return "on_contract";
-  }
 
-  return "unknown";
+  // Everything else defaults to 'available' (yes, active, etc.)
+  return "available";
 }
 
 // ============================================================================
@@ -652,8 +656,8 @@ async function fetchRecentVincereCandidates(client: VincereClient, existingMap: 
 
       offset += PAGE_SIZE;
 
-      // Rate limit: ~1 request per second
-      await sleep(1000);
+      // Rate limit: 0.4 req/sec to stay under 50k/day limit (34,560 req/day)
+      await sleep(2500);
 
       if (offset % 1000 === 0) {
         log(`Progress: offset=${offset}, added ${added} new emails`);
@@ -735,7 +739,8 @@ async function buildVincereEmailMap(client: VincereClient): Promise<Map<string, 
           }
 
           offset += PAGE_SIZE;
-          await sleep(1000);
+          // Rate limit: 0.4 req/sec to stay under 50k/day limit (34,560 req/day)
+          await sleep(2500);
 
           if (offset % 1000 === 0) {
             log(`Progress: offset=${offset}, unique emails=${emailMap.size}`);
@@ -826,6 +831,10 @@ function mapBubbleToCandidate(bubble: BubbleCandidate, vincereId: string | null)
     availability_status: normalizeAvailabilityStatus(bubble.candidateStatus),
     available_from: parseDate(bubble.startDate),
 
+    // Preferences - explicitly opt-out unless they had it enabled in Bubble
+    job_alerts: false,
+    email_notifications: false,
+
     // External
     vincere_id: vincereId,
 
@@ -908,7 +917,21 @@ async function downloadAndUploadDocument(
 
       const { data: urlData } = supabase.storage.from("documents").getPublicUrl(storagePath);
 
-      // Create document record
+      // Extract text from CV
+      let extractedText = "";
+      try {
+        const extractionResult = await extractText(buffer, contentType, filename);
+        if (extractionResult.text && extractionResult.text.length > 50) {
+          extractedText = extractionResult.text;
+          logVerbose(`Extracted ${extractedText.length} chars from CV`);
+        } else if (extractionResult.error) {
+          logVerbose(`Text extraction warning: ${extractionResult.error}`);
+        }
+      } catch (err) {
+        logVerbose(`Text extraction error: ${err}`);
+      }
+
+      // Create document record with extracted text
       const { data: doc, error: docError } = await supabase
         .from("documents")
         .insert({
@@ -922,6 +945,7 @@ async function downloadAndUploadDocument(
           mime_type: contentType,
           status: "approved",
           is_latest_version: true,
+          extracted_text: extractedText || null,
           organization_id: DEFAULT_ORG_ID,
           metadata: {
             source: "bubble_import",
@@ -942,6 +966,157 @@ async function downloadAndUploadDocument(
       return { success: false, error: "Download timeout" };
     }
     return { success: false, error: String(error) };
+  }
+}
+
+/**
+ * Process CV extraction and embedding generation for a candidate
+ * This runs after the document has been uploaded and text extracted
+ */
+async function processCVExtraction(
+  candidateId: string,
+  documentId: string,
+  supabase: SupabaseClient
+): Promise<{ extracted: boolean; embedded: boolean; error?: string }> {
+  try {
+    // Get the document with extracted text
+    const { data: document, error: docError } = await supabase
+      .from("documents")
+      .select("extracted_text")
+      .eq("id", documentId)
+      .single();
+
+    if (docError || !document || !document.extracted_text) {
+      return { extracted: false, embedded: false, error: "No extracted text available" };
+    }
+
+    const cvText = document.extracted_text;
+
+    // Minimum text length check
+    if (cvText.length < 100) {
+      return { extracted: false, embedded: false, error: "Insufficient CV text" };
+    }
+
+    // Extract structured data from CV using AI
+    const extractionResponse = await extractFromCVSafe({
+      cv_text: cvText,
+      candidate_id: candidateId,
+      document_id: documentId,
+    });
+
+    if (!extractionResponse.success || !extractionResponse.extraction) {
+      return { extracted: false, embedded: false, error: extractionResponse.error || "Extraction failed" };
+    }
+
+    const extraction = extractionResponse.extraction;
+    const searchKeywords = buildSearchKeywords(extraction);
+
+    // Update candidate with extracted data
+    const { error: updateError } = await supabase
+      .from("candidates")
+      .update({
+        years_experience: extraction.years_experience,
+        primary_position: extraction.primary_position,
+        position_category: extraction.position_category || "other",
+        highest_license: extraction.highest_license,
+        has_stcw: extraction.has_stcw,
+        has_eng1: extraction.has_eng1,
+        positions_held: extraction.positions_held.map((p) => p.normalized),
+        positions_extracted: extraction.positions_held,
+        licenses_extracted: extraction.licenses,
+        languages_extracted: extraction.languages,
+        cv_skills: searchKeywords,
+        yacht_experience_extracted: extraction.yacht_experience,
+        villa_experience_extracted: extraction.villa_experience,
+        education_extracted: extraction.education,
+        references_extracted: extraction.references,
+        certifications_extracted: extraction.certifications,
+        cv_extracted_at: new Date().toISOString(),
+        cv_extraction_version: 1,
+        extraction_confidence: extraction.extraction_confidence,
+        extraction_notes: extraction.extraction_notes,
+        search_keywords: searchKeywords,
+      })
+      .eq("id", candidateId);
+
+    if (updateError) {
+      return { extracted: false, embedded: false, error: `Update failed: ${updateError.message}` };
+    }
+
+    // Now generate embedding
+    // Get updated candidate data for embedding
+    const { data: candidate, error: candError } = await supabase
+      .from("candidates")
+      .select("*")
+      .eq("id", candidateId)
+      .single();
+
+    if (candError || !candidate) {
+      return { extracted: true, embedded: false, error: "Candidate not found for embedding" };
+    }
+
+    // Build embedding text
+    const embeddingText = buildUnifiedCandidateEmbeddingText(
+      {
+        first_name: candidate.first_name,
+        last_name: candidate.last_name,
+        primary_position: candidate.primary_position,
+        secondary_positions: candidate.secondary_positions,
+        years_experience: candidate.years_experience,
+        nationality: candidate.nationality,
+        second_nationality: candidate.second_nationality,
+        current_location: candidate.current_location,
+        has_stcw: candidate.has_stcw,
+        has_eng1: candidate.has_eng1,
+        highest_license: candidate.highest_license,
+        has_schengen: candidate.has_schengen,
+        has_b1b2: candidate.has_b1b2,
+        has_c1d: candidate.has_c1d,
+        preferred_yacht_types: candidate.preferred_yacht_types,
+        preferred_regions: candidate.preferred_regions,
+        preferred_contract_types: candidate.preferred_contract_types,
+        is_smoker: candidate.is_smoker,
+        has_visible_tattoos: candidate.has_visible_tattoos,
+        is_couple: candidate.is_couple,
+        partner_position: candidate.partner_position,
+        profile_summary: candidate.profile_summary,
+        search_keywords: candidate.search_keywords,
+      },
+      [{
+        type: "cv",
+        extracted_text: cvText,
+        visibility: "recruiter" as const,
+      }],
+      [],
+      [],
+      "recruiter"
+    );
+
+    if (embeddingText.length < 50) {
+      return { extracted: true, embedded: false, error: "Insufficient embedding text" };
+    }
+
+    // Generate embedding vector
+    const embedding = await generateEmbedding(embeddingText);
+
+    // Update candidate with embedding
+    const { error: embeddingError } = await supabase
+      .from("candidates")
+      .update({
+        embedding: embedding,
+        embedding_text: embeddingText,
+        embedding_updated_at: new Date().toISOString(),
+      })
+      .eq("id", candidateId);
+
+    if (embeddingError) {
+      return { extracted: true, embedded: false, error: `Embedding update failed: ${embeddingError.message}` };
+    }
+
+    logVerbose(`✓ CV extracted & embedded: ${extraction.positions_held.length} positions, ${embedding.length} dims`);
+    return { extracted: true, embedded: true };
+  } catch (error) {
+    return { extracted: false, embedded: false, error: String(error) };
   }
 }
 
@@ -977,6 +1152,8 @@ async function main() {
         skippedCount: 0,
         errorCount: 0,
         documentsProcessed: 0,
+        cvsExtracted: 0,
+        embeddingsGenerated: 0,
         errors: [],
       };
 
@@ -1119,7 +1296,10 @@ async function main() {
   console.log(`Updated (existing): ${progress.updatedCount}`);
   console.log(`Skipped: ${progress.skippedCount}`);
   console.log(`Errors: ${progress.errorCount}`);
-  console.log(`Documents processed: ${progress.documentsProcessed}`);
+  console.log(`\nDocument Processing:`);
+  console.log(`  Documents uploaded: ${progress.documentsProcessed}`);
+  console.log(`  CVs extracted (AI): ${progress.cvsExtracted}`);
+  console.log(`  Embeddings generated: ${progress.embeddingsGenerated}`);
 
   if (progress.errors.length > 0) {
     console.log("\nFirst 10 errors:");
@@ -1140,6 +1320,13 @@ async function processBatch(
 
   for (const { row, candidate } of batch) {
     try {
+      // Skip candidates without at least a first name or last name
+      if (!candidate.nameFirst?.trim() && !candidate.nameLast?.trim()) {
+        progress.skippedCount++;
+        logVerbose(`Row ${row}: Skipped - no name (${candidate.email || 'no email'})`);
+        continue;
+      }
+
       // Lookup vincere_id
       const vincereId = candidate.email
         ? emailToVincereMap.get(candidate.email.toLowerCase().trim()) || null
@@ -1189,7 +1376,7 @@ async function processBatch(
       }
 
       // Create/update agency relationship
-      await db
+      const { error: relError } = await db
         .from("candidate_agency_relationships")
         .upsert(
           {
@@ -1202,6 +1389,10 @@ async function processBatch(
           },
           { onConflict: "candidate_id,agency_id" }
         );
+
+      if (relError) {
+        logError(`Row ${row}: Failed to create agency relationship: ${relError.message}`);
+      }
 
       // Process documents (if not skipped)
       if (!skipDocuments) {
@@ -1241,6 +1432,23 @@ async function processBatch(
               })
               .eq("id", candidateId);
             progress.documentsProcessed++;
+
+            // Process CV extraction and embedding
+            const extractionResult = await processCVExtraction(
+              candidateId,
+              cvResult.documentId,
+              db
+            );
+
+            if (extractionResult.extracted) {
+              progress.cvsExtracted++;
+            }
+            if (extractionResult.embedded) {
+              progress.embeddingsGenerated++;
+            }
+            if (extractionResult.error) {
+              logVerbose(`Row ${row}: CV processing: ${extractionResult.error}`);
+            }
           } else if (cvResult.error) {
             logVerbose(`Row ${row}: CV upload failed: ${cvResult.error}`);
           }
@@ -1249,13 +1457,17 @@ async function processBatch(
 
       progress.lastProcessedRow = row;
     } catch (error) {
+      const errorMessage = error instanceof Error
+        ? `${error.message}${error.stack ? '\n' + error.stack.split('\n').slice(0, 3).join('\n') : ''}`
+        : JSON.stringify(error);
+
       progress.errors.push({
         row,
         email: candidate.email || "N/A",
-        error: String(error),
+        error: errorMessage,
       });
       progress.errorCount++;
-      logError(`Row ${row}: ${error}`);
+      logError(`Row ${row}: ${errorMessage}`);
     }
   }
 }

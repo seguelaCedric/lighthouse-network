@@ -25,6 +25,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { ContentLayout } from "@/components/dashboard/ContentLayout";
+import { DashboardBreadcrumbs, getLandingPageBreadcrumbs } from "@/components/dashboard/DashboardBreadcrumbs";
 
 interface FAQItem {
   question: string;
@@ -509,52 +511,14 @@ export default function SeoLandingPageEdit({ params }: { params: Promise<{ id: s
     );
   }
 
-  return (
-    <div className="p-6">
-      <div className="mx-auto max-w-7xl space-y-6">
-        {/* Toast Notifications */}
-        {error && (
-          <div className="fixed right-6 top-6 z-50 flex items-center gap-3 rounded-lg border border-error-200 bg-error-50 px-4 py-3 shadow-lg">
-            <AlertCircle className="h-5 w-5 text-error-600" />
-            <p className="text-sm font-medium text-error-800">{error}</p>
-            <button
-              onClick={() => setError(null)}
-              className="ml-2 text-error-600 hover:text-error-800"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        )}
-        {success && (
-          <div className="fixed right-6 top-6 z-50 flex items-center gap-3 rounded-lg border border-success-200 bg-success-50 px-4 py-3 shadow-lg">
-            <CheckCircle2 className="h-5 w-5 text-success-600" />
-            <p className="text-sm font-medium text-success-800">{success}</p>
-            <button
-              onClick={() => setSuccess(null)}
-              className="ml-2 text-success-600 hover:text-success-800"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        )}
+  const pageTitle = `${page.position} in ${[page.city, page.state, page.country].filter(Boolean).join(", ")}`;
 
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard/seo-pages/landing-pages">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-4xl font-serif font-semibold text-navy-800">Edit Landing Page</h1>
-              <p className="mt-1 text-gray-600">
-                {page.position} in {[page.city, page.state, page.country].filter(Boolean).join(", ")}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
+  return (
+    <ContentLayout
+      title={`Edit: ${pageTitle}`}
+      description="Edit landing page content and SEO settings"
+      actions={
+        <>
             <Button
               variant="secondary"
               onClick={handleGenerateContent}
@@ -584,9 +548,39 @@ export default function SeoLandingPageEdit({ params }: { params: Promise<{ id: s
                 Inquiries ({page.inquiry_count || 0})
               </Button>
             </Link>
-          </div>
+        </>
+      }
+    >
+      {/* Toast Notifications */}
+      {error && (
+        <div className="fixed right-6 top-6 z-50 flex items-center gap-3 rounded-lg border border-error-200 bg-error-50 px-4 py-3 shadow-lg">
+          <AlertCircle className="h-5 w-5 text-error-600" />
+          <p className="text-sm font-medium text-error-800">{error}</p>
+          <button
+            onClick={() => setError(null)}
+            className="ml-2 text-error-600 hover:text-error-800"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
+      )}
+      {success && (
+        <div className="fixed right-6 top-6 z-50 flex items-center gap-3 rounded-lg border border-success-200 bg-success-50 px-4 py-3 shadow-lg">
+          <CheckCircle2 className="h-5 w-5 text-success-600" />
+          <p className="text-sm font-medium text-success-800">{success}</p>
+          <button
+            onClick={() => setSuccess(null)}
+            className="ml-2 text-success-600 hover:text-success-800"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
 
+      {/* Breadcrumbs */}
+      <DashboardBreadcrumbs items={getLandingPageBreadcrumbs(pageTitle)} />
+
+      <div className="space-y-6">
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Main Editor */}
           <div className="lg:col-span-2 space-y-6">
@@ -1257,6 +1251,6 @@ export default function SeoLandingPageEdit({ params }: { params: Promise<{ id: s
           </div>
         </div>
       </div>
-    </div>
+    </ContentLayout>
   );
 }

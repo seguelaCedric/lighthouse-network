@@ -4,8 +4,11 @@ import { notFound } from 'next/navigation';
 import { PublicHeader } from '@/components/pricing/PublicHeader';
 import { PublicFooter } from '@/components/pricing/PublicFooter';
 import { InternalLinking } from '@/components/seo/InternalLinking';
-import { AnswerCapsuleWithLinks, getAnswerCapsuleSchema } from '@/components/seo/AnswerCapsule';
-import { Calendar, User, ArrowLeft, Clock } from 'lucide-react';
+import { AnswerCapsuleWithLinks } from '@/components/seo/AnswerCapsule';
+import { getAnswerCapsuleSchema } from '@/lib/seo/answer-capsule-schema';
+import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
+import { getBlogPostBreadcrumbs } from '@/lib/navigation/breadcrumb-helpers';
+import { Calendar, User, ArrowLeft, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 // Content is stored as Markdown or HTML - render as HTML for now
 
@@ -13,6 +16,7 @@ export const revalidate = 3600; // Revalidate every hour
 
 interface Props {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ preview?: string }>;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -44,16 +48,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function BlogPostPage({ params }: Props) {
+export default async function BlogPostPage({ params, searchParams }: Props) {
   const { slug } = await params;
+  const { preview } = await searchParams;
   const supabase = await createClient();
 
-  const { data: post, error } = await supabase
+  // Build query - if preview mode, don't filter by status
+  let query = supabase
     .from('blog_posts')
     .select('*')
-    .eq('slug', slug)
-    .eq('status', 'published')
-    .single();
+    .eq('slug', slug);
+
+  // Only filter by published status if not in preview mode
+  if (!preview) {
+    query = query.eq('status', 'published');
+  }
+
+  const { data: post, error } = await query.single();
 
   if (error || !post) {
     notFound();
@@ -80,18 +91,58 @@ export default async function BlogPostPage({ params }: Props) {
     .order('priority', { ascending: false })
     .limit(12);
 
+  // Fetch previous and next posts for navigation
+  const [previousPostResult, nextPostResult] = await Promise.all([
+    // Previous post (older)
+    supabase
+      .from('blog_posts')
+      .select('slug, title')
+      .eq('status', 'published')
+      .lt('published_at', post.published_at || new Date().toISOString())
+      .order('published_at', { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    // Next post (newer)
+    supabase
+      .from('blog_posts')
+      .select('slug, title')
+      .eq('status', 'published')
+      .gt('published_at', post.published_at || new Date().toISOString())
+      .order('published_at', { ascending: true })
+      .limit(1)
+      .maybeSingle(),
+  ]);
+
+  const previousPost = previousPostResult.data;
+  const nextPost = nextPostResult.data;
+
+  // Generate breadcrumbs
+  const breadcrumbItems = getBlogPostBreadcrumbs(post.title);
+
   return (
     <div className="min-h-screen bg-white">
       <PublicHeader />
 
+      {/* Preview mode banner */}
+      {preview && (
+        <div className="bg-gold-100 border-b border-gold-200 px-4 py-3">
+          <div className="mx-auto max-w-4xl flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center rounded-full bg-gold-200 px-3 py-1 text-xs font-medium text-gold-800">
+                Preview Mode
+              </span>
+              <span className="text-sm text-gold-900">
+                You're viewing an unpublished draft. Status: <span className="font-medium capitalize">{post.status}</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Breadcrumbs */}
+      <Breadcrumbs items={breadcrumbItems} />
+
       <article className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
-        <Link
-          href="/blog"
-          className="mb-8 inline-flex items-center gap-2 text-gold-600 hover:text-gold-700"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Blog
-        </Link>
 
         <header className="mb-8">
           <h1 className="font-serif text-4xl font-semibold text-navy-900 sm:text-5xl">
@@ -193,6 +244,53 @@ export default async function BlogPostPage({ params }: Props) {
           className="prose prose-lg max-w-none"
           dangerouslySetInnerHTML={{ __html: post.content }}
         />
+
+        {/* Previous/Next Post Navigation */}
+        {(previousPost || nextPost) && (
+          <nav className="border-t border-gray-200 mt-12 pt-8" aria-label="Post navigation">
+            <div className="flex items-center justify-between gap-8">
+              {/* Previous Post */}
+              {previousPost ? (
+                <Link
+                  href={`/blog/${previousPost.slug}`}
+                  className="group flex-1 max-w-xs"
+                >
+                  <div className="flex items-start gap-2">
+                    <ChevronLeft className="h-5 w-5 text-gray-400 group-hover:text-burgundy-700 mt-1 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Previous</p>
+                      <p className="font-semibold text-navy-800 group-hover:text-burgundy-700 line-clamp-2">
+                        {previousPost.title}
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+              ) : (
+                <div className="flex-1" />
+              )}
+
+              {/* Next Post */}
+              {nextPost ? (
+                <Link
+                  href={`/blog/${nextPost.slug}`}
+                  className="group flex-1 max-w-xs text-right"
+                >
+                  <div className="flex items-start gap-2 justify-end">
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Next</p>
+                      <p className="font-semibold text-navy-800 group-hover:text-burgundy-700 line-clamp-2">
+                        {nextPost.title}
+                      </p>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-burgundy-700 mt-1 flex-shrink-0" />
+                  </div>
+                </Link>
+              ) : (
+                <div className="flex-1" />
+              )}
+            </div>
+          </nav>
+        )}
 
         {/* Internal Linking Section */}
         {relatedPages.length > 0 && (
