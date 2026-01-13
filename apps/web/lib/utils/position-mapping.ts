@@ -118,6 +118,82 @@ export const POSITION_DISPLAY_TO_VALUE: Record<string, string> = {
 };
 
 /**
+ * Positions that are primarily yacht crew roles
+ * Used to determine which preference field to populate
+ */
+export const YACHT_POSITIONS = new Set([
+  // Deck
+  "captain", "chief_officer", "second_officer", "third_officer", "oow",
+  "bosun", "lead_deckhand", "experienced_deckhand", "junior_deckhand", "carpenter",
+  // Water Sports
+  "dive_instructor", "dive_master", "pwc_instructor",
+  // Engineering
+  "chief_engineer", "second_engineer", "third_engineer", "junior_engineer", "eto", "av_it_engineer",
+  // Interior
+  "purser", "interior_manager", "chief_stewardess", "head_of_service", "head_of_house",
+  "second_stewardess", "sole_stewardess", "experienced_stewardess", "junior_stewardess",
+  "laundry_stewardess", "cook_stew",
+  // Wellness & Beauty
+  "masseuse", "beautician", "hairdresser", "spa_manager", "yoga_instructor", "personal_trainer",
+  // Medical
+  "nurse", "paramedic",
+  // Culinary (yacht-specific)
+  "crew_chef", "galley_hand",
+]);
+
+/**
+ * Positions that are primarily household staff roles
+ * Used to determine which preference field to populate
+ */
+export const HOUSEHOLD_POSITIONS = new Set([
+  // Management
+  "estate_manager", "house_manager", "personal_assistant",
+  // Service
+  "butler", "housekeeper",
+  // Outdoor & Maintenance
+  "chauffeur", "gardener", "handyman",
+]);
+
+/**
+ * Positions that are shared between yacht and household
+ * These are set in the preference field matching the candidate_type
+ */
+export const SHARED_POSITIONS = new Set([
+  "nanny", "governess", "head_chef", "second_chef", "sous_chef", "sole_chef", "security", "couple",
+]);
+
+/**
+ * Determine the industry for a position based on candidate type
+ * Returns 'yacht', 'household', or 'both' for shared positions
+ */
+export function getPositionIndustry(
+  position: string,
+  candidateType?: string | null
+): "yacht" | "household" | "both" {
+  const normalizedPosition = mapPositionToDatabaseValue(position);
+
+  if (YACHT_POSITIONS.has(normalizedPosition)) {
+    return "yacht";
+  }
+
+  if (HOUSEHOLD_POSITIONS.has(normalizedPosition)) {
+    return "household";
+  }
+
+  // For shared positions, use candidate type to determine preference
+  if (SHARED_POSITIONS.has(normalizedPosition)) {
+    if (candidateType === "yacht_crew") return "yacht";
+    if (candidateType === "household_staff") return "household";
+    return "both";
+  }
+
+  // Default: use candidate type or both
+  if (candidateType === "yacht_crew") return "yacht";
+  if (candidateType === "household_staff") return "household";
+  return "both";
+}
+
+/**
  * Convert position display name to database value
  * If the value is already a database value, return it as-is
  */

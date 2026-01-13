@@ -3,7 +3,7 @@
 import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { mapPositionToDatabaseValue } from "@/lib/utils/position-mapping";
+import { mapPositionToDatabaseValue, getPositionIndustry } from "@/lib/utils/position-mapping";
 import { syncCandidateCreation } from "@/lib/vincere/sync-service";
 import { sendEmail, welcomeCandidateEmail } from "@/lib/email";
 
@@ -154,25 +154,53 @@ export async function signUp(
       candidateId = existingCandidate.id;
       // Link existing candidate to user account if not already linked
       if (!existingCandidate.user_id && userRecord?.id) {
+        const normalizedPosition = metadata.primary_position
+          ? mapPositionToDatabaseValue(metadata.primary_position)
+          : existingCandidate.primary_position;
+        const candidateType = metadata.candidate_type || existingCandidate.candidate_type;
+
+        // Determine which preference field(s) to populate based on position and candidate type
+        const positionIndustry = normalizedPosition
+          ? getPositionIndustry(normalizedPosition, candidateType)
+          : null;
+
+        const updatePayload: Record<string, unknown> = {
+          user_id: userRecord.id,
+          first_name: metadata.first_name || existingCandidate.first_name,
+          last_name: metadata.last_name || existingCandidate.last_name,
+          phone: metadata.phone || existingCandidate.phone,
+          whatsapp: metadata.phone || existingCandidate.phone,
+          nationality: metadata.nationality || existingCandidate.nationality,
+          candidate_type: candidateType,
+          primary_position: normalizedPosition,
+          years_experience: metadata.years_experience
+            ? parseInt(metadata.years_experience)
+            : existingCandidate.years_experience,
+          availability_status: "available",
+          updated_at: new Date().toISOString(),
+        };
+
+        // Also populate the appropriate preference position field(s)
+        if (normalizedPosition && positionIndustry) {
+          if (positionIndustry === "yacht" || positionIndustry === "both") {
+            updatePayload.yacht_primary_position = normalizedPosition;
+          }
+          if (positionIndustry === "household" || positionIndustry === "both") {
+            updatePayload.household_primary_position = normalizedPosition;
+          }
+          // Set industry_preference based on candidate type
+          if (candidateType === "yacht_crew") {
+            updatePayload.industry_preference = "yacht";
+          } else if (candidateType === "household_staff") {
+            updatePayload.industry_preference = "household";
+          } else if (candidateType === "both") {
+            updatePayload.industry_preference = "both";
+          }
+        }
+
         const { error: updateError } = await serviceClient
           .from("candidates")
-          .update({
-            user_id: userRecord.id,
-            first_name: metadata.first_name || existingCandidate.first_name,
-            last_name: metadata.last_name || existingCandidate.last_name,
-            phone: metadata.phone || existingCandidate.phone,
-            whatsapp: metadata.phone || existingCandidate.phone,
-            nationality: metadata.nationality || existingCandidate.nationality,
-            candidate_type: metadata.candidate_type || existingCandidate.candidate_type,
-            primary_position: metadata.primary_position 
-              ? mapPositionToDatabaseValue(metadata.primary_position)
-              : existingCandidate.primary_position,
-            years_experience: metadata.years_experience
-              ? parseInt(metadata.years_experience)
-              : existingCandidate.years_experience,
-            availability_status: "available",
-            updated_at: new Date().toISOString(),
-          })
+          .update(updatePayload)
           .eq("id", existingCandidate.id);
 
         if (updateError) {
@@ -181,26 +209,54 @@ export async function signUp(
       }
     } else {
       // Create new candidate record
+      const normalizedPosition = metadata.primary_position
+        ? mapPositionToDatabaseValue(metadata.primary_position)
+        : null;
+      const candidateType = metadata.candidate_type || null;
+
+      // Determine which preference field(s) to populate based on position and candidate type
+      const positionIndustry = normalizedPosition
+        ? getPositionIndustry(normalizedPosition, candidateType)
+        : null;
+
+      const insertPayload: Record<string, unknown> = {
+        user_id: userRecord?.id || null,
+        first_name: metadata.first_name || "",
+        last_name: metadata.last_name || "",
+        email: email.toLowerCase(),
+        phone: metadata.phone || null,
+        whatsapp: metadata.phone || null,
+        nationality: metadata.nationality || null,
+        candidate_type: candidateType,
+        primary_position: normalizedPosition,
+        years_experience: metadata.years_experience
+          ? parseInt(metadata.years_experience)
+          : null,
+        source: "self_registration",
+        availability_status: "available",
+      };
+
+      // Also populate the appropriate preference position field(s)
+      if (normalizedPosition && positionIndustry) {
+        if (positionIndustry === "yacht" || positionIndustry === "both") {
+          insertPayload.yacht_primary_position = normalizedPosition;
+        }
+        if (positionIndustry === "household" || positionIndustry === "both") {
+          insertPayload.household_primary_position = normalizedPosition;
+        }
+        // Set industry_preference based on candidate type
+        if (candidateType === "yacht_crew") {
+          insertPayload.industry_preference = "yacht";
+        } else if (candidateType === "household_staff") {
+          insertPayload.industry_preference = "household";
+        } else if (candidateType === "both") {
+          insertPayload.industry_preference = "both";
+        }
+      }
+
       const { data: newCandidate, error: candidateError } = await serviceClient
         .from("candidates")
-        .insert({
-          user_id: userRecord?.id || null,
-          first_name: metadata.first_name || "",
-          last_name: metadata.last_name || "",
-          email: email.toLowerCase(),
-          phone: metadata.phone || null,
-          whatsapp: metadata.phone || null,
-          nationality: metadata.nationality || null,
-        candidate_type: metadata.candidate_type || null,
-        primary_position: metadata.primary_position 
-          ? mapPositionToDatabaseValue(metadata.primary_position)
-          : null,
-          years_experience: metadata.years_experience
-            ? parseInt(metadata.years_experience)
-            : null,
-          source: "self_registration",
-          availability_status: "available",
-        })
+        .insert(insertPayload)
         .select("id")
         .single();
 
