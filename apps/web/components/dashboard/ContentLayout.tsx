@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FileText, Layout, Lightbulb, Calendar, Archive } from "lucide-react";
+import { FileText, Layout, Lightbulb, Calendar, Archive, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Tab {
@@ -42,6 +42,12 @@ const CONTENT_TABS: Tab[] = [
     href: "/dashboard/seo-pages/blog/bulk",
     icon: Archive,
     description: "Bulk content management",
+  },
+  {
+    label: "SEO Tools",
+    href: "/dashboard/seo-pages/tools",
+    icon: Settings,
+    description: "Content freshness and SEO settings",
   },
 ];
 

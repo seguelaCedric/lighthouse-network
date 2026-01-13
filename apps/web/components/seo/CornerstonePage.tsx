@@ -28,10 +28,10 @@ import {
   DollarSign,
   ChevronDown,
   Globe,
-  HelpCircle,
   type LucideIcon,
 } from "lucide-react";
 import { ClientLogos } from "@/components/marketing/ClientLogos";
+import { CornerstoneStructuredData } from "@/components/seo/CornerstoneStructuredData";
 
 // Yacht positions for image selection
 const YACHT_POSITIONS = [
@@ -160,6 +160,8 @@ interface CornerstonePageData {
   answer_capsule: string | null;
   answer_capsule_question: string | null;
   key_facts: string[] | null;
+  last_reviewed_at: string | null;
+  updated_at: string | null;
 }
 
 interface Props {
@@ -238,6 +240,7 @@ export function CornerstonePage({
 
   return (
     <div className="min-h-screen bg-white">
+      <CornerstoneStructuredData data={data} />
       <PublicHeader />
 
       <article itemScope itemType="https://schema.org/Service">
@@ -794,6 +797,12 @@ export function CornerstonePage({
                 </div>
               ))}
             </div>
+            {/* Content freshness signal */}
+            {data.last_reviewed_at && (
+              <p className="mt-8 text-sm text-gray-500">
+                Last reviewed: {new Date(data.last_reviewed_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              </p>
+            )}
           </div>
         </section>
 

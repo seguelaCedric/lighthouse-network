@@ -61,7 +61,7 @@ export function StructuredData({ data }: Props) {
       "@type": "Organization",
       name: "Lighthouse Careers",
       url: "https://lighthouse-careers.com",
-      foundingDate: "2002",
+      foundingDate: "2020",
       description:
         "Premium yacht crew and private household staffing agency with 500+ satisfied clients",
       logo: "https://lighthouse-careers.com/logo.png",
@@ -147,10 +147,10 @@ export function StructuredData({ data }: Props) {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: "Lighthouse Careers",
-    alternateName: "Lighthouse Crew Network",
+    alternateName: "Lighthouse",
     url: "https://lighthouse-careers.com",
     logo: "https://lighthouse-careers.com/logo.png",
-    foundingDate: "2002",
+    foundingDate: "2020",
     description:
       "Premium yacht crew and private household staffing agency with 500+ satisfied clients, connecting verified candidates with discerning clients worldwide.",
     address: {

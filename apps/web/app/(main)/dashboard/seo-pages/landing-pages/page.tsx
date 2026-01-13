@@ -13,6 +13,7 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
+  Settings,
 } from "lucide-react";
 import Link from "next/link";
 import { ContentLayout } from "@/components/dashboard/ContentLayout";
@@ -112,6 +113,14 @@ export default function SeoLandingPagesPage() {
     <ContentLayout
       title="SEO Landing Pages"
       description="Manage lead generation pages and track inquiries"
+      actions={
+        <Link href="/dashboard/seo-pages/tools">
+          <Button variant="secondary" size="sm">
+            <Settings className="mr-2 h-4 w-4" />
+            SEO Tools
+          </Button>
+        </Link>
+      }
     >
       <div className="space-y-6">
         {/* Filters */}
