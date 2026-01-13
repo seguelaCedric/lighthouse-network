@@ -3,7 +3,7 @@
 import {
   CheckCircle,
   Phone,
-  Sparkles,
+  Users,
   Briefcase,
   Globe,
   Shield,
@@ -157,10 +157,10 @@ export function AIPreviewSection({
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center gap-3 mb-4">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold-100">
-              <Sparkles className="h-4 w-4 text-gold-600 animate-pulse" />
+              <Users className="h-4 w-4 text-gold-600 animate-pulse" />
             </div>
             <p className="font-medium text-navy-900">
-              Searching our database...
+              Searching our candidate database...
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -194,27 +194,38 @@ export function AIPreviewSection({
           </div>
         </div>
 
-        {/* Fallback Message */}
-        <div className="bg-gradient-to-br from-navy-50 to-navy-100 rounded-xl border border-navy-200 p-6 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-navy-200">
-              <Sparkles className="h-8 w-8 text-navy-600" />
-            </div>
+        {/* What's Next */}
+        <div className="bg-gradient-to-br from-gold-50 to-gold-100/50 rounded-xl border border-gold-200 p-4">
+          <h4 className="font-semibold text-navy-900 mb-2">What happens next?</h4>
+          <ul className="space-y-2 text-sm text-gray-700">
+            <li className="flex items-start gap-2">
+              <CheckCircle className="h-4 w-4 text-gold-600 mt-0.5 flex-shrink-0" />
+              <span>
+                A consultant will review your requirements and identify matching candidates
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <CheckCircle className="h-4 w-4 text-gold-600 mt-0.5 flex-shrink-0" />
+              <span>
+                You&apos;ll receive a curated shortlist with full CVs and references
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <CheckCircle className="h-4 w-4 text-gold-600 mt-0.5 flex-shrink-0" />
+              <span>
+                We&apos;ll call to discuss your needs and answer any questions
+              </span>
+            </li>
+          </ul>
+          <div className="mt-4 pt-4 border-t border-gold-200">
+            <a
+              href="tel:+33676410299"
+              className="inline-flex items-center gap-2 text-gold-600 hover:text-gold-700 font-semibold text-sm"
+            >
+              <Phone className="h-4 w-4" />
+              Need to speak now? +33 6 76 41 02 99
+            </a>
           </div>
-          <h3 className="font-semibold text-navy-900 text-lg mb-2">
-            Our team is searching our extended network
-          </h3>
-          <p className="text-gray-600 mb-4 max-w-md mx-auto">
-            A dedicated consultant will contact you within 4 business hours with
-            curated candidate options tailored to your requirements.
-          </p>
-          <a
-            href="tel:+33676410299"
-            className="inline-flex items-center gap-2 text-gold-600 hover:text-gold-700 font-semibold"
-          >
-            <Phone className="h-5 w-5" />
-            Call us now: +33 6 76 41 02 99
-          </a>
         </div>
       </div>
     );
@@ -231,10 +242,10 @@ export function AIPreviewSection({
           </div>
           <div>
             <h3 className="font-semibold text-success-800">
-              Thank you! Here&apos;s a preview of candidates that fit your criteria.
+              Brief received. Here&apos;s a preview of potential matches.
             </h3>
             <p className="text-sm text-success-700">
-              Our consultant will send full profiles within 24 hours.
+              Your consultant will send a curated shortlist within 24 hours.
             </p>
           </div>
         </div>
@@ -244,11 +255,10 @@ export function AIPreviewSection({
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <div className="flex items-center gap-3 mb-4">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold-100">
-            <Sparkles className="h-4 w-4 text-gold-600" />
+            <Users className="h-4 w-4 text-gold-600" />
           </div>
           <p className="font-medium text-navy-900">
-            {candidates.length} candidate{candidates.length !== 1 ? "s" : ""}{" "}
-            found
+            Preview: {candidates.length} potential match{candidates.length !== 1 ? "es" : ""}
           </p>
         </div>
 
@@ -264,7 +274,7 @@ export function AIPreviewSection({
 
         {candidates.length > 3 && (
           <p className="text-center text-sm text-gray-500 mt-4">
-            + {candidates.length - 3} more candidates in full report
+            + {candidates.length - 3} more in your consultant&apos;s shortlist
           </p>
         )}
       </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
-import { Loader2, Sparkles, CheckCircle } from "lucide-react";
+import { Loader2, Award, CheckCircle } from "lucide-react";
 import { PublicHeader } from "@/components/pricing/PublicHeader";
 import { PublicFooter } from "@/components/pricing/PublicFooter";
 import { MatchFunnel } from "@/components/match";
@@ -90,30 +90,30 @@ function MatchPageContent() {
           <div className="max-w-3xl mx-auto text-center">
             {/* Elegant badge */}
             <div className="inline-flex items-center gap-2 rounded-full border border-gold-500/30 bg-gold-500/10 px-5 py-2.5 text-sm font-medium text-gold-300 mb-8 backdrop-blur-sm">
-              <Sparkles className="h-4 w-4" />
-              AI-Powered Candidate Search
+              <Award className="h-4 w-4" />
+              1,500+ Successful Placements
             </div>
             <h1 className="font-cormorant text-5xl sm:text-6xl lg:text-7xl font-semibold tracking-tight text-white mb-6">
-              Find Your Perfect
+              Hire Exceptional
               <span className="block text-gradient-gold">Crew & Staff</span>
             </h1>
             <p className="mx-auto max-w-2xl text-lg text-white/90 sm:text-xl">
-              Tell us what you need. Our AI instantly searches 5,000+ vetted
-              yacht crew and private staff professionals.
+              Access 45,000+ pre-vetted yacht crew and private household professionals.
+              Your dedicated consultant delivers a shortlist within 24 hours.
             </p>
             {/* Trust indicators */}
             <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-sm text-gray-400">
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-gold-400" />
-                <span>Lead Captured First</span>
+                <span>96% Placement Success</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-gold-400" />
-                <span>Consultant Follow-Up</span>
+                <span>Reference Checked</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4 text-gold-400" />
-                <span>AI Preview Bonus</span>
+                <span>No Placement, No Fee</span>
               </div>
             </div>
           </div>

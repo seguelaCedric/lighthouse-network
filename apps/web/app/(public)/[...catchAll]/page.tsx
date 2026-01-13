@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation'
 import { Metadata } from 'next'
 import { cookies, headers } from 'next/headers'
 import { HireLandingPage } from '@/components/seo/HireLandingPage'
+import { CornerstonePage } from '@/components/seo/CornerstonePage'
 import { generateMetadata as genMeta } from '@/lib/seo/metadata'
 import { cache } from 'react'
 import { getLandingPageExperiments } from '@/lib/ab-testing/assignment.server'
@@ -24,6 +25,69 @@ const getPage = cache(async (urlPath: string) => {
 
   return data
 })
+
+// Cache cornerstone page lookup (for hub pages like /hire-a-captain)
+const getCornerstonePage = cache(async (positionSlug: string) => {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('seo_cornerstone_pages')
+    .select('*')
+    .eq('position_slug', positionSlug)
+    .eq('is_active', true)
+    .single()
+  return data
+})
+
+// Cache location pages lookup for cornerstone pages
+const getLocationPages = cache(async (positionSlug: string) => {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('seo_landing_pages')
+    .select('id, original_url_path, city, state, country, hero_headline')
+    .eq('position_slug', positionSlug)
+    .eq('is_active', true)
+    .order('country', { ascending: true })
+    .order('city', { ascending: true })
+    .limit(100)
+  return data || []
+})
+
+// Cache blog posts lookup for cornerstone pages
+const getBlogPosts = cache(async (targetPosition: string) => {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('blog_posts')
+    .select('id, title, slug, excerpt, content_type')
+    .eq('target_position', targetPosition)
+    .eq('status', 'published')
+    .order('published_at', { ascending: false })
+    .limit(12)
+  return data || []
+})
+
+// Map position slugs to blog post target_position values
+const SLUG_TO_BLOG_POSITION: Record<string, string> = {
+  'butler': 'Butler',
+  'house-manager': 'House Manager',
+  'pa': 'Personal Assistant',
+  'private-chef': 'Private Chef',
+  'personal-assistant': 'Personal Assistant',
+  'estate-manager': 'Estate Manager',
+  'nanny': 'Nanny',
+  'housekeeper': 'Housekeeper',
+  'governess': 'Governess',
+  'captain': 'Captain',
+  'chief-stewardess': 'Chief Stewardess',
+  'yacht-chef': 'Yacht Chef',
+  'first-officer': 'First Officer',
+  'chief-engineer': 'Chief Engineer',
+  'bosun': 'Bosun',
+  'deckhand': 'Deckhand',
+  'stewardess': 'Stewardess',
+  'second-engineer': 'Second Engineer',
+  'eto': 'ETO',
+  'second-stewardess': 'Second Stewardess',
+}
 
 // Related page type
 interface RelatedPage {
@@ -140,6 +204,29 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     })
   }
 
+  // Handle cornerstone pages (single segment like /hire-a-captain/)
+  if (catchAll.length === 1) {
+    const positionSlug = catchAll[0].replace('hire-a-', '')
+    const cornerstone = await getCornerstonePage(positionSlug)
+
+    if (cornerstone) {
+      return {
+        title: cornerstone.meta_title,
+        description: cornerstone.meta_description,
+        openGraph: {
+          title: cornerstone.meta_title,
+          description: cornerstone.meta_description,
+          type: 'website',
+        },
+      }
+    }
+
+    return genMeta({
+      title: 'Page Not Found | Lighthouse Careers',
+      noindex: true,
+    })
+  }
+
   const urlPath = buildUrlPath(catchAll)
   const page = await getPage(urlPath)
 
@@ -202,10 +289,30 @@ export default async function CatchAllPage({ params }: Props) {
     notFound()
   }
 
-  // Hub pages (single segment like /hire-a-butler/) are handled by hire-a-[position] route
-  // This catch-all only handles specific landing pages with locations (e.g., /hire-a-butler/london/)
+  // Hub pages (single segment like /hire-a-captain/) - check for cornerstone page
   if (catchAll.length === 1) {
-    notFound() // Let the hire-a-[position] route handle this
+    const positionSlug = catchAll[0].replace('hire-a-', '')
+    const cornerstone = await getCornerstonePage(positionSlug)
+
+    if (cornerstone) {
+      // Get related data for cornerstone page
+      const blogPositionName = SLUG_TO_BLOG_POSITION[positionSlug]
+      const [locationPages, blogPosts] = await Promise.all([
+        getLocationPages(positionSlug),
+        blogPositionName ? getBlogPosts(blogPositionName) : Promise.resolve([]),
+      ])
+
+      return (
+        <CornerstonePage
+          data={cornerstone}
+          locationPages={locationPages}
+          blogPosts={blogPosts}
+        />
+      )
+    }
+
+    // No cornerstone page found - 404
+    notFound()
   }
 
   const urlPath = buildUrlPath(catchAll)

@@ -92,7 +92,7 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     const {
-      type, // 'brief_match' | 'contact' | 'inquiry'
+      type, // 'brief_match' | 'match_funnel' | 'contact' | 'inquiry'
       name,
       email,
       phone,
@@ -111,7 +111,7 @@ export async function POST(request: Request) {
     } = body;
 
     // Validate required fields based on type
-    if (type === 'brief_match') {
+    if (type === 'brief_match' || type === 'match_funnel') {
       // For brief_match, require name, email, and phone
       if (!name || !name.trim()) {
         return NextResponse.json(
@@ -149,8 +149,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Phone validation for brief_match type
-    if (type === 'brief_match' && phone) {
+    // Phone validation for brief_match and match_funnel types
+    if ((type === 'brief_match' || type === 'match_funnel') && phone) {
       if (!validatePhoneNumber(phone)) {
         return NextResponse.json(
           { error: "Please enter a valid phone number with country code (e.g., +33 6 12 34 56 78)" },
@@ -159,48 +159,51 @@ export async function POST(request: Request) {
       }
     }
 
-    // Build comprehensive message for brief_match type
+    // Build comprehensive message for brief_match and match_funnel types
     let finalMessage = message || null;
-    if (type === 'brief_match' && brief) {
+    if ((type === 'brief_match' || type === 'match_funnel') && brief) {
       const messageParts: string[] = [];
-      messageParts.push("AI Brief Match Request");
+      messageParts.push(type === 'match_funnel' ? "Match Funnel Lead (Requirements-First)" : "AI Brief Match Request");
       messageParts.push("");
-      
+
       // Include company if provided
       if (company && company.trim()) {
         messageParts.push(`Company/Organization: ${company.trim()}`);
         messageParts.push("");
       }
-      
+
       if (brief.query) {
-        messageParts.push(`Search Query: ${brief.query}`);
+        messageParts.push(`Requirements: ${brief.query}`);
         messageParts.push("");
       }
-      
+
       if (brief.position) {
         messageParts.push(`Position: ${brief.position}`);
       }
-      
+
       if (brief.location) {
         messageParts.push(`Location: ${brief.location}`);
       }
-      
+
       if (brief.timeline) {
         messageParts.push(`Timeline: ${brief.timeline}`);
       }
-      
+
       if (brief.budget) {
         messageParts.push(`Budget: ${brief.budget}`);
       }
-      
+
       if (brief.additional_notes) {
         messageParts.push("");
         messageParts.push(`Additional Notes: ${brief.additional_notes}`);
       }
-      
-      messageParts.push("");
-      messageParts.push(`Matched Candidates: ${matched_count || 0}`);
-      
+
+      // Only show matched_count for brief_match (match_funnel doesn't have it at submission time)
+      if (type === 'brief_match') {
+        messageParts.push("");
+        messageParts.push(`Matched Candidates: ${matched_count || 0}`);
+      }
+
       finalMessage = messageParts.join("\n");
     } else if (company && company.trim()) {
       // For non-brief_match types, include company in message if provided
