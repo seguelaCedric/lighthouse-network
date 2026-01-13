@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase/client";
 import type { User, Session } from "@supabase/supabase-js";
 
@@ -13,16 +13,6 @@ type UseUserReturn = {
   refresh: () => Promise<void>;
 };
 
-// Create singleton supabase client outside the hook to avoid re-creation
-let supabaseClient: ReturnType<typeof createClient> | null = null;
-
-function getSupabaseClient() {
-  if (!supabaseClient) {
-    supabaseClient = createClient();
-  }
-  return supabaseClient;
-}
-
 export function useUser(): UseUserReturn {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -30,20 +20,8 @@ export function useUser(): UseUserReturn {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  // Use singleton client
-  const supabase = useMemo(() => getSupabaseClient(), []);
-
-  const fetchUserType = useCallback(async (authId: string) => {
-    const { data } = await supabase
-      .from("users")
-      .select("user_type")
-      .eq("auth_id", authId)
-      .single();
-
-    setUserType(data?.user_type ?? null);
-  }, [supabase]);
-
   const refresh = useCallback(async () => {
+    const supabase = createClient();
     try {
       setLoading(true);
       const { data, error: sessionError } = await supabase.auth.getSession();
@@ -56,7 +34,12 @@ export function useUser(): UseUserReturn {
       setUser(data.session?.user ?? null);
 
       if (data.session?.user?.id) {
-        await fetchUserType(data.session.user.id);
+        const { data: userData } = await supabase
+          .from("users")
+          .select("user_type")
+          .eq("auth_id", data.session.user.id)
+          .single();
+        setUserType(userData?.user_type ?? null);
       } else {
         setUserType(null);
       }
@@ -70,12 +53,13 @@ export function useUser(): UseUserReturn {
     } finally {
       setLoading(false);
     }
-  }, [supabase, fetchUserType]);
+  }, []);
 
   useEffect(() => {
+    const supabase = createClient();
     let isMounted = true;
 
-    // Get initial session - inline to avoid stale closure issues
+    // Get initial session
     const initSession = async () => {
       try {
         const { data, error: sessionError } = await supabase.auth.getSession();
@@ -148,7 +132,7 @@ export function useUser(): UseUserReturn {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, []);
 
   return { user, session, userType, loading, error, refresh };
 }
