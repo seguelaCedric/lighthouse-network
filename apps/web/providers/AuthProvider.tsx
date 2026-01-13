@@ -7,6 +7,7 @@ import type { User, Session } from "@supabase/supabase-js";
 type AuthContextType = {
   user: User | null;
   session: Session | null;
+  userType: string | null;
   loading: boolean;
   error: Error | null;
   refresh: () => Promise<void>;
