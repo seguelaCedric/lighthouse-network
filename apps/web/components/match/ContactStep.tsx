@@ -6,7 +6,6 @@ import {
   Mail,
   Phone,
   User,
-  Building2,
   Loader2,
   ArrowRight,
   ArrowLeft,
@@ -250,30 +249,6 @@ export function ContactStep({
           <p className="mt-1.5 text-xs text-gray-500">
             Include country code (e.g., +33 for France)
           </p>
-        </div>
-
-        {/* Company (Optional) */}
-        <div>
-          <label
-            htmlFor="company"
-            className="block text-sm font-semibold text-gray-700 mb-2"
-          >
-            Company/Organization{" "}
-            <span className="text-gray-400 text-xs font-normal">(Optional)</span>
-          </label>
-          <div className="relative">
-            <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <input
-              id="company"
-              type="text"
-              value={contactData.company}
-              onChange={(e) =>
-                onContactChange({ ...contactData, company: e.target.value })
-              }
-              placeholder="Your Company Name"
-              className="w-full rounded-lg border border-gray-300 pl-10 pr-4 py-3 text-gray-900 placeholder:text-gray-400 focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/20 transition-colors"
-            />
-          </div>
         </div>
 
         {/* Submit Error */}

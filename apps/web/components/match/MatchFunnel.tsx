@@ -109,21 +109,36 @@ export function MatchFunnel() {
       setAiLoading(true);
 
       // Run AI matching in background (failure is OK - lead is already captured!)
+      // Use AbortController for timeout - API can take 30+ seconds due to AI processing
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 second timeout
+
       try {
         const matchResponse = await fetch("/api/public/brief-match/", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ query: requirements.trim() }),
+          signal: controller.signal,
         });
+
+        clearTimeout(timeoutId);
 
         if (matchResponse.ok) {
           const matchData = await matchResponse.json();
+          console.log("[MatchFunnel] AI results:", matchData.candidates?.length || 0, "candidates");
           setAiCandidates(matchData.candidates || []);
         } else {
+          console.error("[MatchFunnel] AI match failed:", matchResponse.status);
           // AI failed, but lead is saved - show fallback
           setAiError("Our team will find matches for you");
         }
-      } catch {
+      } catch (err) {
+        clearTimeout(timeoutId);
+        if (err instanceof Error && err.name === "AbortError") {
+          console.log("[MatchFunnel] AI match timed out after 45s");
+        } else {
+          console.error("[MatchFunnel] AI match error:", err);
+        }
         // AI failed, but lead is saved - show fallback
         setAiError("Our team will find matches for you");
       } finally {
