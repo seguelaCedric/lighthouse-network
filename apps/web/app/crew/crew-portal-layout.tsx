@@ -14,7 +14,6 @@ import {
   Menu,
   X,
   ChevronDown,
-  Shield,
   FileText,
   UserCircle,
   Gift,

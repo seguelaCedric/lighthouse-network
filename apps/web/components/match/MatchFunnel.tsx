@@ -25,6 +25,12 @@ interface AnonymizedCandidate {
   nationality: string;
   match_score: number;
   why_good_fit: string;
+  rich_bio: string;
+  career_highlights: string[];
+  key_strengths: string[];
+  qualifications: string[];
+  experience_summary: string;
+  availability: string;
 }
 
 export function MatchFunnel() {
@@ -50,6 +56,8 @@ export function MatchFunnel() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiCandidates, setAiCandidates] = useState<AnonymizedCandidate[]>([]);
   const [aiError, setAiError] = useState<string>();
+  const [aiTotalFound, setAiTotalFound] = useState<number>(0);
+  const [aiSearchQuality, setAiSearchQuality] = useState<string>();
 
   // Handle requirements step continue
   const handleRequirementsContinue = () => {
@@ -127,6 +135,8 @@ export function MatchFunnel() {
           const matchData = await matchResponse.json();
           console.log("[MatchFunnel] AI results:", matchData.candidates?.length || 0, "candidates");
           setAiCandidates(matchData.candidates || []);
+          setAiTotalFound(matchData.total_found || matchData.result_stats?.total_candidates_considered || 0);
+          setAiSearchQuality(matchData.search_quality || "good");
         } else {
           console.error("[MatchFunnel] AI match failed:", matchResponse.status);
           // AI failed, but lead is saved - show fallback
@@ -214,6 +224,9 @@ export function MatchFunnel() {
             isLoading={aiLoading}
             candidates={aiCandidates}
             error={aiError}
+            totalFound={aiTotalFound}
+            searchQuality={aiSearchQuality}
+            inquiryId={inquiryId}
           />
         )}
       </div>

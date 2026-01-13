@@ -264,3 +264,63 @@ export async function POST(request: Request) {
     );
   }
 }
+
+// PATCH - Update inquiry (e.g., add interested candidates)
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json();
+    const { id, interested_candidates } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { error: "Inquiry ID is required" },
+        { status: 400 }
+      );
+    }
+
+    // First, get the current inquiry to check it exists
+    const { data: existing, error: fetchError } = await supabaseService
+      .from("seo_inquiries")
+      .select("id, message")
+      .eq("id", id)
+      .single();
+
+    if (fetchError || !existing) {
+      return NextResponse.json(
+        { error: "Inquiry not found" },
+        { status: 404 }
+      );
+    }
+
+    // Append interested candidates to the message
+    let updatedMessage = existing.message || "";
+    if (interested_candidates && interested_candidates.length > 0) {
+      const candidateInfo = interested_candidates.map((c: { display_name: string; position: string }) =>
+        `  - ${c.display_name} (${c.position})`
+      ).join("\n");
+
+      updatedMessage = updatedMessage + "\n\n--- Candidate Interest ---\nInterested in:\n" + candidateInfo;
+    }
+
+    const { error: updateError } = await supabaseService
+      .from("seo_inquiries")
+      .update({ message: updatedMessage })
+      .eq("id", id);
+
+    if (updateError) {
+      console.error("Error updating inquiry:", updateError);
+      return NextResponse.json(
+        { error: "Failed to update inquiry" },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Inquiry PATCH error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
