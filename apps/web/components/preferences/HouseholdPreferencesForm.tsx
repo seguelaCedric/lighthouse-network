@@ -4,22 +4,32 @@ import * as React from "react";
 import { Home, DollarSign, Calendar, MapPin, Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Household staff positions
+// Household staff positions - aligned with Vincere functional expertises
 const householdPositions = [
+  // Management
   { value: "estate_manager", label: "Estate Manager" },
   { value: "house_manager", label: "House Manager" },
-  { value: "butler", label: "Butler" },
-  { value: "head_housekeeper", label: "Head Housekeeper" },
-  { value: "housekeeper", label: "Housekeeper" },
   { value: "personal_assistant", label: "Personal Assistant" },
+  // Service Staff
+  { value: "butler", label: "Butler" },
+  { value: "housekeeper", label: "Housekeeper" },
+  // Childcare
   { value: "nanny", label: "Nanny" },
   { value: "governess", label: "Governess" },
-  { value: "private_chef", label: "Private Chef" },
+  // Culinary
+  { value: "head_chef", label: "Head Chef" },
+  { value: "second_chef", label: "Second Chef" },
+  { value: "sous_chef", label: "Sous Chef" },
+  { value: "sole_chef", label: "Sole Chef" },
+  { value: "crew_chef", label: "Crew Chef" },
+  // Outdoor & Maintenance
   { value: "chauffeur", label: "Chauffeur" },
-  { value: "security", label: "Security / Close Protection" },
-  { value: "gardener", label: "Gardener / Groundskeeper" },
-  { value: "maintenance", label: "Maintenance / Handyman" },
-  { value: "laundress", label: "Laundress" },
+  { value: "gardener", label: "Gardener" },
+  { value: "handyman", label: "Handyman" },
+  // Security
+  { value: "security", label: "Security" },
+  // Couples
+  { value: "couple", label: "Couple" },
 ];
 
 const livingArrangementOptions = [

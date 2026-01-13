@@ -3,30 +3,66 @@
 import { Ship, DollarSign, Calendar, MapPin, Anchor } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Yacht crew positions
+// Yacht crew positions - aligned with Vincere functional expertises
 const yachtPositions = [
   // Deck
   { value: "captain", label: "Captain" },
-  { value: "first_officer", label: "First Officer" },
+  { value: "chief_officer", label: "Chief Officer" },
   { value: "second_officer", label: "Second Officer" },
+  { value: "third_officer", label: "Third Officer" },
+  { value: "oow", label: "OOW" },
   { value: "bosun", label: "Bosun" },
   { value: "lead_deckhand", label: "Lead Deckhand" },
-  { value: "deckhand", label: "Deckhand" },
+  { value: "experienced_deckhand", label: "Experienced Deckhand" },
+  { value: "junior_deckhand", label: "Junior Deckhand" },
+  { value: "carpenter", label: "Carpenter" },
+  // Water Sports
+  { value: "dive_instructor", label: "Dive Instructor" },
+  { value: "dive_master", label: "Dive Master" },
+  { value: "pwc_instructor", label: "PWC Instructor" },
   // Engineering
   { value: "chief_engineer", label: "Chief Engineer" },
   { value: "second_engineer", label: "2nd Engineer" },
   { value: "third_engineer", label: "3rd Engineer" },
+  { value: "junior_engineer", label: "Junior Engineer" },
   { value: "eto", label: "ETO" },
+  { value: "av_it_engineer", label: "AV/IT Engineer" },
   // Interior
-  { value: "chief_stewardess", label: "Chief Stewardess" },
-  { value: "second_stewardess", label: "2nd Stewardess" },
-  { value: "third_stewardess", label: "3rd Stewardess" },
-  { value: "stewardess", label: "Stewardess" },
   { value: "purser", label: "Purser" },
-  // Culinary
+  { value: "interior_manager", label: "Interior Manager" },
+  { value: "chief_stewardess", label: "Chief Stewardess" },
+  { value: "head_of_service", label: "Head of Service" },
+  { value: "head_of_house", label: "Head of House" },
+  { value: "second_stewardess", label: "2nd Stewardess" },
+  { value: "sole_stewardess", label: "Sole Stewardess" },
+  { value: "experienced_stewardess", label: "Experienced Stewardess" },
+  { value: "junior_stewardess", label: "Junior Stewardess" },
+  { value: "laundry_stewardess", label: "Laundry Stewardess" },
+  { value: "cook_stew", label: "Cook/Stew" },
+  // Wellness & Beauty
+  { value: "masseuse", label: "Masseuse" },
+  { value: "beautician", label: "Beautician" },
+  { value: "hairdresser", label: "Hairdresser" },
+  { value: "spa_manager", label: "SPA Manager" },
+  { value: "yoga_instructor", label: "Yoga Instructor" },
+  { value: "personal_trainer", label: "Personal Trainer" },
+  // Medical
+  { value: "nurse", label: "Nurse" },
+  { value: "paramedic", label: "Paramedic" },
+  // Childcare
+  { value: "nanny", label: "Nanny" },
+  { value: "governess", label: "Governess" },
+  // Galley
   { value: "head_chef", label: "Head Chef" },
+  { value: "second_chef", label: "Second Chef" },
   { value: "sous_chef", label: "Sous Chef" },
-  { value: "chef", label: "Chef" },
+  { value: "sole_chef", label: "Sole Chef" },
+  { value: "crew_chef", label: "Crew Chef" },
+  { value: "galley_hand", label: "Galley Hand" },
+  // Security
+  { value: "security", label: "Security" },
+  // Couples
+  { value: "couple", label: "Couple" },
 ];
 
 const yachtTypes = [
