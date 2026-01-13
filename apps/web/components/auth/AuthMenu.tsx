@@ -2,16 +2,19 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChevronDown, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/providers/AuthProvider";
-import { signOut } from "@/lib/auth/actions";
+import { createClient } from "@/lib/supabase/client";
 
 export function AuthMenu() {
-  const { user, loading } = useAuth();
+  const { user, userType, loading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const supabase = createClient();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -39,7 +42,9 @@ export function AuthMenu() {
 
   const handleSignOut = async () => {
     setIsOpen(false);
-    await signOut();
+    await supabase.auth.signOut();
+    router.push("/");
+    router.refresh();
   };
 
   // Show loading state
@@ -92,7 +97,7 @@ export function AuthMenu() {
               </div>
               <div className="py-1">
                 <Link
-                  href="/dashboard"
+                  href={userType === "candidate" ? "/crew/dashboard" : "/dashboard"}
                   onClick={() => setIsOpen(false)}
                   className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                 >
