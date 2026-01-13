@@ -189,6 +189,153 @@ const CONFIG = {
 };
 
 // ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Parse PostgreSQL array string format (e.g., "{value1,value2}") to array
+ */
+function parsePostgresArray(value: string | string[] | null | undefined): string[] {
+  if (!value) return [];
+  if (Array.isArray(value)) return value;
+  // Handle "{value1,value2}" format from PostgreSQL
+  if (typeof value === 'string' && value.startsWith('{') && value.endsWith('}')) {
+    const inner = value.slice(1, -1);
+    if (!inner) return [];
+    return inner.split(',').map(s => s.trim()).filter(Boolean);
+  }
+  return [value];
+}
+
+/**
+ * Extract the core position from complex job titles
+ * Examples:
+ * - "Experienced stew - service" → "stewardess"
+ * - "Junior Deckhand - Caribbean" → "deckhand"
+ * - "Head Chef - Rotational" → "chef"
+ * - "Second stew / Lead stew" → "stewardess" (takes first valid position)
+ */
+function extractPositionFromTitle(title: string): string {
+  if (!title) return '';
+
+  // Known positions for validation
+  const knownPositions = new Set([
+    'stewardess', 'deckhand', 'chef', 'captain', 'engineer', 'bosun', 'purser', 'cook',
+    'chief_stewardess', 'second_stewardess', 'third_stewardess',
+    'chief_engineer', 'second_engineer', 'third_engineer',
+    'first_officer', 'second_officer', 'third_officer',
+    'head_chef', 'sous_chef', 'private_chef',
+    'butler', 'housekeeper', 'head_housekeeper', 'nanny', 'personal_assistant',
+    'chauffeur', 'security', 'gardener', 'estate_manager', 'house_manager',
+    'eto', 'lead_deckhand', 'governess', 'laundress', 'maintenance'
+  ]);
+
+  let cleaned = title
+    .toLowerCase()
+    // Remove experience level prefixes
+    .replace(/^(experienced|junior|senior|lead|sole|relief|trainee|assistant|head|chief|1st|2nd|3rd|first|second|third)\s+/i, '')
+    // Remove suffixes after dash/hyphen (location, contract type, etc.)
+    .replace(/\s*[-–—]\s*(land\s*based|service|yacht|rotation|rotational|permanent|temporary|seasonal|live[\s-]?(in|out)|based.*|caribbean|med.*|worldwide|uae|europe.*)$/i, '')
+    // Remove parenthetical content
+    .replace(/\s*\([^)]*\)\s*/g, ' ')
+    .trim();
+
+  // Handle titles with "/" separator (e.g., "Second stew / Lead stew", "Yoga / Pilates / Stew")
+  // Try each part and return the first one that normalizes to a known position
+  if (cleaned.includes('/')) {
+    const parts = cleaned.split('/').map(p => p.trim());
+    for (const part of parts) {
+      // Clean each part of experience prefixes
+      const cleanedPart = part
+        .replace(/^(experienced|junior|senior|lead|sole|relief|trainee|assistant|head|chief|1st|2nd|3rd|first|second|third)\s+/i, '')
+        .trim();
+      const normalized = normalizePosition(cleanedPart);
+      // Check if it's a recognized position
+      if (knownPositions.has(normalized)) {
+        return normalized;
+      }
+    }
+  }
+
+  return normalizePosition(cleaned);
+}
+
+/**
+ * Region groups for semantic matching
+ * Allows "Nice" to match "Med" and "South Africa" to match "Africa/Worldwide"
+ */
+const REGION_GROUPS: Record<string, string[]> = {
+  mediterranean: [
+    'med', 'mediterranean', 'france', 'french riviera', 'spain', 'spanish', 'italy', 'italian',
+    'greece', 'greek', 'croatia', 'croatian', 'monaco', 'nice', 'antibes', 'cannes', 'saint tropez',
+    'palma', 'mallorca', 'ibiza', 'sardinia', 'amalfi', 'capri', 'sicily', 'cote d\'azur',
+    'south of france', 'balearic', 'adriatic', 'aegean', 'turkey', 'turkish riviera',
+    'montenegro', 'malta', 'cyprus', 'eastern med', 'western med'
+  ],
+  caribbean: [
+    'caribbean', 'bahamas', 'st barts', 'saint barts', 'antigua', 'virgin islands', 'bvi', 'usvi',
+    'st martin', 'saint martin', 'turks', 'caicos', 'jamaica', 'barbados', 'grenada',
+    'st lucia', 'saint lucia', 'martinique', 'guadeloupe', 'aruba', 'curacao', 'bonaire',
+    'cayman', 'puerto rico', 'dominican', 'florida', 'miami', 'fort lauderdale', 'palm beach'
+  ],
+  usa: [
+    'usa', 'united states', 'america', 'american', 'florida', 'miami', 'fort lauderdale',
+    'newport', 'new england', 'seattle', 'san diego', 'los angeles', 'california',
+    'east coast', 'west coast', 'pacific northwest'
+  ],
+  middle_east: [
+    'uae', 'dubai', 'abu dhabi', 'qatar', 'doha', 'saudi', 'bahrain', 'oman', 'muscat',
+    'middle east', 'arabian', 'gulf', 'red sea', 'persian gulf'
+  ],
+  asia_pacific: [
+    'asia', 'pacific', 'thailand', 'phuket', 'indonesia', 'bali', 'malaysia', 'singapore',
+    'hong kong', 'japan', 'australia', 'new zealand', 'fiji', 'tahiti', 'maldives',
+    'seychelles', 'indian ocean', 'far east', 'south east asia'
+  ],
+  northern_europe: [
+    'uk', 'united kingdom', 'britain', 'england', 'scotland', 'wales', 'ireland',
+    'netherlands', 'holland', 'amsterdam', 'germany', 'norway', 'norwegian', 'sweden',
+    'denmark', 'baltic', 'north sea', 'scandinavia', 'northern europe', 'europe'
+  ],
+  africa: [
+    'africa', 'south africa', 'cape town', 'durban', 'namibia', 'mozambique',
+    'kenya', 'tanzania', 'zanzibar', 'mauritius', 'madagascar'
+  ]
+};
+
+/**
+ * Check if job region matches any of candidate's preferred regions
+ * Uses semantic grouping for better matching (e.g., "Nice" matches "Med Based")
+ */
+function regionsMatch(jobRegion: string | null | undefined, candidateRegions: string[] | null | undefined): boolean {
+  if (!jobRegion || !candidateRegions || candidateRegions.length === 0) return false;
+
+  const jobNorm = jobRegion.toLowerCase();
+  const candidateNorms = candidateRegions.map(r => r.toLowerCase());
+
+  // "Worldwide" or "Dual season" jobs match any candidate preference
+  if (jobNorm.includes('worldwide') || jobNorm.includes('dual season') || jobNorm.includes('global')) {
+    return true;
+  }
+
+  // Direct substring match (e.g., "Caribbean" in "Caribbean based")
+  if (candidateNorms.some(r => jobNorm.includes(r) || r.includes(jobNorm))) {
+    return true;
+  }
+
+  // Semantic group matching
+  for (const keywords of Object.values(REGION_GROUPS)) {
+    const jobInGroup = keywords.some(k => jobNorm.includes(k));
+    const candidateInGroup = candidateNorms.some(cr => keywords.some(k => cr.includes(k)));
+    if (jobInGroup && candidateInGroup) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+// ============================================================================
 // INDUSTRY DETECTION
 // ============================================================================
 
@@ -267,7 +414,8 @@ function getCandidatePositions(candidate: CandidateProfile, industry: JobIndustr
 
 function scorePositionMatch(candidate: CandidateProfile, job: PublicJob, industry: JobIndustry): { score: number; details: string[] } {
   const candidatePositions = getCandidatePositions(candidate, industry);
-  const jobPosition = normalizePosition(job.position_category || job.title);
+  // Use extractPositionFromTitle to handle complex job titles like "Experienced stew - service"
+  const jobPosition = extractPositionFromTitle(job.position_category || job.title);
   const details: string[] = [];
 
   if (candidatePositions.length === 0) {
@@ -283,26 +431,33 @@ function scorePositionMatch(candidate: CandidateProfile, job: PublicJob, industr
     return { score: CONFIG.weights.position, details };
   }
 
-  // Secondary position match = 70% points
-  if (normalizedCandidatePositions.slice(1).includes(jobPosition)) {
-    details.push(`Secondary position matches: ${job.position_category || job.title}`);
-    return { score: Math.round(CONFIG.weights.position * 0.7), details };
+  // Check if any normalized candidate position matches the job position
+  if (normalizedCandidatePositions.includes(jobPosition)) {
+    const matchIndex = normalizedCandidatePositions.indexOf(jobPosition);
+    if (matchIndex === 0) {
+      details.push(`Primary position matches: ${candidatePositions[0]}`);
+      return { score: CONFIG.weights.position, details };
+    } else {
+      // Secondary position match = 70% points
+      details.push(`Secondary position matches: ${job.position_category || job.title}`);
+      return { score: Math.round(CONFIG.weights.position * 0.7), details };
+    }
   }
 
   // Same department = 40% points
   const departments = {
-    deck: ['captain', 'officer', 'mate', 'bosun', 'deckhand', 'deck'],
-    interior: ['steward', 'stew', 'chief_stew', 'purser', 'interior'],
-    engineering: ['engineer', 'eto', 'engine'],
-    galley: ['chef', 'cook', 'galley'],
-    household: ['butler', 'housekeeper', 'nanny', 'house_manager', 'estate_manager'],
+    deck: ['captain', 'officer', 'mate', 'bosun', 'deckhand', 'deck', 'first_officer', 'second_officer', 'third_officer', 'lead_deckhand'],
+    interior: ['steward', 'stew', 'chief_stew', 'chief_stewardess', 'purser', 'interior', 'stewardess', 'second_stewardess', 'third_stewardess'],
+    engineering: ['engineer', 'eto', 'engine', 'chief_engineer', 'second_engineer', 'third_engineer'],
+    galley: ['chef', 'cook', 'galley', 'head_chef', 'sous_chef', 'private_chef'],
+    household: ['butler', 'housekeeper', 'nanny', 'house_manager', 'estate_manager', 'head_housekeeper', 'personal_assistant', 'chauffeur', 'security', 'gardener', 'governess'],
   };
 
   for (const [dept, positions] of Object.entries(departments)) {
     const candidateInDept = normalizedCandidatePositions.some(p =>
-      positions.some(dp => p.includes(dp))
+      positions.some(dp => p.includes(dp) || dp.includes(p))
     );
-    const jobInDept = positions.some(dp => jobPosition.includes(dp));
+    const jobInDept = positions.some(dp => jobPosition.includes(dp) || dp.includes(jobPosition));
 
     if (candidateInDept && jobInDept) {
       details.push(`Same department: ${dept}`);
@@ -382,20 +537,20 @@ function scorePreferences(candidate: CandidateProfile, job: PublicJob, industry:
   // --- REGION/LOCATION (7 points) ---
   if (industry === 'yacht' && job.primary_region) {
     factorsChecked++;
-    const jobRegion = job.primary_region.toLowerCase();
-    const candidateRegions = (candidate.preferred_regions || []).map(r => r.toLowerCase());
+    // Use semantic region matching for better results
+    const candidateRegions = parsePostgresArray(candidate.preferred_regions);
 
-    if (candidateRegions.some(r => jobRegion.includes(r) || r.includes(jobRegion))) {
+    if (regionsMatch(job.primary_region, candidateRegions)) {
       score += 7;
       factorsMatched++;
       details.push(`Region matches: ${job.primary_region}`);
     }
   } else if (industry === 'household' && job.location) {
     factorsChecked++;
-    const jobLocation = job.location.toLowerCase();
-    const candidateLocations = (candidate.household_locations || []).map(l => l.toLowerCase());
+    // Use semantic region matching for household locations too
+    const candidateLocations = parsePostgresArray(candidate.household_locations);
 
-    if (candidateLocations.some(l => jobLocation.includes(l) || l.includes(jobLocation))) {
+    if (regionsMatch(job.location, candidateLocations)) {
       score += 7;
       factorsMatched++;
       details.push(`Location matches: ${job.location}`);
@@ -403,12 +558,15 @@ function scorePreferences(candidate: CandidateProfile, job: PublicJob, industry:
   }
 
   // --- CONTRACT TYPE (5 points) ---
-  if (job.contract_type && candidate.preferred_contract_types?.length) {
+  // Parse contract types handling PostgreSQL array format
+  const candidateContracts = parsePostgresArray(candidate.preferred_contract_types);
+  if (job.contract_type && candidateContracts.length > 0) {
     factorsChecked++;
     const jobContract = job.contract_type.toLowerCase();
-    const candidateContracts = candidate.preferred_contract_types.map(c => c.toLowerCase());
+    const normalizedContracts = candidateContracts.map(c => c.toLowerCase());
 
-    if (candidateContracts.includes(jobContract)) {
+    if (normalizedContracts.includes(jobContract) ||
+        normalizedContracts.some(c => jobContract.includes(c) || c.includes(jobContract))) {
       score += 5;
       factorsMatched++;
       details.push(`Contract type matches: ${job.contract_type}`);
@@ -438,12 +596,13 @@ function scorePreferences(candidate: CandidateProfile, job: PublicJob, industry:
   }
 
   // --- VESSEL TYPE (yacht only, 3 points) ---
-  if (industry === 'yacht' && job.vessel_type && candidate.preferred_yacht_types?.length) {
+  const candidateVessels = parsePostgresArray(candidate.preferred_yacht_types);
+  if (industry === 'yacht' && job.vessel_type && candidateVessels.length > 0) {
     factorsChecked++;
     const jobVessel = job.vessel_type.toLowerCase();
-    const candidateVessels = candidate.preferred_yacht_types.map(v => v.toLowerCase());
+    const normalizedVessels = candidateVessels.map(v => v.toLowerCase());
 
-    if (candidateVessels.some(v => jobVessel.includes(v) || v.includes(jobVessel))) {
+    if (normalizedVessels.some(v => jobVessel.includes(v) || v.includes(jobVessel))) {
       score += 3;
       factorsMatched++;
       details.push(`Vessel type preferred: ${job.vessel_type}`);
@@ -471,10 +630,11 @@ function scorePreferences(candidate: CandidateProfile, job: PublicJob, industry:
     factorsMatched++;
   }
 
-  // If few factors matched, give partial credit for not having dealbreakers
+  // If no factors to compare, give higher partial credit (70% instead of 50%)
+  // "No data to compare" should not heavily penalize the score
   if (factorsChecked === 0) {
-    score = Math.round(CONFIG.weights.preferences * 0.5);
-    details.push('No specific preferences to compare');
+    score = Math.round(CONFIG.weights.preferences * 0.7);
+    details.push('Limited preference data available');
   }
 
   return { score: Math.min(score, CONFIG.weights.preferences), details };
@@ -1018,3 +1178,35 @@ export function checkProfileCompleteness(candidate: CandidateProfile): ProfileCo
     requiredFields: ['first_name', 'last_name', 'email', 'phone', 'nationality', 'position', 'availability_status'],
   };
 }
+
+// ============================================================================
+// EXPORTED UTILITIES
+// ============================================================================
+
+/**
+ * Exported region groups for semantic matching
+ * Can be used by UI components for region selection and filtering
+ */
+export { REGION_GROUPS };
+
+/**
+ * Check if two regions match using semantic grouping
+ * @param jobRegion - The job's primary region
+ * @param candidateRegions - The candidate's preferred regions
+ * @returns true if the regions match semantically
+ */
+export { regionsMatch };
+
+/**
+ * Parse PostgreSQL array string format
+ * @param value - The value to parse (can be "{value1,value2}" format or array)
+ * @returns Parsed array of strings
+ */
+export { parsePostgresArray };
+
+/**
+ * Extract the core position from a complex job title
+ * @param title - The job title (e.g., "Experienced stew - service")
+ * @returns Normalized position (e.g., "stewardess")
+ */
+export { extractPositionFromTitle };
