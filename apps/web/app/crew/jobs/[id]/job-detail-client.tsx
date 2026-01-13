@@ -21,11 +21,14 @@ import {
   Check,
   X,
   Upload,
+  CalendarClock,
+  Home,
 } from "lucide-react";
 import { applyToJob, type JobListing } from "../actions";
 import { InlineCVUpload } from "@/components/documents/InlineCVUpload";
 import { calculateProfileCompletion } from "@/lib/profile-completion";
 import { candidateHasCV } from "@/lib/utils/candidate-cv";
+import { isLandBasedJob } from "@/lib/utils/job-helpers";
 
 interface JobDetailClientProps {
   job: JobListing;
@@ -116,6 +119,12 @@ function getMatchBgColor(score: number | null): string {
   return "bg-orange-100";
 }
 
+// Format vessel type for display (capitalize first letter)
+function formatVesselTypeDisplay(vesselType: string | null): string {
+  if (!vesselType) return "";
+  return vesselType.charAt(0).toUpperCase() + vesselType.slice(1).toLowerCase();
+}
+
 interface CandidateData {
   id: string;
   firstName?: string | null;
@@ -127,11 +136,13 @@ interface CandidateData {
   currentLocation?: string | null;
   candidateType?: string | null;
   primaryPosition?: string | null;
+  yachtPrimaryPosition?: string | null;
+  householdPrimaryPosition?: string | null;
+  availabilityStatus?: string | null;
   avatarUrl?: string | null;
   hasStcw?: boolean;
   hasEng1?: boolean;
   industryPreference?: string | null;
-  verificationTier?: string | null;
   documents?: Array<{ type: string }>;
 }
 
@@ -173,11 +184,13 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
               currentLocation: candidate.current_location,
               candidateType: candidate.candidate_type,
               primaryPosition: candidate.primary_position,
+              yachtPrimaryPosition: candidate.yacht_primary_position,
+              householdPrimaryPosition: candidate.household_primary_position,
+              availabilityStatus: candidate.availability_status,
               avatarUrl: candidate.avatar_url,
               hasStcw: candidate.has_stcw,
               hasEng1: candidate.has_eng1,
               industryPreference: candidate.industry_preference,
-              verificationTier: candidate.verification_tier,
               documents: candidate.documents?.map((doc: { document_type?: string; type?: string }) => ({
                 type: doc.document_type || doc.type || "",
               })) || [],
@@ -194,11 +207,13 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
               currentLocation: candidate.current_location,
               candidateType: candidate.candidate_type,
               primaryPosition: candidate.primary_position,
+              yachtPrimaryPosition: candidate.yacht_primary_position,
+              householdPrimaryPosition: candidate.household_primary_position,
+              availabilityStatus: candidate.availability_status,
               avatarUrl: candidate.avatar_url,
               hasStcw: candidate.has_stcw,
               hasEng1: candidate.has_eng1,
               industryPreference: candidate.industry_preference,
-              verificationTier: candidate.verification_tier,
               documents: candidate.documents?.map((doc: { document_type?: string; type?: string }) => ({
                 type: doc.document_type || doc.type || "",
               })) || [],
@@ -305,8 +320,8 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
             )}
 
             <div className="p-6">
-              {/* Top Row: Badges + Match Score */}
-              <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+              {/* Top Tags Row */}
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <div className="flex flex-wrap items-center gap-2">
                   {job.contractType && (
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-navy-100 px-3 py-1 text-xs font-medium text-navy-700">
@@ -315,7 +330,8 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
                     </span>
                   )}
                   {job.publishedAt && (
-                    <span className="text-sm text-gray-500">
+                    <span className="flex items-center gap-1 text-sm text-gray-500">
+                      <Clock className="h-3.5 w-3.5" />
                       {formatPostedDate(job.publishedAt)}
                     </span>
                   )}
@@ -338,67 +354,91 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
                 <p className="text-gray-600 mb-4">{job.vesselName}</p>
               )}
 
-              {/* Key Details Grid */}
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 p-4 bg-gray-50 rounded-xl">
-                {job.location && (
-                  <div className="flex flex-col space-y-1 p-3 bg-white rounded-lg">
-                    <span className="text-xs text-gray-500 uppercase tracking-wide">Location</span>
-                    <div className="flex items-center gap-2 text-navy-800">
-                      <MapPin className="h-4 w-4 text-gold-500 flex-shrink-0" />
-                      <span className="font-medium text-sm">{job.location}</span>
-                    </div>
+              {/* Key Details Grid - Grey Section */}
+              <div className="grid grid-cols-1 gap-3 rounded-xl bg-gray-50 p-3 sm:grid-cols-2 sm:gap-4 sm:p-4">
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-1.5">
+                    {isLandBasedJob(job.title) ? (
+                      <Home className="h-4 w-4 shrink-0 text-gray-400" />
+                    ) : (
+                      <Ship className="h-4 w-4 shrink-0 text-gray-400" />
+                    )}
+                    <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                      {isLandBasedJob(job.title) ? "Property" : "Vessel / Property"}
+                    </p>
                   </div>
-                )}
-                {hasSalary && (
-                  <div className="flex flex-col space-y-1 p-3 bg-white rounded-lg">
-                    <span className="text-xs text-gray-500 uppercase tracking-wide">Salary</span>
-                    <div className="flex items-center gap-2 text-navy-800">
-                      <DollarSign className="h-4 w-4 text-gold-500 flex-shrink-0" />
-                      <span className="font-semibold text-sm">
-                        {formatSalary(job.salaryMin, job.salaryMax, job.currency, job.salaryPeriod)}
-                      </span>
+                  <p className="text-sm font-semibold text-navy-900">
+                    {isLandBasedJob(job.title) ? (
+                      "Private Household"
+                    ) : (
+                      <>
+                        {formatVesselTypeDisplay(job.vesselType)}
+                        {job.vesselType && job.vesselSize ? " • " : ""}
+                        {job.vesselSize ? `${job.vesselSize}m` : ""}
+                        {!job.vesselType && !job.vesselSize && "Not specified"}
+                      </>
+                    )}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-1.5">
+                    <DollarSign className="h-4 w-4 shrink-0 text-gray-400" />
+                    <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                      Salary
+                    </p>
+                  </div>
+                  <p className="text-sm font-semibold text-navy-900">
+                    {formatSalary(job.salaryMin, job.salaryMax, job.currency, job.salaryPeriod)}
+                  </p>
+                </div>
+                {job.location && (
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="h-4 w-4 shrink-0 text-gray-400" />
+                      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                        Location
+                      </p>
                     </div>
+                    <p className="text-sm font-semibold text-navy-900">{job.location}</p>
                   </div>
                 )}
                 {job.startDate && (
-                  <div className="flex flex-col space-y-1 p-3 bg-white rounded-lg">
-                    <span className="text-xs text-gray-500 uppercase tracking-wide">Start Date</span>
-                    <div className={`flex items-center gap-2 ${startingSoon ? "text-amber-600" : "text-navy-800"}`}>
-                      <Calendar className="h-4 w-4 text-gold-500 flex-shrink-0" />
-                      <span className={`text-sm ${startingSoon ? "font-semibold" : "font-medium"}`}>
-                        {formatDate(job.startDate)}
-                      </span>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-1.5">
+                      <Calendar className="h-4 w-4 shrink-0 text-gray-400" />
+                      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                        Start Date
+                      </p>
                     </div>
+                    <p className={`text-sm font-semibold ${startingSoon ? "text-amber-600" : "text-navy-900"}`}>
+                      {formatDate(job.startDate)}
+                    </p>
                   </div>
                 )}
                 {job.holidayDays && (
-                  <div className="flex flex-col space-y-1 p-3 bg-white rounded-lg">
-                    <span className="text-xs text-gray-500 uppercase tracking-wide">Annual Leave</span>
-                    <div className="flex items-center gap-2 text-navy-800">
-                      <Palmtree className="h-4 w-4 text-gold-500 flex-shrink-0" />
-                      <span className="font-medium text-sm">{job.holidayDays} days</span>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-1.5">
+                      <CalendarClock className="h-4 w-4 shrink-0 text-gray-400" />
+                      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                        Holiday
+                      </p>
                     </div>
-                  </div>
-                )}
-                {job.vesselType && (
-                  <div className="flex flex-col space-y-1 p-3 bg-white rounded-lg">
-                    <span className="text-xs text-gray-500 uppercase tracking-wide">Vessel</span>
-                    <div className="flex items-center gap-2 text-navy-800">
-                      <Ship className="h-4 w-4 text-gold-500 flex-shrink-0" />
-                      <span className="font-medium text-sm">
-                        {job.vesselType}
-                        {job.vesselSize && ` (${job.vesselSize}m)`}
-                      </span>
-                    </div>
+                    <p className="text-sm font-semibold text-navy-900">
+                      {job.holidayDays} days
+                    </p>
                   </div>
                 )}
                 {job.rotationSchedule && (
-                  <div className="flex flex-col space-y-1 p-3 bg-white rounded-lg">
-                    <span className="text-xs text-gray-500 uppercase tracking-wide">Rotation</span>
-                    <div className="flex items-center gap-2 text-navy-800">
-                      <Clock className="h-4 w-4 text-gold-500 flex-shrink-0" />
-                      <span className="font-medium text-sm">{job.rotationSchedule}</span>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="h-4 w-4 shrink-0 text-gray-400" />
+                      <p className="text-xs font-medium uppercase tracking-wide text-gray-500">
+                        Rotation
+                      </p>
                     </div>
+                    <p className="text-sm font-semibold text-navy-900">
+                      {job.rotationSchedule}
+                    </p>
                   </div>
                 )}
               </div>
@@ -427,9 +467,10 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
             <h2 className="text-lg font-semibold text-navy-900 mb-4">About This Position</h2>
             {job.description ? (
-              <div className="prose prose-navy max-w-none">
-                <p className="whitespace-pre-line text-gray-700 leading-relaxed">{job.description}</p>
-              </div>
+              <div
+                className="prose prose-navy max-w-none text-gray-700 prose-headings:text-navy-900 prose-a:text-gold-600 prose-strong:text-navy-900"
+                dangerouslySetInnerHTML={{ __html: job.description }}
+              />
             ) : (
               <p className="text-gray-500 italic">Contact us for more details about this position.</p>
             )}
@@ -490,7 +531,7 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
           )}
 
           {/* Apply Card */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sticky top-24">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
             <h3 className="text-lg font-semibold text-navy-900 mb-4">
               {hasApplied ? "Application Submitted" : "Apply for this position"}
             </h3>

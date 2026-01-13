@@ -257,15 +257,19 @@ export function CrewPortalLayout({
 
             {/* User Info */}
             <div className="border-b border-gray-100 px-4 py-4">
-              <div className="flex items-center gap-3">
+              <Link
+                href="/crew/profile/edit"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 transition-transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:ring-offset-2 rounded-lg -m-2 p-2"
+              >
                 {user.profilePhotoUrl ? (
                   <img
                     src={user.profilePhotoUrl}
                     alt=""
-                    className="size-12 rounded-full object-cover ring-2 ring-gold-200"
+                    className="size-12 rounded-full object-cover ring-2 ring-gold-200 transition-shadow"
                   />
                 ) : (
-                  <div className="flex size-12 items-center justify-center rounded-full bg-gold-100 text-gold-600 ring-2 ring-gold-200">
+                  <div className="flex size-12 items-center justify-center rounded-full bg-gold-100 text-gold-600 ring-2 ring-gold-200 transition-shadow">
                     <span className="text-lg font-semibold">
                       {user.firstName?.[0]}
                       {user.lastName?.[0]}
@@ -280,7 +284,7 @@ export function CrewPortalLayout({
                     {user.primaryPosition?.replace(/_/g, " ") || "Candidate"}
                   </p>
                 </div>
-              </div>
+              </Link>
 
               {/* Availability Status */}
               <div

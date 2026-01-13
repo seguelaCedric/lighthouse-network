@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
  * GET /api/verification/pending
  * Get all pending verifications for recruiters
  * Returns pending ID documents, references, and voice verifications
+ * Note: Document approval is handled separately on the agency side
  */
 export async function GET(request: NextRequest) {
   try {
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
 
     // Get query params for filtering
     const searchParams = request.nextUrl.searchParams;
-    const type = searchParams.get("type"); // "id" | "reference" | "voice" | "documents" | null (all)
+    const type = searchParams.get("type"); // "id" | "reference" | "voice" | null (all)
 
     const results: {
       id_documents: Array<{
@@ -71,12 +72,10 @@ export async function GET(request: NextRequest) {
         candidate_phone: string | null;
         requested_at: string;
       }>;
-      documents: Array<any>;
     } = {
       id_documents: [],
       references: [],
       voice: [],
-      documents: [],
     };
 
     // Fetch pending ID documents
@@ -220,81 +219,16 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Fetch pending documents
-    if (!type || type === "documents") {
-      const { data: pendingDocs, error: docsError } = await supabase
-        .from("documents")
-        .select(
-          `
-          id,
-          type,
-          file_url,
-          name,
-          file_size,
-          mime_type,
-          description,
-          status,
-          version,
-          expiry_date,
-          created_at,
-          candidates!inner (
-            id,
-            first_name,
-            last_name,
-            email,
-            deleted_at
-          )
-        `
-        )
-        .eq("status", "pending")
-        .eq("entity_type", "candidate")
-        .is("deleted_at", null)
-        .is("candidates.deleted_at", null)
-        .order("created_at", { ascending: false });
-
-      if (!docsError && pendingDocs) {
-        results.documents = pendingDocs.map((d) => {
-          const candidate = d.candidates as unknown as {
-            id: string;
-            first_name: string | null;
-            last_name: string | null;
-            email: string | null;
-          };
-          return {
-            id: d.id,
-            documentType: d.type,
-            fileUrl: d.file_url,
-            fileName: d.name,
-            fileSize: d.file_size,
-            mimeType: d.mime_type,
-            description: d.description,
-            status: "pending" as const,
-            version: d.version,
-            expiryDate: d.expiry_date,
-            uploadedAt: d.created_at,
-            candidate: {
-              id: candidate.id,
-              firstName: candidate.first_name || "",
-              lastName: candidate.last_name || "",
-              email: candidate.email || "",
-            },
-          };
-        });
-      }
-    }
-
     return NextResponse.json({
       data: results,
       counts: {
         id_documents: results.id_documents.length,
         references: results.references.length,
         voice: results.voice.length,
-        documents: results.documents.length,
         total:
           results.id_documents.length +
           results.references.length +
-          results.voice.length +
-          results.documents.length,
+          results.voice.length,
       },
     });
   } catch (error) {

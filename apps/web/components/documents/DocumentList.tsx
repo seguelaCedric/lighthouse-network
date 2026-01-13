@@ -172,6 +172,8 @@ export default function DocumentList({
   };
 
   const handleApprove = async (documentId: string) => {
+    // Only available for recruiters
+    if (!isRecruiter) return;
     try {
       const response = await fetch(`/api/documents/${documentId}/approve`, {
         method: "POST",
@@ -185,6 +187,8 @@ export default function DocumentList({
   };
 
   const handleReject = async (documentId: string, reason: string) => {
+    // Only available for recruiters
+    if (!isRecruiter) return;
     try {
       const response = await fetch(`/api/documents/${documentId}/reject`, {
         method: "POST",
@@ -366,8 +370,8 @@ export default function DocumentList({
                     <DocumentCard
                       key={doc.id}
                       document={doc}
-                      onApprove={handleApprove}
-                      onReject={handleReject}
+                      onApprove={isRecruiter ? handleApprove : undefined}
+                      onReject={isRecruiter ? handleReject : undefined}
                       onDelete={handleDelete}
                       isRecruiter={isRecruiter}
                       showActions={true}

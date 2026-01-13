@@ -93,19 +93,19 @@ function StatusBadge({
 }) {
   const config = {
     pending: {
-      icon: Clock,
-      label: "Pending Review",
-      className: "bg-gold-100 text-gold-700 border-gold-200",
+      icon: CheckCircle2,
+      label: "Uploaded",
+      className: "bg-success-100 text-success-700 border-success-200",
     },
     approved: {
       icon: CheckCircle2,
-      label: "Approved",
+      label: "Uploaded",
       className: "bg-success-100 text-success-700 border-success-200",
     },
     rejected: {
-      icon: XCircle,
-      label: "Rejected",
-      className: "bg-error-100 text-error-700 border-error-200",
+      icon: CheckCircle2,
+      label: "Uploaded",
+      className: "bg-success-100 text-success-700 border-success-200",
     },
   };
 

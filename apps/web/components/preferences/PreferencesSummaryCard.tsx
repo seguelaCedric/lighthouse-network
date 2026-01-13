@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Ship, Home, Sparkles, ChevronRight, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Ship, Home, Sparkles, ChevronRight, AlertCircle, CheckCircle2, Edit2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { yachtPositionLabels, householdPositionLabels, regionLabels } from "./constants";
+import { Button } from "@/components/ui/button";
 
 interface PreferencesSummaryCardProps {
   preferences: {
@@ -80,42 +81,48 @@ export function PreferencesSummaryCard({ preferences }: PreferencesSummaryCardPr
   }
 
   return (
-    <Link
-      href="/crew/preferences"
-      className="group block rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all hover:border-gold-300 hover:shadow-md"
-    >
+    <div className="rounded-xl sm:rounded-2xl border border-gray-200 bg-white p-4 sm:p-6 shadow-sm">
       {/* Header */}
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="font-serif text-xl font-medium text-navy-900">
+      <div className="mb-3 sm:mb-4 flex items-center justify-between gap-2">
+        <h3 className="font-serif text-lg sm:text-xl font-medium text-navy-900">
           Job Preferences
         </h3>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
           {isComplete && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-success-100 px-2.5 py-1 text-xs font-medium text-success-700">
-              <CheckCircle2 className="size-3" />
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-success-100 px-2 sm:px-2.5 py-0.5 sm:py-1 text-[10px] sm:text-xs font-medium text-success-700 whitespace-nowrap">
+              <CheckCircle2 className="size-2.5 sm:size-3" />
               Complete
             </span>
           )}
-          <ChevronRight className="size-5 shrink-0 text-gray-400 transition-transform group-hover:translate-x-1 group-hover:text-gold-600" />
+          <Link href="/crew/preferences">
+            <Button
+              variant="outline"
+              size="sm"
+              className="px-2 sm:px-3 text-xs sm:text-sm gap-1.5 border-gray-300 hover:border-gold-400 hover:bg-gold-50"
+            >
+              <Edit2 className="size-3 sm:size-3.5" />
+              <span className="hidden sm:inline">Edit</span>
+            </Button>
+          </Link>
         </div>
       </div>
 
       {/* Industry Label */}
       {industryDisplay && (
-        <p className="mb-5 text-sm text-gray-500">{industryDisplay.label}</p>
+        <p className="mb-3 sm:mb-5 text-xs sm:text-sm text-gray-500">{industryDisplay.label}</p>
       )}
 
       {/* Content */}
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         {/* Yacht position and regions */}
         {(preferences.industryPreference === "yacht" ||
           preferences.industryPreference === "both") &&
           yachtPositionLabel && (
-            <div className="flex items-start gap-3">
+            <div className="flex items-start gap-2.5 sm:gap-3">
               {industryDisplay && (
                 <div
                   className={cn(
-                    "flex size-12 shrink-0 items-center justify-center rounded-xl",
+                    "flex size-10 sm:size-12 shrink-0 items-center justify-center rounded-xl",
                     industryDisplay.color === "navy"
                       ? "bg-navy-50"
                       : industryDisplay.color === "gold"
@@ -125,7 +132,7 @@ export function PreferencesSummaryCard({ preferences }: PreferencesSummaryCardPr
                 >
                   <Ship
                     className={cn(
-                      "size-5",
+                      "size-4 sm:size-5",
                       industryDisplay.color === "navy"
                         ? "text-navy-600"
                         : industryDisplay.color === "gold"
@@ -135,10 +142,10 @@ export function PreferencesSummaryCard({ preferences }: PreferencesSummaryCardPr
                   />
                 </div>
               )}
-              <div className="flex-1 pt-1">
-                <p className="font-medium text-navy-900">{yachtPositionLabel}</p>
+              <div className="flex-1 pt-0.5 sm:pt-1 min-w-0">
+                <p className="font-medium text-sm sm:text-base text-navy-900 break-words">{yachtPositionLabel}</p>
                 {regionLabelsDisplay.length > 0 && (
-                  <p className="mt-0.5 text-sm text-gray-500">
+                  <p className="mt-0.5 text-xs sm:text-sm text-gray-500 line-clamp-2">
                     {regionLabelsDisplay.join(", ")}
                     {preferences.regions.length > 2 &&
                       ` · +${preferences.regions.length - 2} more`}
@@ -152,11 +159,11 @@ export function PreferencesSummaryCard({ preferences }: PreferencesSummaryCardPr
         {(preferences.industryPreference === "household" ||
           preferences.industryPreference === "both") &&
           householdPositionLabel && (
-            <div className="flex items-start gap-3">
+            <div className="flex items-start gap-2.5 sm:gap-3">
               {industryDisplay && (
                 <div
                   className={cn(
-                    "flex size-12 shrink-0 items-center justify-center rounded-xl",
+                    "flex size-10 sm:size-12 shrink-0 items-center justify-center rounded-xl",
                     industryDisplay.color === "navy"
                       ? "bg-navy-50"
                       : industryDisplay.color === "gold"
@@ -166,7 +173,7 @@ export function PreferencesSummaryCard({ preferences }: PreferencesSummaryCardPr
                 >
                   <Home
                     className={cn(
-                      "size-5",
+                      "size-4 sm:size-5",
                       industryDisplay.color === "navy"
                         ? "text-navy-600"
                         : industryDisplay.color === "gold"
@@ -176,10 +183,10 @@ export function PreferencesSummaryCard({ preferences }: PreferencesSummaryCardPr
                   />
                 </div>
               )}
-              <div className="flex-1 pt-1">
-                <p className="font-medium text-navy-900">{householdPositionLabel}</p>
+              <div className="flex-1 pt-0.5 sm:pt-1 min-w-0">
+                <p className="font-medium text-sm sm:text-base text-navy-900 break-words">{householdPositionLabel}</p>
                 {locationLabelsDisplay.length > 0 && (
-                  <p className="mt-0.5 text-sm text-gray-500">
+                  <p className="mt-0.5 text-xs sm:text-sm text-gray-500 line-clamp-2">
                     {locationLabelsDisplay.join(", ")}
                     {preferences.householdLocations.length > 2 &&
                       ` · +${preferences.householdLocations.length - 2} more`}
@@ -191,10 +198,10 @@ export function PreferencesSummaryCard({ preferences }: PreferencesSummaryCardPr
 
         {/* Availability Status Badge */}
         {preferences.availabilityStatus && (
-          <div className="pt-2">
+          <div className="pt-1 sm:pt-2">
             <span
               className={cn(
-                "inline-flex items-center rounded-full px-3 py-1.5 text-xs font-medium",
+                "inline-flex items-center rounded-full px-2.5 sm:px-3 py-1 sm:py-1.5 text-[10px] sm:text-xs font-medium",
                 preferences.availabilityStatus === "available"
                   ? "bg-success-50 text-success-700"
                   : preferences.availabilityStatus === "looking"
@@ -215,6 +222,6 @@ export function PreferencesSummaryCard({ preferences }: PreferencesSummaryCardPr
           </div>
         )}
       </div>
-    </Link>
+    </div>
   );
 }

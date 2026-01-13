@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Heart, Users, User } from "lucide-react";
+import { Heart, Users, User, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Combined list of positions for partner selection
@@ -158,8 +158,8 @@ export function CoupleSection({
 
       {/* Partner Details (shown when couple is selected) */}
       {isCouple && (
-        <div className="space-y-4 rounded-lg border border-error-200 bg-error-50/50 p-4">
-          <h3 className="font-medium text-navy-900">Partner Details</h3>
+        <div className="space-y-4 rounded-lg border border-error-200 bg-error-50/50 p-4 sm:p-6">
+          <h3 className="text-sm font-medium text-navy-900 sm:text-base">Partner Details</h3>
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
@@ -170,7 +170,7 @@ export function CoupleSection({
               value={partnerName || ""}
               onChange={(e) => onChange("partnerName", e.target.value || null)}
               placeholder="Enter your partner's name"
-              className="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm focus:border-error-500 focus:outline-none focus:ring-2 focus:ring-error-500/20"
+              className="h-10 w-full min-w-0 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:border-error-500 focus:outline-none focus:ring-2 focus:ring-error-500/20"
             />
           </div>
 
@@ -178,11 +178,12 @@ export function CoupleSection({
             <label className="block text-sm font-medium text-gray-700">
               Partner&apos;s Position
             </label>
-            <select
-              value={partnerPosition || ""}
-              onChange={(e) => onChange("partnerPosition", e.target.value || null)}
-              className="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm focus:border-error-500 focus:outline-none focus:ring-2 focus:ring-error-500/20"
-            >
+            <div className="relative">
+              <select
+                value={partnerPosition || ""}
+                onChange={(e) => onChange("partnerPosition", e.target.value || null)}
+                className="h-10 w-full min-w-0 appearance-none rounded-lg border border-gray-300 bg-white px-3 pr-10 text-sm focus:border-error-500 focus:outline-none focus:ring-2 focus:ring-error-500/20"
+              >
               <option value="">Select partner&apos;s position...</option>
               <optgroup label="Yacht Crew">
                 {allPositions
@@ -202,10 +203,12 @@ export function CoupleSection({
                     </option>
                   ))}
               </optgroup>
-            </select>
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
+            </div>
           </div>
 
-          <p className="text-xs text-gray-500">
+          <p className="text-xs leading-relaxed text-gray-500 sm:text-sm">
             Couple placements are highly sought after. We&apos;ll match you with opportunities
             that can accommodate both positions.
           </p>

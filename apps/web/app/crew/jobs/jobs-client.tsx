@@ -19,7 +19,6 @@ import {
   ChevronDown,
   ChevronUp,
   Sparkles,
-  Anchor,
   CalendarClock,
   HelpCircle,
   Bookmark,
@@ -171,7 +170,7 @@ function JobCard({
   isSaving: boolean;
 }) {
   return (
-    <div className="group relative rounded-xl border border-gray-200 bg-white p-5 transition-all hover:border-gray-300 hover:shadow-md">
+    <div className="group relative rounded-xl border border-gray-200 bg-white p-4 sm:p-5 transition-all hover:border-gray-300 hover:shadow-md">
       {/* Urgent Badge */}
       {job.isUrgent && (
         <div className="absolute -left-2 top-4 rounded-r-full bg-error-500 px-3 py-1 text-xs font-bold text-white shadow-sm">
@@ -179,13 +178,39 @@ function JobCard({
         </div>
       )}
 
-      {/* Match Score */}
-      <div className="absolute right-4 top-4 flex items-center gap-2">
-        <MatchScoreBadge score={job.matchScore} matchType={job.matchType} showTooltip />
+      {/* Top Row: Contract Badge, Save Button, Match Score */}
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <ContractBadge type={job.contractType} />
+        </div>
+        <div className="flex items-center gap-2">
+          {/* Bookmark Button */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleSave();
+            }}
+            disabled={isSaving}
+            className={cn(
+              "rounded-lg p-1.5 transition-colors",
+              job.isSaved
+                ? "bg-gold-100 text-gold-600 hover:bg-gold-200"
+                : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            )}
+            title={job.isSaved ? "Remove from saved" : "Save for later"}
+          >
+            {isSaving ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <Bookmark className={cn("size-3.5", job.isSaved && "fill-current")} />
+            )}
+          </button>
+          <MatchScoreBadge score={job.matchScore} matchType={job.matchType} showTooltip />
+        </div>
       </div>
 
       {/* Main Content */}
-      <div className="pr-48">
+      <div>
         <h3 className="text-lg font-semibold text-navy-900">
           <button
             onClick={onView}
@@ -205,7 +230,7 @@ function JobCard({
       </div>
 
       {/* Details Grid */}
-      <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-4">
+      <div className="mt-4 grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2 md:grid-cols-4">
         <div className="flex items-center gap-2 text-gray-600">
           <Ship className="size-4 text-gray-400" />
           <span>
@@ -231,40 +256,16 @@ function JobCard({
       </div>
 
       {/* Footer */}
-      <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-4">
-        <div className="flex items-center gap-3">
-          <ContractBadge type={job.contractType} />
-          <span className="text-xs text-gray-400">
-            Posted {formatRelativeDate(job.createdAt)}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          {/* Bookmark Button */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleSave();
-            }}
-            disabled={isSaving}
-            className={cn(
-              "rounded-lg p-2 transition-colors",
-              job.isSaved
-                ? "bg-gold-100 text-gold-600 hover:bg-gold-200"
-                : "text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-            )}
-            title={job.isSaved ? "Remove from saved" : "Save for later"}
-          >
-            {isSaving ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Bookmark className={cn("size-4", job.isSaved && "fill-current")} />
-            )}
-          </button>
-          <Button variant="secondary" size="sm" onClick={onView}>
+      <div className="mt-4 flex flex-col gap-2 border-t border-gray-100 pt-3 sm:flex-row sm:items-center sm:justify-between">
+        <span className="text-xs text-gray-400">
+          Posted {formatRelativeDate(job.createdAt)}
+        </span>
+        <div className="flex items-center gap-1.5">
+          <Button variant="secondary" size="sm" onClick={onView} className="text-xs px-2.5 py-1 h-7">
             View Details
           </Button>
           {job.hasApplied ? (
-            <Button variant="secondary" size="sm" disabled>
+            <Button variant="secondary" size="sm" disabled className="text-xs px-2.5 py-1 h-7">
               <CheckCircle2 className="mr-1 size-3 text-success-500" />
               Applied
             </Button>
@@ -274,6 +275,7 @@ function JobCard({
               size="sm"
               onClick={onQuickApply}
               disabled={isApplying}
+              className="text-xs px-2.5 py-1 h-7"
             >
               {isApplying ? (
                 <>
@@ -310,36 +312,40 @@ function JobDetailModal({
   const requirements = job.requirements;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-20">
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-3 pt-16 sm:p-4 sm:pt-20">
       <div className="relative w-full max-w-3xl rounded-2xl bg-white shadow-xl">
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-start justify-between rounded-t-2xl border-b border-gray-100 bg-white p-6">
-          <div>
-            <div className="flex items-center gap-3">
-              <h2 className="font-serif text-2xl font-medium text-navy-800">
-                {job.title}
-              </h2>
-              {job.isUrgent && (
-                <span className="rounded-full bg-error-100 px-2 py-0.5 text-xs font-bold text-error-600">
-                  URGENT
-                </span>
-              )}
-              <MatchScoreBadge score={job.matchScore} matchType={job.matchType} showTooltip />
+        <div className="flex items-start justify-between rounded-t-2xl border-b border-gray-100 bg-white p-4 sm:p-6">
+          <div className="flex-1 min-w-0 pr-2">
+            <div className="flex items-start justify-between gap-3 mb-2">
+              <div className="flex-1 min-w-0">
+                <h2 className="font-serif text-xl sm:text-2xl font-medium text-navy-800 break-words pr-2">
+                  {job.title}
+                </h2>
+              </div>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {job.isUrgent && (
+                  <span className="rounded-full bg-error-100 px-2 py-0.5 text-xs font-bold text-error-600 whitespace-nowrap">
+                    URGENT
+                  </span>
+                )}
+                <MatchScoreBadge score={job.matchScore} matchType={job.matchType} showTooltip />
+              </div>
             </div>
-            <p className="mt-1 text-gray-600">
+            <p className="text-sm sm:text-base text-gray-600">
               {job.vesselName || "Confidential Listing"}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            className="flex-shrink-0 rounded-full p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 ml-2"
           >
             <X className="size-5" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {/* Key Info */}
           <div className="mb-6 flex flex-wrap items-center gap-4">
             <ContractBadge type={job.contractType} />
@@ -356,7 +362,7 @@ function JobDetailModal({
           </div>
 
           {/* Quick Stats */}
-          <div className="mb-6 grid grid-cols-2 gap-4 rounded-xl bg-gray-50 p-4 sm:grid-cols-4">
+          <div className="mb-6 grid grid-cols-1 gap-4 rounded-xl bg-gray-50 p-4 sm:grid-cols-2 lg:grid-cols-3">
             <div>
               <p className="text-xs text-gray-500">Vessel / Property</p>
               <p className="font-medium text-navy-900">
@@ -383,139 +389,174 @@ function JobDetailModal({
                 {formatDate(job.startDate)}
               </p>
             </div>
+            {job.holidayDays && (
+              <div>
+                <p className="text-xs text-gray-500">Holiday</p>
+                <p className="font-medium text-navy-900">
+                  {job.holidayDays} days annual leave
+                </p>
+              </div>
+            )}
+            {job.rotationSchedule && (
+              <div>
+                <p className="text-xs text-gray-500">Rotation</p>
+                <p className="font-medium text-navy-900">
+                  {job.rotationSchedule}
+                </p>
+              </div>
+            )}
+            {job.benefits && (
+              <div className="sm:col-span-2 lg:col-span-1">
+                <p className="text-xs text-gray-500">Benefits & Package</p>
+                <p className="font-medium text-navy-900">
+                  {job.benefits}
+                </p>
+              </div>
+            )}
           </div>
-
-          {/* Additional Info Row */}
-          {(job.holidayDays || job.rotationSchedule) && (
-            <div className="mb-6 flex flex-wrap gap-4">
-              {job.holidayDays && (
-                <div className="flex items-center gap-2 rounded-lg bg-success-50 px-3 py-2 text-sm">
-                  <CalendarClock className="size-4 text-success-600" />
-                  <span className="text-success-700">{job.holidayDays} days holiday</span>
-                </div>
-              )}
-              {job.rotationSchedule && (
-                <div className="flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2 text-sm">
-                  <Anchor className="size-4 text-blue-600" />
-                  <span className="text-blue-700">{job.rotationSchedule}</span>
-                </div>
-              )}
-            </div>
-          )}
 
           {/* Description */}
           {job.description && (
             <div className="mb-6">
-              <h3 className="mb-3 font-semibold text-navy-900">
+              <h3 className="mb-4 text-base font-semibold text-navy-900 sm:text-lg">
                 About This Position
               </h3>
-              <p className="whitespace-pre-line text-sm leading-relaxed text-gray-600">
-                {job.description}
-              </p>
+              <div
+                className="prose prose-sm sm:prose-base max-w-none text-gray-700 
+                  prose-headings:text-navy-900 prose-headings:font-semibold prose-headings:mt-6 prose-headings:mb-3
+                  prose-h1:text-xl prose-h2:text-lg prose-h3:text-base
+                  prose-p:text-gray-700 prose-p:leading-relaxed prose-p:mb-4
+                  prose-strong:text-navy-900 prose-strong:font-semibold
+                  prose-a:text-gold-600 prose-a:font-medium prose-a:no-underline hover:prose-a:underline
+                  prose-ul:my-4 prose-ul:pl-6 prose-ul:list-disc prose-ul:space-y-1.5
+                  prose-ol:my-4 prose-ol:pl-6 prose-ol:list-decimal prose-ol:space-y-1.5
+                  prose-li:my-1 prose-li:text-gray-700 prose-li:leading-relaxed prose-li:pl-1
+                  prose-blockquote:border-l-4 prose-blockquote:border-gold-500 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-gray-600
+                  prose-code:text-sm prose-code:bg-gray-100 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
+                  prose-pre:bg-gray-900 prose-pre:text-gray-100
+                  prose-hr:border-gray-200 prose-hr:my-6
+                  [&_p_strong]:text-navy-900 [&_p_strong]:font-semibold
+                  [&_p]:[text-align:left]
+                  [&_p:has(>_strong:first-child)]:mb-2
+                  [&_p:has(>_strong:first-child)]:mt-0
+                  [&_p]:[&:not(:has(ul))]:[&:not(:has(ol))]:[&:not(:has(li))]:before:content-none
+                  [&_ul]:list-disc [&_ul]:pl-6 [&_ul]:my-4
+                  [&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:my-4
+                  [&_li]:my-1.5 [&_li]:leading-relaxed"
+                dangerouslySetInnerHTML={{ 
+                  __html: job.description
+                    // Remove plain text bullets from paragraphs (•, ·, ▪, ▫, -)
+                    .replace(/<p>([•·▪▫-])\s*/gi, '<p>')
+                    .replace(/\s*([•·▪▫-])\s*/g, ' ')
+                    // Clean up any double spaces
+                    .replace(/\s{2,}/g, ' ')
+                }}
+              />
             </div>
           )}
 
           {/* Requirements */}
           {requirements && Object.keys(requirements).length > 0 && (
             <div className="mb-6">
-              <h3 className="mb-3 font-semibold text-navy-900">Requirements</h3>
-              <ul className="space-y-2">
+              <h3 className="mb-3 text-base font-semibold text-navy-900 sm:text-lg">Requirements</h3>
+              <ul className="space-y-2.5">
                 {typeof requirements.experience_years_min === "number" && (
-                  <li className="flex items-start gap-2 text-sm text-gray-600">
+                  <li className="flex items-start gap-2.5 text-sm text-gray-700">
                     <Check className="mt-0.5 size-4 shrink-0 text-success-500" />
-                    Minimum {String(requirements.experience_years_min)} years experience
+                    <span>Minimum {String(requirements.experience_years_min)} years experience</span>
                   </li>
                 )}
                 {Array.isArray(requirements.certifications_required) &&
                   (requirements.certifications_required as string[]).map((cert: string) => (
                     <li
                       key={cert}
-                      className="flex items-start gap-2 text-sm text-gray-600"
+                      className="flex items-start gap-2.5 text-sm text-gray-700"
                     >
                       <Check className="mt-0.5 size-4 shrink-0 text-success-500" />
-                      {cert} required
+                      <span>{cert} required</span>
                     </li>
                   ))}
                 {Array.isArray(requirements.languages_required) &&
                   (requirements.languages_required as string[]).map((lang: string) => (
                     <li
                       key={lang}
-                      className="flex items-start gap-2 text-sm text-gray-600"
+                      className="flex items-start gap-2.5 text-sm text-gray-700"
                     >
                       <Check className="mt-0.5 size-4 shrink-0 text-success-500" />
-                      {lang} required
+                      <span>{lang} required</span>
                     </li>
                   ))}
                 {Boolean(requirements.non_smoker) && (
-                  <li className="flex items-start gap-2 text-sm text-gray-600">
+                  <li className="flex items-start gap-2.5 text-sm text-gray-700">
                     <Check className="mt-0.5 size-4 shrink-0 text-success-500" />
-                    Non-smoker preferred
+                    <span>Non-smoker preferred</span>
                   </li>
                 )}
               </ul>
             </div>
           )}
 
-          {/* Benefits */}
-          {job.benefits && (
-            <div className="mb-6">
-              <h3 className="mb-3 font-semibold text-navy-900">
-                Benefits & Package
-              </h3>
-              <p className="text-sm text-gray-600">{job.benefits}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="sticky bottom-0 flex items-center justify-between rounded-b-2xl border-t border-gray-100 bg-white p-4">
-          {/* Bookmark Button */}
-          <button
-            onClick={onToggleSave}
-            disabled={isSaving}
-            className={cn(
-              "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-              job.isSaved
-                ? "bg-gold-100 text-gold-700 hover:bg-gold-200"
-                : "text-gray-600 hover:bg-gray-100 hover:text-gray-800"
-            )}
-          >
-            {isSaving ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Bookmark className={cn("size-4", job.isSaved && "fill-current")} />
-            )}
-            {job.isSaved ? "Saved" : "Save for Later"}
-          </button>
-
-          <div className="flex items-center gap-3">
-            <Button variant="secondary" onClick={onClose}>
-              Close
-            </Button>
-            {job.hasApplied ? (
-              <Button variant="secondary" disabled>
-                <CheckCircle2 className="mr-2 size-4 text-success-500" />
-                Already Applied
-              </Button>
-            ) : (
-              <Button
-                variant="primary"
-                onClick={onApply}
-                disabled={isApplying}
-              >
-                {isApplying ? (
-                  <>
-                    <Loader2 className="mr-2 size-4 animate-spin" />
-                    Submitting...
-                  </>
-                ) : (
-                  <>
-                    <Send className="mr-2 size-4" />
-                    Apply Now
-                  </>
+          {/* Action Buttons */}
+          <div className="border-t border-gray-100 pt-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              {/* Save Button */}
+              <button
+                onClick={onToggleSave}
+                disabled={isSaving}
+                className={cn(
+                  "flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors sm:justify-start",
+                  job.isSaved
+                    ? "bg-gold-100 text-gold-700 hover:bg-gold-200"
+                    : "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
                 )}
-              </Button>
-            )}
+              >
+                {isSaving ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Bookmark className={cn("size-4", job.isSaved && "fill-current")} />
+                )}
+                {job.isSaved ? "Saved" : "Save for Later"}
+              </button>
+
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                <Button 
+                  variant="secondary" 
+                  onClick={onClose} 
+                  className="w-full sm:w-auto sm:min-w-[100px]"
+                >
+                  Close
+                </Button>
+                {job.hasApplied ? (
+                  <Button 
+                    variant="secondary" 
+                    disabled 
+                    className="w-full sm:w-auto sm:min-w-[140px]"
+                  >
+                    <CheckCircle2 className="mr-2 size-4 text-success-500" />
+                    Already Applied
+                  </Button>
+                ) : (
+                  <Button
+                    variant="primary"
+                    onClick={onApply}
+                    disabled={isApplying}
+                    className="w-full sm:w-auto sm:min-w-[140px]"
+                  >
+                    {isApplying ? (
+                      <>
+                        <Loader2 className="mr-2 size-4 animate-spin" />
+                        Submitting...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="mr-2 size-4" />
+                        Apply Now
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>

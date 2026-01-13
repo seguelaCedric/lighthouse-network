@@ -65,25 +65,25 @@ const STATUS_CONFIG: Record<
   }
 > = {
   pending: {
-    label: "Pending Review",
-    description: "Your document is waiting for recruiter approval",
-    icon: Clock,
-    className: "text-gold-600",
-    bgClassName: "bg-gold-50 border-gold-200",
+    label: "Uploaded",
+    description: "Your document has been uploaded successfully",
+    icon: CheckCircle2,
+    className: "text-success-600",
+    bgClassName: "bg-success-50 border-success-200",
   },
   approved: {
-    label: "Approved",
-    description: "Your document has been approved",
+    label: "Uploaded",
+    description: "Your document has been uploaded successfully",
     icon: CheckCircle2,
     className: "text-success-600",
     bgClassName: "bg-success-50 border-success-200",
   },
   rejected: {
-    label: "Rejected",
-    description: "Your document was rejected. Please upload a new version.",
-    icon: XCircle,
-    className: "text-error-600",
-    bgClassName: "bg-error-50 border-error-200",
+    label: "Uploaded",
+    description: "Your document has been uploaded successfully",
+    icon: CheckCircle2,
+    className: "text-success-600",
+    bgClassName: "bg-success-50 border-success-200",
   },
 };
 
@@ -247,7 +247,7 @@ export function DocumentUploadModal({
       </div>
 
       <div className="p-6">
-        {/* Status Banner (if document exists) */}
+        {/* Status Banner (if document exists) - simplified for candidates */}
         {status && (
           <div
             className={cn(
@@ -265,11 +265,6 @@ export function DocumentUploadModal({
               <p className="mt-0.5 text-sm text-gray-600">
                 {STATUS_CONFIG[status].description}
               </p>
-              {status === "rejected" && rejectionReason && (
-                <div className="mt-2 rounded bg-error-100 p-2 text-sm text-error-700">
-                  <strong>Reason:</strong> {rejectionReason}
-                </div>
-              )}
             </div>
           </div>
         )}
@@ -459,7 +454,6 @@ export function DocumentUploadModal({
             <li>• All information must be visible and not cropped</li>
             <li>• File size should not exceed 10MB</li>
             {requiresExpiry && <li>• Make sure the document is not expired</li>}
-            <li>• Your document will be reviewed by our team before approval</li>
           </ul>
         </div>
       </div>

@@ -4,11 +4,11 @@
   "totalRows": 45521,
   "vincereMapComplete": true,
   "vincereTotalCandidates": 27789,
-  "lastProcessedRow": 32991,
-  "importedCount": 99,
-  "updatedCount": 5048,
-  "skippedCount": 28712,
-  "errorCount": 7,
+  "lastProcessedRow": 45521,
+  "importedCount": 537,
+  "updatedCount": 16249,
+  "skippedCount": 29587,
+  "errorCount": 23,
   "documentsProcessed": 3520,
   "cvsExtracted": 343,
   "embeddingsGenerated": 343,
@@ -47,6 +47,86 @@
       "row": 26803,
       "email": "cptclaudio5@gmail.com",
       "error": "{\"message\":\"TypeError: fetch failed\",\"details\":\"TypeError: fetch failed\\n\\nCaused by: Error: read ECONNRESET (ECONNRESET)\\nError: read ECONNRESET\\n    at TLSWrap.onStreamRead (node:internal/stream_base_commons:216:20)\",\"hint\":\"\",\"code\":\"\"}"
+    },
+    {
+      "row": 34290,
+      "email": "mujahidshah3624@gmail.com",
+      "error": "{\"code\":\"22003\",\"details\":null,\"hint\":null,\"message\":\"value \\\"30000000000\\\" is out of range for type integer\"}"
+    },
+    {
+      "row": 39259,
+      "email": "asadullah@gmail.com",
+      "error": "{\"code\":\"22003\",\"details\":null,\"hint\":null,\"message\":\"value \\\"4000000000\\\" is out of range for type integer\"}"
+    },
+    {
+      "row": 39727,
+      "email": "dileepkumar.d1r@gmail.com",
+      "error": "{\"code\":\"22003\",\"details\":null,\"hint\":null,\"message\":\"value \\\"3000000000000\\\" is out of range for type integer\"}"
+    },
+    {
+      "row": 40396,
+      "email": "kumarvermaanand8@gmail.com",
+      "error": "{\"code\":\"22003\",\"details\":null,\"hint\":null,\"message\":\"value \\\"3000000000000000000\\\" is out of range for type integer\"}"
+    },
+    {
+      "row": 41335,
+      "email": "wajidmanzoor307@gmail.com",
+      "error": "{\"code\":\"22003\",\"details\":null,\"hint\":null,\"message\":\"value \\\"300000000000\\\" is out of range for type integer\"}"
+    },
+    {
+      "row": 41787,
+      "email": "mustafajatt169@gmail.com",
+      "error": "{\"code\":\"22003\",\"details\":null,\"hint\":null,\"message\":\"value \\\"2700000000\\\" is out of range for type integer\"}"
+    },
+    {
+      "row": 42143,
+      "email": "nv98254@gmail.com",
+      "error": "{\"code\":\"22003\",\"details\":null,\"hint\":null,\"message\":\"value \\\"3000000000\\\" is out of range for type integer\"}"
+    },
+    {
+      "row": 42577,
+      "email": "royu11698@gmail.com",
+      "error": "{\"code\":\"22003\",\"details\":null,\"hint\":null,\"message\":\"value \\\"8000000000\\\" is out of range for type integer\"}"
+    },
+    {
+      "row": 42973,
+      "email": "pubgmobile55ppp@gmail.com",
+      "error": "{\"code\":\"22003\",\"details\":null,\"hint\":null,\"message\":\"value \\\"900000000000000\\\" is out of range for type integer\"}"
+    },
+    {
+      "row": 43452,
+      "email": "parvazaslm2525140063@gmail.com",
+      "error": "{\"code\":\"22003\",\"details\":null,\"hint\":null,\"message\":\"value \\\"100000000000\\\" is out of range for type integer\"}"
+    },
+    {
+      "row": 44373,
+      "email": "javedahmedm720@gmail.com",
+      "error": "{\"code\":\"22003\",\"details\":null,\"hint\":null,\"message\":\"value \\\"3480871158\\\" is out of range for type integer\"}"
+    },
+    {
+      "row": 44727,
+      "email": "rizwankarimyes@gmail.com",
+      "error": "{\"code\":\"22003\",\"details\":null,\"hint\":null,\"message\":\"value \\\"3000000000000\\\" is out of range for type integer\"}"
+    },
+    {
+      "row": 44794,
+      "email": "mukhiya784w@gmail.com",
+      "error": "{\"code\":\"22003\",\"details\":null,\"hint\":null,\"message\":\"value \\\"30000000000\\\" is out of range for type integer\"}"
+    },
+    {
+      "row": 44849,
+      "email": "mranwaar5@gmail.com",
+      "error": "{\"code\":\"22003\",\"details\":null,\"hint\":null,\"message\":\"value \\\"3200000000\\\" is out of range for type integer\"}"
+    },
+    {
+      "row": 45014,
+      "email": "hh5441790@gmail.com",
+      "error": "{\"code\":\"22003\",\"details\":null,\"hint\":null,\"message\":\"value \\\"3000000000\\\" is out of range for type integer\"}"
+    },
+    {
+      "row": 45432,
+      "email": "meharilyas644@gmail.com",
+      "error": "{\"code\":\"22003\",\"details\":null,\"hint\":null,\"message\":\"value \\\"3200000000\\\" is out of range for type integer\"}"
     }
   ]
 }

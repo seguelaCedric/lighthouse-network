@@ -952,3 +952,213 @@ export async function updateCertificationChecklist(data: {
   revalidatePath("/crew/profile/edit");
   return { success: true };
 }
+
+/**
+ * Upload tattoo images
+ * Uploads tattoo photos to Supabase Storage as documents
+ */
+export async function uploadTattooImage(formData: FormData): Promise<{
+  success: boolean;
+  documentId?: string;
+  error?: string;
+}> {
+  const { candidateId, error: lookupError } = await getCandidateIdFromAuth();
+  if (!candidateId) {
+    return { success: false, error: lookupError || "Candidate not found" };
+  }
+
+  const supabase = await createClient();
+
+  const file = formData.get("image") as File;
+  if (!file) {
+    return { success: false, error: "No file provided" };
+  }
+
+  // Validate file type (images only)
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+  if (!allowedTypes.includes(file.type)) {
+    return { success: false, error: "Invalid file type. Please use JPG, PNG, or WebP" };
+  }
+
+  // Validate file size (max 5MB)
+  const maxSize = 5 * 1024 * 1024;
+  if (file.size > maxSize) {
+    return { success: false, error: "File too large. Maximum size is 5MB" };
+  }
+
+  // Generate unique file name
+  const fileExt = file.name.split(".").pop();
+  const timestamp = Date.now();
+  const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_").substring(0, 50);
+  const fileName = `tattoo-${timestamp}-${sanitizedName}`;
+  const filePath = `candidate/${candidateId}/${fileName}`;
+
+  // Upload to Supabase Storage
+  const { error: uploadError } = await supabase.storage
+    .from("documents")
+    .upload(filePath, file, {
+      cacheControl: "3600",
+      upsert: false,
+    });
+
+  if (uploadError) {
+    console.error("Error uploading tattoo image:", uploadError);
+    return { success: false, error: "Failed to upload image" };
+  }
+
+  // Get public URL
+  const { data: urlData } = supabase.storage
+    .from("documents")
+    .getPublicUrl(filePath);
+
+  const fileUrl = urlData.publicUrl;
+
+  // Get user ID for uploaded_by
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    await supabase.storage.from("documents").remove([filePath]);
+    return { success: false, error: "Not authenticated" };
+  }
+
+  const { data: userData } = await supabase
+    .from("users")
+    .select("id, organization_id")
+    .eq("auth_id", user.id)
+    .single();
+
+  if (!userData) {
+    await supabase.storage.from("documents").remove([filePath]);
+    return { success: false, error: "User not found" };
+  }
+
+  // Save document record
+  const { data: documentRecord, error: dbError } = await supabase
+    .from("documents")
+    .insert({
+      entity_type: "candidate",
+      entity_id: candidateId,
+      name: file.name,
+      type: "other",
+      file_name: file.name,
+      file_path: filePath,
+      file_url: fileUrl,
+      file_size: file.size,
+      mime_type: file.type,
+      description: "Tattoo image",
+      uploaded_by: userData.id,
+      organization_id: userData.organization_id,
+      is_latest_version: true,
+    })
+    .select("id")
+    .single();
+
+  if (dbError) {
+    console.error("Error saving tattoo document:", dbError);
+    await supabase.storage.from("documents").remove([filePath]);
+    return { success: false, error: "Failed to save document record" };
+  }
+
+  // Revalidate paths
+  revalidatePath("/crew/profile/edit");
+  revalidatePath("/crew/dashboard");
+
+  return { success: true, documentId: documentRecord.id };
+}
+
+/**
+ * Delete a tattoo image document
+ */
+export async function deleteTattooImage(documentId: string): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  const { candidateId, error: lookupError } = await getCandidateIdFromAuth();
+  if (!candidateId) {
+    return { success: false, error: lookupError || "Candidate not found" };
+  }
+
+  const supabase = await createClient();
+
+  // Verify document belongs to this candidate and is a tattoo image
+  const { data: doc, error: fetchError } = await supabase
+    .from("documents")
+    .select("id, entity_id, file_path, description")
+    .eq("id", documentId)
+    .single();
+
+  if (fetchError || !doc) {
+    return { success: false, error: "Document not found" };
+  }
+
+  if (doc.entity_id !== candidateId) {
+    return { success: false, error: "Not authorized to delete this document" };
+  }
+
+  if (doc.description !== "Tattoo image") {
+    return { success: false, error: "Not a tattoo image document" };
+  }
+
+  // Delete from storage
+  if (doc.file_path) {
+    await supabase.storage.from("documents").remove([doc.file_path]);
+  }
+
+  // Delete from database
+  const { error: deleteError } = await supabase
+    .from("documents")
+    .delete()
+    .eq("id", documentId);
+
+  if (deleteError) {
+    console.error("Error deleting tattoo document:", deleteError);
+    return { success: false, error: "Failed to delete document" };
+  }
+
+  // Revalidate paths
+  revalidatePath("/crew/profile/edit");
+  revalidatePath("/crew/dashboard");
+
+  return { success: true };
+}
+
+/**
+ * Get tattoo images for the authenticated candidate
+ */
+export async function getTattooImages(): Promise<Array<{
+  id: string;
+  name: string;
+  fileUrl: string;
+  uploadedAt: string;
+}>> {
+  const { candidateId, error: lookupError } = await getCandidateIdFromAuth();
+  if (!candidateId) {
+    return [];
+  }
+
+  const supabase = await createClient();
+
+  const { data: documents, error } = await supabase
+    .from("documents")
+    .select("id, name, file_url, created_at")
+    .eq("entity_type", "candidate")
+    .eq("entity_id", candidateId)
+    .eq("type", "other")
+    .eq("description", "Tattoo image")
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false });
+
+  if (error || !documents) {
+    console.error("Error fetching tattoo images:", error);
+    return [];
+  }
+
+  return documents.map((doc) => ({
+    id: doc.id,
+    name: doc.name,
+    fileUrl: doc.file_url,
+    uploadedAt: doc.created_at,
+  }));
+}

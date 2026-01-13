@@ -212,7 +212,7 @@ export function CertificationsForm({
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-navy-900">{title}</h2>
         <p className="mt-1 text-sm text-gray-500">{subtitle}</p>
@@ -233,7 +233,7 @@ export function CertificationsForm({
             Required documents for yacht crew positions
           </p>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <ToggleCard
               title="STCW Basic Safety"
               description="Standards of Training, Certification and Watchkeeping"
@@ -271,7 +271,7 @@ export function CertificationsForm({
             Visa status for international placements
           </p>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <ToggleCard
               title="Schengen Visa"
               description="Travel authorization for Schengen area"

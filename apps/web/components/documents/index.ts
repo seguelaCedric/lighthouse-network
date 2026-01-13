@@ -15,3 +15,4 @@ export {
   type UploadStatus,
   type QueuedFile,
 } from "./UploadQueue";
+export { DocumentsSummaryCard } from "./DocumentsSummaryCard";

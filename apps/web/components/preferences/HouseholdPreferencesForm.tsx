@@ -203,16 +203,16 @@ export function HouseholdPreferencesForm({
             onChange={(e) => setNewLocation(e.target.value)}
             onKeyDown={handleLocationKeyDown}
             placeholder="e.g., London, Monaco, New York..."
-            className="h-10 flex-1 rounded-lg border border-gray-300 px-3 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/20"
+            className="h-10 min-w-0 flex-1 rounded-lg border border-gray-300 px-3 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/20"
           />
           <button
             type="button"
             onClick={addLocation}
             disabled={!newLocation.trim()}
-            className="inline-flex h-10 items-center gap-1 rounded-lg bg-gold-500 px-4 text-sm font-medium text-white transition-colors hover:bg-gold-600 disabled:bg-gray-200 disabled:text-gray-500"
+            className="inline-flex h-10 flex-shrink-0 items-center gap-1 rounded-lg bg-gold-500 px-3 text-sm font-medium text-white transition-colors hover:bg-gold-600 disabled:bg-gray-200 disabled:text-gray-500 sm:px-4"
           >
             <Plus className="size-4" />
-            Add
+            <span className="hidden sm:inline">Add</span>
           </button>
         </div>
       </div>

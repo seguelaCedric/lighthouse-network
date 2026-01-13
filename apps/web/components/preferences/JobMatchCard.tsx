@@ -186,26 +186,26 @@ export const JobMatchCard = React.forwardRef<HTMLDivElement, JobMatchCardProps>(
         )}
       >
         {/* Header Section */}
-        <div className="p-5">
-          <div className="flex items-start justify-between gap-4">
+        <div className="p-4 sm:p-5">
+          <div className="flex items-start justify-between gap-3 sm:gap-4">
             {/* Job Info */}
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 mb-1">
+              <div className="flex items-center gap-1.5 mb-1 sm:gap-2">
                 {isYacht ? (
-                  <Ship className="size-4 text-navy-600 shrink-0" />
+                  <Ship className="size-3.5 text-navy-600 shrink-0 sm:size-4" />
                 ) : (
-                  <Home className="size-4 text-navy-600 shrink-0" />
+                  <Home className="size-3.5 text-navy-600 shrink-0 sm:size-4" />
                 )}
-                <span className="text-xs font-medium text-navy-600 uppercase tracking-wide">
+                <span className="text-[10px] font-medium text-navy-600 uppercase tracking-wide sm:text-xs">
                   {isYacht ? "Yacht" : "Private Household"}
                 </span>
               </div>
 
-              <h3 className="text-lg font-semibold text-navy-900 font-cormorant line-clamp-2">
+              <h3 className="text-base font-semibold text-navy-900 font-cormorant line-clamp-2 sm:text-lg">
                 {job.title || job.position_category || "Untitled Position"}
               </h3>
 
-              <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-gray-600">
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-600 sm:gap-3 sm:text-sm">
                 {job.vessel_type && (
                   <span className="flex items-center gap-1">
                     <Ship className="size-3.5" />
@@ -228,17 +228,17 @@ export const JobMatchCard = React.forwardRef<HTMLDivElement, JobMatchCardProps>(
               </div>
 
               {/* Salary & Dates */}
-              <div className="mt-2 flex flex-wrap items-center gap-4 text-sm">
+              <div className="mt-2 flex flex-wrap items-center gap-2 text-xs sm:gap-4 sm:text-sm">
                 {salaryDisplay && (
                   <span className="flex items-center gap-1 font-semibold text-navy-800">
-                    <DollarSign className="size-4 text-gray-400" />
-                    {salaryDisplay}
+                    <DollarSign className="size-3 text-gray-400 sm:size-4" />
+                    <span className="truncate">{salaryDisplay}</span>
                   </span>
                 )}
                 {job.start_date && (
                   <span className="flex items-center gap-1 text-gray-600">
-                    <Calendar className="size-3.5" />
-                    Starts {formatDate(job.start_date)}
+                    <Calendar className="size-3 text-gray-400 sm:size-3.5" />
+                    <span className="truncate">Starts {formatDate(job.start_date)}</span>
                   </span>
                 )}
               </div>
@@ -247,41 +247,43 @@ export const JobMatchCard = React.forwardRef<HTMLDivElement, JobMatchCardProps>(
             {/* Match Score Badge */}
             <div
               className={cn(
-                "flex flex-col items-center justify-center rounded-xl border px-4 py-3 min-w-[90px]",
+                "flex flex-col items-center justify-center rounded-lg border px-2.5 py-2 min-w-[70px] sm:rounded-xl sm:px-4 sm:py-3 sm:min-w-[90px]",
                 getScoreBgColor(matchScore)
               )}
             >
-              <span className={cn("text-2xl font-bold", getScoreColor(matchScore))}>
+              <span className={cn("text-lg font-bold sm:text-2xl", getScoreColor(matchScore))}>
                 {matchScore}%
               </span>
-              <span className="text-xs text-gray-600 font-medium text-center">
+              <span className="text-[9px] text-gray-600 font-medium text-center sm:text-xs">
                 {getScoreLabel(matchScore)}
               </span>
             </div>
           </div>
 
           {/* Quick Actions */}
-          <div className="mt-4 flex items-center gap-3">
+          <div className="mt-3 flex flex-col gap-2 sm:mt-4 sm:flex-row sm:items-center sm:gap-3">
             {hasApplied ? (
-              <div className="flex items-center gap-2 text-success-600 bg-success-50 px-4 py-2 rounded-lg">
-                <Check className="size-4" />
-                <span className="text-sm font-medium">Applied</span>
+              <div className="flex items-center gap-2 text-success-600 bg-success-50 px-3 py-1.5 rounded-lg sm:px-4 sm:py-2">
+                <Check className="size-3.5 sm:size-4" />
+                <span className="text-xs font-medium sm:text-sm">Applied</span>
               </div>
             ) : needsCV ? (
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={() => setShowCVUpload(true)}
-                leftIcon={<Upload className="size-4" />}
+                leftIcon={<Upload className="size-3.5 sm:size-4" />}
+                className="w-full text-xs sm:w-auto sm:text-sm"
               >
-                Upload CV to Apply
+                <span className="hidden sm:inline">Upload CV to Apply</span>
+                <span className="sm:hidden">Upload CV</span>
               </Button>
             ) : canQuickApply ? (
               <Button
                 onClick={handleQuickApply}
                 loading={isApplying}
                 size="sm"
-                className="min-w-[120px]"
+                className="w-full min-w-0 sm:min-w-[120px] text-xs sm:text-sm"
               >
                 Quick Apply
               </Button>
@@ -290,6 +292,7 @@ export const JobMatchCard = React.forwardRef<HTMLDivElement, JobMatchCardProps>(
                 variant="secondary"
                 size="sm"
                 onClick={() => onViewJob?.(job.id)}
+                className="w-full text-xs sm:w-auto sm:text-sm"
               >
                 View & Apply
               </Button>
@@ -299,7 +302,8 @@ export const JobMatchCard = React.forwardRef<HTMLDivElement, JobMatchCardProps>(
               variant="ghost"
               size="sm"
               onClick={() => setExpanded(!expanded)}
-              rightIcon={expanded ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
+              rightIcon={expanded ? <ChevronUp className="size-3.5 sm:size-4" /> : <ChevronDown className="size-3.5 sm:size-4" />}
+              className="w-full text-xs sm:w-auto sm:text-sm"
             >
               {expanded ? "Less" : "Details"}
             </Button>
@@ -307,12 +311,12 @@ export const JobMatchCard = React.forwardRef<HTMLDivElement, JobMatchCardProps>(
 
           {/* Inline CV Upload Section */}
           {showCVUpload && candidateId && (
-            <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
-              <h4 className="text-sm font-semibold text-amber-900 mb-3 flex items-center gap-2">
-                <Upload className="size-4" />
+            <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg sm:mt-4 sm:p-4 sm:rounded-xl">
+              <h4 className="text-xs font-semibold text-amber-900 mb-2 flex items-center gap-1.5 sm:text-sm sm:mb-3 sm:gap-2">
+                <Upload className="size-3.5 sm:size-4" />
                 Upload Your CV to Apply
               </h4>
-              <p className="text-xs text-amber-700 mb-3">
+              <p className="text-[11px] text-amber-700 mb-2 sm:text-xs sm:mb-3">
                 A CV is required to apply for jobs. Upload your CV below to continue.
               </p>
               <InlineCVUpload
@@ -331,10 +335,10 @@ export const JobMatchCard = React.forwardRef<HTMLDivElement, JobMatchCardProps>(
 
         {/* Expanded Details */}
         {expanded && (
-          <div className="border-t border-gray-100 px-5 py-4 space-y-5 bg-gray-50/50">
+          <div className="border-t border-gray-100 px-4 py-3 space-y-4 bg-gray-50/50 sm:px-5 sm:py-4 sm:space-y-5">
             {/* Score Breakdown */}
             <div>
-              <h4 className="text-sm font-semibold text-navy-800 mb-3">Match Breakdown</h4>
+              <h4 className="text-xs font-semibold text-navy-800 mb-2 sm:text-sm sm:mb-3">Match Breakdown</h4>
               <ScoreBreakdown
                 segments={segments}
                 totalScore={matchScore}
@@ -347,15 +351,15 @@ export const JobMatchCard = React.forwardRef<HTMLDivElement, JobMatchCardProps>(
             {/* Strengths */}
             {strengths.length > 0 && (
               <div>
-                <h4 className="text-sm font-semibold text-navy-800 mb-2 flex items-center gap-1.5">
-                  <CheckCircle2 className="size-4 text-success-500" />
+                <h4 className="text-xs font-semibold text-navy-800 mb-2 flex items-center gap-1.5 sm:text-sm">
+                  <CheckCircle2 className="size-3.5 text-success-500 sm:size-4" />
                   Strengths
                 </h4>
                 <ul className="space-y-1.5">
                   {strengths.map((strength, idx) => (
-                    <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
-                      <span className="text-success-500 mt-0.5">+</span>
-                      {strength}
+                    <li key={idx} className="flex items-start gap-1.5 text-xs text-gray-700 sm:gap-2 sm:text-sm">
+                      <span className="text-success-500 mt-0.5 shrink-0">+</span>
+                      <span>{strength}</span>
                     </li>
                   ))}
                 </ul>
@@ -365,15 +369,15 @@ export const JobMatchCard = React.forwardRef<HTMLDivElement, JobMatchCardProps>(
             {/* Concerns */}
             {concerns.length > 0 && (
               <div>
-                <h4 className="text-sm font-semibold text-navy-800 mb-2 flex items-center gap-1.5">
-                  <AlertCircle className="size-4 text-warning-500" />
+                <h4 className="text-xs font-semibold text-navy-800 mb-2 flex items-center gap-1.5 sm:text-sm">
+                  <AlertCircle className="size-3.5 text-warning-500 sm:size-4" />
                   Considerations
                 </h4>
                 <ul className="space-y-1.5">
                   {concerns.map((concern, idx) => (
-                    <li key={idx} className="flex items-start gap-2 text-sm text-gray-600">
-                      <span className="text-warning-500 mt-0.5">!</span>
-                      {concern}
+                    <li key={idx} className="flex items-start gap-1.5 text-xs text-gray-600 sm:gap-2 sm:text-sm">
+                      <span className="text-warning-500 mt-0.5 shrink-0">!</span>
+                      <span>{concern}</span>
                     </li>
                   ))}
                 </ul>
@@ -382,12 +386,12 @@ export const JobMatchCard = React.forwardRef<HTMLDivElement, JobMatchCardProps>(
 
             {/* AI Summary */}
             {aiSummary && (
-              <div className="bg-gradient-to-r from-gold-50 to-amber-50 rounded-lg p-4 border border-gold-200/50">
-                <h4 className="text-sm font-semibold text-navy-800 mb-2 flex items-center gap-1.5">
-                  <Sparkles className="size-4 text-gold-500" />
+              <div className="bg-gradient-to-r from-gold-50 to-amber-50 rounded-lg p-3 border border-gold-200/50 sm:p-4">
+                <h4 className="text-xs font-semibold text-navy-800 mb-2 flex items-center gap-1.5 sm:text-sm">
+                  <Sparkles className="size-3.5 text-gold-500 sm:size-4" />
                   AI Analysis
                 </h4>
-                <p className="text-sm text-gray-700 leading-relaxed">{aiSummary}</p>
+                <p className="text-xs text-gray-700 leading-relaxed sm:text-sm">{aiSummary}</p>
               </div>
             )}
 
@@ -397,7 +401,7 @@ export const JobMatchCard = React.forwardRef<HTMLDivElement, JobMatchCardProps>(
                 variant="tertiary"
                 size="sm"
                 onClick={() => onViewJob?.(job.id)}
-                className="w-full"
+                className="w-full text-xs sm:text-sm"
               >
                 View Full Job Details
               </Button>

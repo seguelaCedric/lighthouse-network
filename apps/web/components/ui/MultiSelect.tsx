@@ -58,7 +58,7 @@ export function MultiSelect({
     .filter(Boolean);
 
   return (
-    <div ref={containerRef} className={cn("relative", className)}>
+    <div ref={containerRef} className={cn("relative w-full", className)}>
       <div
         onClick={() => !disabled && setIsOpen(!isOpen)}
         className={cn(
@@ -90,19 +90,26 @@ export function MultiSelect({
       </div>
 
       {isOpen && !disabled && (
-        <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md border border-gray-200 bg-white shadow-lg">
+        <div 
+          className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto overflow-x-hidden rounded-md border border-gray-200 bg-white shadow-lg overscroll-contain"
+          style={{ 
+            maxHeight: '15rem',
+            WebkitOverflowScrolling: 'touch',
+            scrollbarWidth: 'thin',
+          }}
+        >
           {options.map((option) => (
             <div
               key={option.value}
               onClick={() => toggleOption(option.value)}
               className={cn(
-                "flex cursor-pointer items-center justify-between px-3 py-2 text-sm hover:bg-gray-100",
+                "flex cursor-pointer items-center justify-between px-3 py-2 text-sm hover:bg-gray-100 transition-colors",
                 value.includes(option.value) && "bg-navy-50"
               )}
             >
-              <span>{option.label}</span>
+              <span className="flex-1 min-w-0">{option.label}</span>
               {value.includes(option.value) && (
-                <Check className="h-4 w-4 text-navy-600" />
+                <Check className="h-4 w-4 text-navy-600 flex-shrink-0 ml-2" />
               )}
             </div>
           ))}

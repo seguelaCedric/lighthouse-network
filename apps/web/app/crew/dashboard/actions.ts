@@ -58,7 +58,7 @@ export interface CandidateApplication {
 
 export interface Alert {
   id: string;
-  type: "certification" | "message" | "application";
+  type: "certification" | "message" | "application" | "job";
   title: string;
   description: string;
   date: string;
@@ -77,6 +77,14 @@ export interface JobPreferences {
   preferencesCompletedAt: string | null;
 }
 
+export interface DocumentsSummary {
+  hasCV: boolean;
+  totalDocuments: number;
+  totalCertifications: number;
+  expiringCertificationsCount: number;
+  pendingDocumentsCount: number;
+}
+
 export interface DashboardData {
   candidate: DashboardCandidate;
   profileCompleteness: number;
@@ -85,16 +93,19 @@ export interface DashboardData {
   applications: CandidateApplication[];
   alerts: Alert[];
   preferences: JobPreferences;
+  documents: DocumentsSummary;
   isIdentityVerified: boolean;
 }
+import { normalizePosition as normalizePositionUtil } from "@/lib/utils/position-normalization";
+
 /**
  * Normalize a position string for comparison
+ * Uses shared normalization utility, but converts to space-separated format for this context
  */
 function normalizePosition(position: string): string {
-  return position.toLowerCase().trim()
-    .replace(/stewardess/g, "stew")
-    .replace(/chief stew/g, "chief stew")
-    .replace(/\s+/g, " ");
+  const normalized = normalizePositionUtil(position);
+  // Convert underscores to spaces for this matching context
+  return normalized.replace(/_/g, " ");
 }
 
 /**
@@ -359,14 +370,15 @@ export async function getDashboardData(): Promise<DashboardData | null> {
   }
 
   // PERFORMANCE: Run all independent queries in parallel
-  const [documentsResult, jobsResult, applicationsResult, certificationsResult] =
+  const [documentsResult, jobsResult, applicationsResult, certificationsResult, jobAlertsResult] =
     await Promise.all([
       // Get documents
       supabase
         .from("documents")
-        .select("id, type, name")
+        .select("id, type, name, status, is_latest_version")
         .eq("entity_type", "candidate")
-        .eq("entity_id", candidate.id),
+        .eq("entity_id", candidate.id)
+        .is("deleted_at", null),
       // Get jobs (30 most recent open jobs)
       supabase
         .from("jobs")
@@ -395,12 +407,45 @@ export async function getDashboardData(): Promise<DashboardData | null> {
         .eq("has_certification", true)
         .not("expiry_date", "is", null)
         .order("expiry_date", { ascending: true }),
+      // Get job alert notifications (last 7 days, unread or recently read)
+      supabase
+        .from("candidate_notifications")
+        .select("id, type, title, description, is_read, created_at, action_url, action_label, entity_id, metadata")
+        .eq("candidate_id", candidate.id)
+        .eq("type", "job_alert")
+        .gte("created_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString())
+        .order("created_at", { ascending: false })
+        .limit(10),
     ]);
 
   const documents = documentsResult.data;
   const jobs = jobsResult.data;
   const applications = applicationsResult.data;
   const certifications = certificationsResult.data;
+  const jobAlerts = jobAlertsResult.data;
+
+  // Calculate document summary
+  // Only consider latest versions for CV and counts
+  const latestDocuments = (documents || []).filter((d) => d.is_latest_version !== false);
+  const cvDoc = latestDocuments.find((d) => d.type === "cv");
+  const now = new Date();
+  const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+  
+  const expiringCerts = (certifications || []).filter((cert) => {
+    if (!cert.expiry_date) return false;
+    const expiryDate = new Date(cert.expiry_date);
+    return expiryDate <= thirtyDaysFromNow && expiryDate > now;
+  });
+
+  const pendingDocs = latestDocuments.filter((d) => d.status === "pending");
+
+  const documentsSummary: DocumentsSummary = {
+    hasCV: !!cvDoc,
+    totalDocuments: latestDocuments.length,
+    totalCertifications: (certifications || []).length,
+    expiringCertificationsCount: expiringCerts.length,
+    pendingDocumentsCount: pendingDocs.length,
+  };
 
   // Attach documents to candidate for profile completeness calculation
   const candidateWithDocs = {
@@ -419,13 +464,19 @@ export async function getDashboardData(): Promise<DashboardData | null> {
     currentLocation: candidate.current_location,
     candidateType: candidate.candidate_type,
     primaryPosition: candidate.primary_position,
+    yachtPrimaryPosition: candidate.yacht_primary_position,
+    householdPrimaryPosition: candidate.household_primary_position,
+    availabilityStatus: candidate.availability_status,
     avatarUrl: candidate.avatar_url,
     hasStcw: candidate.has_stcw,
     hasEng1: candidate.has_eng1,
     industryPreference: candidate.industry_preference,
-    verificationTier: candidate.verification_tier,
     documents: candidateWithDocs.documents,
   });
+
+  // Check identity verification separately (not part of completion score)
+  const identityVerifiedTiers = new Set(["identity", "verified", "premium"]);
+  const isIdentityVerified = identityVerifiedTiers.has(candidate.verification_tier || "");
 
   // Calculate match scores for all jobs and sort by relevance
   const jobsWithScores = (jobs || []).map((job) => {
@@ -545,9 +596,7 @@ export async function getDashboardData(): Promise<DashboardData | null> {
   // Build alerts
   const alerts: Alert[] = [];
 
-  // Check certificate expiry alerts
-  const now = new Date();
-  const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+  // Check certificate expiry alerts (reuse now and thirtyDaysFromNow from above)
   const ninetyDaysFromNow = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
 
   // Helper to format date consistently (avoid toLocaleDateString for hydration)
@@ -600,13 +649,13 @@ export async function getDashboardData(): Promise<DashboardData | null> {
   }
 
   // Filter certifications expiring within 90 days (data already fetched in parallel above)
-  const expiringCerts = (certifications || []).filter((cert) => {
+  const expiringCertsForAlerts = (certifications || []).filter((cert) => {
     if (!cert.expiry_date) return false;
     const expiryDate = new Date(cert.expiry_date);
     return expiryDate <= ninetyDaysFromNow;
   });
 
-  for (const cert of expiringCerts) {
+  for (const cert of expiringCertsForAlerts) {
     if (cert.expiry_date) {
       const expiryDate = new Date(cert.expiry_date);
       const isUrgent = expiryDate <= thirtyDaysFromNow;
@@ -630,6 +679,31 @@ export async function getDashboardData(): Promise<DashboardData | null> {
         actionLabel: "Update Certificate",
         actionHref: "/crew/documents#certificates",
       });
+    }
+  }
+
+  // Map job alert notifications to Alert format
+  if (jobAlerts && jobAlerts.length > 0) {
+    for (const jobAlert of jobAlerts) {
+      // Only show unread alerts or alerts from the last 24 hours
+      const alertDate = new Date(jobAlert.created_at);
+      const hoursSinceCreation = (now.getTime() - alertDate.getTime()) / (1000 * 60 * 60);
+      const isRecent = hoursSinceCreation <= 24;
+
+      if (!jobAlert.is_read || isRecent) {
+        // Use action_url if available, otherwise construct from entity_id
+        const actionHref = jobAlert.action_url || (jobAlert.entity_id ? `/crew/jobs/${jobAlert.entity_id}` : "/crew/jobs");
+        alerts.push({
+          id: jobAlert.id,
+          type: "job",
+          title: jobAlert.title,
+          description: jobAlert.description,
+          date: jobAlert.created_at,
+          urgent: false, // Job alerts are not urgent by default
+          actionLabel: jobAlert.action_label || "View Job",
+          actionHref,
+        });
+      }
     }
   }
 
@@ -663,10 +737,6 @@ export async function getDashboardData(): Promise<DashboardData | null> {
     preferencesCompletedAt: candidate.preferences_completed_at,
   };
 
-  // Check if candidate has identity verification (identity, verified, or premium tier)
-  const identityVerifiedTiers = new Set(["identity", "verified", "premium"]);
-  const isIdentityVerified = identityVerifiedTiers.has(candidate.verification_tier || "");
-
   return {
     candidate: dashboardCandidate,
     profileCompleteness: score,
@@ -675,6 +745,7 @@ export async function getDashboardData(): Promise<DashboardData | null> {
     applications: mappedApplications,
     alerts,
     preferences,
+    documents: documentsSummary,
     isIdentityVerified,
   };
 }
@@ -707,22 +778,28 @@ export async function updateAvailability(
     updated_at: new Date().toISOString(),
   };
 
-  if (availableFrom) {
+  // Set available_from based on status
+  if (status === "unavailable") {
+    // Clear available_from when setting to unavailable
+    updateData.available_from = null;
+  } else if (availableFrom) {
+    // Set available_from for available status
     updateData.available_from = availableFrom;
   }
 
   // Try update by user_id first, then by email
-  let error = null;
-
   if (userData) {
     const result = await supabase
       .from("candidates")
       .update(updateData)
-      .eq("user_id", userData.id);
-    error = result.error;
+      .eq("user_id", userData.id)
+      .select("id");
 
-    // Check if any rows were updated
-    if (!error) {
+    if (result.error) {
+      console.error("Error updating availability by user_id:", result.error);
+      // Continue to email fallback
+    } else if (result.data && result.data.length > 0) {
+      // Successfully updated
       revalidatePath("/crew/dashboard");
       return { success: true };
     }
@@ -732,11 +809,22 @@ export async function updateAvailability(
   const emailResult = await supabase
     .from("candidates")
     .update(updateData)
-    .eq("email", user.email);
+    .eq("email", user.email)
+    .select("id");
 
   if (emailResult.error) {
-    console.error("Error updating availability:", emailResult.error);
-    return { success: false, error: "Failed to update availability" };
+    console.error("Error updating availability by email:", emailResult.error);
+    return { 
+      success: false, 
+      error: emailResult.error.message || "Failed to update availability. Please try again." 
+    };
+  }
+
+  if (!emailResult.data || emailResult.data.length === 0) {
+    return { 
+      success: false, 
+      error: "Candidate profile not found. Please contact support." 
+    };
   }
 
   revalidatePath("/crew/dashboard");

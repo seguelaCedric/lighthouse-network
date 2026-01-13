@@ -12,11 +12,17 @@ import {
   UserCheck,
   HelpCircle,
   Check,
+  Upload,
+  X,
+  Loader2,
+  Image as ImageIcon,
 } from "lucide-react";
 import { FormField } from "@/components/ui/FormField";
 import { TextInput } from "@/components/ui/TextInput";
 import { SelectInput } from "@/components/ui/SelectInput";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { uploadTattooImage, deleteTattooImage, getTattooImages } from "@/app/crew/profile/actions";
 
 // Position options - will be provided by parent component
 interface PositionOption {
@@ -100,6 +106,170 @@ function ToggleOption({
   );
 }
 
+// Tattoo Image Upload Component
+function TattooImageUpload() {
+  const [images, setImages] = React.useState<Array<{ id: string; name: string; fileUrl: string; uploadedAt: string }>>([]);
+  const [isUploading, setIsUploading] = React.useState(false);
+  const [uploadError, setUploadError] = React.useState<string | null>(null);
+  const [deletingId, setDeletingId] = React.useState<string | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Load existing tattoo images
+  React.useEffect(() => {
+    loadImages();
+  }, []);
+
+  const loadImages = async () => {
+    try {
+      const tattooImages = await getTattooImages();
+      setImages(tattooImages);
+    } catch (error) {
+      console.error("Error loading tattoo images:", error);
+    }
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadError(null);
+
+    // Client-side validation
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      setUploadError("Invalid file type. Please use JPG, PNG, or WebP");
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      return;
+    }
+
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      setUploadError("File too large. Maximum size is 5MB");
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const result = await uploadTattooImage(formData);
+      if (result.success) {
+        await loadImages(); // Reload images
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
+      } else {
+        setUploadError(result.error || "Failed to upload image");
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      setUploadError("An error occurred while uploading");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleDelete = async (imageId: string) => {
+    if (!confirm("Are you sure you want to delete this tattoo image?")) return;
+
+    setDeletingId(imageId);
+    try {
+      const result = await deleteTattooImage(imageId);
+      if (result.success) {
+        await loadImages(); // Reload images
+      } else {
+        alert(result.error || "Failed to delete image");
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert("An error occurred while deleting");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  return (
+    <div className="rounded-lg bg-amber-50 border border-amber-200 p-4">
+      <label className="mb-3 block text-sm font-medium text-amber-800">
+        Upload Tattoo Photos (Optional)
+      </label>
+      <p className="mb-4 text-xs text-amber-600">
+        Upload photos of your visible tattoos. This helps us match you with placements where tattoos are acceptable.
+      </p>
+
+      {/* Upload Button */}
+      <div className="mb-4">
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileSelect}
+          accept="image/jpeg,image/png,image/webp"
+          className="hidden"
+          disabled={isUploading}
+        />
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          leftIcon={isUploading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isUploading}
+          className="w-full sm:w-auto"
+        >
+          {isUploading ? "Uploading..." : "Upload Photo"}
+        </Button>
+        {uploadError && (
+          <p className="mt-2 text-xs text-red-600">{uploadError}</p>
+        )}
+      </div>
+
+      {/* Uploaded Images Grid */}
+      {images.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {images.map((image) => (
+            <div key={image.id} className="relative group">
+              <div className="aspect-square rounded-lg overflow-hidden border-2 border-amber-200 bg-gray-100">
+                <img
+                  src={image.fileUrl}
+                  alt={image.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => handleDelete(image.id)}
+                disabled={deletingId === image.id}
+                className="absolute top-1 right-1 p-1 rounded-full bg-red-500 text-white opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600 disabled:opacity-50"
+                aria-label="Delete image"
+              >
+                {deletingId === image.id ? (
+                  <Loader2 className="size-3 animate-spin" />
+                ) : (
+                  <X className="size-3" />
+                )}
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {images.length === 0 && !isUploading && (
+        <div className="flex flex-col items-center justify-center py-6 text-center">
+          <ImageIcon className="size-8 text-amber-300 mb-2" />
+          <p className="text-xs text-amber-600">No photos uploaded yet</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Section card wrapper for visual grouping
 function SectionCard({
   title,
@@ -149,7 +319,7 @@ export function PersonalDetailsForm({
   error,
 }: PersonalDetailsFormProps) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="mb-2">
         <h2 className="text-xl font-semibold text-navy-900">Personal Details</h2>
@@ -169,13 +339,13 @@ export function PersonalDetailsForm({
         description="Preferences that may affect placement"
         icon={Coffee}
       >
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Smoker */}
           <div>
             <label className="mb-3 block text-sm font-medium text-gray-700">
               Smoking Status
             </label>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <ToggleOption
                 selected={smoker === "no"}
                 onClick={() => setSmoker("no")}
@@ -202,7 +372,7 @@ export function PersonalDetailsForm({
             <label className="mb-3 block text-sm font-medium text-gray-700">
               Visible Tattoos
             </label>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <ToggleOption
                 selected={hasTattoos === "no"}
                 onClick={() => setHasTattoos("no")}
@@ -217,18 +387,23 @@ export function PersonalDetailsForm({
               />
             </div>
             {hasTattoos === "yes" && (
-              <div className="mt-4 rounded-lg bg-amber-50 border border-amber-200 p-4">
-                <label className="mb-2 block text-sm font-medium text-amber-800">
-                  Please describe location(s)
-                </label>
-                <TextInput
-                  value={tattooLocation}
-                  onChange={setTattooLocation}
-                  placeholder="e.g., Small tattoo on forearm, wrist tattoo"
-                />
-                <p className="mt-2 text-xs text-amber-600">
-                  This information helps us find placements where visible tattoos are acceptable.
-                </p>
+              <div className="mt-4 space-y-4">
+                <div className="rounded-lg bg-amber-50 border border-amber-200 p-4">
+                  <label className="mb-2 block text-sm font-medium text-amber-800">
+                    Please describe location(s)
+                  </label>
+                  <TextInput
+                    value={tattooLocation}
+                    onChange={setTattooLocation}
+                    placeholder="e.g., Small tattoo on forearm, wrist tattoo"
+                  />
+                  <p className="mt-2 text-xs text-amber-600">
+                    This information helps us find placements where visible tattoos are acceptable.
+                  </p>
+                </div>
+
+                {/* Tattoo Image Upload Section */}
+                <TattooImageUpload />
               </div>
             )}
           </div>
@@ -241,10 +416,10 @@ export function PersonalDetailsForm({
         description="For couple placements and household positions"
         icon={Heart}
       >
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Marital Status */}
           <FormField label="Current Status">
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {[
                 { value: "single", label: "Single", icon: User },
                 { value: "partnered", label: "In Relationship", icon: Heart },
@@ -298,7 +473,7 @@ export function PersonalDetailsForm({
                 </div>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <ToggleOption
                 selected={couplePosition === "no"}
                 onClick={() => setCouplePosition("no")}

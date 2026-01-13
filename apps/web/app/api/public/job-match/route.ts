@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { openai } from "@ai-sdk/openai";
 import { embed } from "ai";
+import { normalizePosition } from "@/lib/utils/position-normalization";
 
 // ----------------------------------------------------------------------------
 // TYPES
@@ -184,16 +185,7 @@ function calculateMatchScore(candidate: CandidateProfile, job: PublicJob): { sco
   return { score, isRelevant };
 }
 
-/**
- * Normalize position names for comparison
- */
-function normalizePosition(position: string): string {
-  return position
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "_")
-    .replace(/_+/g, "_")
-    .replace(/^_|_$/g, "");
-}
+// normalizePosition is imported from @/lib/utils/position-normalization
 
 /**
  * Check if two positions are in the same department

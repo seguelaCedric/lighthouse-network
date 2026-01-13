@@ -10,6 +10,7 @@ import { anthropic } from '@ai-sdk/anthropic';
 import { embed, generateObject } from 'ai';
 import { z } from 'zod';
 import { SupabaseClient } from '@supabase/supabase-js';
+import { normalizePosition } from './position-normalization';
 
 // ============================================================================
 // TYPES
@@ -231,14 +232,6 @@ export function detectJobIndustry(job: PublicJob): JobIndustry {
 // ============================================================================
 // POSITION MATCHING
 // ============================================================================
-
-function normalizePosition(position: string): string {
-  return position
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, '_')
-    .replace(/_+/g, '_')
-    .replace(/^_|_$/g, '');
-}
 
 function getCandidatePositions(candidate: CandidateProfile, industry: JobIndustry): string[] {
   const positions: string[] = [];
@@ -956,48 +949,72 @@ export interface ProfileCompletenessResult {
 }
 
 export function checkProfileCompleteness(candidate: CandidateProfile): ProfileCompletenessResult {
-  const requiredFields = [
-    'first_name',
-    'last_name',
-    'email',
-    'nationality',
-    'years_experience',
-    'availability_status',
-  ];
-
-  const positionFields = [
-    'primary_position',
-    'yacht_primary_position',
-    'household_primary_position',
-  ];
-
+  // Match the same fields and scoring as calculateProfileCompletion
+  // Core required fields for job matching
   const missingFields: string[] = [];
-  let completedCount = 0;
+  let score = 0;
 
-  // Check required fields
-  for (const field of requiredFields) {
-    if ((candidate as any)[field]) {
-      completedCount++;
+  // Personal Info (20%): 4% per field (5 fields = 20%)
+  const personalFields = [
+    { field: 'first_name', label: 'first name', points: 4 },
+    { field: 'last_name', label: 'last name', points: 4 },
+    { field: 'email', label: 'email', points: 4 },
+    { field: 'phone', label: 'phone', points: 4 },
+    { field: 'nationality', label: 'nationality', points: 4 },
+  ];
+
+  personalFields.forEach(({ field, label, points }) => {
+    const value = (candidate as any)[field];
+    if (value && (typeof value === 'string' ? value.trim().length > 0 : true)) {
+      score += points;
     } else {
-      missingFields.push(field);
+      missingFields.push(label);
     }
-  }
+  });
 
-  // Check at least one position field
-  const hasPosition = positionFields.some(f => (candidate as any)[f]);
+  // Professional Info (25%): candidateType (10%), position (15%)
+  // Note: candidateType not in CandidateProfile interface, so we check position only
+  // Position check (15%)
+  const hasPosition = 
+    (candidate.primary_position && candidate.primary_position.trim().length > 0) ||
+    (candidate.yacht_primary_position && candidate.yacht_primary_position.trim().length > 0) ||
+    (candidate.household_primary_position && candidate.household_primary_position.trim().length > 0);
+  
   if (hasPosition) {
-    completedCount++;
+    score += 15;
   } else {
-    missingFields.push('position (yacht or household)');
+    missingFields.push('primary position');
   }
 
-  const totalRequired = requiredFields.length + 1; // +1 for position
-  const completeness = Math.round((completedCount / totalRequired) * 100);
+  // We can't check candidateType here, so we give 10% if position exists
+  // This is a limitation of the CandidateProfile interface
+  if (hasPosition) {
+    score += 10; // Assume candidateType is set if position exists
+  }
+
+  // Availability (10%): availability_status
+  if (candidate.availability_status && candidate.availability_status.trim().length > 0) {
+    score += 10;
+  } else {
+    missingFields.push('availability status');
+  }
+
+  // Documents (20%): CV - not checked here, handled separately
+  // Enhancement Fields (10%): dateOfBirth, currentLocation, avatarUrl - not critical for matching
+  // Certifications (10%): STCW/ENG1 - not critical for matching
+  // Preferences (15%): industryPreference - not critical for matching
+
+  // Cap at 100%
+  score = Math.min(100, score);
+
+  // Calculate completeness percentage
+  // Core required: Personal (20) + Professional (25) + Availability (10) + Documents (20) + Certifications (10) + Preferences (15) = 100%
+  const completeness = Math.round(score);
 
   return {
     completeness,
     canQuickApply: completeness >= 70,
     missingFields,
-    requiredFields: [...requiredFields, 'position'],
+    requiredFields: ['first_name', 'last_name', 'email', 'phone', 'nationality', 'position', 'availability_status'],
   };
 }

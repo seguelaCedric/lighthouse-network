@@ -968,7 +968,12 @@ export function ProfileEditClient({
       // 3. Navigate to target step
       setCurrentStep(targetStep);
 
-      // 4. Scroll to top on mobile
+      // 4. Clear hash from URL when navigating to a different step
+      if (targetStep !== currentStep && window.location.hash) {
+        window.history.replaceState(null, "", window.location.pathname);
+      }
+
+      // 5. Scroll to top on mobile
       if (window.innerWidth < 768) {
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
@@ -1028,6 +1033,24 @@ export function ProfileEditClient({
     }
   }, [smoker, hasTattoos, maritalStatus, validateStep]);
 
+  // Handle hash navigation (e.g., #photo) - scroll to section when page loads
+  React.useEffect(() => {
+    const hash = window.location.hash;
+    if (hash === "#photo") {
+      // Ensure we're on the personal step
+      if (currentStep !== "personal") {
+        setCurrentStep("personal");
+      }
+      // Scroll to photo section after a short delay to allow DOM to update
+      setTimeout(() => {
+        const photoElement = document.getElementById("photo");
+        if (photoElement) {
+          photoElement.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 100);
+    }
+  }, [currentStep]);
+
   const profileCompletion = React.useMemo(() => {
     return calculateProfileCompletion({
       firstName,
@@ -1039,11 +1062,13 @@ export function ProfileEditClient({
       currentLocation: currentLocation?.displayName || null,
       candidateType,
       primaryPosition,
+      yachtPrimaryPosition: candidate.yachtPrimaryPosition,
+      householdPrimaryPosition: candidate.householdPrimaryPosition,
+      availabilityStatus: candidate.availabilityStatus,
       avatarUrl: profilePhotoUrl,
       hasStcw: hasSTCW === "yes",
       hasEng1: hasENG1 === "yes",
       industryPreference: candidate.industryPreference,
-      verificationTier: candidate.verificationTier,
       documents,
     });
   }, [
@@ -1056,11 +1081,13 @@ export function ProfileEditClient({
     currentLocation,
     candidateType,
     primaryPosition,
+    candidate.yachtPrimaryPosition,
+    candidate.householdPrimaryPosition,
+    candidate.availabilityStatus,
     profilePhotoUrl,
     hasSTCW,
     hasENG1,
     candidate.industryPreference,
-    candidate.verificationTier,
     documents,
   ]);
 
@@ -1139,23 +1166,25 @@ export function ProfileEditClient({
   const hasJobPreferences = Boolean(candidate.industryPreference);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <div className="flex gap-6">
+    <div className="bg-gray-50 -mx-4 -my-6 sm:-mx-6 sm:-my-8 lg:-mx-8 px-4 py-6 sm:px-6 sm:py-8 lg:px-8 min-h-[calc(100vh-12rem)]">
+      <div className="mx-auto max-w-7xl">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           {/* Desktop: Sticky sidebar */}
-          <div className="hidden md:block md:w-[280px] md:shrink-0">
-            <StepNavigator
-              variant="sidebar"
-              steps={profileSteps}
-              currentStep={currentStep}
-              formData={formData}
-              onStepClick={handleStepClick}
-            />
-          </div>
+          <aside className="hidden lg:block lg:w-[280px] lg:shrink-0">
+            <div className="sticky top-24">
+              <StepNavigator
+                variant="sidebar"
+                steps={profileSteps}
+                currentStep={currentStep}
+                formData={formData}
+                onStepClick={handleStepClick}
+              />
+            </div>
+          </aside>
 
-          <div className="flex-1">
+          <div className="flex-1 min-w-0 relative z-0">
             {/* Mobile: Horizontal stepper */}
-            <div className="block md:hidden mb-6">
+            <div className="block lg:hidden mb-6">
               <StepNavigator
                 variant="horizontal"
                 steps={profileSteps}
@@ -1165,73 +1194,83 @@ export function ProfileEditClient({
               />
             </div>
 
-            {/* Header: Save status */}
-            <div className="mb-2 flex flex-wrap items-center gap-4">
-              <Link
-                href="/crew/dashboard"
-                className="inline-flex items-center gap-2 text-sm font-medium text-gold-600 hover:text-gold-700"
-              >
-                <ChevronLeft className="size-4" />
-                Back to dashboard
-              </Link>
-              {safeRedirect && (
+            {/* Header */}
+            <div className="mb-4 sm:mb-6 space-y-3 sm:space-y-4">
+              {/* Back button */}
+              <div className="flex items-center gap-3 sm:gap-4">
                 <Link
-                  href={safeRedirect}
-                  className="inline-flex items-center gap-2 text-sm font-medium text-gold-600 hover:text-gold-700"
+                  href="/crew/dashboard"
+                  className="inline-flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium text-gold-600 hover:text-gold-700 transition-colors min-h-[44px] sm:min-h-0"
                 >
                   <ChevronLeft className="size-4" />
-                  Back to job
+                  <span className="hidden sm:inline">Back to dashboard</span>
+                  <span className="sm:hidden">Back</span>
                 </Link>
-              )}
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-              <div>
-                <h1 className="flex items-center gap-3 font-serif text-3xl font-semibold text-navy-800">
-                  <UserCircle className="size-7 text-gold-500" />
-                  Edit Profile
-                </h1>
-                <p className="mt-2 text-gray-600">
-                  Keep your profile up to date to get the best opportunities
-                </p>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                {saveStatus === "saved" && (
-                  <>
-                    <Cloud className="size-4 text-success-500" />
-                    <span className="text-gray-500" suppressHydrationWarning>
-                      Saved {lastSaved.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                    </span>
-                  </>
-                )}
-                {saveStatus === "saving" && (
-                  <>
-                    <Cloud className="size-4 animate-pulse text-gold-500" />
-                    <span className="text-gold-600">Saving...</span>
-                  </>
-                )}
-                {saveStatus === "error" && (
-                  <>
-                    <CloudOff className="size-4 text-error-500" />
-                    <span className="text-error-600">Error saving</span>
-                  </>
+                {safeRedirect && (
+                  <Link
+                    href={safeRedirect}
+                    className="inline-flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium text-gold-600 hover:text-gold-700 transition-colors min-h-[44px] sm:min-h-0"
+                  >
+                    <ChevronLeft className="size-4" />
+                    <span className="hidden sm:inline">Back to job</span>
+                    <span className="sm:hidden">Job</span>
+                  </Link>
                 )}
               </div>
-            </div>
-            <div className="mb-6 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-medium text-navy-900">Profile completion</span>
-                <span className="text-gray-500">{overallProgress}%</span>
+
+              {/* Title and save status */}
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+                <div className="min-w-0 flex-1">
+                  <h1 className="flex items-center gap-2 sm:gap-3 font-serif text-xl sm:text-2xl lg:text-3xl font-semibold text-navy-800">
+                    <UserCircle className="size-5 sm:size-6 lg:size-7 text-gold-500 flex-shrink-0" />
+                    <span className="truncate">Edit Profile</span>
+                  </h1>
+                  <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm lg:text-base text-gray-600">
+                    Keep your profile up to date to get the best opportunities
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 text-xs sm:text-sm flex-shrink-0">
+                  {saveStatus === "saved" && (
+                    <>
+                      <Cloud className="size-3.5 sm:size-4 text-success-500 flex-shrink-0" />
+                      <span className="text-gray-500 whitespace-nowrap" suppressHydrationWarning>
+                        <span className="hidden sm:inline">Saved </span>
+                        {lastSaved.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    </>
+                  )}
+                  {saveStatus === "saving" && (
+                    <>
+                      <Cloud className="size-3.5 sm:size-4 animate-pulse text-gold-500 flex-shrink-0" />
+                      <span className="text-gold-600 whitespace-nowrap">Saving...</span>
+                    </>
+                  )}
+                  {saveStatus === "error" && (
+                    <>
+                      <CloudOff className="size-3.5 sm:size-4 text-error-500 flex-shrink-0" />
+                      <span className="text-error-600 whitespace-nowrap">Error saving</span>
+                    </>
+                  )}
+                </div>
               </div>
-              <div className="mt-2 h-2 overflow-hidden rounded-full bg-gray-200">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-gold-400 to-gold-500 transition-all duration-500"
-                  style={{ width: `${overallProgress}%` }}
-                />
+
+              {/* Profile completion */}
+              <div className="rounded-lg border border-gray-200 bg-white p-3 sm:p-4 shadow-sm">
+                <div className="flex items-center justify-between text-xs sm:text-sm mb-2">
+                  <span className="font-medium text-navy-900">Profile completion</span>
+                  <span className="text-gray-500">{overallProgress}%</span>
+                </div>
+                <div className="h-1.5 sm:h-2 overflow-hidden rounded-full bg-gray-200">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-gold-400 to-gold-500 transition-all duration-500"
+                    style={{ width: `${overallProgress}%` }}
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Step content */}
-            <div className="bg-white rounded-xl border border-gray-200 p-8 shadow-sm">
+              {/* Step content */}
+              <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6 lg:p-8 shadow-sm">
               {currentStep === "personal" && (
                 <PersonalInfoForm
                   profilePhotoUrl={profilePhotoUrl || undefined}
@@ -1340,47 +1379,49 @@ export function ProfileEditClient({
       )}
             </div>
 
-      {/* Wizard Navigation Buttons */}
-      {currentStep !== "complete" && (
-        <div className="mt-6 flex items-center justify-between">
-          <Button
-            variant="secondary"
-            leftIcon={<ChevronLeft className="size-4" />}
-            onClick={() => {
-              const currentIndex = steps.indexOf(currentStep);
-              if (currentIndex > 0) {
-                handleStepClick(steps[currentIndex - 1]);
-              }
-            }}
-            disabled={steps.indexOf(currentStep) === 0}
-          >
-            Back
-          </Button>
-          <div className="flex items-center gap-2 text-sm text-gray-500">
-            {saveStatus === "saved" && (
-              <>
-                <CheckCircle2 className="size-4 text-success-500" />
-                All changes saved
-              </>
+            {/* Wizard Navigation Buttons */}
+            {currentStep !== "complete" && (
+              <div className="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
+                <Button
+                  variant="secondary"
+                  leftIcon={<ChevronLeft className="size-4" />}
+                  onClick={() => {
+                    const currentIndex = steps.indexOf(currentStep);
+                    if (currentIndex > 0) {
+                      handleStepClick(steps[currentIndex - 1]);
+                    }
+                  }}
+                  disabled={steps.indexOf(currentStep) === 0}
+                  className="w-full sm:w-auto min-h-[44px]"
+                >
+                  Back
+                </Button>
+                <div className="flex items-center justify-center gap-2 text-xs sm:text-sm text-gray-500 order-2 sm:order-none py-1">
+                  {saveStatus === "saved" && (
+                    <>
+                      <CheckCircle2 className="size-4 text-success-500 flex-shrink-0" />
+                      <span className="hidden sm:inline">All changes saved</span>
+                    </>
+                  )}
+                </div>
+                <Button
+                  variant="primary"
+                  rightIcon={<ChevronRight className="size-4" />}
+                  onClick={() => {
+                    const currentIndex = steps.indexOf(currentStep);
+                    if (currentIndex < steps.length - 1) {
+                      handleStepClick(steps[currentIndex + 1]);
+                    }
+                  }}
+                  className="w-full sm:w-auto order-1 sm:order-none min-h-[44px]"
+                >
+                  {steps.indexOf(currentStep) === steps.length - 2 ? "Complete" : "Continue"}
+                </Button>
+              </div>
             )}
           </div>
-          <Button
-            variant="primary"
-            rightIcon={<ChevronRight className="size-4" />}
-            onClick={() => {
-              const currentIndex = steps.indexOf(currentStep);
-              if (currentIndex < steps.length - 1) {
-                handleStepClick(steps[currentIndex + 1]);
-              }
-            }}
-          >
-            {steps.indexOf(currentStep) === steps.length - 2 ? "Complete" : "Continue"}
-          </Button>
-        </div>
-      )}
         </div>
       </div>
-    </div>
     </div>
   );
 }

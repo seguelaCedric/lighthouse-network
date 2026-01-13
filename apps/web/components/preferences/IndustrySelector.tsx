@@ -35,15 +35,15 @@ const options = [
 
 export function IndustrySelector({ value, onChange }: IndustrySelectorProps) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="text-center">
-        <h2 className="text-xl font-semibold text-navy-900">What type of role are you looking for?</h2>
-        <p className="mt-1 text-gray-600">
+        <h2 className="text-lg font-semibold text-navy-900 sm:text-xl">What type of role are you looking for?</h2>
+        <p className="mt-1 text-sm text-gray-600 sm:text-base">
           This helps us show you the most relevant opportunities
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
         {options.map((option) => {
           const isSelected = value === option.value;
           const Icon = option.icon;
@@ -53,7 +53,7 @@ export function IndustrySelector({ value, onChange }: IndustrySelectorProps) {
               key={option.value}
               onClick={() => onChange(option.value)}
               className={cn(
-                "group relative flex flex-col items-center rounded-xl border-2 p-6 text-center transition-all",
+                "group relative flex flex-col items-center rounded-xl border-2 p-4 text-center transition-all sm:p-6",
                 "hover:border-navy-300 hover:bg-navy-50/50",
                 isSelected
                   ? option.color === "navy"
@@ -91,7 +91,7 @@ export function IndustrySelector({ value, onChange }: IndustrySelectorProps) {
               {/* Icon */}
               <div
                 className={cn(
-                  "mb-4 flex size-16 items-center justify-center rounded-full transition-colors",
+                  "mb-3 flex size-12 items-center justify-center rounded-full transition-colors sm:mb-4 sm:size-16",
                   isSelected
                     ? option.color === "navy"
                       ? "bg-navy-100"
@@ -103,7 +103,7 @@ export function IndustrySelector({ value, onChange }: IndustrySelectorProps) {
               >
                 <Icon
                   className={cn(
-                    "size-8",
+                    "size-6 sm:size-8",
                     isSelected
                       ? option.color === "navy"
                         ? "text-navy-600"
@@ -118,13 +118,13 @@ export function IndustrySelector({ value, onChange }: IndustrySelectorProps) {
               {/* Text */}
               <h3
                 className={cn(
-                  "mb-1 font-semibold",
+                  "mb-1 text-sm font-semibold sm:text-base",
                   isSelected ? "text-navy-900" : "text-gray-700"
                 )}
               >
                 {option.label}
               </h3>
-              <p className="text-sm text-gray-500">{option.description}</p>
+              <p className="text-xs text-gray-500 sm:text-sm">{option.description}</p>
             </button>
           );
         })}

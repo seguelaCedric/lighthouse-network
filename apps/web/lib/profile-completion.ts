@@ -1,9 +1,10 @@
 export type ProfileCompletionAction = {
-  id: "basic-info" | "professional" | "cv" | "photo" | "certs" | "preferences";
+  id: string;
   label: string;
   percentageBoost: number;
   completed: boolean;
   href: string;
+  field?: string; // Optional field name for granular tracking
 };
 
 export type ProfileCompletionInput = {
@@ -16,11 +17,13 @@ export type ProfileCompletionInput = {
   currentLocation?: string | null;
   candidateType?: string | null;
   primaryPosition?: string | null;
+  yachtPrimaryPosition?: string | null;
+  householdPrimaryPosition?: string | null;
+  availabilityStatus?: string | null;
   avatarUrl?: string | null;
   hasStcw?: boolean;
   hasEng1?: boolean;
   industryPreference?: string | null;
-  verificationTier?: string | null;
   documents?: Array<{ type: string }>;
 };
 
@@ -35,47 +38,85 @@ const identityVerificationTiers = new Set(["identity", "verified", "premium"]);
 const hasValue = (value: string | null | undefined): boolean =>
   typeof value === "string" ? value.trim().length > 0 : Boolean(value);
 
+const hasNumericValue = (value: number | null | undefined): boolean =>
+  value !== null && value !== undefined && !isNaN(value);
+
 export function calculateProfileCompletion(
   input: ProfileCompletionInput
 ): ProfileCompletionResult {
   const actions: ProfileCompletionAction[] = [];
   let score = 0;
 
-  const basicInfoComplete =
-    hasValue(input.firstName) &&
-    hasValue(input.lastName) &&
-    hasValue(input.email) &&
-    hasValue(input.phone) &&
-    hasValue(input.dateOfBirth) &&
-    hasValue(input.nationality) &&
-    hasValue(input.currentLocation);
+  // Personal Info (20%): 4% per field (5 fields = 20%)
+  const personalFields = [
+    { field: "firstName", value: input.firstName, label: "First name", points: 4 },
+    { field: "lastName", value: input.lastName, label: "Last name", points: 4 },
+    { field: "email", value: input.email, label: "Email", points: 4 },
+    { field: "phone", value: input.phone, label: "Phone", points: 4 },
+    { field: "nationality", value: input.nationality, label: "Nationality", points: 4 },
+  ];
 
-  if (basicInfoComplete) {
+  personalFields.forEach(({ field, value, label, points }) => {
+    if (hasValue(value)) {
+      score += points;
+    } else {
+      actions.push({
+        id: `personal-${field}`,
+        label: `Add ${label.toLowerCase()}`,
+        percentageBoost: points,
+        completed: false,
+        href: "/crew/profile/edit#personal",
+        field,
+      });
+    }
+  });
+
+  // Professional Info (25%): candidateType (10%), primaryPosition (15%)
+  if (hasValue(input.candidateType)) {
+    score += 10;
+  } else {
+    actions.push({
+      id: "professional-candidateType",
+      label: "Select role category",
+      percentageBoost: 10,
+      completed: false,
+      href: "/crew/profile/edit#professional",
+      field: "candidateType",
+    });
+  }
+
+  const hasPosition = hasValue(input.primaryPosition) ||
+    hasValue(input.yachtPrimaryPosition) ||
+    hasValue(input.householdPrimaryPosition);
+
+  if (hasPosition) {
     score += 15;
   } else {
     actions.push({
-      id: "basic-info",
-      label: "Complete personal details",
+      id: "professional-position",
+      label: "Add primary position",
       percentageBoost: 15,
       completed: false,
-      href: "/crew/profile/edit#personal",
+      href: "/crew/profile/edit#professional",
+      field: "primaryPosition",
     });
   }
 
-  const professionalComplete =
-    hasValue(input.primaryPosition) && hasValue(input.candidateType);
-  if (professionalComplete) {
-    score += 20;
+  // Availability (10%): availability_status
+  if (hasValue(input.availabilityStatus)) {
+    score += 10;
   } else {
     actions.push({
-      id: "professional",
-      label: "Add professional details",
-      percentageBoost: 20,
+      id: "availability-status",
+      label: "Set availability status",
+      percentageBoost: 10,
       completed: false,
       href: "/crew/profile/edit#professional",
+      field: "availabilityStatus",
     });
   }
 
+  // Documents (20%): CV upload
   const hasCv = (input.documents || []).some((doc) => doc.type === "cv");
   if (hasCv) {
     score += 20;
@@ -86,55 +127,108 @@ export function calculateProfileCompletion(
       percentageBoost: 20,
       completed: false,
       href: "/crew/documents#cv",
+      field: "cv",
+    });
+  }
+
+  // Enhancement Fields (10%): dateOfBirth (2%), currentLocation (3%), avatarUrl (5%)
+  // These are optional and only shown as actions if core profile is not yet complete
+  const coreScore = score; // Score before enhancement fields
+  const enhancementActions: ProfileCompletionAction[] = [];
+
+  if (hasValue(input.dateOfBirth)) {
+    score += 2;
+  } else {
+    enhancementActions.push({
+      id: "enhancement-dateOfBirth",
+      label: "Add date of birth",
+      percentageBoost: 2,
+      completed: false,
+      href: "/crew/profile/edit#personal",
+      field: "dateOfBirth",
+    });
+  }
+
+  if (hasValue(input.currentLocation)) {
+    score += 3;
+  } else {
+    enhancementActions.push({
+      id: "enhancement-currentLocation",
+      label: "Add current location",
+      percentageBoost: 3,
+      completed: false,
+      href: "/crew/profile/edit#personal",
+      field: "currentLocation",
     });
   }
 
   if (hasValue(input.avatarUrl)) {
-    score += 10;
+    score += 5;
   } else {
-    actions.push({
-      id: "photo",
+    enhancementActions.push({
+      id: "enhancement-photo",
       label: "Add profile photo",
-      percentageBoost: 10,
+      percentageBoost: 5,
       completed: false,
       href: "/crew/profile/edit#photo",
+      field: "avatarUrl",
     });
   }
 
+  // Only add enhancement actions if core profile is not complete
+  // Enhancement fields are optional and shouldn't show as required when core is done
+  // Core required: Personal (20) + Professional (25) + Availability (10) + Documents (20) + Certifications (10) + Preferences (15) = 100%
+  const coreRequiredScore = 100;
+  if (coreScore < coreRequiredScore) {
+    actions.push(...enhancementActions);
+  }
+
+  // Certifications (10%): STCW/ENG1 for yacht crew
   const needsYachtCerts =
     input.candidateType === "yacht_crew" || input.candidateType === "both";
-  const hasCerts = needsYachtCerts ? input.hasStcw || input.hasEng1 : true;
-  if (hasCerts) {
-    score += 20;
+  if (needsYachtCerts) {
+    const hasCerts = input.hasStcw || input.hasEng1;
+    if (hasCerts) {
+      score += 10;
+    } else {
+      actions.push({
+        id: "certs",
+        label: "Add certifications (STCW or ENG1)",
+        percentageBoost: 10,
+        completed: false,
+        href: "/crew/documents#certificates",
+        field: "certifications",
+      });
+    }
   } else {
-    actions.push({
-      id: "certs",
-      label: "Add certifications",
-      percentageBoost: 20,
-      completed: false,
-      href: "/crew/documents#certificates",
-    });
+    // Household staff don't need yacht certifications
+    score += 10;
   }
 
-  const hasPrefs = hasValue(input.industryPreference);
-  if (hasPrefs) {
-    score += 10;
+  // Preferences (15%): industryPreference (increased from 5% to compensate for removed years_experience)
+  if (hasValue(input.industryPreference)) {
+    score += 15;
   } else {
     actions.push({
       id: "preferences",
       label: "Set job preferences",
-      percentageBoost: 10,
+      percentageBoost: 15,
       completed: false,
       href: "/crew/preferences",
+      field: "industryPreference",
     });
   }
 
-  const isIdentityVerified = identityVerificationTiers.has(
-    input.verificationTier || ""
-  );
-  if (isIdentityVerified) {
-    score += 5;
-  }
+  // Cap score at 100%
+  score = Math.min(100, score);
 
-  return { score, actions, isIdentityVerified };
+  // Filter out actions if score is already 100%
+  // If profile is complete, don't show enhancement field suggestions
+  const filteredActions = score >= 100 ? [] : actions;
+
+  // Note: Verification tier is excluded as it's not candidate-controlled
+  // We still check it for display purposes but don't include in score
+  const isIdentityVerified = false; // Will be set by caller if needed
+
+  return { score, actions: filteredActions, isIdentityVerified };
 }

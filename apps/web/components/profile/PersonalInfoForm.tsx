@@ -1,13 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { Camera, Upload, Phone, Mail, Loader2 } from "lucide-react";
+import { Camera, Upload, Phone, Mail, Loader2, AlertCircle } from "lucide-react";
 import { FormField } from "@/components/ui/FormField";
 import { TextInput } from "@/components/ui/TextInput";
 import { SelectInput } from "@/components/ui/SelectInput";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
 import { LocationInput, type LocationData } from "@/components/ui/LocationInput";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { genderOptions, nationalityOptions } from "./constants";
 import { updateProfilePhoto } from "@/app/crew/profile/actions";
 
@@ -210,16 +211,16 @@ export function PersonalInfoForm({
       {/* Profile Photo */}
       <div id="photo" className="mb-6 scroll-mt-24">
         <label className="mb-2 block text-sm font-medium text-gray-700">Profile Photo</label>
-        <div className="flex items-center gap-6">
-          <div className="relative">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+          <div className="relative flex-shrink-0">
             {profilePhotoUrl ? (
               <img
                 src={profilePhotoUrl}
                 alt={`${firstName} ${lastName}`}
-                className="size-24 rounded-full object-cover"
+                className="size-24 rounded-full object-cover ring-2 ring-gold-200"
               />
             ) : (
-              <div className="flex size-24 items-center justify-center rounded-full bg-gradient-to-br from-navy-100 to-navy-200 text-2xl font-bold text-navy-600">
+              <div className="flex size-24 items-center justify-center rounded-full bg-gradient-to-br from-navy-100 to-navy-200 text-2xl font-bold text-navy-600 ring-2 ring-gold-200">
                 {firstName[0]}
                 {lastName[0]}
               </div>
@@ -228,22 +229,24 @@ export function PersonalInfoForm({
               type="button"
               onClick={handlePhotoClick}
               disabled={isUploading}
-              className="absolute -bottom-1 -right-1 flex size-8 items-center justify-center rounded-full bg-gold-500 text-white shadow-md hover:bg-gold-600 disabled:opacity-50"
+              className="absolute -bottom-1 -right-1 flex size-10 sm:size-8 items-center justify-center rounded-full bg-gold-500 text-white shadow-md hover:bg-gold-600 disabled:opacity-50 transition-all active:scale-90 focus:outline-none focus:ring-2 focus:ring-gold-500 focus:ring-offset-2"
+              aria-label="Change profile photo"
             >
               {isUploading ? (
-                <Loader2 className="size-4 animate-spin" />
+                <Loader2 className="size-5 sm:size-4 animate-spin" />
               ) : (
-                <Camera className="size-4" />
+                <Camera className="size-5 sm:size-4" />
               )}
             </button>
           </div>
-          <div>
+          <div className="flex-1 w-full sm:w-auto">
             <Button
               variant="secondary"
               size="sm"
               leftIcon={isUploading ? <Loader2 className="size-4 animate-spin" /> : <Upload className="size-4" />}
               onClick={handlePhotoClick}
               disabled={isUploading}
+              className="w-full sm:w-auto"
             >
               {isUploading ? "Uploading..." : "Upload Photo"}
             </Button>
@@ -251,13 +254,16 @@ export function PersonalInfoForm({
               JPG or PNG, max 5MB. Square photos work best.
             </p>
             {uploadError && (
-              <p className="mt-1 text-xs text-red-600">{uploadError}</p>
+              <div className="mt-2 flex items-start gap-1.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
+                <AlertCircle className="size-4 text-red-600 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-red-700">{uploadError}</p>
+              </div>
             )}
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2">
         <FormField label="First Name" required error={errors?.firstName}>
           <TextInput
             value={firstName}
@@ -335,7 +341,10 @@ export function PersonalInfoForm({
               onChange={setEmail}
               placeholder="email@example.com"
               prefix={<Mail className="size-4 text-gray-400" />}
-              className={errors?.email ? "border-red-500 focus:border-red-500 focus:ring-red-500" : undefined}
+              className={cn(
+                "min-w-0",
+                errors?.email ? "border-red-500 focus:border-red-500 focus:ring-red-500" : undefined
+              )}
             />
           </div>
         </FormField>

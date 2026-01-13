@@ -155,8 +155,8 @@ export function getJobFieldValue(
 
 /**
  * Parse vessel info from yacht name field
- * Handles formats like "80m MY", "65m S/Y", "45m Motor Yacht", "Sailing Yacht 55m"
- * Returns vessel_size_meters and vessel_type
+ * Only extracts vessel_size_meters and vessel_name
+ * Does NOT infer vessel_type - only use if explicitly provided from a separate field
  */
 function parseVesselInfo(yachtName: string | null): {
   vessel_size_meters: number | null;
@@ -167,7 +167,6 @@ function parseVesselInfo(yachtName: string | null): {
 
   const text = yachtName.trim();
   let vesselSize: number | null = null;
-  let vesselType: string | null = null;
 
   // Extract size: "80m", "45 m", "55 meters"
   const sizeMatch = text.match(/(\d+)\s*m(?:eters?)?/i);
@@ -175,40 +174,11 @@ function parseVesselInfo(yachtName: string | null): {
     vesselSize = parseInt(sizeMatch[1], 10);
   }
 
-  // Extract vessel type from common patterns
-  const lowerText = text.toLowerCase();
+  // Use the full yacht name as vessel_name - don't try to clean it
+  // We don't infer vessel_type from abbreviations like "MY" or "S/Y"
+  const vesselName = text;
 
-  // Motor yacht patterns: "MY", "M/Y", "Motor Yacht"
-  if (/\bm\/?y\b|motor\s*yacht/i.test(text)) {
-    vesselType = 'motor';
-  }
-  // Sailing yacht patterns: "SY", "S/Y", "Sailing Yacht"
-  else if (/\bs\/?y\b|sailing\s*yacht/i.test(text)) {
-    vesselType = 'sail';
-  }
-  // Explorer/expedition
-  else if (/explorer|expedition/i.test(text)) {
-    vesselType = 'explorer';
-  }
-  // Catamaran
-  else if (/catamaran|cat\b/i.test(text)) {
-    vesselType = 'catamaran';
-  }
-  // Classic/vintage
-  else if (/classic|vintage/i.test(text)) {
-    vesselType = 'classic';
-  }
-
-  // Clean the vessel name by removing the size/type indicators for display
-  let vesselName = text
-    .replace(/\d+\s*m(?:eters?)?\s*/gi, '') // Remove size
-    .replace(/\b(?:m\/?y|s\/?y|motor\s*yacht|sailing\s*yacht)\b/gi, '') // Remove type abbreviations
-    .trim();
-
-  // If name is empty after cleaning, use original
-  if (!vesselName) vesselName = text;
-
-  return { vessel_size_meters: vesselSize, vessel_type: vesselType, vessel_name: vesselName };
+  return { vessel_size_meters: vesselSize, vessel_type: null, vessel_name: vesselName };
 }
 
 /**
@@ -479,6 +449,31 @@ export function mapVincereToJob(
     }
   }
 
+  // Fallback: Try to extract rotation schedule from description text if custom fields are missing
+  if (!rotationSchedule && !holidayDays) {
+    // Check both requirements_text and public_description for rotation mentions
+    const descriptionText = (requirements || vincereData.internal_description || vincereData.external_description || vincereData.public_description || '').toLowerCase();
+    
+    // Look for rotation patterns in text: "2:2 rotation", "rotational 2:2", "2/2 rotation", etc.
+    const rotationPatterns = [
+      /rotational\s+(?:position\s+)?(\d+)[:\/](\d+)/i,
+      /(\d+)[:\/](\d+)\s+rotation/i,
+      /rotation\s+(\d+)[:\/](\d+)/i,
+      /(\d+)\s+on\s+(\d+)\s+off/i,
+      /(\d+)\s+months?\s+on\s+(\d+)\s+months?\s+off/i,
+    ];
+
+    for (const pattern of rotationPatterns) {
+      const match = descriptionText.match(pattern);
+      if (match) {
+        const on = match[1];
+        const off = match[2];
+        rotationSchedule = `${on}:${off}`;
+        break;
+      }
+    }
+  }
+
   // Parse salary - prefer custom field, fall back to base data
   let salaryMin = vincereData.salary_from || null;
   let salaryMax = vincereData.salary_to || null;
@@ -493,9 +488,43 @@ export function mapVincereToJob(
   // Map contract type ID to enum value
   let mappedContractType: string | null = null;
   if (contractType) {
-    const contractTypeId = parseInt(contractType as string, 10);
+    // Vincere can return contract type as either:
+    // 1. Numeric ID (1=permanent, 2=rotational, 3=seasonal, 4=freelance, 5=temporary)
+    // 2. String value (e.g., "contract", "freelance", etc.)
+    const contractTypeStr = String(contractType).toLowerCase().trim();
+    
+    // First try to parse as numeric ID
+    const contractTypeId = parseInt(contractTypeStr, 10);
     if (!isNaN(contractTypeId)) {
       mappedContractType = JOB_CONTRACT_TYPE_MAP[contractTypeId] || null;
+    } else {
+      // Handle string values - map common variations
+      const stringMap: Record<string, string> = {
+        'contract': 'temporary', // "contract" typically means temporary/contract work
+        'freelance': 'freelance',
+        'permanent': 'permanent',
+        'rotational': 'rotational',
+        'seasonal': 'seasonal',
+        'temporary': 'temporary',
+        'temp': 'temporary',
+      };
+      mappedContractType = stringMap[contractTypeStr] || null;
+    }
+  }
+
+  // Override contract type based on detected rotation schedule
+  // If there's a rotation schedule, the contract type must be "rotational"
+  if (rotationSchedule) {
+    mappedContractType = 'rotational';
+  }
+  // Override contract type based on holiday days when it makes sense
+  // Permanent positions typically have 30-90 days holiday
+  // If a job has holiday days in this range and is marked as "freelance", it's likely permanent
+  else if (holidayDays !== null && holidayDays >= 30 && holidayDays <= 90) {
+    // Jobs with 30-90 days holiday are typically permanent positions
+    // Freelance/temporary positions rarely have such generous holiday packages
+    if (mappedContractType === 'freelance' || mappedContractType === null) {
+      mappedContractType = 'permanent';
     }
   }
 
@@ -533,7 +562,7 @@ export function mapVincereToJob(
     is_urgent: false,
     fee_type: 'percentage',
     requirements: {},
-    published_at: isPublic ? (vincereData.open_date || vincereData.created_date) : null,
+    published_at: isPublic ? (vincereData.created_date || vincereData.open_date || null) : null,
     holiday_days: holidayDays,
     itinerary: itinerary,
     holiday_package: holidayPackage,

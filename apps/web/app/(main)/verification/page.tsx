@@ -21,7 +21,6 @@ import { VerificationBadge, type VerificationTier } from "@/components/ui/verifi
 import { cn } from "@/lib/utils";
 import { IDReviewModal } from "@/components/verification/IDReviewModal";
 import { ReferenceVerifyModal } from "@/components/verification/ReferenceVerifyModal";
-import DocumentApprovalCard from "@/components/documents/DocumentApprovalCard";
 
 // Types for pending verifications
 interface PendingIDVerification {
@@ -59,38 +58,7 @@ interface PendingVoiceVerification {
   requested_at: string;
 }
 
-type DocumentType =
-  | "cv"
-  | "certification"
-  | "passport"
-  | "visa"
-  | "medical"
-  | "reference"
-  | "contract"
-  | "photo"
-  | "other";
-
-interface PendingDocument {
-  id: string;
-  documentType: DocumentType;
-  fileUrl: string;
-  name: string;
-  fileSize: number;
-  mimeType: string;
-  description?: string;
-  status: "pending";
-  version: number;
-  expiryDate?: string;
-  uploadedAt: string;
-  candidate: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-  };
-}
-
-type FilterType = "all" | "id" | "reference" | "voice" | "documents";
+type FilterType = "all" | "id" | "reference" | "voice";
 
 // Format relative time
 function formatRelativeTime(dateString: string): string {
@@ -126,7 +94,6 @@ export default function VerificationQueuePage() {
   const [pendingIDs, setPendingIDs] = React.useState<PendingIDVerification[]>([]);
   const [pendingRefs, setPendingRefs] = React.useState<PendingReference[]>([]);
   const [pendingVoice, setPendingVoice] = React.useState<PendingVoiceVerification[]>([]);
-  const [pendingDocuments, setPendingDocuments] = React.useState<PendingDocument[]>([]);
 
   // Modal state
   const [selectedID, setSelectedID] = React.useState<PendingIDVerification | null>(null);
@@ -150,7 +117,6 @@ export default function VerificationQueuePage() {
       setPendingIDs(data.data.id_documents || []);
       setPendingRefs(data.data.references || []);
       setPendingVoice(data.data.voice || []);
-      setPendingDocuments(data.data.documents || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -166,8 +132,7 @@ export default function VerificationQueuePage() {
   const idCount = pendingIDs.length;
   const refCount = pendingRefs.length;
   const voiceCount = pendingVoice.length;
-  const documentsCount = pendingDocuments.length;
-  const totalCount = idCount + refCount + voiceCount + documentsCount;
+  const totalCount = idCount + refCount + voiceCount;
 
   // Handle modal callbacks
   const handleIDVerified = () => {
@@ -182,32 +147,6 @@ export default function VerificationQueuePage() {
     fetchPending();
   };
 
-  const handleDocumentApprove = async (documentId: string) => {
-    try {
-      const response = await fetch(`/api/documents/${documentId}/approve`, {
-        method: "POST",
-      });
-      if (!response.ok) throw new Error("Failed to approve document");
-      fetchPending();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to approve document");
-    }
-  };
-
-  const handleDocumentReject = async (documentId: string, reason: string) => {
-    try {
-      const response = await fetch(`/api/documents/${documentId}/reject`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason }),
-      });
-      if (!response.ok) throw new Error("Failed to reject document");
-      fetchPending();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Failed to reject document");
-    }
-  };
-
   return (
     <>
       <main className="flex-1 overflow-y-auto p-6">
@@ -218,7 +157,7 @@ export default function VerificationQueuePage() {
                 Verification Queue
               </h1>
               <p className="mt-1 text-sm text-gray-600">
-                Review and verify candidate documents, references, and voice verifications
+                Review and verify candidate references and voice verifications
               </p>
             </div>
 
@@ -269,17 +208,6 @@ export default function VerificationQueuePage() {
                   )}
                 >
                   Voice ({voiceCount})
-                </button>
-                <button
-                  onClick={() => setFilter("documents")}
-                  className={cn(
-                    "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-                    filter === "documents"
-                      ? "bg-white text-navy-900 shadow-sm"
-                      : "text-gray-600 hover:text-navy-900"
-                  )}
-                >
-                  Documents ({documentsCount})
                 </button>
               </div>
             </div>
@@ -471,26 +399,6 @@ export default function VerificationQueuePage() {
                         </Button>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Documents Section */}
-            {!loading && !error && (filter === "all" || filter === "documents") && documentsCount > 0 && (
-              <section className="mb-8">
-                <h2 className="mb-4 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-gray-500">
-                  <FileCheck className="size-4" />
-                  Documents Pending Review ({documentsCount})
-                </h2>
-                <div className="grid grid-cols-1 gap-4">
-                  {pendingDocuments.map((doc) => (
-                    <DocumentApprovalCard
-                      key={doc.id}
-                      document={doc}
-                      onApprove={handleDocumentApprove}
-                      onReject={handleDocumentReject}
-                    />
                   ))}
                 </div>
               </section>

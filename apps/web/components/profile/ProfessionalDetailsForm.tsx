@@ -99,7 +99,7 @@ export function ProfessionalDetailsForm({
   ] as const;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-navy-900">Professional Details</h2>
         <p className="mt-1 text-sm text-gray-500">
@@ -113,7 +113,7 @@ export function ProfessionalDetailsForm({
       </div>
 
       <FormField label="Role Category" required error={errors?.candidateType}>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {roleCards.map(({ value, label, description, Icon }) => {
             const isSelected = candidateType === value;
             return (
@@ -122,7 +122,7 @@ export function ProfessionalDetailsForm({
                 type="button"
                 onClick={() => setCandidateType(value as CandidateType)}
                 className={[
-                  "flex w-full flex-col gap-2 rounded-xl border p-4 text-left transition-all",
+                  "flex w-full flex-col gap-2 rounded-xl border p-4 text-left transition-all min-h-[80px]",
                   isSelected
                     ? "border-gold-400 bg-gold-50 shadow-sm"
                     : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm",
@@ -132,7 +132,7 @@ export function ProfessionalDetailsForm({
                 <div className="flex items-center gap-2">
                   <span
                     className={[
-                      "flex size-9 items-center justify-center rounded-full",
+                      "flex size-9 sm:size-8 items-center justify-center rounded-full flex-shrink-0",
                       isSelected ? "bg-gold-500 text-white" : "bg-gray-100 text-gray-500",
                     ].join(" ")}
                   >
@@ -195,7 +195,7 @@ export function ProfessionalDetailsForm({
 
       {/* License fields in 2-column grid */}
       {showLicenses && (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2">
           <FormField label="Highest Licence">
             <SelectInput
               value={highestLicense}

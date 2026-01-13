@@ -215,8 +215,8 @@ export function StepNavigator({
 
   if (variant === "horizontal") {
     return (
-      <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-        <div className="flex items-center justify-between gap-2 overflow-x-auto">
+      <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm sm:p-4">
+        <div className="flex items-center justify-center gap-2 overflow-x-auto px-2 pt-1 pb-1 sm:gap-4 sm:px-3 sm:pt-2">
           {steps.map((step, index) => {
             const isCurrent = step === currentStep;
             const isComplete = stepCompletion[step];
@@ -228,7 +228,7 @@ export function StepNavigator({
                 <button
                   onClick={() => onStepClick(step)}
                   className={cn(
-                    "flex min-w-[100px] flex-col items-center gap-2 rounded-lg p-3 transition-all",
+                    "flex flex-shrink-0 flex-col items-center gap-1.5 rounded-lg p-2.5 transition-all sm:gap-2 sm:p-3",
                     isCurrent
                       ? "bg-gold-50 ring-2 ring-gold-500"
                       : isComplete
@@ -242,7 +242,7 @@ export function StepNavigator({
                 >
                   <div
                     className={cn(
-                      "flex size-10 items-center justify-center rounded-full",
+                      "flex size-9 items-center justify-center rounded-full sm:size-10",
                       isCurrent
                         ? "bg-gold-500"
                         : isComplete
@@ -251,11 +251,11 @@ export function StepNavigator({
                     )}
                   >
                     {isComplete && !isCurrent ? (
-                      <CheckCircle2 className="size-5 text-white" />
+                      <CheckCircle2 className="size-4.5 text-white sm:size-5" />
                     ) : (
                       <StepIcon
                         className={cn(
-                          "size-5",
+                          "size-4.5 sm:size-5",
                           isCurrent || isComplete ? "text-white" : "text-gray-400"
                         )}
                       />
@@ -264,7 +264,7 @@ export function StepNavigator({
                   <div className="text-center">
                     <div
                       className={cn(
-                        "text-xs font-medium",
+                        "text-[11px] font-medium leading-tight sm:text-xs",
                         isCurrent ? "text-gold-900" : "text-gray-600"
                       )}
                     >
@@ -275,7 +275,7 @@ export function StepNavigator({
                 {index < steps.length - 1 && (
                   <div
                     className={cn(
-                      "h-0.5 w-8 flex-shrink-0",
+                      "hidden h-0.5 w-6 flex-shrink-0 sm:block sm:w-8",
                       stepCompletion[steps[index + 1]] ? "bg-success-300" : "bg-gray-200"
                     )}
                   />
@@ -286,12 +286,12 @@ export function StepNavigator({
         </div>
         {/* Show current step summary below */}
         {stepSummaries[currentStep] && (
-          <div className="mt-3 border-t border-gray-100 pt-3">
-            <div className="text-sm font-medium text-gray-900">
+          <div className="mt-2 border-t border-gray-100 pt-2 sm:mt-3 sm:pt-3">
+            <div className="text-xs font-medium text-gray-900 sm:text-sm">
               {stepSummaries[currentStep]?.primary}
             </div>
             {stepSummaries[currentStep]?.secondary && (
-              <div className="text-xs text-gray-500">{stepSummaries[currentStep]?.secondary}</div>
+              <div className="text-[10px] text-gray-500 sm:text-xs">{stepSummaries[currentStep]?.secondary}</div>
             )}
           </div>
         )}

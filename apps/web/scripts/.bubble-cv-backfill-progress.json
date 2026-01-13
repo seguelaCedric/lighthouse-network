@@ -1,0 +1,69 @@
+{
+  "startedAt": "2026-01-13T08:28:35.129Z",
+  "csvPath": "data/bubble-candidates.csv",
+  "totalWithCVs": 11921,
+  "lastProcessedRow": 35003,
+  "processedCount": 2260,
+  "uploadedCount": 1856,
+  "extractedCount": 1568,
+  "embeddedCount": 1568,
+  "skippedCount": 393,
+  "errorCount": 11,
+  "errors": [
+    {
+      "row": 33101,
+      "email": "leonora.wills@live.co.uk",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 33278,
+      "email": "jensenmauree12@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 33511,
+      "email": "lubandaboston0@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 34060,
+      "email": "alexncuevas@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 34270,
+      "email": "husainrasasadiqi50@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 34277,
+      "email": "abu.ujaid@www.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 34443,
+      "email": "naqvi702@gmail.com",
+      "error": "Upload failed: Unexpected token '<', \"<html>\r\n<h\"... is not valid JSON"
+    },
+    {
+      "row": 34548,
+      "email": "ermiasayenew0319@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 34649,
+      "email": "mdazada822@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 34673,
+      "email": "jiabarclay@gmail.com",
+      "error": "Upload failed: Unexpected token '<', \"<html>\r\n<h\"... is not valid JSON"
+    },
+    {
+      "row": 34752,
+      "email": "handsomeasif75@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    }
+  ]
+}

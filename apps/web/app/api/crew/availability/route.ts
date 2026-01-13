@@ -7,7 +7,7 @@ import { syncAvailabilityUpdate } from "@/lib/vincere/sync-service";
 const updateAvailabilitySchema = z.object({
   availability_status: z.enum([
     "available",
-    "not_looking",
+    "unavailable",
   ]),
   available_from: z.string().nullable().optional(),
 });
