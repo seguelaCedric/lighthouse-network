@@ -252,7 +252,7 @@ export async function loadJobMatches(
   } = options;
 
   const candidateSelectFields = `
-    id, first_name, last_name, email,
+    id, first_name, last_name, email, phone,
     primary_position, yacht_primary_position, yacht_secondary_positions,
     household_primary_position, household_secondary_positions, secondary_positions,
     years_experience,
