@@ -48,12 +48,12 @@ export function SearchQualityBanner({
               We Found Candidates Worth Considering
             </h3>
             <p className="font-inter text-sm md:text-base text-navy-600 leading-relaxed">
-              While we didn&apos;t find a perfect match for {roleText}, these
+              While we didn&apos;t find an exact fit for {roleText}, these
               professionals have relevant experience that may suit your needs.
               {bestScore && bestScore >= 55 && (
                 <span className="text-warning-700 font-medium">
                   {' '}
-                  Our top candidate matches {Math.round(bestScore)}% of your
+                  Our top candidate fits {Math.round(bestScore)}% of your
                   criteria.
                 </span>
               )}

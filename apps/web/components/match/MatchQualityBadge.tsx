@@ -25,7 +25,7 @@ function getTierConfig(score: number): TierConfig {
   if (score >= 85) {
     return {
       tier: 'excellent',
-      label: 'Exceptional Match',
+      label: 'Excellent Fit',
       Icon: Award,
       gradient: 'from-success-500 to-success-600',
       iconColor: 'text-emerald-300',
@@ -35,7 +35,7 @@ function getTierConfig(score: number): TierConfig {
   if (score >= 70) {
     return {
       tier: 'strong',
-      label: 'Strong Match',
+      label: 'Strong Fit',
       Icon: Target,
       gradient: 'from-gold-500 to-gold-600',
       iconColor: 'text-gold-300',
@@ -45,7 +45,7 @@ function getTierConfig(score: number): TierConfig {
   if (score >= 55) {
     return {
       tier: 'moderate',
-      label: 'Partial Match',
+      label: 'Partial Fit',
       Icon: TrendingUp,
       gradient: 'from-warning-400 to-warning-500',
       iconColor: 'text-amber-200',
@@ -54,7 +54,7 @@ function getTierConfig(score: number): TierConfig {
   }
   return {
     tier: 'limited',
-    label: 'Exploratory Match',
+    label: 'Worth Exploring',
     Icon: Search,
     gradient: 'from-navy-400 to-navy-500',
     iconColor: 'text-navy-200',

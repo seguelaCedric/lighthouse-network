@@ -87,9 +87,9 @@ function MatchScoreBadge({
 
   // Styling for matches
   const colorClass = "bg-success-100 text-success-700";
-  const label = `${score}% Match`;
+  const label = `${score}% Fit`;
 
-  const tooltipContent = "This job matches your desired position. Score is based on your experience, certifications, and preferences.";
+  const tooltipContent = "This score indicates how well this job fits your profile based on your experience, certifications, and preferences.";
 
   return (
     <div className="relative">
@@ -118,7 +118,7 @@ function MatchScoreBadge({
       {tooltipOpen && (
         <div className="absolute left-1/2 top-full z-50 mt-2 w-64 -translate-x-1/2 rounded-lg bg-navy-900 px-3 py-2 text-xs text-white shadow-lg">
           <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 border-[6px] border-transparent border-b-navy-900" />
-          <p className="font-medium mb-1">Position Match</p>
+          <p className="font-medium mb-1">Fit Score</p>
           <p className="text-gray-300 leading-relaxed">
             {tooltipContent}
           </p>

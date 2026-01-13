@@ -78,11 +78,11 @@ const getScoreBgColor = (score: number): string => {
 };
 
 const getScoreLabel = (score: number): string => {
-  if (score >= 85) return "Excellent Match";
-  if (score >= 70) return "Great Match";
-  if (score >= 55) return "Good Match";
-  if (score >= 40) return "Fair Match";
-  return "Possible Match";
+  if (score >= 85) return "Excellent Fit";
+  if (score >= 70) return "Great Fit";
+  if (score >= 55) return "Good Fit";
+  if (score >= 40) return "Fair Fit";
+  return "Worth Exploring";
 };
 
 // Score segment colors

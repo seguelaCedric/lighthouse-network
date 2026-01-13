@@ -19,7 +19,7 @@ function getMatchDetails(score: number): {
 } {
   if (score >= 90) {
     return {
-      label: "Excellent Match",
+      label: "Excellent Fit",
       color: "text-emerald-700",
       bgColor: "bg-gradient-to-r from-emerald-500 to-emerald-600",
       borderColor: "border-emerald-200",
@@ -29,17 +29,17 @@ function getMatchDetails(score: number): {
   }
   if (score >= 75) {
     return {
-      label: "Strong Match",
+      label: "Strong Fit",
       color: "text-emerald-600",
       bgColor: "bg-gradient-to-r from-emerald-400 to-emerald-500",
       borderColor: "border-emerald-100",
       icon: Target,
-      description: "Your profile strongly matches this role",
+      description: "Your profile strongly aligns with this role",
     };
   }
   if (score >= 60) {
     return {
-      label: "Good Match",
+      label: "Good Fit",
       color: "text-gold-700",
       bgColor: "bg-gradient-to-r from-gold-500 to-gold-600",
       borderColor: "border-gold-200",
@@ -49,16 +49,16 @@ function getMatchDetails(score: number): {
   }
   if (score >= 40) {
     return {
-      label: "Potential Match",
+      label: "Potential Fit",
       color: "text-amber-700",
       bgColor: "bg-gradient-to-r from-amber-400 to-amber-500",
       borderColor: "border-amber-200",
       icon: Sparkles,
-      description: "Some aspects of your profile match this role",
+      description: "Some aspects of your profile align with this role",
     };
   }
   return {
-    label: "Partial Match",
+    label: "Partial Fit",
     color: "text-gray-600",
     bgColor: "bg-gradient-to-r from-gray-400 to-gray-500",
     borderColor: "border-gray-200",
@@ -102,7 +102,7 @@ export function JobMatchBadge({
     >
       <Icon className={classes.icon} />
       <span className={classes.text}>{score}%</span>
-      {showLabel && <span className={`${classes.text} opacity-90`}>Match</span>}
+      {showLabel && <span className={`${classes.text} opacity-90`}>Fit</span>}
     </div>
   );
 }
@@ -188,10 +188,10 @@ export function JobMatchPrompt({ className = "" }: { className?: string }) {
         </div>
         <div className="flex-1">
           <h4 className="font-semibold text-navy-900 mb-1">
-            See Your Match Score
+            See Your Fit Score
           </h4>
           <p className="text-sm text-gray-600 mb-3">
-            Sign in to see how well your profile matches each job opportunity.
+            Sign in to see how well your profile fits each job opportunity.
           </p>
           <a
             href="/auth/login"
