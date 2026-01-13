@@ -8,7 +8,6 @@ import { PublicFooter } from "@/components/pricing/PublicFooter";
 import { Button } from "@/components/ui/button";
 import { StructuredData } from "./StructuredData";
 import { InquiryForm } from "./InquiryForm";
-import { MatchPreview } from "./MatchPreview";
 import { InternalLinking } from "./InternalLinking";
 import { AnswerCapsuleWithLinks } from "./AnswerCapsule";
 import { Breadcrumbs } from "@/components/navigation/Breadcrumbs";
@@ -222,10 +221,8 @@ export function HireLandingPage({
   // A/B Testing hooks
   const {
     cta,
-    matchPreview,
     trackCTAClick,
     trackFormSubmit,
-    trackMatchPreviewClick,
   } = useExperiments(experiments);
 
   // Initialize scroll depth tracking for CRO analytics
@@ -409,7 +406,7 @@ export function HireLandingPage({
             <div className="mt-16 flex flex-wrap items-center justify-center gap-8 text-sm text-gray-400">
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-gold-400" />
-                <span>300+ Placements/Year</span>
+                <span>1,500+ Successful Placements</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-gold-400" />
@@ -428,7 +425,7 @@ export function HireLandingPage({
           <div className="mx-auto max-w-5xl px-4 sm:px-6">
             <div className="grid grid-cols-2 gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-xl sm:grid-cols-4 sm:gap-8 sm:p-8">
               {[
-                { value: "300+", label: "Placements/Year" },
+                { value: "1,500+", label: "Successful Placements" },
                 { value: "500+", label: "Satisfied Clients" },
                 { value: "20+", label: "Years Experience" },
                 { value: "24h", label: "First Candidates" },
@@ -600,34 +597,6 @@ export function HireLandingPage({
             </div>
           </div>
         </section>
-
-        {/* Match Preview Section - Moved after Value Prop & How It Works for better conversion flow */}
-        {matchPreview.show !== false && (
-          <section id="match-preview" className="py-20 sm:py-28 bg-gradient-to-b from-gray-50 to-white" aria-labelledby="match-preview-heading">
-            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-              <div className="text-center mb-16">
-                <div className="inline-flex items-center gap-2 rounded-full border border-gold-500/30 bg-gold-50 px-5 py-2 text-sm font-medium text-gold-700 mb-6">
-                  <Sparkles className="h-4 w-4" />
-                  AI-Powered Matching
-                </div>
-                <h2 id="match-preview-heading" className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl lg:text-5xl">
-                  Your Potential {data.position} Matches
-                </h2>
-                <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
-                  Preview qualified candidates available in {locationString}. Our AI matches your requirements with our exclusive talent pool.
-                </p>
-              </div>
-              <MatchPreview
-                position={data.position}
-                location={locationString}
-                positionSlug={data.position_slug}
-                locationSlug={data.city_slug || data.state_slug || data.country_slug}
-                previewCount={matchPreview.preview_count}
-                onCandidateClick={matchPreview.experimentId ? trackMatchPreviewClick : undefined}
-              />
-            </div>
-          </section>
-        )}
 
         {/* Testimonials Section - Luxurious navy background with elegant pattern */}
         <section className="relative py-20 sm:py-28 overflow-hidden">

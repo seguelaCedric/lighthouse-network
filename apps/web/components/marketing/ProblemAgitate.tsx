@@ -146,7 +146,7 @@ export function ProblemAgitate() {
                 <div className="flex items-start gap-2">
                   <CheckCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-green-500" />
                   <p className="text-sm text-gray-700">
-                    <span className="font-semibold text-gray-900">Pre-vetted candidates same day</span>, we don&apos;t post ads, we tap our 300+ placements per year network.
+                    <span className="font-semibold text-gray-900">Pre-vetted candidates same day</span>, we don&apos;t post ads, we tap our network of 1,500+ successful placements.
                   </p>
                 </div>
               </div>

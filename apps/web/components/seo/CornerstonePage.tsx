@@ -315,7 +315,7 @@ export function CornerstonePage({
             <div className="mt-16 flex flex-wrap items-center justify-center gap-8 text-sm text-gray-400">
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-gold-400" />
-                <span>300+ Placements/Year</span>
+                <span>1,500+ Successful Placements</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-gold-400" />
@@ -334,7 +334,7 @@ export function CornerstonePage({
           <div className="mx-auto max-w-5xl px-4 sm:px-6">
             <div className="grid grid-cols-2 gap-4 rounded-2xl border border-gray-200 bg-white p-6 shadow-xl sm:grid-cols-4 sm:gap-8 sm:p-8">
               {[
-                { value: "300+", label: "Placements/Year" },
+                { value: "1,500+", label: "Successful Placements" },
                 { value: "500+", label: "Satisfied Clients" },
                 { value: "20+", label: "Years Experience" },
                 { value: "24h", label: "First Candidates" },
@@ -405,8 +405,8 @@ export function CornerstonePage({
                     </div>
                     {/* Floating badge */}
                     <div className="absolute -bottom-4 -left-4 bg-white rounded-xl shadow-xl p-4 border border-gray-100">
-                      <div className="text-2xl font-bold text-gold-600">300+</div>
-                      <div className="text-sm text-gray-600">Placements/Year</div>
+                      <div className="text-2xl font-bold text-gold-600">1,500+</div>
+                      <div className="text-sm text-gray-600">Successful Placements</div>
                     </div>
                     {/* Second floating badge */}
                     <div className="absolute -top-4 -right-4 bg-navy-900 rounded-xl shadow-xl p-4">
@@ -719,7 +719,7 @@ export function CornerstonePage({
           stats={[
             { value: "4.9★", label: "Client Rating" },
             { value: "500+", label: "Satisfied Clients" },
-            { value: "300+", label: "Placements/Year" },
+            { value: "1,500+", label: "Successful Placements" },
             { value: "20+", label: "Years Experience" },
           ]}
         />
