@@ -224,13 +224,13 @@ function Step1({
           />
           <span className="text-xs text-gray-600">
             I agree to the{" "}
-            <a href="#" className="font-medium text-navy-600 hover:underline">
+            <Link href="/terms" target="_blank" className="font-medium text-navy-600 hover:underline">
               Terms of Service
-            </a>{" "}
+            </Link>{" "}
             and{" "}
-            <a href="#" className="font-medium text-navy-600 hover:underline">
+            <Link href="/privacy" target="_blank" className="font-medium text-navy-600 hover:underline">
               Privacy Policy
-            </a>
+            </Link>
           </span>
         </label>
         {errors.acceptTerms && <p className="mt-1 text-xs text-burgundy-600">{errors.acceptTerms}</p>}
