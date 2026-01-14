@@ -134,9 +134,12 @@ The Lighthouse Careers Team`,
     });
 
     if (!emailResult.success) {
-      console.error("Failed to send email:", emailResult.error);
+      console.error("Failed to send salary guide email:", {
+        error: emailResult.error,
+        recipient: email.toLowerCase().trim(),
+      });
       return NextResponse.json(
-        { error: "Failed to send email. Please try again later." },
+        { error: `Failed to send email: ${emailResult.error || "Unknown error"}. Please try again later.` },
         { status: 500 }
       );
     }
