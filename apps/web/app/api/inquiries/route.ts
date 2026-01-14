@@ -100,6 +100,7 @@ export async function POST(request: Request) {
       phone,
       company,
       message,
+      subject,
       landing_page_id,
       position_needed,
       location,
@@ -280,7 +281,7 @@ export async function POST(request: Request) {
         try {
           const confirmationEmail = contactConfirmationEmail({
             name: data.name,
-            message: message || undefined,
+            subject: subject || undefined,
           });
 
           await sendEmail({
