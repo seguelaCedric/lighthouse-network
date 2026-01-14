@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, Suspense, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -21,6 +21,10 @@ import {
   Check,
   ChevronDown,
   Gift,
+  Upload,
+  FileText,
+  X,
+  AlertTriangle,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { SearchableSelect } from "@/components/ui/SearchableSelect";
@@ -36,6 +40,7 @@ function StepIndicator({
     { number: 1, label: "Account" },
     { number: 2, label: "Personal" },
     { number: 3, label: "Professional" },
+    { number: 4, label: "CV" },
   ];
 
   return (
@@ -536,6 +541,204 @@ function Step3({
   );
 }
 
+// Step 4: CV Upload
+function Step4({
+  data,
+  onChange,
+  errors,
+}: {
+  data: { cvFile: File | null };
+  onChange: (field: string, value: File | null) => void;
+  errors: Record<string, string>;
+}) {
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const allowedTypes = [
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "image/jpeg",
+    "image/png",
+  ];
+
+  const maxSize = 10 * 1024 * 1024; // 10MB
+
+  const validateFile = (file: File): string | null => {
+    if (file.size > maxSize) {
+      return "File size must be less than 10MB";
+    }
+    if (!allowedTypes.includes(file.type)) {
+      return "Please upload a PDF, Word document, or image file";
+    }
+    return null;
+  };
+
+  const handleFileSelect = (file: File) => {
+    const error = validateFile(file);
+    if (error) {
+      onChange("cvFile", null);
+      // Set error through the parent component
+      return;
+    }
+    onChange("cvFile", file);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFileSelect(file);
+    }
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      handleFileSelect(file);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    onChange("cvFile", null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="mb-6 text-center">
+        <h2 className="font-serif text-2xl font-medium text-navy-800">Upload Your CV</h2>
+        <p className="text-sm text-gray-500">Help recruiters learn more about your experience</p>
+      </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+        onChange={handleFileChange}
+        className="sr-only"
+        id="cv-upload"
+      />
+
+      {errors.cvFile && (
+        <div className="flex items-start gap-2 rounded-lg border border-burgundy-200 bg-burgundy-50 p-3 text-sm text-burgundy-700">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+          <span>{errors.cvFile}</span>
+        </div>
+      )}
+
+      {data.cvFile ? (
+        <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex size-12 items-center justify-center rounded-lg bg-gold-100">
+              <FileText className="size-6 text-gold-600" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-navy-900">{data.cvFile.name}</p>
+              <p className="text-xs text-gray-500">{formatFileSize(data.cvFile.size)}</p>
+            </div>
+            <button
+              type="button"
+              onClick={handleRemoveFile}
+              className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-600"
+              aria-label="Remove file"
+            >
+              <X className="size-5" />
+            </button>
+          </div>
+          <div className="mt-3 flex items-center gap-2 text-xs text-success-600">
+            <CheckCircle2 className="size-4" />
+            <span>File ready to upload</span>
+          </div>
+        </div>
+      ) : (
+        <div
+          className={cn(
+            "cursor-pointer rounded-xl border-2 border-dashed p-8 text-center transition-all duration-200",
+            isDragging
+              ? "scale-[1.02] border-gold-500 bg-gold-50"
+              : "border-gray-300 hover:border-gold-400 hover:bg-gray-50"
+          )}
+          onClick={() => fileInputRef.current?.click()}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+        >
+          <div
+            className={cn(
+              "mx-auto mb-4 flex size-16 items-center justify-center rounded-full transition-colors",
+              isDragging ? "bg-gold-100" : "bg-gray-100"
+            )}
+          >
+            <Upload
+              className={cn(
+                "size-8 transition-colors",
+                isDragging ? "text-gold-600" : "text-gray-400"
+              )}
+            />
+          </div>
+          <p
+            className={cn(
+              "mb-1 text-sm font-medium transition-colors",
+              isDragging ? "text-gold-700" : "text-gray-600"
+            )}
+          >
+            {isDragging ? "Drop your CV here" : "Click or drag your CV to upload"}
+          </p>
+          <p className="text-xs text-gray-400">PDF, Word documents, or images up to 10MB</p>
+        </div>
+      )}
+
+      <div className="rounded-lg bg-navy-50 p-4">
+        <h3 className="mb-2 text-sm font-medium text-navy-900">Why upload your CV?</h3>
+        <ul className="space-y-1.5 text-xs text-gray-600">
+          <li className="flex items-start gap-2">
+            <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-success-500" />
+            <span>Get matched with relevant job opportunities faster</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-success-500" />
+            <span>Recruiters can better understand your experience</span>
+          </li>
+          <li className="flex items-start gap-2">
+            <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-success-500" />
+            <span>Apply to jobs with one click using your uploaded CV</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  );
+}
+
 // Main registration page
 function RegisterContent() {
   const router = useRouter();
@@ -571,6 +774,10 @@ function RegisterContent() {
     candidateType: "",
     primaryPosition: "",
     otherRoleDetails: "",
+  });
+
+  const [step4Data, setStep4Data] = useState<{ cvFile: File | null }>({
+    cvFile: null,
   });
 
   // Check for referral code on mount
@@ -614,6 +821,11 @@ function RegisterContent() {
 
   const handleStep3Change = (field: string, value: string) => {
     setStep3Data((prev) => ({ ...prev, [field]: value }));
+    setErrors((prev) => ({ ...prev, [field]: "" }));
+  };
+
+  const handleStep4Change = (field: string, value: File | null) => {
+    setStep4Data((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
@@ -683,6 +895,32 @@ function RegisterContent() {
     return Object.keys(newErrors).length === 0;
   };
 
+  const validateStep4 = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (!step4Data.cvFile) {
+      newErrors.cvFile = "Please upload your CV to complete registration";
+    } else {
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      const allowedTypes = [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "image/jpeg",
+        "image/png",
+      ];
+
+      if (step4Data.cvFile.size > maxSize) {
+        newErrors.cvFile = "File size must be less than 10MB";
+      } else if (!allowedTypes.includes(step4Data.cvFile.type)) {
+        newErrors.cvFile = "Please upload a PDF, Word document, or image file";
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleNext = async () => {
     if (currentStep === 1 && !validateStep1()) {
       return;
@@ -692,8 +930,12 @@ function RegisterContent() {
       return;
     }
 
-    if (currentStep === 3) {
-      if (!validateStep3()) {
+    if (currentStep === 3 && !validateStep3()) {
+      return;
+    }
+
+    if (currentStep === 4) {
+      if (!validateStep4()) {
         return;
       }
 
@@ -718,13 +960,43 @@ function RegisterContent() {
         redirectTo || undefined
       );
 
-      setIsLoading(false);
-
       if (!result.success) {
+        setIsLoading(false);
         toast.error(result.error || "Failed to create account");
         return;
       }
 
+      // Upload CV after successful registration
+      if (step4Data.cvFile) {
+        try {
+          // Get the candidate ID for the newly registered user
+          const candidateResponse = await fetch("/api/crew/profile");
+          const candidateData = await candidateResponse.json();
+
+          if (candidateData.data?.id) {
+            const formData = new FormData();
+            formData.append("file", step4Data.cvFile);
+            formData.append("entityType", "candidate");
+            formData.append("entityId", candidateData.data.id);
+            formData.append("documentType", "cv");
+
+            const uploadResponse = await fetch("/api/documents/upload", {
+              method: "POST",
+              body: formData,
+            });
+
+            if (!uploadResponse.ok) {
+              console.error("CV upload failed, but registration succeeded");
+              // Don't block registration, user can upload CV later
+            }
+          }
+        } catch (uploadError) {
+          console.error("CV upload error:", uploadError);
+          // Don't block registration, user can upload CV later
+        }
+      }
+
+      setIsLoading(false);
       toast.success("Account created! Welcome to Lighthouse Network.");
 
       // Redirect to dashboard (user is now signed in)
@@ -738,7 +1010,7 @@ function RegisterContent() {
       return;
     }
 
-    if (currentStep < 3) {
+    if (currentStep < 4) {
       setCurrentStep((prev) => prev + 1);
     }
   };
@@ -793,6 +1065,9 @@ function RegisterContent() {
             {currentStep === 3 && (
               <Step3 data={step3Data} onChange={handleStep3Change} errors={errors} />
             )}
+            {currentStep === 4 && (
+              <Step4 data={step4Data} onChange={handleStep4Change} errors={errors} />
+            )}
 
             {/* Navigation */}
             <div className="mt-6 flex items-center justify-between">
@@ -832,11 +1107,11 @@ function RegisterContent() {
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                       />
                     </svg>
-                    {currentStep === 3 ? "Creating account..." : ""}
+                    {currentStep === 4 ? "Creating account..." : ""}
                   </span>
                 ) : (
                   <span className="flex items-center gap-1">
-                    {currentStep === 3 ? "Complete Registration" : "Continue"}
+                    {currentStep === 4 ? "Complete Registration" : "Continue"}
                     <ArrowRight className="size-4" />
                   </span>
                 )}

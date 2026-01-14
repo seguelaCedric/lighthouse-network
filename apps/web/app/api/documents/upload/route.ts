@@ -318,10 +318,14 @@ export async function POST(request: NextRequest) {
 
     // If this is a CV for a candidate, extract text and update candidate status
     if (documentType === "cv" && entityType === "candidate") {
-      // Update candidate CV status
+      // Update candidate CV status, url, and document reference
       await supabase
         .from("candidates")
-        .update({ cv_status: "pending" })
+        .update({
+          cv_status: "pending",
+          cv_url: publicUrl,
+          cv_document_id: documentId,
+        })
         .eq("id", entityId);
 
       // Extract text from CV if it's an extractable format (PDF, DOCX)
