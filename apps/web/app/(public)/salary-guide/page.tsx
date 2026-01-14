@@ -502,7 +502,7 @@ const organizationSchema = {
   foundingDate: "2020",
   contactPoint: {
     "@type": "ContactPoint",
-    telephone: "+33-6-76-41-02-99",
+    telephone: "+33-6-52-92-83-60",
     contactType: "customer service",
     availableLanguage: ["English", "French"],
   },
@@ -1165,7 +1165,7 @@ export default function SalaryGuidePage({ searchParams }: SalaryGuidePageProps) 
             <div className="mt-8 text-center print:mt-8">
               <p className="text-base text-gray-400 print:text-base print:text-gray-700">
                 Questions?{" "}
-                <a href="tel:+33676410299" className="font-semibold text-gold-300 hover:text-gold-200 print:text-gold-600">
+                <a href="tel:+33652928360" className="font-semibold text-gold-300 hover:text-gold-200 print:text-gold-600">
                   Call us
                 </a>
                 {" "}or{" "}

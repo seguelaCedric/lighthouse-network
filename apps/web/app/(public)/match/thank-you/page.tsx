@@ -228,11 +228,11 @@ function ThankYouContent() {
                   </p>
                   <div className="space-y-3">
                     <a
-                      href="tel:+33676410299"
+                      href="tel:+33652928360"
                       className="flex items-center gap-3 p-3 bg-white/10 rounded-lg hover:bg-white/20 transition-colors group"
                     >
                       <Phone className="h-5 w-5 text-gold-400 group-hover:text-gold-300" />
-                      <span className="font-medium">+33 6 76 41 02 99</span>
+                      <span className="font-medium">+33 6 52 92 83 60</span>
                     </a>
                     <a
                       href="mailto:admin@lighthouse-careers.com"

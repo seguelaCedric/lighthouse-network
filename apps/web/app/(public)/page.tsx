@@ -36,7 +36,7 @@ import {
 
 const stats = [
   { value: "500+", label: "Satisfied Clients", description: "Over 500 yacht owners, captains, and private clients trust us" },
-  { value: "300+", label: "Placements/Year", description: "Successfully placing over 300 candidates annually" },
+  { value: "1500+", label: "Successful Placements", description: "Over 1500 successful placements worldwide" },
   { value: "50+", label: "Countries", description: "Operating in over 50 countries worldwide" },
   { value: "20+", label: "Years of Trust", description: "Established in 2002, serving the industry for over 20 years" },
 ];
@@ -280,7 +280,7 @@ export default function HomePage() {
                 <Link href="/match">
                   <Button variant="secondary" size="lg" className="w-full min-w-[220px] border-white/20 text-white hover:bg-white/10 sm:w-auto">
                     <Zap className="mr-2 h-5 w-5" aria-hidden="true" />
-                    Get Staff Today
+                    Start Hiring
                   </Button>
                 </Link>
               </div>
@@ -288,7 +288,7 @@ export default function HomePage() {
               {/* Quick contact for urgency */}
               <p className="mt-6 text-sm text-gray-400">
                 Need someone urgently?{" "}
-                <a href="tel:+33676410299" className="inline-flex items-center gap-1 text-gold-400 hover:text-gold-300">
+                <a href="tel:+33652928360" className="inline-flex items-center gap-1 text-gold-400 hover:text-gold-300">
                   <Phone className="h-3.5 w-3.5" aria-hidden="true" />
                   Call us now
                 </a>
@@ -679,7 +679,7 @@ export default function HomePage() {
             <div className="mt-12 text-center">
               <p className="text-gray-500">
                 Need help?{" "}
-                <a href="tel:+33676410299" className="font-medium text-navy-600 hover:text-navy-700 underline-offset-2 hover:underline">
+                <a href="tel:+33652928360" className="font-medium text-navy-600 hover:text-navy-700 underline-offset-2 hover:underline">
                   Call us
                 </a>
                 {" "}or{" "}

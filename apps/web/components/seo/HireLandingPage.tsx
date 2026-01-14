@@ -371,7 +371,7 @@ export function HireLandingPage({
 
             {/* Headline with "24h" in gold */}
             <h1 className="font-serif text-4xl font-semibold leading-tight text-white sm:text-5xl lg:text-6xl" itemProp="name">
-              Find Your Perfect {data.position} within{" "}
+              Hire a {data.position} in{" "}
               <span className="text-gold-400">24h</span>
             </h1>
 
@@ -816,7 +816,7 @@ export function HireLandingPage({
 
           <div className="relative mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
             <h2 className="font-serif text-3xl font-semibold text-white sm:text-4xl lg:text-5xl mb-6">
-              Ready to Find Your Perfect {data.position}?
+              Start Your {data.position} Search Today
             </h2>
             <p className="text-xl text-gray-300 max-w-2xl mx-auto mb-10">
               See matching candidates instantly with our AI-powered search. No commitment required.
@@ -836,7 +836,7 @@ export function HireLandingPage({
                 size="lg"
                 className="w-full sm:w-auto border-white/30 text-white hover:bg-white/15 hover:border-white/50"
               >
-                <a href="tel:+33676410299" className="flex items-center">
+                <a href="tel:+33652928360" className="flex items-center">
                   <Phone className="mr-2 h-5 w-5" />
                   Call Us Now
                 </a>
@@ -878,7 +878,7 @@ export function HireLandingPage({
             {/* Left side - Message (Desktop) */}
             <div className="hidden sm:block flex-1 min-w-0">
               <p className="text-white font-medium truncate">
-                Find your perfect {data.position} in {locationString}
+                Start your {data.position} search in {locationString}
               </p>
               <p className="text-sm text-gray-400">
                 See matching candidates instantly

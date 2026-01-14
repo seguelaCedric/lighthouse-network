@@ -6,10 +6,31 @@ export function PublicFooter() {
   const popularPositions = getPopularPositions();
 
   return (
-    <footer className="border-t border-gray-200 bg-white">
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        {/* Top Section - Logo and Description */}
-        <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
+    <>
+      {/* Popular Positions Section - Above Footer */}
+      <section className="border-t border-gray-200 bg-gray-50">
+        <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+          <h3 className="text-sm font-semibold text-navy-900 uppercase tracking-wider mb-4">
+            Popular Positions
+          </h3>
+          <nav className="flex flex-wrap gap-2">
+            {popularPositions.map((position) => (
+              <Link
+                key={position.slug}
+                href={`/hire-a-${position.slug}`}
+                className="inline-flex items-center rounded-full bg-white border border-gray-200 px-3 py-1.5 text-xs sm:text-sm sm:px-4 text-gray-700 hover:border-burgundy-600 hover:bg-burgundy-50 hover:text-burgundy-700 transition-colors"
+              >
+                {position.label}
+              </Link>
+            ))}
+          </nav>
+        </div>
+      </section>
+
+      <footer className="border-t border-gray-200 bg-white pb-24">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          {/* Top Section - Logo and Description */}
+          <div className="grid grid-cols-1 gap-12 lg:grid-cols-12">
           {/* Brand Column */}
           <div className="lg:col-span-4">
             <Logo size="md" />
@@ -25,6 +46,9 @@ export function PublicFooter() {
               >
                 admin@lighthouse-careers.com
               </a>
+            </p>
+            <p className="mt-6 text-sm text-gray-400">
+              &copy; {new Date().getFullYear()} Lighthouse Careers. All rights reserved.
             </p>
           </div>
 
@@ -118,42 +142,8 @@ export function PublicFooter() {
           </div>
         </div>
 
-        {/* Popular Positions Row */}
-        <div className="mt-12 pt-8 border-t border-gray-100">
-          <h3 className="text-sm font-semibold text-navy-900 uppercase tracking-wider mb-4">
-            Popular Positions
-          </h3>
-          <nav className="flex flex-wrap gap-2">
-            {popularPositions.map((position) => (
-              <Link
-                key={position.slug}
-                href={`/hire?position=${position.slug}`}
-                className="inline-flex items-center rounded-full bg-gray-50 border border-gray-200 px-3 py-1.5 text-xs sm:text-sm sm:px-4 text-gray-700 hover:border-burgundy-600 hover:bg-burgundy-50 hover:text-burgundy-700 transition-colors"
-              >
-                {position.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
-
-        {/* Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-gray-100 flex flex-col items-center justify-between gap-4 sm:flex-row">
-          <p className="text-sm text-gray-400">
-            &copy; {new Date().getFullYear()} Lighthouse Careers. All rights reserved.
-          </p>
-          <div className="flex items-center gap-6 text-sm text-gray-400">
-            <Link href="/privacy" className="hover:text-gray-600 transition-colors">
-              Privacy
-            </Link>
-            <Link href="/terms" className="hover:text-gray-600 transition-colors">
-              Terms
-            </Link>
-            <Link href="/contact" className="hover:text-gray-600 transition-colors">
-              Contact
-            </Link>
-          </div>
-        </div>
       </div>
     </footer>
+    </>
   );
 }

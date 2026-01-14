@@ -168,10 +168,10 @@ export function ExitIntent() {
 
               <div className="text-center">
                 <a
-                  href="tel:+33676410299"
+                  href="tel:+33652928360"
                   className="text-sm text-gold-600 hover:text-gold-700"
                 >
-                  Or call us now: +33 6 76 41 02 99
+                  Or call us now: +33 6 52 92 83 60
                 </a>
               </div>
             </div>

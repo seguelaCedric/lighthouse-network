@@ -15,7 +15,7 @@ const navItems = [
   { href: "/yacht-crew", label: "Yacht Crew" },
   { href: "/private-staff", label: "Private Staff" },
   { href: "/job-board", label: "Job Board" },
-  { href: "/blog", label: "Resources" },
+  { href: "/resources", label: "Resources" },
   { href: "/contact", label: "Contact" },
 ];
 

@@ -106,7 +106,7 @@ export function AudienceSplit() {
             <div className="flex flex-col gap-3 sm:flex-row">
               <Link href="/match" className="flex-1">
                 <Button className="w-full">
-                  Get Staff Today
+                  Start Hiring
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
@@ -124,7 +124,7 @@ export function AudienceSplit() {
         <div className="mt-12 text-center">
           <p className="text-sm text-gray-500">
             Not sure what you need?{" "}
-            <a href="tel:+33676410299" className="font-medium text-gold-600 hover:text-gold-700">
+            <a href="tel:+33652928360" className="font-medium text-gold-600 hover:text-gold-700">
               Call us
             </a>{" "}
             or{" "}

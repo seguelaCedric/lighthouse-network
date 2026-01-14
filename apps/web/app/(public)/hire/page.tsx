@@ -319,11 +319,11 @@ export default function HirePage() {
               <div className="mt-8 flex items-center justify-center gap-4 lg:justify-start">
                 <span className="text-sm text-gray-400">Prefer to talk?</span>
                 <a
-                  href="tel:+33676410299"
+                  href="tel:+33652928360"
                   className="inline-flex items-center gap-2 rounded-full border border-gold-500/30 bg-gold-500/10 px-4 py-2 text-sm font-medium text-gold-400 transition-colors hover:bg-gold-500/20"
                 >
                   <Phone className="h-4 w-4" />
-                  +33 6 76 41 02 99
+                  +33 6 52 92 83 60
                 </a>
               </div>
             </div>
@@ -586,7 +586,7 @@ export default function HirePage() {
           </div>
 
           <h2 className="font-serif text-3xl font-semibold text-white sm:text-4xl">
-            Ready to Find Your Perfect Hire?
+            Start Your Staff Search Today
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-gray-300">
             Tell us about your requirements and receive qualified candidates within
@@ -599,14 +599,14 @@ export default function HirePage() {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </a>
-            <a href="tel:+33676410299">
+            <a href="tel:+33652928360">
               <Button
                 variant="secondary"
                 size="lg"
                 className="border-white/20 text-white hover:bg-white/10"
               >
                 <Phone className="mr-2 h-5 w-5" />
-                +33 6 76 41 02 99
+                +33 6 52 92 83 60
               </Button>
             </a>
           </div>

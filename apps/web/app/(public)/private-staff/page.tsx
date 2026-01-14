@@ -215,7 +215,7 @@ const organizationSchema = {
   ],
   contactPoint: {
     "@type": "ContactPoint",
-    telephone: "+33-6-76-41-02-99",
+    telephone: "+33-6-52-92-83-60",
     contactType: "customer service",
     availableLanguage: ["English", "French"],
   },
@@ -484,7 +484,7 @@ export default function PrivateStaffPage() {
                 <span className="text-gold-600"> Exceptional Homes</span>
               </h2>
               <p className="mt-6 text-lg text-gray-600 leading-relaxed">
-                We understand that your household is more than just a home—it's a sanctuary
+                We understand that your household is more than just a home, it's a sanctuary
                 that reflects your lifestyle and values. Our rigorous selection process
                 ensures every candidate we present embodies the discretion, professionalism,
                 and service excellence your household deserves.
@@ -510,65 +510,112 @@ export default function PrivateStaffPage() {
 
 
       {/* Departments Section */}
-      <section className="bg-gray-50 py-20 sm:py-28">
+      <section className="py-20 sm:py-28">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          {/* Section Header with Image */}
-          <div className="mb-16 grid gap-8 lg:grid-cols-2 lg:items-center">
-            <div>
-              <h2 className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl">
-                Staff Categories
-              </h2>
-              <p className="mt-4 text-lg text-gray-600">
-                We place exceptional professionals across all household roles. From estate management
-                to childcare, kitchen to security—our extensive network covers every aspect of
-                luxury household staffing.
-              </p>
-            </div>
-            <div className="relative aspect-[16/9] overflow-hidden rounded-2xl shadow-xl">
-              <Image
-                src="/images/private-staff/staff.jpg"
-                alt="Professional household staff"
-                fill
-                className="object-cover"
-              />
-            </div>
+          {/* Section Header */}
+          <div className="mb-12 text-center">
+            <h2 className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl">
+              Staff Categories
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-gray-600">
+              From estate management to childcare, we place exceptional professionals
+              across every household role with discretion and expertise.
+            </p>
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {departments.map((dept) => {
+          {/* Department Cards Grid */}
+          <div className="grid gap-6 md:grid-cols-2">
+            {departments.map((dept, index) => {
+              const Icon = dept.icon;
+              const isEven = index % 2 === 1;
+
               return (
                 <div
                   key={dept.name}
-                  className="group rounded-2xl border border-gray-200 bg-white p-6 transition-all hover:-translate-y-1 hover:shadow-xl"
+                  className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-8 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-gray-300"
                 >
-                  <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gold-100">
-                    <Image
-                      src={dept.image}
-                      alt={dept.name}
-                      width={28}
-                      height={28}
-                      className="object-contain"
-                    />
-                  </div>
-                  <h3 className="mb-4 text-xl font-semibold text-navy-900">
-                    {dept.name}
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {dept.positions.slice(0, 6).map((position) => (
-                      <span
-                        key={position}
-                        className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700"
+                  {/* Accent Bar */}
+                  <div
+                    className={`absolute ${isEven ? "right-0" : "left-0"} top-0 bottom-0 w-2 ${
+                      isEven ? "bg-gold-500" : "bg-navy-900"
+                    } transition-all duration-300 group-hover:w-3 ${
+                      isEven
+                        ? "group-hover:shadow-[-4px_0_20px_rgba(195,165,120,0.4)]"
+                        : "group-hover:shadow-[4px_0_20px_rgba(10,25,47,0.3)]"
+                    }`}
+                  />
+
+                  {/* Content */}
+                  <div className={isEven ? "pr-4 md:text-right" : "pl-4"}>
+                    {/* Header */}
+                    <div className={`flex items-center gap-4 ${isEven ? "md:flex-row-reverse" : ""}`}>
+                      <div
+                        className={`flex h-14 w-14 items-center justify-center rounded-xl ${
+                          isEven ? "bg-gold-100" : "bg-navy-100"
+                        }`}
                       >
-                        {position}
-                      </span>
-                    ))}
-                    <span className="inline-flex items-center rounded-full bg-gold-100 px-3 py-1 text-xs font-medium text-gold-700">
-                      & more
-                    </span>
+                        <Icon
+                          className={`h-7 w-7 ${isEven ? "text-gold-600" : "text-navy-900"}`}
+                        />
+                      </div>
+                      <div>
+                        <h3 className="font-serif text-xl font-semibold text-navy-900 tracking-wide">
+                          {dept.name}
+                        </h3>
+                        <p className="text-sm text-gray-500">
+                          {dept.positions.length} positions
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Positions Preview */}
+                    <div className="mt-6 space-y-2">
+                      {dept.positions.slice(0, 4).map((position) => (
+                        <div
+                          key={position}
+                          className={`flex items-center gap-2 text-gray-600 ${
+                            isEven ? "md:justify-end" : ""
+                          }`}
+                        >
+                          {!isEven && (
+                            <CheckCircle className="h-4 w-4 text-gold-500 flex-shrink-0" />
+                          )}
+                          <span className="text-sm">{position}</span>
+                          {isEven && (
+                            <CheckCircle className="h-4 w-4 text-gold-500 flex-shrink-0" />
+                          )}
+                        </div>
+                      ))}
+                      {dept.positions.length > 4 && (
+                        <p
+                          className={`text-sm font-medium text-gold-600 mt-4 group-hover:text-gold-700 transition-colors ${
+                            isEven ? "md:text-right" : ""
+                          }`}
+                        >
+                          + {dept.positions.length - 4} more positions →
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
             })}
+          </div>
+
+          {/* Bottom Trust Indicators */}
+          <div className="mt-12 flex flex-wrap items-center justify-center gap-8 text-sm text-gray-600">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-gold-500" />
+              All household roles
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-gold-500" />
+              Full-time & part-time
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-gold-500" />
+              Global placements
+            </div>
           </div>
         </div>
       </section>

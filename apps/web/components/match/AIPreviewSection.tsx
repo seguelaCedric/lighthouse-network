@@ -14,6 +14,10 @@ import {
   Award,
   Heart,
   Loader2,
+  FileCheck,
+  UserCheck,
+  Search,
+  MessageCircle,
 } from "lucide-react";
 import { MatchQualityBadge } from "./MatchQualityBadge";
 
@@ -22,7 +26,7 @@ interface AnonymizedCandidate {
   display_name: string;
   avatar_url: string | null;
   position: string;
-  experience_years: number;
+  experience_years: number | null; // null = "Experience on file" display
   languages: string[];
   nationality: string;
   match_score: number;
@@ -148,7 +152,11 @@ function RichCandidateCard({
             <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
               <div className="flex items-center gap-1.5">
                 <Briefcase className="h-4 w-4 text-gold-600" />
-                <span>{candidate.experience_years}+ years experience</span>
+                <span>
+                  {candidate.experience_years !== null
+                    ? `${candidate.experience_years}+ years experience`
+                    : "Experience on file"}
+                </span>
               </div>
               <div className="flex items-center gap-1.5">
                 <Globe className="h-4 w-4 text-gold-600" />
@@ -288,78 +296,125 @@ function RichCandidateCard({
   );
 }
 
-// Private Network Section
-function PrivateNetworkSection() {
+// Agency Value Proposition Section - What makes us different
+function AgencyValueSection() {
   return (
-    <div className="bg-gradient-to-br from-navy-50 to-navy-100/50 rounded-xl border border-navy-200 p-5">
-      <div className="flex items-start gap-3 mb-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-navy-900">
-          <Network className="h-5 w-5 text-gold-400" />
+    <div className="bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 rounded-xl p-6 text-white">
+      <div className="flex items-center gap-3 mb-5">
+        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-gold-500/20">
+          <UserCheck className="h-6 w-6 text-gold-400" />
         </div>
         <div>
-          <h4 className="font-semibold text-navy-900">Our Extended Network</h4>
-          <p className="text-sm text-gray-600">
-            Beyond our database, we actively source through exclusive channels
+          <h4 className="font-bold text-lg">Why Work With a Specialist Agency?</h4>
+          <p className="text-sm text-gray-400">
+            What you see above is just an AI-powered preview
           </p>
         </div>
       </div>
-      <ul className="space-y-2 text-sm text-gray-700 ml-13">
-        <li className="flex items-start gap-2">
-          <span className="text-gold-500 mt-0.5">•</span>
-          <span>
-            Global industry connections across yacht hubs and private estates
-            worldwide
-          </span>
-        </li>
-        <li className="flex items-start gap-2">
-          <span className="text-gold-500 mt-0.5">•</span>
-          <span>Private referral networks from 1,500+ successful placements</span>
-        </li>
-        <li className="flex items-start gap-2">
-          <span className="text-gold-500 mt-0.5">•</span>
-          <span>
-            Access to candidates not actively looking but open to the right
-            opportunity
-          </span>
-        </li>
-      </ul>
+
+      <div className="grid sm:grid-cols-2 gap-4">
+        <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+          <div className="flex items-center gap-2 mb-2">
+            <Search className="h-5 w-5 text-gold-400" />
+            <h5 className="font-semibold">Personalised Research</h5>
+          </div>
+          <p className="text-sm text-gray-300">
+            Your consultant searches beyond algorithms, tapping into private networks,
+            industry contacts, and candidates not actively looking but perfect for your role.
+          </p>
+        </div>
+
+        <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+          <div className="flex items-center gap-2 mb-2">
+            <FileCheck className="h-5 w-5 text-gold-400" />
+            <h5 className="font-semibold">Verified References</h5>
+          </div>
+          <p className="text-sm text-gray-300">
+            Every candidate we recommend has been reference-checked. We speak directly
+            with previous employers to verify skills, character, and work history.
+          </p>
+        </div>
+
+        <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+          <div className="flex items-center gap-2 mb-2">
+            <MessageCircle className="h-5 w-5 text-gold-400" />
+            <h5 className="font-semibold">Understanding Your Needs</h5>
+          </div>
+          <p className="text-sm text-gray-300">
+            We take time to understand your household, yacht culture, and what makes
+            a &quot;perfect fit&quot;, beyond just qualifications on paper.
+          </p>
+        </div>
+
+        <div className="bg-white/5 rounded-lg p-4 border border-white/10">
+          <div className="flex items-center gap-2 mb-2">
+            <Network className="h-5 w-5 text-gold-400" />
+            <h5 className="font-semibold">Industry Expertise</h5>
+          </div>
+          <p className="text-sm text-gray-300">
+            1,500+ successful placements across yachts and private households. We know
+            what works and can advise on salary, structure, and realistic expectations.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
 
-// What's Next Section
+// What's Next Section - Enhanced
 function WhatsNextSection() {
   return (
     <div className="bg-gradient-to-br from-gold-50 to-gold-100/50 rounded-xl border border-gold-200 p-5">
-      <h4 className="font-semibold text-navy-900 mb-3">What happens next?</h4>
-      <ul className="space-y-2.5 text-sm text-gray-700">
-        <li className="flex items-start gap-2">
-          <CheckCircle className="h-4 w-4 text-gold-600 mt-0.5 flex-shrink-0" />
-          <span>
-            A consultant will review your requirements and these matches
-          </span>
-        </li>
-        <li className="flex items-start gap-2">
-          <CheckCircle className="h-4 w-4 text-gold-600 mt-0.5 flex-shrink-0" />
-          <span>
-            You&apos;ll receive full CVs, references, and contact details via
-            email
-          </span>
-        </li>
-        <li className="flex items-start gap-2">
-          <CheckCircle className="h-4 w-4 text-gold-600 mt-0.5 flex-shrink-0" />
-          <span>
-            We&apos;ll call to discuss your needs and answer any questions
-          </span>
-        </li>
-      </ul>
-      <div className="mt-4 pt-4 border-t border-gold-200">
+      <h4 className="font-semibold text-navy-900 mb-4">What Happens Next?</h4>
+
+      <div className="space-y-4">
+        <div className="flex gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gold-500 text-white font-bold text-sm flex-shrink-0">
+            1
+          </div>
+          <div>
+            <p className="font-medium text-navy-900">Consultant Reviews Your Brief</p>
+            <p className="text-sm text-gray-600">
+              A dedicated consultant will analyse your requirements and these initial matches
+            </p>
+          </div>
+        </div>
+
+        <div className="flex gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gold-500 text-white font-bold text-sm flex-shrink-0">
+            2
+          </div>
+          <div>
+            <p className="font-medium text-navy-900">Personalised Shortlist Delivered</p>
+            <p className="text-sm text-gray-600">
+              Within 24 hours, receive full CVs, verified references, and detailed profiles via email
+            </p>
+          </div>
+        </div>
+
+        <div className="flex gap-3">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gold-500 text-white font-bold text-sm flex-shrink-0">
+            3
+          </div>
+          <div>
+            <p className="font-medium text-navy-900">Discovery Call</p>
+            <p className="text-sm text-gray-600">
+              We&apos;ll call to discuss your needs in depth, answer questions, and refine the search
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-5 pt-4 border-t border-gold-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <p className="text-sm text-gray-600">
+          <span className="font-semibold text-navy-900">96% placement success rate</span> • No placement, no fee
+        </p>
         <a
-          href="tel:+33676410299"
+          href="tel:+33652928360"
           className="inline-flex items-center gap-2 text-gold-600 hover:text-gold-700 font-semibold text-sm"
         >
           <Phone className="h-4 w-4" />
-          Need to speak now? +33 6 76 41 02 99
+          +33 6 52 92 83 60
         </a>
       </div>
     </div>
@@ -491,8 +546,8 @@ export function AIPreviewSection({
           </div>
         </div>
 
-        {/* Private Network */}
-        <PrivateNetworkSection />
+        {/* Agency Value Proposition */}
+        <AgencyValueSection />
 
         {/* What's Next */}
         <WhatsNextSection />
@@ -562,8 +617,8 @@ export function AIPreviewSection({
         ))}
       </div>
 
-      {/* Private Network Section */}
-      <PrivateNetworkSection />
+      {/* Agency Value Proposition - Why work with us */}
+      <AgencyValueSection />
 
       {/* What's Next */}
       <WhatsNextSection />

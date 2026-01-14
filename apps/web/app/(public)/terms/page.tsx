@@ -446,7 +446,7 @@ export default function TermsPage() {
                   <strong>Address:</strong> 6 B CHEMIN DES COUGOULINS, 06600 ANTIBES, France
                 </p>
                 <p>
-                  <strong>Phone:</strong> +33 6 76 41 02 99
+                  <strong>Phone:</strong> +33 6 52 92 83 60
                 </p>
               </div>
             </div>

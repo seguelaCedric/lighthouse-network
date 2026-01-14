@@ -228,7 +228,7 @@ const faqs: FAQItem[] = [
   },
   {
     question: "Can you help with last-minute or emergency crew needs?",
-    answer: "Absolutely. We maintain a database of immediately available crew and can often provide candidates same-day for urgent needs. Contact us directly at +33 6 76 41 02 99 for emergency placements.",
+    answer: "Absolutely. We maintain a database of immediately available crew and can often provide candidates same-day for urgent needs. Contact us directly at +33 6 52 92 83 60 for emergency placements.",
   },
 ];
 
@@ -267,7 +267,7 @@ const organizationSchema = {
   foundingDate: "2020",
   contactPoint: {
     "@type": "ContactPoint",
-    telephone: "+33-6-76-41-02-99",
+    telephone: "+33-6-52-92-83-60",
     contactType: "sales",
     availableLanguage: ["English", "French"],
   },
@@ -511,7 +511,7 @@ export default function YachtCrewPage() {
                 <span className="text-gold-600"> Exceptional Yachts</span>
               </h2>
               <p className="mt-6 text-lg text-gray-600 leading-relaxed">
-                We understand that your yacht is more than just a vessel—it's a floating
+                We understand that your yacht is more than just a vessel, it's a floating
                 sanctuary that reflects your lifestyle and standards. Our rigorous selection
                 process ensures every candidate we present embodies the professionalism,
                 expertise, and service excellence your yacht deserves.
@@ -666,7 +666,7 @@ export default function YachtCrewPage() {
               All Departments Covered
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-gray-600">
-              From deck to engineering, galley to interior—we place exceptional professionals
+              From deck to engineering, galley to interior, we place exceptional professionals
               across every yacht department with expertise and precision.
             </p>
           </div>
@@ -831,13 +831,13 @@ export default function YachtCrewPage() {
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </Link>
-            <a href="tel:+33676410299">
+            <a href="tel:+33652928360">
               <Button
                 variant="secondary"
                 size="lg"
                 className="min-w-[220px] border-white/20 text-white hover:bg-white/10"
               >
-                Call +33 6 76 41 02 99
+                Call +33 6 52 92 83 60
               </Button>
             </a>
           </div>

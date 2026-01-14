@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { z } from "zod";
+import { sendEmail, isResendConfigured } from "@/lib/email/client";
+import { employerBriefReceivedEmail } from "@/lib/email/templates";
 
 // Validation schema for creating a brief
 const createBriefSchema = z.object({
@@ -149,7 +151,38 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: Send notification to agency team about new brief
+    // Send confirmation email to employer
+    if (isResendConfigured()) {
+      // Get employer email
+      const { data: employer } = await supabase
+        .from("employer_accounts")
+        .select("email, contact_name")
+        .eq("id", session.employer_id)
+        .single();
+
+      if (employer) {
+        const emailData = employerBriefReceivedEmail({
+          contactName: employer.contact_name,
+          briefTitle: title,
+          positions: data.positions_needed,
+          hiringFor: data.hiring_for,
+          vesselName: data.vessel_name || undefined,
+          propertyLocation: data.property_location || undefined,
+          timeline: data.timeline || undefined,
+        });
+
+        const emailResult = await sendEmail({
+          to: employer.email,
+          subject: emailData.subject,
+          html: emailData.html,
+          text: emailData.text,
+        });
+
+        if (!emailResult.success) {
+          console.error("Failed to send brief received email:", emailResult.error);
+        }
+      }
+    }
 
     return NextResponse.json({ brief }, { status: 201 });
   } catch (error) {

@@ -555,11 +555,11 @@ export function LeadCaptureForm({
                 Prefer to speak directly?
               </p>
               <a
-                href="tel:+33676410299"
+                href="tel:+33652928360"
                 className="inline-flex items-center gap-2 text-gold-600 hover:text-gold-700 font-medium transition-colors"
               >
                 <Phone className="h-4 w-4" />
-                +33 6 76 41 02 99
+                +33 6 52 92 83 60
               </a>
             </div>
           </div>

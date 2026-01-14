@@ -45,7 +45,7 @@ export function CornerstoneStructuredData({ data }: Props) {
     contactPoint: [
       {
         "@type": "ContactPoint",
-        telephone: "+33-6-76-41-02-99",
+        telephone: "+33-6-52-92-83-60",
         contactType: "customer service",
         email: "admin@lighthouse-careers.com",
         availableLanguage: ["English", "French"],

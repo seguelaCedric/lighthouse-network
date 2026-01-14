@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getClientSessionFromCookie } from "@/lib/auth/client-session";
 import { z } from "zod";
+import { sendEmail, isResendConfigured } from "@/lib/email/client";
+import { interviewRequestNotificationEmail } from "@/lib/email/templates";
 
 const requestInterviewSchema = z.object({
   submissionId: z.string().uuid(),
@@ -251,7 +253,75 @@ export async function POST(request: NextRequest) {
       })
       .eq("id", submissionId);
 
-    // TODO: Trigger notification to recruiter
+    // Send notification to agency recruiters
+    if (isResendConfigured()) {
+      try {
+        // Get job details with client info
+        const { data: jobDetails } = await supabase
+          .from("jobs")
+          .select(`
+            title,
+            vessel_name,
+            agency_id,
+            clients (
+              name,
+              contact_name
+            )
+          `)
+          .eq("id", jobId)
+          .single();
+
+        // Get candidate name
+        const { data: candidate } = await supabase
+          .from("candidates")
+          .select("first_name, last_name")
+          .eq("id", submission.candidate_id)
+          .single();
+
+        const clientData = jobDetails?.clients as unknown as { name?: string; contact_name?: string } | null;
+        const clientName = clientData?.name || clientData?.contact_name || "Client";
+        const candidateName = candidate ? `${candidate.first_name} ${candidate.last_name}` : "Candidate";
+
+        // Get agency recruiters
+        if (jobDetails?.agency_id) {
+          const { data: recruiters } = await supabase
+            .from("users")
+            .select("email, full_name")
+            .eq("agency_id", jobDetails.agency_id)
+            .in("user_type", ["recruiter", "admin"]);
+
+          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://lighthouse-careers.com";
+
+          if (recruiters && recruiters.length > 0) {
+            await Promise.all(
+              recruiters.map(async (recruiter) => {
+                const emailData = interviewRequestNotificationEmail({
+                  recruiterName: recruiter.full_name || "Team",
+                  clientName,
+                  candidateName,
+                  position: jobDetails.title,
+                  vesselName: jobDetails.vessel_name || undefined,
+                  requestedType: requestedType || undefined,
+                  preferredDates: preferredDates || undefined,
+                  notes: notes || undefined,
+                  dashboardLink: `${baseUrl}/admin/interviews`,
+                });
+
+                await sendEmail({
+                  to: recruiter.email,
+                  subject: emailData.subject,
+                  html: emailData.html,
+                  text: emailData.text,
+                });
+              })
+            );
+          }
+        }
+      } catch (emailError) {
+        // Log but don't fail the request
+        console.error("Failed to send interview request notification:", emailError);
+      }
+    }
 
     return NextResponse.json(
       {

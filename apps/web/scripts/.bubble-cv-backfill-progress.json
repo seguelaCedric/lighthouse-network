@@ -2,13 +2,13 @@
   "startedAt": "2026-01-13T08:28:35.129Z",
   "csvPath": "data/bubble-candidates.csv",
   "totalWithCVs": 11921,
-  "lastProcessedRow": 37402,
-  "processedCount": 4480,
-  "uploadedCount": 4067,
-  "extractedCount": 3377,
-  "embeddedCount": 3377,
-  "skippedCount": 395,
-  "errorCount": 18,
+  "lastProcessedRow": 42331,
+  "processedCount": 9020,
+  "uploadedCount": 8388,
+  "extractedCount": 6611,
+  "embeddedCount": 6609,
+  "skippedCount": 586,
+  "errorCount": 46,
   "errors": [
     {
       "row": 33101,
@@ -98,6 +98,146 @@
     {
       "row": 37200,
       "email": "aputchie29@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 38185,
+      "email": "ethan3claridge@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 38437,
+      "email": "bmokoena24@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 38667,
+      "email": "princegwala94@gmail.com",
+      "error": "Download timeout"
+    },
+    {
+      "row": 38696,
+      "email": "kanegomametja@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 38786,
+      "email": "eugenesimbe231@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 38920,
+      "email": "chrishinds.work@hotmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 39079,
+      "email": "alihamzayusuf466@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 39165,
+      "email": "mz3360555@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 39590,
+      "email": "shibuhere123@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 39724,
+      "email": "sh896580@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 40163,
+      "email": "rabbulali2007@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 40592,
+      "email": "vkumarbhardwaj806@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 40769,
+      "email": "tadelehailemichael2@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 40836,
+      "email": "tmoreta6@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 41015,
+      "email": "bitukumarssm6578@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 41037,
+      "email": "shurahbiilaliy1995@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 41038,
+      "email": "muniiraliy149@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 41290,
+      "email": "t6190724@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 41418,
+      "email": "azharjani786@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 41515,
+      "email": "pontshosakong@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 41519,
+      "email": "mhelbbie.casas22@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 41529,
+      "email": "shahiddj585@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 41634,
+      "email": "satishyadavdhdh123r@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 41669,
+      "email": "vivekkumar42729@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 41767,
+      "email": "khanaftab6277@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 41823,
+      "email": "taufeekkhan.tk244@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 42039,
+      "email": "onesimosimo13@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 42244,
+      "email": "qondile.mkhwanaz@gmail.com",
       "error": "Upload failed: The object exceeded the maximum allowed size"
     }
   ]

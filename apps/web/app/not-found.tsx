@@ -59,10 +59,10 @@ export default function NotFound() {
             <p className="text-sm text-gray-600">
               Need help? Call us at{' '}
               <a
-                href="tel:+33676410299"
+                href="tel:+33652928360"
                 className="font-medium text-gold-600 hover:text-gold-700 transition-colors"
               >
-                +33 6 76 41 02 99
+                +33 6 52 92 83 60
               </a>
               {' '}or email{' '}
               <a

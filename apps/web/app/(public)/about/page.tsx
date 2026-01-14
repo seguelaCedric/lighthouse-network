@@ -553,10 +553,10 @@ export default async function AboutPage() {
             </a>
             <span className="hidden sm:inline">|</span>
             <a
-              href="tel:+33676410299"
+              href="tel:+33652928360"
               className="transition-colors hover:text-gold-400"
             >
-              +33 6 76 41 02 99
+              +33 6 52 92 83 60
             </a>
           </div>
         </div>

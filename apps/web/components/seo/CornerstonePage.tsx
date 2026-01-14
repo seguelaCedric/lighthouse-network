@@ -19,7 +19,6 @@ import {
   Phone,
   Sparkles,
   FileText,
-  MapPin,
   BookOpen,
   Clock,
   UserCheck,
@@ -295,7 +294,7 @@ export function CornerstonePage({
               </p>
             )}
 
-            <div className="mt-10 flex flex-col gap-4 sm:flex-row sm:justify-center">
+            <div className="mt-10">
               <Button
                 size="lg"
                 onClick={() => handleSeeMatches('hero')}
@@ -303,15 +302,6 @@ export function CornerstonePage({
               >
                 Start Receiving Applicants
                 <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              <Button
-                variant="secondary"
-                size="lg"
-                onClick={() => document.getElementById('locations')?.scrollIntoView({ behavior: 'smooth' })}
-                className="w-full sm:w-auto sm:min-w-[200px] border-white/20 text-white hover:bg-white/10"
-              >
-                Browse Locations
-                <MapPin className="ml-2 h-5 w-5" />
               </Button>
             </div>
 
@@ -821,7 +811,7 @@ export function CornerstonePage({
 
           <div className="relative mx-auto max-w-4xl px-4 text-center sm:px-6">
             <h2 className="font-serif text-3xl font-semibold text-white sm:text-4xl lg:text-5xl mb-6">
-              Ready to Find Your Perfect {data.position}?
+              Start Your {data.position} Search Today
             </h2>
             <p className="text-xl text-gray-300 max-w-2xl mx-auto mb-10">
               See matching candidates instantly with our AI-powered search. No commitment required.
@@ -841,7 +831,7 @@ export function CornerstonePage({
                 size="lg"
                 className="w-full sm:w-auto border-white/30 text-white hover:bg-white/15"
               >
-                <a href="tel:+33676410299" className="flex items-center">
+                <a href="tel:+33652928360" className="flex items-center">
                   <Phone className="mr-2 h-5 w-5" />
                   Call Us Now
                 </a>
@@ -863,7 +853,7 @@ export function CornerstonePage({
         <div className="relative mx-auto max-w-7xl px-3 py-3 sm:px-6">
           <div className="flex items-center justify-between gap-3">
             <div className="hidden sm:block flex-1">
-              <p className="text-white font-medium">Find your perfect {data.position}</p>
+              <p className="text-white font-medium">Start your {data.position} search</p>
               <p className="text-sm text-gray-400">See matching candidates instantly</p>
             </div>
             <Button

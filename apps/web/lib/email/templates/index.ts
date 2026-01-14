@@ -463,9 +463,9 @@ export function welcomeCandidateEmail(data: WelcomeCandidateData) {
     <div class="info-box">
       <p style="margin:0 0 15px; font-weight:600; color:#1a2b4a;">Get started in 3 simple steps:</p>
       <ul style="margin:0;">
-        <li><strong>Complete your profile</strong> — Add your experience, certifications, and a professional photo</li>
-        <li><strong>Upload your documents</strong> — CV, certificates, and references help you stand out</li>
-        <li><strong>Set your preferences</strong> — Tell us what you're looking for so we can match you perfectly</li>
+        <li><strong>Complete your profile</strong>, add your experience, certifications, and a professional photo</li>
+        <li><strong>Upload your documents</strong>, CV, certificates, and references help you stand out</li>
+        <li><strong>Set your preferences</strong>, tell us what you're looking for so we can match you perfectly</li>
       </ul>
     </div>
 
@@ -480,9 +480,9 @@ export function welcomeCandidateEmail(data: WelcomeCandidateData) {
     <div class="divider"></div>
 
     <p><strong>What happens next?</strong></p>
-    <p>Our team is already reviewing your profile. When opportunities match your skills and preferences, we'll be in touch. In the meantime, make sure your profile is complete — candidates with complete profiles are <strong>3x more likely</strong> to be shortlisted.</p>
+    <p>Our team is already reviewing your profile. When opportunities match your skills and preferences, we'll be in touch. In the meantime, make sure your profile is complete, candidates with complete profiles are <strong>3x more likely</strong> to be shortlisted.</p>
 
-    <p>Questions? Simply reply to this email — we're here to help you succeed.</p>
+    <p>Questions? Simply reply to this email, we're here to help you succeed.</p>
 
     <p>Welcome aboard,<br>The Lighthouse Careers Team</p>
   `;
@@ -635,10 +635,10 @@ export function employerWelcomeEmail(data: EmployerWelcomeData) {
     <div class="info-box">
       <p style="margin:0 0 15px; font-weight:600; color:#1a2b4a;">Here's how it works:</p>
       <ul style="margin:0;">
-        <li><strong>Submit a brief</strong> — Tell us exactly what you're looking for</li>
-        <li><strong>We match candidates</strong> — Our AI and expert team find the best fits</li>
-        <li><strong>Review your shortlist</strong> — See verified candidates matched to your needs</li>
-        <li><strong>Interview & hire</strong> — We coordinate everything seamlessly</li>
+        <li><strong>Submit a brief</strong>, tell us exactly what you're looking for</li>
+        <li><strong>We match candidates</strong>, our AI and expert team find the best fits</li>
+        <li><strong>Review your shortlist</strong>, see verified candidates matched to your needs</li>
+        <li><strong>Interview & hire</strong>, we coordinate everything seamlessly</li>
       </ul>
     </div>
 
@@ -650,7 +650,7 @@ export function employerWelcomeEmail(data: EmployerWelcomeData) {
       <li>Transparent process with real-time updates</li>
     </ul>
 
-    <p>Questions? Simply reply to this email — we're here to help.</p>
+    <p>Questions? Simply reply to this email, we're here to help.</p>
 
     <p>Welcome aboard,<br>The Lighthouse Crew Team</p>
   `;
@@ -776,7 +776,7 @@ export function employerEnquirySubmittedEmail(data: EmployerEnquirySubmittedData
       </ul>
     </div>
 
-    <p>We'll keep you updated on the status of this lead. In the meantime, keep the referrals coming — there's no limit!</p>
+    <p>We'll keep you updated on the status of this lead. In the meantime, keep the referrals coming, there's no limit!</p>
 
     <p>Thank you for being part of the Lighthouse network,<br>The Lighthouse Crew Team</p>
   `;
@@ -1682,7 +1682,7 @@ export function contactConfirmationEmail(data: ContactConfirmationData) {
     </div>
 
     <p><strong>Need immediate assistance?</strong></p>
-    <p>Call us at <a href="tel:+33676410299" style="color: #c9a962; font-weight: 600;">+33 6 76 41 02 99</a> (Mon-Fri 9am-6pm CET)</p>
+    <p>Call us at <a href="tel:+33652928360" style="color: #c9a962; font-weight: 600;">+33 6 52 92 83 60</a> (Mon-Fri 9am-6pm CET)</p>
 
     <p>In the meantime, feel free to explore:</p>
     <ul>

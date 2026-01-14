@@ -79,7 +79,7 @@ export function EmployerInquiryForm() {
           </p>
           <p className="mt-4 text-sm text-gray-400">
             Need candidates faster?{" "}
-            <a href="tel:+33676410299" className="text-gold-400 hover:text-gold-300">
+            <a href="tel:+33652928360" className="text-gold-400 hover:text-gold-300">
               Call us now
             </a>
           </p>

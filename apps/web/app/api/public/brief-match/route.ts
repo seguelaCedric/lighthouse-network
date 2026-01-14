@@ -15,11 +15,11 @@ import { anthropic } from '@ai-sdk/anthropic';
 
 // Use Claude Sonnet 4.5 for generating "Why We Recommend" presentations
 // These are shown to clients, so quality and reasoning depth matter
-const presentationModel = anthropic('claude-sonnet-4-20250514');
+const presentationModel = anthropic('claude-sonnet-4-5-20250929');
 
 // Use Claude Sonnet 4.5 for AI judgment (deciding if candidate matches)
 // Critical reasoning task that determines which candidates get shown
-const judgmentModel = anthropic('claude-sonnet-4-20250514');
+const judgmentModel = anthropic('claude-sonnet-4-5-20250929');
 
 // ----------------------------------------------------------------------------
 // REQUEST VALIDATION
@@ -28,7 +28,7 @@ const judgmentModel = anthropic('claude-sonnet-4-20250514');
 const briefMatchRequestSchema = z.object({
   query: z.string().min(1, 'Query is required'),
   preview_mode: z.boolean().optional().default(false),
-  limit: z.number().int().min(1).max(10).optional(),
+  limit: z.number().int().min(1).max(20).optional(),
 });
 
 // ----------------------------------------------------------------------------
@@ -72,7 +72,7 @@ interface AnonymizedCandidate {
   // Blurred avatar URL (or placeholder if none)
   avatar_url: string | null;
   position: string;
-  experience_years: number;
+  experience_years: number | null; // null = "Experience on file" display
   rich_bio: string; // Detailed 3-5 sentence mini-resume (anonymized)
   career_highlights: string[]; // 3-4 bullet points of impressive achievements
   experience_summary: string; // Brief summary of work history scope
@@ -95,11 +95,61 @@ interface AnonymizedCandidate {
 // ----------------------------------------------------------------------------
 
 const VECTOR_MATCH_THRESHOLD = 0.35;
-const MAX_RESULTS = 5;
+const MAX_RESULTS = 10;
 
 // ----------------------------------------------------------------------------
 // TYPE DEFINITIONS (moved up for use in recruiter assessment)
 // ----------------------------------------------------------------------------
+
+// AI Judgment result type (defined early for use in candidate interfaces)
+interface AIJudgment {
+  isMatch: boolean;
+  confidence: number;
+  matchScore: number;
+  reasoning: string;
+  specialStrengths: string[];
+  concerns: string[];
+  stepUpPotential: boolean;
+}
+
+// Candidate data as returned from vector search queries
+interface VectorSearchCandidate {
+  id: string;
+  first_name: string | null;
+  last_name: string | null;
+  avatar_url: string | null;
+  primary_position: string | null;
+  position_category: string | null;
+  years_experience: number | null;
+  nationality: string | null;
+  availability_status: string | null;
+  current_location: string | null;
+  profile_summary: string | null;
+  embedding: unknown;
+  positions_held: string[] | null;
+  cv_skills: string[] | null;
+  languages_extracted: Array<{ language: string; proficiency: string }> | string[] | null;
+  yacht_experience_extracted: YachtExperience[] | null;
+  villa_experience_extracted: VillaExperience[] | null;
+  certifications_extracted: CertificationExtracted[] | null;
+  licenses_extracted: LicenseExtracted[] | null;
+  education_extracted: unknown[] | null;
+  references_extracted: ReferenceDetail[] | null;
+  highest_license: string | null;
+  has_stcw: boolean | null;
+  has_eng1: boolean | null;
+  bio_full: string | null;
+  bio_anonymized: string | null;
+  gender: string | null;
+  vector_similarity?: number;
+  // Additional scoring fields added during processing
+  structured_score?: number;
+  position_match?: boolean;
+  step_up_candidate?: boolean;
+  match_quality?: string;
+  aiJudgment?: AIJudgment;
+  recruiter_assessment?: RecruiterAssessment;
+}
 
 interface YachtExperience {
   yacht_name?: string | null;
@@ -129,6 +179,38 @@ interface CertificationExtracted {
 interface LicenseExtracted {
   name: string;
   issuing_authority?: string | null;
+}
+
+// ----------------------------------------------------------------------------
+// EXPERIENCE CALCULATION HELPER
+// ----------------------------------------------------------------------------
+// Calculate total experience from work history when years_experience is null/0
+// This fixes the "0+ years experience" display issue
+
+function calculateExperienceYears(candidate: {
+  years_experience?: number | null;
+  yacht_experience_extracted?: YachtExperience[] | null;
+  villa_experience_extracted?: VillaExperience[] | null;
+}): number | null {
+  // If years_experience is set and > 0, use it
+  if (candidate.years_experience && candidate.years_experience > 0) {
+    return candidate.years_experience;
+  }
+
+  // Calculate from extracted work history
+  const yachtMonths = (candidate.yacht_experience_extracted || [])
+    .reduce((sum, y) => sum + (y.duration_months || 0), 0);
+  const villaMonths = (candidate.villa_experience_extracted || [])
+    .reduce((sum, v) => sum + (v.duration_months || 0), 0);
+
+  const totalMonths = yachtMonths + villaMonths;
+  if (totalMonths > 0) {
+    const years = Math.round(totalMonths / 12);
+    return years > 0 ? years : 1; // At least 1 year if they have any months
+  }
+
+  // Return null if we truly don't know (will display as "Experience on file")
+  return null;
 }
 
 // ----------------------------------------------------------------------------
@@ -928,6 +1010,24 @@ function getEligibleRolesForStepUp(targetRole: string): string[] {
   const normalized = targetRole.toLowerCase().trim();
   const eligible = new Set<string>([normalized]);
 
+  // SENIOR ROLES: No step-up allowed - require exact match
+  // These are top-level positions where we need exact experience, not aspirational candidates
+  const seniorRoles = [
+    'captain',
+    'chief stewardess',
+    'chief stew',
+    'chief engineer',
+    'head chef',
+    'estate manager',
+    'house manager',
+  ];
+
+  // If searching for a senior role, only return exact match - no step-up candidates
+  if (seniorRoles.some(sr => normalized.includes(sr) || sr.includes(normalized))) {
+    console.log(`[Brief Match] Senior role "${normalized}" - step-up disabled, exact match only`);
+    return [normalized];
+  }
+
   for (const ladder of CAREER_LADDERS) {
     // Find the BEST match in this ladder (prefer exact or most specific match)
     // This fixes a bug where "chief stewardess" would match "stewardess" (index 0)
@@ -1023,14 +1123,26 @@ interface StepUpReadiness {
   gaps: string[];
 }
 
+// Enriched candidate type with scoring fields added during processing
+interface EnrichedCandidate extends VectorSearchCandidate {
+  similarity: number;
+  vectorScore: number;
+  recruiterAssessment: RecruiterAssessment;
+  stepUpReadiness: StepUpReadiness;
+  structuredScore: StructuredCandidateScore;
+  isStepUpCandidate: boolean;
+  isReadyToStepUp: boolean;
+  hasExcellenceBonus: boolean;
+}
+
 /**
  * Build a text representation of a candidate for Cohere reranking.
  * This creates a comprehensive text that Cohere's cross-encoder can use
  * to assess semantic relevance to the search query.
  */
 function buildCandidateTextForRerank(candidate: {
-  first_name: string;
-  last_name: string;
+  first_name: string | null;
+  last_name: string | null;
   primary_position: string | null;
   positions_held: string[] | null;
   years_experience: number | null;
@@ -1038,7 +1150,7 @@ function buildCandidateTextForRerank(candidate: {
   current_location: string | null;
   profile_summary: string | null;
   cv_skills: string[] | null;
-  languages_extracted: string[] | null;
+  languages_extracted: Array<{ language: string; proficiency: string }> | string[] | null;
   yacht_experience_extracted: unknown[] | null;
   villa_experience_extracted: unknown[] | null;
   certifications_extracted: unknown[] | null;
@@ -1229,16 +1341,16 @@ function assessStepUpReadiness(
 // ----------------------------------------------------------------------------
 
 const aiJudgmentSchema = z.object({
-  isMatch: z.boolean().describe('Whether this candidate is a good match for the search'),
+  isMatch: z.boolean().describe('Set true if the candidate has the right position/role for the search. Only set false if they are clearly wrong department (deck vs interior) or completely unrelated role. When in doubt, set true and let the score reflect quality.'),
   confidence: z.number().min(0).max(1).describe('Confidence in the assessment (0-1)'),
-  matchScore: z.number().min(0).max(100).describe('Overall match score (0-100)'),
-  reasoning: z.string().describe('Brief explanation of why they are or are not a match'),
+  matchScore: z.number().min(0).max(100).describe('Score based on how well candidate matches: 70-100 if position matches, 50-69 if related position, 0-49 if wrong department/role.'),
+  reasoning: z.string().describe('Brief explanation of match quality'),
   specialStrengths: z.array(z.string()).describe('Special strengths relevant to this specific search'),
   concerns: z.array(z.string()).describe('Any concerns or gaps for this role'),
   stepUpPotential: z.boolean().describe('Whether they could step up to this role with support'),
 });
 
-type AIJudgment = z.infer<typeof aiJudgmentSchema>;
+// AIJudgment interface is defined earlier in the file for use in VectorSearchCandidate
 
 interface CandidateForJudgment {
   primary_position: string | null;
@@ -1251,6 +1363,44 @@ interface CandidateForJudgment {
   villa_experience_extracted: VillaExperience[] | null;
   languages_extracted: unknown;
   gender: string | null;
+}
+
+/**
+ * Calculate total experience years from work history when years_experience is null.
+ * This prevents the AI from seeing "0 years" for candidates who have work history.
+ */
+function calculateTotalExperienceYears(candidate: CandidateForJudgment): number | string {
+  // Use explicit years_experience if available
+  if (candidate.years_experience && candidate.years_experience > 0) {
+    return candidate.years_experience;
+  }
+
+  // Calculate from extracted work history
+  let totalMonths = 0;
+
+  if (candidate.yacht_experience_extracted?.length) {
+    totalMonths += candidate.yacht_experience_extracted.reduce(
+      (sum, y) => sum + (y.duration_months || 0), 0
+    );
+  }
+
+  if (candidate.villa_experience_extracted?.length) {
+    totalMonths += candidate.villa_experience_extracted.reduce(
+      (sum, v) => sum + (v.duration_months || 0), 0
+    );
+  }
+
+  // Return calculated years or "Not specified" if we still can't determine
+  if (totalMonths > 0) {
+    return Math.round(totalMonths / 12);
+  }
+
+  // If they have positions listed, they likely have experience even if we can't quantify it
+  if (candidate.positions_held?.length || candidate.primary_position) {
+    return 'Experience on file (see positions)';
+  }
+
+  return 'Not specified';
 }
 
 interface AISearchContext {
@@ -1269,78 +1419,78 @@ async function assessCandidateWithAI(
   searchContext: AISearchContext
 ): Promise<AIJudgment | null> {
   try {
-    // Build candidate summary for AI
-    const candidateSummary = {
-      currentPosition: candidate.primary_position || 'Unknown',
-      allPositions: candidate.positions_held?.join(', ') || 'None listed',
-      yearsExperience: candidate.years_experience || 0,
+    // Build candidate profile - include ALL available data
+    const candidateProfile = {
+      currentPosition: candidate.primary_position || 'Not specified',
+      allPositions: candidate.positions_held?.join(', ') || 'Not specified',
+      yearsExperience: calculateTotalExperienceYears(candidate),
       gender: candidate.gender || 'Not specified',
-      skills: candidate.cv_skills?.slice(0, 15).join(', ') || 'None listed',
-      certifications: candidate.certifications_extracted?.map(c => c.name).slice(0, 10).join(', ') || 'None',
-      profileSummary: (candidate.profile_summary || '').slice(0, 500),
-      yachtExperience: candidate.yacht_experience_extracted?.map(y =>
-        `${y.position || 'Unknown role'} on ${y.yacht_size_meters || '?'}m ${y.yacht_type || 'yacht'}`
-      ).slice(0, 5).join('; ') || 'None',
-      villaExperience: candidate.villa_experience_extracted?.map(v =>
-        `${v.position || 'Unknown role'} at ${v.property_type || 'property'} in ${v.location || 'unknown location'}`
-      ).slice(0, 3).join('; ') || 'None',
+      skills: candidate.cv_skills?.slice(0, 20).join(', ') || 'Not specified',
+      certifications: candidate.certifications_extracted?.map(c => c.name).slice(0, 15).join(', ') || 'Not specified',
+      profileSummary: (candidate.profile_summary || '').slice(0, 800) || 'Not available',
+      yachtExperience: candidate.yacht_experience_extracted?.length
+        ? candidate.yacht_experience_extracted.map(y =>
+            `${y.position || 'Role'} on ${y.yacht_size_meters || '?'}m ${y.yacht_type || 'yacht'} (${y.duration_months || '?'} months)`
+          ).slice(0, 8).join('; ')
+        : 'Not specified',
+      villaExperience: candidate.villa_experience_extracted?.length
+        ? candidate.villa_experience_extracted.map(v =>
+            `${v.position || 'Role'} at ${v.property_type || 'property'} in ${v.location || 'location'} (${v.duration_months || '?'} months)`
+          ).slice(0, 5).join('; ')
+        : 'Not specified',
     };
 
     const { object } = await generateObject({
       model: judgmentModel,
       schema: aiJudgmentSchema,
-      system: `You are an expert recruiter for luxury service industries (superyachts, private households, estates, UHNW families).
+      system: `You are a recruitment expert for superyachts, private households, and luxury estates.
 
-Your job is to assess if a candidate is suitable for a specific role. Be practical and realistic.
+YOUR TASK IS SIMPLE: Compare what the job requires vs what the candidate has.
 
-DEPARTMENT BOUNDARIES (Critical):
-- Deck/Navigation (captain, officer, deckhand) and Engineering (engineer, ETO) are DIFFERENT departments - never mix
-- Interior/Service (stewardess, butler, housekeeper) and Culinary (chef, cook) are DIFFERENT departments
-- Only match within the same department or clearly related roles
+JOB BRIEF REQUIREMENTS → CANDIDATE PROFILE → MATCH OR NOT?
 
-CAREER PROGRESSION:
-- Someone one level below CAN be a match if they're ready to step up
-- Chief Officer with Master certification IS a valid Captain candidate
-- Experienced 2nd Stewardess IS a valid Chief Stewardess candidate
+MATCHING LOGIC:
+1. POSITION: Does the candidate's current or past positions include the role being searched?
+   - "Chief Stewardess" searching → Candidate is/was Chief Stewardess → MATCH
+   - "Chief Stewardess" searching → Candidate is only 2nd Stewardess → NOT a match for this senior role
+   - If they HAVE the title (current or past), they likely have the experience too
 
-NUANCED REQUIREMENTS:
-- "Chef for toddlers" → needs family cooking or dietary restriction experience
-- "Butler for royalty" → needs formal service, discretion, protocol experience
-- "Russian cuisine" → look for Eastern European, Slavic, or specific cuisine mentions
-- Consider transferable skills (Michelin restaurant → private yacht chef)
+2. SPECIFIC REQUIREMENTS: Only check what's actually mentioned in the brief
+   - Brief mentions "55m+" → Check if candidate has 55m+ yacht experience
+   - Brief mentions "Female" → Check gender
+   - Brief mentions "10 years" → Check experience years
+   - Brief says nothing about yacht size → DON'T filter on yacht size
 
-GENDER REQUIREMENTS (CRITICAL):
-- If requirements specify "Female", "Male", "Female due to cabins", etc. → STRICT FILTER
-- Score 0 and isMatch: false if gender doesn't match explicit requirement
-- Cabin layouts and privacy needs make this non-negotiable
+3. DEPARTMENT: Basic sanity check only
+   - Don't match deck crew (Captain, Officer) to interior roles (Stewardess)
+   - Don't match yacht crew to childcare (Nanny) unless they have childcare experience
 
-SCORING GUIDE:
-- 80-100: Excellent match, would definitely present to client
-- 60-79: Good match, would present with minor caveats
-- 40-59: Possible match, has relevant experience but notable gaps
-- 20-39: Weak match, significant gaps but could work
-- 0-19: Not a match, wrong department or completely unsuitable
-- 0: Hard requirement not met (wrong gender, wrong department, missing critical cert)
+SCORING (Simple):
+- 80-100: Position matches + meets mentioned requirements
+- 60-79: Position matches + partially meets requirements OR strong related experience
+- 40-59: Related position, might be suitable with some gaps
+- 0-39: Wrong position/department → isMatch: false
 
-Be honest and practical. Only say "isMatch: true" if a real recruiter would present this candidate.`,
-      prompt: `SEARCH REQUEST:
+CRITICAL: If the candidate's position MATCHES what's being searched (e.g., searching for Chief Stewardess and candidate IS a Chief Stewardess), they should score 70+ unless they fail a specific requirement mentioned in the brief.
+
+BE GENEROUS with candidates who have the right position title. The vector search already filtered for relevance - your job is to confirm the match, not find reasons to reject.`,
+      prompt: `JOB BRIEF:
 Role: ${searchContext.role}
-Location: ${searchContext.location || 'Not specified'}
-Requirements: ${searchContext.requirements || 'Not specified'}
+Location: ${searchContext.location || 'Any'}
+Requirements: ${searchContext.requirements || 'None specified'}
 
-CANDIDATE PROFILE:
-- Current Position: ${candidateSummary.currentPosition}
-- All Positions: ${candidateSummary.allPositions}
-- Years Experience: ${candidateSummary.yearsExperience}
-- Gender: ${candidateSummary.gender}
-- Key Skills: ${candidateSummary.skills}
-- Certifications: ${candidateSummary.certifications}
-- Yacht Experience: ${candidateSummary.yachtExperience}
-- Villa/Household Experience: ${candidateSummary.villaExperience}
-- Profile Summary: ${candidateSummary.profileSummary}
+CANDIDATE:
+- Position: ${candidateProfile.currentPosition}
+- Past Positions: ${candidateProfile.allPositions}
+- Experience: ${candidateProfile.yearsExperience}
+- Gender: ${candidateProfile.gender}
+- Skills: ${candidateProfile.skills}
+- Certifications: ${candidateProfile.certifications}
+- Yacht History: ${candidateProfile.yachtExperience}
+- Household History: ${candidateProfile.villaExperience}
+- Summary: ${candidateProfile.profileSummary}
 
-Assess this candidate for the role. Is this a good match?
-IMPORTANT: If requirements mention gender (Female, Male, etc.), strictly filter by that.`,
+Does this candidate match the job brief? Compare requirements vs profile.`,
     });
 
     return object;
@@ -1399,6 +1549,7 @@ const aiQueryParseSchema = z.object({
     minYearsExperience: z.number().nullable().describe('Minimum years of experience required'),
     minYachtSizeMeters: z.number().nullable().describe('Minimum yacht size experience in meters'),
     requiredCertifications: z.array(z.string()).describe('Must-have certifications'),
+    requiredLicenses: z.array(z.string()).describe('Required captain/officer licenses like "3000GT", "Master Unlimited", "500GT"'),
     languages: z.array(z.string()).describe('Required languages'),
   }),
   softRequirements: z.object({
@@ -1585,7 +1736,14 @@ SENIORITY LEVELS:
 - senior: 5+ years, leadership roles
 - executive: captain, chief roles, department heads
 
-Parse the query carefully. Extract any specific requirements mentioned.`,
+LICENSE REQUIREMENTS (CRITICAL for Captain/Officer roles):
+- Extract any mentioned captain/officer licenses like "3000GT", "500GT", "Master Unlimited", "OOW"
+- "3000GT" = Master 3000 Gross Tonnage license
+- "500GT" = Master 500 Gross Tonnage license
+- These are HARD requirements that MUST be extracted to requiredLicenses array
+- Example: "Captain with 3000GT" → requiredLicenses: ["3000GT"]
+
+Parse the query carefully. Extract any specific requirements mentioned, especially licenses for captain roles.`,
       prompt: `Parse this job search query:
 
 Role: ${role}
@@ -2137,52 +2295,96 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    // Search for matching candidates
-    // We search by primary_position and use vector similarity
-    // Query rich extracted data for compelling candidate descriptions
-    const { data: candidates, error: searchError } = await supabase
-      .from('candidates')
-      .select(`
-        id,
-        first_name,
-        last_name,
-        avatar_url,
-        primary_position,
-        position_category,
-        years_experience,
-        nationality,
-        availability_status,
-        current_location,
-        profile_summary,
-        embedding,
-        positions_held,
-        cv_skills,
-        languages_extracted,
-        yacht_experience_extracted,
-        villa_experience_extracted,
-        certifications_extracted,
-        licenses_extracted,
-        education_extracted,
-        references_extracted,
-        highest_license,
-        has_stcw,
-        has_eng1,
-        bio_full,
-        bio_anonymized,
-        gender
-      `)
-      .is('deleted_at', null)
-      .not('embedding', 'is', null)
-      .limit(100); // Get a pool of candidates to filter
+    // Search for matching candidates using VECTOR SIMILARITY
+    // This uses pgvector's cosine distance operator to find semantically similar candidates
+    // Much better than random selection - returns candidates actually relevant to the query
+    const embeddingString = `[${queryEmbedding.join(',')}]`;
 
-    if (searchError) {
+    const { data: rpcResult, error: searchError } = await supabase
+      .rpc('match_candidates_by_embedding', {
+        query_embedding: embeddingString,
+        match_threshold: 0.25, // Lower threshold to get more candidates
+        match_count: 200 // Get more candidates to filter from
+      });
+
+    // If RPC doesn't exist, fall back to regular query with manual sorting
+    // This is less efficient but works without the RPC function
+    let candidatesWithEmbeddings = rpcResult;
+    if (searchError?.code === '42883') { // Function doesn't exist
+      console.log('[Brief Match] RPC not available, falling back to manual vector search');
+      const { data: fallbackCandidates, error: fallbackError } = await supabase
+        .from('candidates')
+        .select(`
+          id,
+          first_name,
+          last_name,
+          avatar_url,
+          primary_position,
+          position_category,
+          years_experience,
+          nationality,
+          availability_status,
+          current_location,
+          profile_summary,
+          embedding,
+          positions_held,
+          cv_skills,
+          languages_extracted,
+          yacht_experience_extracted,
+          villa_experience_extracted,
+          certifications_extracted,
+          licenses_extracted,
+          education_extracted,
+          references_extracted,
+          highest_license,
+          has_stcw,
+          has_eng1,
+          bio_full,
+          bio_anonymized,
+          gender
+        `)
+        .is('deleted_at', null)
+        .not('embedding', 'is', null)
+        .limit(500); // Get more candidates for manual filtering
+
+      if (fallbackError) {
+        console.error('[Brief Match] Fallback search error:', fallbackError);
+        return NextResponse.json({ error: 'Search failed' }, { status: 500 });
+      }
+
+      // Manual vector similarity calculation and sorting
+      candidatesWithEmbeddings = (fallbackCandidates || [])
+        .map(c => {
+          let embedding: number[] | null = null;
+          if (typeof c.embedding === 'string') {
+            try { embedding = JSON.parse(c.embedding); } catch { embedding = null; }
+          } else if (Array.isArray(c.embedding)) {
+            embedding = c.embedding;
+          }
+          if (!embedding) return null;
+
+          const similarity = cosineSimilarity(queryEmbedding, embedding);
+          return { ...c, vector_similarity: similarity };
+        })
+        .filter((c): c is NonNullable<typeof c> => c !== null && c.vector_similarity >= 0.25)
+        .sort((a, b) => b.vector_similarity - a.vector_similarity)
+        .slice(0, 200);
+    }
+
+    // Handle errors that weren't already handled by fallback
+    if (searchError && searchError.code !== '42883') {
       console.error('[Brief Match] Search error:', searchError);
       return NextResponse.json({ error: 'Search failed' }, { status: 500 });
     }
 
-    if (!candidates || candidates.length === 0) {
+    // Candidates from vector search (properly sorted by similarity)
+    const candidates = candidatesWithEmbeddings || [];
+
+    if (candidates.length === 0) {
       return NextResponse.json({ candidates: [] });
     }
+
+    console.log(`[Brief Match] Vector search returned ${candidates.length} candidates`);
 
     // Parse requirements from the full query using simple text parsing
     // Note: We pass the full query as "requirements" since everything is in there
@@ -2254,18 +2456,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Pre-filter candidates by department compatibility, position eligibility, and gender
-    const departmentFilteredCandidates = candidates.filter((c) => {
+    const departmentFilteredCandidates = candidates.filter((c: Record<string, unknown>) => {
       const candidatePosition = c.primary_position || '';
       const candidatePositionsHeld = c.positions_held || [];
 
       // HARD FILTER 0: Gender requirement (CRITICAL - cabin layouts, privacy)
-      if (requiresFemale && c.gender?.toLowerCase() === 'male') {
+      const candidateGender = typeof c.gender === 'string' ? c.gender.toLowerCase() : '';
+      if (requiresFemale && candidateGender === 'male') {
         if (process.env.NODE_ENV === 'development') {
           console.log(`[Brief Match] ✗ FILTERED (gender): ${c.first_name} ${c.last_name} - Male candidate, Female required`);
         }
         return false;
       }
-      if (requiresMale && c.gender?.toLowerCase() === 'female') {
+      if (requiresMale && candidateGender === 'female') {
         if (process.env.NODE_ENV === 'development') {
           console.log(`[Brief Match] ✗ FILTERED (gender): ${c.first_name} ${c.last_name} - Female candidate, Male required`);
         }
@@ -2277,8 +2480,8 @@ export async function POST(request: NextRequest) {
       // Use position_category from CV extraction if available (more reliable than string inference)
       const isDepartmentCompatible = areDepartmentsCompatible(
         primarySearchRole,
-        candidatePosition,
-        c.position_category // Pass the stored category from CV extraction
+        String(candidatePosition || ''),
+        typeof c.position_category === 'string' ? c.position_category : undefined
       );
 
       if (!isDepartmentCompatible) {
@@ -2291,7 +2494,8 @@ export async function POST(request: NextRequest) {
       // POSITION ELIGIBILITY CHECK
       // Include exact matches AND step-up candidates (e.g., Chief Officer for Captain)
       // This is a HARD filter - we don't return deckhands for captain searches
-      const isEligible = isPositionEligible(candidatePosition, candidatePositionsHeld, primarySearchRole);
+      const positionsHeldArray = Array.isArray(candidatePositionsHeld) ? candidatePositionsHeld.map(String) : [];
+      const isEligible = isPositionEligible(String(candidatePosition || ''), positionsHeldArray, primarySearchRole);
 
       if (!isEligible) {
         if (process.env.NODE_ENV === 'development') {
@@ -2317,10 +2521,10 @@ export async function POST(request: NextRequest) {
     if (aiParsedQuery && aiParsedQuery.hardRequirements) {
       const { hardRequirements } = aiParsedQuery;
 
-      hardRequirementsFilteredCandidates = departmentFilteredCandidates.filter((c) => {
+      hardRequirementsFilteredCandidates = departmentFilteredCandidates.filter((c: Record<string, unknown>) => {
         // 1. Minimum years experience check
         if (hardRequirements.minYearsExperience !== null) {
-          const candidateYears = c.years_experience || 0;
+          const candidateYears = typeof c.years_experience === 'number' ? c.years_experience : 0;
           // Allow some flexibility - 80% of requirement is okay
           if (candidateYears < hardRequirements.minYearsExperience * 0.8) {
             if (process.env.NODE_ENV === 'development') {
@@ -2351,7 +2555,10 @@ export async function POST(request: NextRequest) {
 
         // 3. Required languages check (soft filter - at least one match)
         if (hardRequirements.languages?.length > 0) {
-          const candidateLangs = (c.languages_extracted || []).map((l: string) => l.toLowerCase());
+          const languagesExtracted = Array.isArray(c.languages_extracted) ? c.languages_extracted : [];
+          const candidateLangs = languagesExtracted.map((l: { language?: string } | string) =>
+            (typeof l === 'string' ? l : l.language || '').toLowerCase()
+          ).filter(Boolean);
           const hasRequiredLanguage = hardRequirements.languages.some((reqLang) =>
             candidateLangs.some((candLang: string) =>
               candLang.includes(reqLang.toLowerCase()) || reqLang.toLowerCase().includes(candLang)
@@ -2366,6 +2573,33 @@ export async function POST(request: NextRequest) {
           }
         }
 
+        // 4. Required licenses check (HARD filter for captain/officer roles)
+        if (hardRequirements.requiredLicenses && hardRequirements.requiredLicenses.length > 0) {
+          const candidateLicense = (typeof c.highest_license === 'string' ? c.highest_license : '').toLowerCase();
+          const candidateSecondLicense = ''; // second_license not in select, but highest_license should be enough
+
+          const hasRequiredLicense = hardRequirements.requiredLicenses.some((reqLicense) => {
+            const reqLicenseLower = reqLicense.toLowerCase();
+            // Check for license variations (3000GT, 3000gt, 3000 GT, Master 3000, etc.)
+            const licensePatterns = [
+              reqLicenseLower,
+              reqLicenseLower.replace('gt', ''),
+              reqLicenseLower.replace(' ', ''),
+            ];
+            return licensePatterns.some(pattern =>
+              candidateLicense.includes(pattern) ||
+              candidateSecondLicense.includes(pattern)
+            );
+          });
+
+          if (!hasRequiredLicense) {
+            if (process.env.NODE_ENV === 'development') {
+              console.log(`[Brief Match] FILTERED (license): ${c.first_name} ${c.last_name} - has "${c.highest_license}", needs ${hardRequirements.requiredLicenses.join('/')}`);
+            }
+            return false;
+          }
+        }
+
         return true;
       });
 
@@ -2373,18 +2607,20 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate vector similarity and recruiter suitability
-    const candidatesWithScores = hardRequirementsFilteredCandidates
-      .map((c) => {
+    const candidatesWithScoresMapped = hardRequirementsFilteredCandidates
+      .map((c: unknown): EnrichedCandidate | null => {
+        // Cast to VectorSearchCandidate for type safety
+        const candidate = c as VectorSearchCandidate;
         // Parse embedding
         let embedding: number[] | null = null;
-        if (typeof c.embedding === 'string') {
+        if (typeof candidate.embedding === 'string') {
           try {
-            embedding = JSON.parse(c.embedding);
+            embedding = JSON.parse(candidate.embedding as string);
           } catch {
             return null;
           }
-        } else if (Array.isArray(c.embedding)) {
-          embedding = c.embedding;
+        } else if (Array.isArray(candidate.embedding)) {
+          embedding = candidate.embedding as number[];
         }
 
         if (!embedding || embedding.length === 0) return null;
@@ -2394,8 +2630,8 @@ export async function POST(request: NextRequest) {
         if (similarity < VECTOR_MATCH_THRESHOLD) return null;
 
         // Check if position matches any of the search terms OR eligible step-up roles
-        const positionLower = c.primary_position?.toLowerCase() || '';
-        const positionsHeldLower = (c.positions_held || []).map((p: string) => p.toLowerCase());
+        const positionLower = candidate.primary_position?.toLowerCase() || '';
+        const positionsHeldLower = (candidate.positions_held || []).map((p: string) => p.toLowerCase());
         const allPositions = [positionLower, ...positionsHeldLower];
 
         // Check for exact position match (uses outer searchTerms variable)
@@ -2424,14 +2660,14 @@ export async function POST(request: NextRequest) {
         // would realistically take this job and be a good fit
         const recruiterAssessment = assessRecruiterSuitability(
           {
-            years_experience: c.years_experience,
-            primary_position: c.primary_position,
-            positions_held: c.positions_held,
-            yacht_experience_extracted: c.yacht_experience_extracted as YachtExperience[] | null,
-            certifications_extracted: c.certifications_extracted as CertificationExtracted[] | null,
-            licenses_extracted: c.licenses_extracted as LicenseExtracted[] | null,
-            has_stcw: c.has_stcw,
-            has_eng1: c.has_eng1,
+            years_experience: candidate.years_experience,
+            primary_position: candidate.primary_position,
+            positions_held: candidate.positions_held,
+            yacht_experience_extracted: candidate.yacht_experience_extracted as YachtExperience[] | null,
+            certifications_extracted: candidate.certifications_extracted as CertificationExtracted[] | null,
+            licenses_extracted: candidate.licenses_extracted as LicenseExtracted[] | null,
+            has_stcw: candidate.has_stcw,
+            has_eng1: candidate.has_eng1,
           },
           parsedRequirements,
           originalRole
@@ -2444,13 +2680,13 @@ export async function POST(request: NextRequest) {
         // assess if they're ready to step up (e.g., Chief Officer → Captain)
         const stepUpReadiness = assessStepUpReadiness(
           {
-            primary_position: c.primary_position,
-            years_experience: c.years_experience,
-            certifications_extracted: c.certifications_extracted as CertificationExtracted[] | null,
-            licenses_extracted: c.licenses_extracted as LicenseExtracted[] | null,
-            has_stcw: c.has_stcw,
-            has_eng1: c.has_eng1,
-            yacht_experience_extracted: c.yacht_experience_extracted as YachtExperience[] | null,
+            primary_position: candidate.primary_position,
+            years_experience: candidate.years_experience,
+            certifications_extracted: candidate.certifications_extracted as CertificationExtracted[] | null,
+            licenses_extracted: candidate.licenses_extracted as LicenseExtracted[] | null,
+            has_stcw: candidate.has_stcw,
+            has_eng1: candidate.has_eng1,
+            yacht_experience_extracted: candidate.yacht_experience_extracted as YachtExperience[] | null,
           },
           primarySearchRole,
           parsedRequirements
@@ -2462,7 +2698,7 @@ export async function POST(request: NextRequest) {
           // Ready step-up candidates get a significant boost
           stepUpBonus = 0.15;
           if (process.env.NODE_ENV === 'development') {
-            console.log(`[Brief Match] STEP-UP CANDIDATE: ${c.first_name} ${c.last_name} - ${stepUpReadiness.currentLevel} → ${stepUpReadiness.targetLevel}, Qualifying: ${stepUpReadiness.qualifyingFactors.join(', ')}, Gaps: ${stepUpReadiness.gaps.join(', ') || 'none'}`);
+            console.log(`[Brief Match] STEP-UP CANDIDATE: ${candidate.first_name} ${candidate.last_name} - ${stepUpReadiness.currentLevel} → ${stepUpReadiness.targetLevel}, Qualifying: ${stepUpReadiness.qualifyingFactors.join(', ')}, Gaps: ${stepUpReadiness.gaps.join(', ') || 'none'}`);
           }
         } else if (stepUpReadiness.isStepUp && !stepUpReadiness.isReady) {
           // Step-up candidates who aren't quite ready still get a small boost
@@ -2475,16 +2711,16 @@ export async function POST(request: NextRequest) {
         // Calculate a transparent, weighted score with excellence bonuses
         const structuredScore = calculateStructuredScore(
           {
-            primary_position: c.primary_position,
-            positions_held: c.positions_held,
-            years_experience: c.years_experience,
-            yacht_experience_extracted: c.yacht_experience_extracted as YachtExperience[] | null,
-            villa_experience_extracted: c.villa_experience_extracted as VillaExperience[] | null,
-            certifications_extracted: c.certifications_extracted as CertificationExtracted[] | null,
-            cv_skills: c.cv_skills,
-            availability_status: c.availability_status,
-            references_extracted: c.references_extracted as ReferenceDetail[] | null,
-            profile_summary: c.profile_summary,
+            primary_position: candidate.primary_position,
+            positions_held: candidate.positions_held,
+            years_experience: candidate.years_experience,
+            yacht_experience_extracted: candidate.yacht_experience_extracted as YachtExperience[] | null,
+            villa_experience_extracted: candidate.villa_experience_extracted as VillaExperience[] | null,
+            certifications_extracted: candidate.certifications_extracted as CertificationExtracted[] | null,
+            cv_skills: candidate.cv_skills,
+            availability_status: candidate.availability_status,
+            references_extracted: candidate.references_extracted as ReferenceDetail[] | null,
+            profile_summary: candidate.profile_summary,
           },
           primarySearchRole,
           parsedRequirements,
@@ -2506,12 +2742,12 @@ export async function POST(request: NextRequest) {
           const excellenceInfo = structuredScore.bonuses.exceedsExperience || structuredScore.bonuses.exceedsYachtSize
             ? ' [EXCELLENCE]'
             : '';
-          console.log(`[Brief Match] ${c.first_name} ${c.last_name}: vector=${vectorScore.toFixed(2)}, suitability=${recruiterAssessment.suitability_score.toFixed(2)}, structured=${structuredScore.totalScore}, combined=${combinedScore.toFixed(2)}, rec=${structuredScore.recommendation}${stepUpInfo}${excellenceInfo}`);
+          console.log(`[Brief Match] ${candidate.first_name} ${candidate.last_name}: vector=${vectorScore.toFixed(2)}, suitability=${recruiterAssessment.suitability_score.toFixed(2)}, structured=${structuredScore.totalScore}, combined=${combinedScore.toFixed(2)}, rec=${structuredScore.recommendation}${stepUpInfo}${excellenceInfo}`);
         }
 
         return {
-          ...c,
-          gender: c.gender, // Explicitly preserve gender for AI judgment
+          ...candidate,
+          gender: candidate.gender, // Explicitly preserve gender for AI judgment
           similarity: combinedScore, // Now includes recruiter assessment + step-up bonus + structured score
           vectorScore: Math.min(vectorScore, 1),
           recruiterAssessment,
@@ -2522,16 +2758,22 @@ export async function POST(request: NextRequest) {
           hasExcellenceBonus: structuredScore.bonuses.exceedsExperience ||
                               structuredScore.bonuses.exceedsYachtSize ||
                               structuredScore.bonuses.hasPremiumCerts,
-        };
-      })
-      .filter((c): c is NonNullable<typeof c> => c !== null)
-      // Sort by combined score (vector × suitability × structured)
-      .sort((a, b) => b.similarity - a.similarity)
+        } as EnrichedCandidate;
+      });
+
+    // Filter out nulls and get typed array
+    const validCandidates: EnrichedCandidate[] = candidatesWithScoresMapped.filter(
+      (c: EnrichedCandidate | null): c is EnrichedCandidate => c !== null
+    );
+
+    // Sort by combined score (vector × suitability × structured)
+    const candidatesWithScores = validCandidates
+      .sort((a: EnrichedCandidate, b: EnrichedCandidate) => b.similarity - a.similarity)
       // Take more candidates initially, then filter to top results
       .slice(0, MAX_RESULTS * 2)
       // Prefer candidates with 'excellent' or 'strong' recommendations from structured scoring
       // Also give priority to candidates with excellence bonuses
-      .sort((a, b) => {
+      .sort((a: EnrichedCandidate, b: EnrichedCandidate) => {
         // First priority: structured score recommendation
         const structuredRecOrder = { excellent: 0, strong: 1, suitable: 2, consider: 3, unlikely: 4 };
         const structuredDiff = structuredRecOrder[a.structuredScore.recommendation] - structuredRecOrder[b.structuredScore.recommendation];
@@ -2631,19 +2873,14 @@ export async function POST(request: NextRequest) {
     // =========================================================================
 
     // Determine if we should run AI judgment
-    // Use AI judgment if: long requirements text OR AI parsed query found soft requirements
-    const hasNuancedRequirements = (requirements && requirements.length > 20) ||
-      (aiParsedQuery && aiParsedQuery.softRequirements && aiParsedQuery.context && (
-        (aiParsedQuery.softRequirements.cuisineTypes?.length || 0) > 0 ||
-        (aiParsedQuery.softRequirements.serviceStyle?.length || 0) > 0 ||
-        (aiParsedQuery.softRequirements.specialSkills?.length || 0) > 0 ||
-        (aiParsedQuery.softRequirements.dietaryExpertise?.length || 0) > 0 ||
-        aiParsedQuery.context.clientType !== null
-      ));
+    // ALWAYS run AI judgment when we have candidates - this ensures proper filtering
+    // of unqualified candidates even when requirements aren't "nuanced"
+    const hasNuancedRequirements = true; // Always run AI judgment for quality control
 
     let aiJudgments: Map<string, AIJudgment> | null = null;
 
     console.log(`[Brief Match] AI Judgment check: hasNuancedRequirements=${hasNuancedRequirements}, candidates=${candidatesForAIJudgment.length}, requirements.length=${requirements?.length || 0}`);
+    console.log(`[Brief Match] Candidates for AI judgment:`, candidatesForAIJudgment.map(c => `${c.first_name} ${c.last_name} (${c.primary_position})`).join(', '));
 
     if (hasNuancedRequirements && candidatesForAIJudgment.length > 0) {
       console.log('[Brief Match] ✓ RUNNING AI JUDGMENT for nuanced requirements...');
@@ -2752,10 +2989,11 @@ export async function POST(request: NextRequest) {
                 return false;
               }
 
-              // Also filter very low scores even if isMatch = true (AI might be generous)
-              if (judgment.matchScore < 20) {
+              // Filter scores below minimum threshold even if isMatch = true
+              // Lowered to 30 to show more candidates - display threshold handles final filtering
+              if (judgment.matchScore < 30) {
                 if (process.env.NODE_ENV === 'development') {
-                  console.log(`[Brief Match] ✗ FILTERED (low score): ${c.first_name} ${c.last_name} - score ${judgment.matchScore}`);
+                  console.log(`[Brief Match] ✗ FILTERED (low AI score): ${c.first_name} ${c.last_name} - score ${judgment.matchScore}`);
                 }
                 return false;
               }
@@ -2782,7 +3020,8 @@ export async function POST(request: NextRequest) {
 
       // Score candidates using simplified fallback scoring
       const fallbackScored = departmentFilteredCandidates
-        .map(c => {
+        .map((cRaw: unknown) => {
+          const c = cRaw as VectorSearchCandidate;
           const fallbackResult = calculateFallbackScore(
             {
               primary_position: c.primary_position,
@@ -2861,12 +3100,12 @@ export async function POST(request: NextRequest) {
             hasExcellenceBonus: false,
           };
         })
-        .filter(c => c.fallbackScore >= 40) // Minimum 40% threshold
-        .sort((a, b) => b.fallbackScore - a.fallbackScore)
+        .filter((c: EnrichedCandidate & { fallbackScore: number }) => c.fallbackScore >= 55) // Lowered from 75 to 55 - allow more candidates in fallback mode
+        .sort((a: EnrichedCandidate & { fallbackScore: number }, b: EnrichedCandidate & { fallbackScore: number }) => b.fallbackScore - a.fallbackScore)
         .slice(0, resultLimit);
 
       if (fallbackScored.length > 0) {
-        console.log(`[Brief Match] Fallback found ${fallbackScored.length} candidates with scores: ${fallbackScored.map(c => c.fallbackScore).join(', ')}`);
+        console.log(`[Brief Match] Fallback found ${fallbackScored.length} candidates with scores: ${fallbackScored.map((c: EnrichedCandidate & { fallbackScore: number }) => c.fallbackScore).join(', ')}`);
         candidatesToProcess = fallbackScored;
         fallbackMode = true;
       } else {
@@ -2875,7 +3114,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Use candidatesToProcess for all subsequent operations
-    const processedCandidates = candidatesToProcess;
+    // Apply minimum display threshold - lowered to 40% to show all reasonable matches
+    // The AI already filtered out non-matches, so trust its judgment
+    const MIN_DISPLAY_SCORE = 0.40;
+    const processedCandidates = candidatesToProcess.filter(c => {
+      if (c.similarity < MIN_DISPLAY_SCORE) {
+        console.log(`[Brief Match] EXCLUDED (below ${MIN_DISPLAY_SCORE * 100}% threshold): ${c.first_name} ${c.last_name} at ${Math.round(c.similarity * 100)}%`);
+        return false;
+      }
+      return true;
+    });
+
+    console.log(`[Brief Match] After minimum threshold filter: ${processedCandidates.length}/${candidatesToProcess.length} candidates`);
 
     // Build search context for personalized matching explanations
     const searchContext = {
@@ -2935,10 +3185,10 @@ export async function POST(request: NextRequest) {
           (c.bio_full
             ? anonymizeBio(
                 c.bio_full,
-                c.first_name,
-                c.last_name,
-                c.nationality,
-                c.primary_position,
+                c.first_name || '',
+                c.last_name || '',
+                c.nationality || null,
+                c.primary_position || null,
                 c.references_extracted as ReferenceDetail[] | null,
                 c.yacht_experience_extracted as YachtExperience[] | null,
                 c.villa_experience_extracted as VillaExperience[] | null
@@ -2975,7 +3225,7 @@ export async function POST(request: NextRequest) {
           display_name: displayName,
           avatar_url: c.avatar_url || null,
           position: c.primary_position || 'Private Staff Professional',
-          experience_years: c.years_experience || 0,
+          experience_years: calculateExperienceYears(c),
           // Use pre-generated bio (anonymized) or fall back to AI/static generation
           rich_bio: storedBioAnonymized || anonymizeText(
             aiPresentation?.professional_summary || generateRichBio(c),
@@ -3239,11 +3489,22 @@ function calculateFallbackScore(
 // ----------------------------------------------------------------------------
 
 const aiPresentationSchema = z.object({
-  professional_summary: z.string().describe('Quick background on who they are: 3-4 sentences in third person covering experience level, yacht sizes, key certs. Use specifics - "5 years on yachts up to 54m" not "extensive experience". Example: "British deckhand with 5 years across motor yachts up to 54m. Holds RYA Yachtmaster Offshore and STCW. Spent last 2 years on charter yachts in the Med handling tender ops and guest water sports."'),
-  why_good_fit: z.string().describe('Your honest recommendation: 2-3 sentences on why this candidate could work for this brief. Be specific about the match. If they tick boxes the client asked for, say so. If there are gaps versus stated requirements, acknowledge them. Sounds like a recruiter talking to a client, not a sales pitch.'),
-  career_highlights: z.array(z.string()).default([]).describe('3-4 concrete things worth mentioning - each with a number, size, or specific outcome. Not "worked on prestigious yachts" but "4 seasons on M/Y Oceana (62m)" or "managed 3 RIBs and all tender ops on 45m charter boat".'),
-  standout_qualities: z.array(z.string()).default([]).describe('2-3 things that make them worth interviewing. Be specific - not "team player" but "trained 2 junior deckhands last season" or "speaks Italian and French - handy for Med work" or "PADI Divemaster - can run guest dives".'),
-  longevity_assessment: z.string().describe('Straight talk on tenure: 1-2 sentences with actual numbers. "Average 14 months across 4 positions, longest was 2 years on a 60m charter yacht." If tenure is short, note it honestly - "averaging 8 months which is below typical - may be seasonal work or worth asking about."'),
+  professional_summary: z.string().describe(`Write a 3-paragraph professional bio in third person. Each paragraph should be 2-3 sentences.
+
+PARAGRAPH 1 - PERSONAL & OVERVIEW:
+Start with nationality and position. Include age if known. Example: "L*** is a 32-year-old British Chief Stewardess with over 10 years in the yachting industry."
+
+PARAGRAPH 2 - QUALIFICATIONS & EXPERIENCE:
+Cover certifications (STCW, ENG1, licenses) and key experience. Include yacht sizes and tenure specifics. Example: "She holds STCW and ENG1 medical, with experience across motor yachts from 45m to 80m. Her career includes 3 years as Chief Stew on a 65m charter yacht in the Mediterranean, managing a team of 4 stewardesses."
+
+PARAGRAPH 3 - CAREER PROGRESSION & STRENGTHS:
+Highlight career progression, notable vessels, charter vs private experience, languages. Example: "Starting as Junior Stewardess on M/Y Eclipse (72m), she progressed through 2nd Stew to Chief over 6 years. Fluent in French and English, she specializes in formal service and high-end charter operations."
+
+DO NOT use bullet points or headers - pure prose paragraphs only.`),
+  why_good_fit: z.string().describe('Confident recommendation: 2-3 sentences selling why this candidate is worth interviewing. Lead with their strengths - experience level, certifications, years in industry, availability. Be positive and confident. Do NOT mention gaps, missing data, or things that need verification.'),
+  career_highlights: z.array(z.string()).default([]).describe('3-4 positive achievements to highlight. Use numbers when available. Examples: "10 years as Chief Stewardess", "Holds STCW and ENG1 certifications", "Available for immediate start", "Greek nationality - Mediterranean expertise".'),
+  standout_qualities: z.array(z.string()).default([]).describe('2-3 strengths that make them worth interviewing. Examples: "10 years at senior interior level", "Current certifications for commercial yachting", "Immediately available for Med season".'),
+  longevity_assessment: z.string().describe('Brief positive statement about their experience. Example: "10 years in yachting demonstrates commitment to the industry." If tenure data is limited, simply state their years of experience positively.'),
 });
 
 
@@ -3265,11 +3526,11 @@ async function generateAICandidatePresentation(
     villa_experience_extracted?: VillaExperience[] | null;
     certifications_extracted?: CertificationExtracted[] | null;
     licenses_extracted?: LicenseExtracted[] | null;
-    languages_extracted?: Array<{ language: string; proficiency: string }> | null;
+    languages_extracted?: Array<{ language: string; proficiency: string }> | string[] | null;
     highest_license?: string | null;
     availability_status?: string | null;
-    has_stcw?: boolean;
-    has_eng1?: boolean;
+    has_stcw?: boolean | null;
+    has_eng1?: boolean | null;
     bio_full?: string | null; // Rich narrative bio with personality traits and reference feedback
   },
   searchContext: {
@@ -3352,56 +3613,43 @@ async function generateAICandidatePresentation(
   const { object } = await generateObject({
     model: presentationModel, // Using GPT-4o-mini for speed and quality
     schema: aiPresentationSchema,
-    system: `You are an experienced yacht crew recruiter with 15+ years placing crew on superyachts and private estates. You're having a candid conversation with a client about a candidate you're recommending.
+    system: `You are a yacht crew recruiter presenting candidates to clients. Your job is to SELL these candidates - highlight their strengths and make the client want to interview them.
 
-YOUR PERSONA:
-- You've seen hundreds of crew come and go - you know what makes someone succeed
-- You're honest with your clients because your reputation depends on good placements
-- You speak plainly about both strengths and concerns - clients trust you for your candor
-- You recommend candidates you genuinely believe could work, but you're upfront about any gaps
+MINDSET:
+- These candidates passed our screening - they're worth the client's time
+- Focus on what they HAVE, not what's missing
+- Your job is to get them interviews, not to second-guess your own recommendations
+- If data is limited, work with what you have - don't apologize for it
 
-TONE & STYLE:
-- Write like you're briefing a captain or principal over coffee - professional but natural
-- Use THIRD PERSON throughout ("This deckhand has..." not "I recommend...")
-- Be conversational yet professional - avoid corporate recruitment jargon
-- Let the candidate's credentials speak for themselves - no salesy hyperbole
-- Always include specific numbers: yacht sizes (54m), tenure (18 months), years (5 years)
-- Mention yacht names - they're industry credentials (e.g., "M/Y Quattroelle (86m)")
-- NEVER assume the candidate's current location - yacht crew relocate globally
+TONE:
+- Confident and positive - you believe in these candidates
+- Professional but warm
+- Third person throughout
+- Include specific numbers when available (yacht sizes, years, certifications)
 
-WHAT TO AVOID:
-- Superlatives: exceptional, outstanding, impressive, remarkable, excellent, stellar
-- Empty phrases: "perfectly aligns", "ideal candidate", "strong work ethic", "team player", "passionate"
-- Overselling - if something is average, say so. Clients respect honesty.
+FOR "WHY GOOD FIT":
+Lead with STRENGTHS. What makes this candidate worth interviewing?
+- Their experience level and position match
+- Relevant certifications they hold
+- Years in the industry
+- Nationality/language advantages for the region
+- Availability timing
 
-THE "WHY WE RECOMMEND" SECTION - THIS IS YOUR HONEST ASSESSMENT:
-Think of this as your professional opinion to a client asking "so why should I interview this person?"
+DO NOT:
+- Say "difficult to recommend" or "hard to assess" - if they're being shown, recommend them
+- Focus on CV gaps or missing data - work with what you have
+- Undermine confidence with phrases like "would need to verify" or "can't confirm"
+- Write paragraphs about what's NOT in the CV
 
-1. Lead with the match: How does their experience align with what the client needs?
-2. Address EXPLICIT requirements honestly:
-   - If search mentions a language (e.g., "must speak Italian") → Check if candidate speaks it. If not, say so clearly.
-   - If search mentions a skill (e.g., "cocktail making") → Check if candidate has it
-   - If search mentions certifications → Verify candidate has them
-   - DON'T invent requirements that weren't stated
-3. Acknowledge gaps directly: "She doesn't have the Italian they're asking for, but her Mediterranean charter experience might compensate"
-4. Include personality insights from the bio/references when relevant
-5. If there are concerns (short tenure, gaps, missing quals), mention them - it builds trust
+EXAMPLES OF GOOD RECOMMENDATIONS:
+- "With 10 years as Chief Stewardess and current STCW/ENG1, she has the experience and certifications for a 60m Mediterranean role. Her availability works for the season timing."
+- "Greek nationality is an asset for Med operations - she'll know the ports and suppliers. 10 years at Chief Stew level shows she's established in senior interior roles."
+- "14 years in yachting with proper certifications. Available now for immediate start which suits urgent placements."
 
-Examples of honest recommendations:
-- "She's been Chief Stew on yachts up to 80m and knows the Mediterranean charter circuit well. The client asked for Italian and she doesn't speak it, but her service standards are solid."
-- "Strong technical background with experience on vessels this size. Tenure's been short - averaging 10 months - which may be worth asking about, but his references from M/Y Oceana speak well of his work."
-- "Exactly what they're looking for: female, speaks French, experienced with formal service. Previous Principal kept her for 3 years which is notable in this industry."
-
-LONGEVITY ASSESSMENT - BE STRAIGHT:
-State the facts, then give your honest read. Clients need to know.
-
-- 24+ months average: "Shows commitment - X month average tenure is above industry norm"
-- 18-24 months average: "Solid retention at X months average"
-- 12-18 months average: "X month average tenure is standard for yachting"
-- 6-12 months average: "Tenure runs shorter than average at X months - may be seasonal work or worth discussing"
-- Under 6 months average: "Pattern of short stints (X month average) - I'd ask about this in interview"
-
-DON'T sugarcoat short tenure with phrases like "gaining diverse experience" - just state the facts and flag it if relevant.`,
+EXAMPLES OF BAD RECOMMENDATIONS (DON'T DO THIS):
+- "This is a difficult recommendation given sparse CV data..."
+- "Without documented yacht experience, there's no way to assess..."
+- "The CV lacks critical detail which makes it challenging..."`,
     prompt: `You're briefing a client about a candidate for a ${searchContext.role} position.
 
 THE CLIENT'S BRIEF:
@@ -3415,18 +3663,26 @@ ${bio_narrative || 'No detailed bio available - working from CV data only.'}
 CANDIDATE DATA:
 ${JSON.stringify(structuredData, null, 2)}
 
-YOUR TASK - Write an honest recruiter assessment:
-- Use third person ("This stewardess has..." not "I think...")
-- Include specifics: yacht sizes, years, tenure lengths, yacht names
-- For "why_good_fit": Give your honest take on why this candidate could work for this brief
-  * Lead with how their experience matches what the client needs
-  * Check the client's brief above - address any EXPLICIT requirements (languages, skills, gender, certs)
-  * If they meet a requirement: highlight it upfront
-  * If they DON'T meet a stated requirement: be upfront about it
-  * Include personality/reference insights from the bio if relevant
-  * Don't invent requirements the client didn't mention
-- For "standout_qualities": What makes this person worth interviewing? Draw from bio and data.
-- Be honest about concerns (short tenure, gaps) - clients respect candor`,
+YOUR TASK - Present this candidate positively:
+
+PROFESSIONAL SUMMARY (3 paragraphs, no headers/bullets):
+Write a confident recruiter bio - 3 flowing paragraphs focusing on STRENGTHS:
+1. First paragraph: Nationality, position, years in industry - presented confidently
+2. Second paragraph: Certifications they HAVE (STCW, ENG1, licenses), experience highlights
+3. Third paragraph: What makes them a solid candidate - languages, availability, regional knowledge
+
+Use specifics when available. If data is limited, keep it brief and positive.
+Example: "L*** is an Australian Chief Stewardess with 10 years in yachting. She holds current STCW and ENG1 certifications. Available for immediate start."
+
+WHY GOOD FIT - SELL THE CANDIDATE:
+Lead with why they're worth interviewing:
+- Position and experience match
+- Certifications they hold
+- Years of experience
+- Nationality/language advantages
+- Availability timing
+
+Keep it positive and confident. Do NOT list what's missing or apologize for limited data.`,
   });
 
   return object;
@@ -3449,11 +3705,11 @@ async function generateAIPresentationsForCandidates(
     villa_experience_extracted?: VillaExperience[] | null;
     certifications_extracted?: CertificationExtracted[] | null;
     licenses_extracted?: LicenseExtracted[] | null;
-    languages_extracted?: Array<{ language: string; proficiency: string }> | null;
+    languages_extracted?: Array<{ language: string; proficiency: string }> | string[] | null;
     highest_license?: string | null;
     availability_status?: string | null;
-    has_stcw?: boolean;
-    has_eng1?: boolean;
+    has_stcw?: boolean | null;
+    has_eng1?: boolean | null;
     bio_full?: string | null; // Rich narrative bio with personality traits and reference feedback
   }>,
   searchContext: {
@@ -3520,9 +3776,9 @@ function generateFallbackPresentation(
     certifications_extracted?: CertificationExtracted[] | null;
     licenses_extracted?: LicenseExtracted[] | null;
     cv_skills?: string[] | null;
-    languages_extracted?: Array<{ language: string; proficiency: string }> | null;
-    has_stcw?: boolean;
-    has_eng1?: boolean;
+    languages_extracted?: Array<{ language: string; proficiency: string }> | string[] | null;
+    has_stcw?: boolean | null;
+    has_eng1?: boolean | null;
   },
   searchContext: { role: string; requirements?: string }
 ): AICandidatePresentation {
@@ -3753,7 +4009,7 @@ function generateRichBio(candidate: {
   certifications_extracted?: CertificationExtracted[] | null;
   licenses_extracted?: LicenseExtracted[] | null;
   highest_license?: string | null;
-  languages_extracted?: Array<{ language: string; proficiency: string }> | null;
+  languages_extracted?: Array<{ language: string; proficiency: string }> | string[] | null;
 }): string {
   const position = candidate.primary_position?.toLowerCase() || '';
   const yearsExp = candidate.years_experience || 0;
@@ -3764,7 +4020,11 @@ function generateRichBio(candidate: {
   const villaExp = (candidate.villa_experience_extracted || []) as VillaExperience[];
   const certs = (candidate.certifications_extracted || []) as CertificationExtracted[];
   const licenses = (candidate.licenses_extracted || []) as LicenseExtracted[];
-  const langs = (candidate.languages_extracted || []) as Array<{ language: string; proficiency: string }>;
+  // Handle both string[] and object[] formats for languages
+  const rawLangs = candidate.languages_extracted || [];
+  const langs: Array<{ language: string; proficiency: string }> = rawLangs.length > 0 && typeof rawLangs[0] === 'string'
+    ? (rawLangs as string[]).map(l => ({ language: l, proficiency: 'fluent' }))
+    : rawLangs as Array<{ language: string; proficiency: string }>;
   const skills = candidate.cv_skills || [];
 
   // Calculate key metrics
@@ -4630,8 +4890,8 @@ function normalizeCertName(name: string): string {
 function extractQualifications(candidate: {
   certifications_extracted?: CertificationExtracted[] | null;
   licenses_extracted?: LicenseExtracted[] | null;
-  has_stcw?: boolean;
-  has_eng1?: boolean;
+  has_stcw?: boolean | null;
+  has_eng1?: boolean | null;
   highest_license?: string | null;
 }): string[] {
   const quals: string[] = [];
@@ -4691,13 +4951,18 @@ function extractQualifications(candidate: {
 }
 
 function extractLanguages(
-  languagesExtracted: Array<{ language: string; proficiency: string }> | null
+  languagesExtracted: Array<{ language: string; proficiency: string }> | string[] | null
 ): string[] {
   if (!languagesExtracted || languagesExtracted.length === 0) {
     return ['English'];
   }
 
-  return languagesExtracted
+  // Handle both formats: string[] or object[]
+  if (typeof languagesExtracted[0] === 'string') {
+    return (languagesExtracted as string[]).slice(0, 4);
+  }
+
+  return (languagesExtracted as Array<{ language: string; proficiency: string }>)
     .filter((l) => l.proficiency !== 'basic')
     .map((l) => l.language)
     .slice(0, 4);
@@ -4960,7 +5225,7 @@ function generateWhyGoodFit(
     villa_experience_extracted?: VillaExperience[] | null;
     certifications_extracted?: CertificationExtracted[] | null;
     licenses_extracted?: LicenseExtracted[] | null;
-    languages_extracted?: Array<{ language: string; proficiency: string }> | null;
+    languages_extracted?: Array<{ language: string; proficiency: string }> | string[] | null;
   },
   context: SearchContext
 ): string {
@@ -5464,7 +5729,7 @@ function extractEmployeeQualities(candidate: {
   years_experience?: number | null;
   yacht_experience_extracted?: YachtExperience[] | null;
   villa_experience_extracted?: VillaExperience[] | null;
-  languages_extracted?: Array<{ language: string; proficiency: string }> | null;
+  languages_extracted?: Array<{ language: string; proficiency: string }> | string[] | null;
   certifications_extracted?: CertificationExtracted[] | null;
 }): string[] {
   // ONLY include evidence-based, quantifiable qualities - NO generic soft skills

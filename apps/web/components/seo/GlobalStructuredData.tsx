@@ -31,7 +31,7 @@ export function GlobalStructuredData() {
     contactPoint: [
       {
         "@type": "ContactPoint",
-        telephone: "+33-6-76-41-02-99",
+        telephone: "+33-6-52-92-83-60",
         contactType: "customer service",
         email: "admin@lighthouse-careers.com",
         availableLanguage: ["English", "French"],
@@ -39,7 +39,7 @@ export function GlobalStructuredData() {
       },
       {
         "@type": "ContactPoint",
-        telephone: "+33-6-76-41-02-99",
+        telephone: "+33-6-52-92-83-60",
         contactType: "sales",
         email: "admin@lighthouse-careers.com",
         availableLanguage: ["English", "French"],
@@ -129,7 +129,7 @@ export function GlobalStructuredData() {
     name: "Lighthouse Careers",
     image: `${baseUrl}/logo.png`,
     url: baseUrl,
-    telephone: "+33-6-76-41-02-99",
+    telephone: "+33-6-52-92-83-60",
     email: "admin@lighthouse-careers.com",
     address: {
       "@type": "PostalAddress",

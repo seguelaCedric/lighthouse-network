@@ -9,6 +9,8 @@ import {
 import { syncSubscriptionFromStripe } from '@/lib/stripe/subscriptions'
 import { handleCheckoutComplete } from '@/lib/stripe/checkout'
 import { createClient } from '@/lib/supabase/server'
+import { sendEmail, isResendConfigured } from '@/lib/email/client'
+import { subscriptionCancelledEmail, paymentFailedEmail } from '@/lib/email/templates'
 import type Stripe from 'stripe'
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
@@ -173,6 +175,24 @@ async function handleSubscriptionDeleted(
     .eq('slug', 'free')
     .single()
 
+  // Get current subscription details before downgrading
+  const { data: currentSub } = await supabase
+    .from('agency_subscriptions')
+    .select(`
+      subscription_plans (name),
+      period_end
+    `)
+    .eq('agency_id', agencyId)
+    .single()
+
+  const planData = currentSub?.subscription_plans as unknown as { name?: string } | null
+  const planName = planData?.name || 'Subscription'
+  // Get period end from our database or from Stripe subscription object
+  const periodEnd = currentSub?.period_end || (subscription as unknown as { current_period_end?: number }).current_period_end
+  const endDate = periodEnd
+    ? new Date(typeof periodEnd === 'number' ? periodEnd * 1000 : periodEnd).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+    : 'Unknown'
+
   // Downgrade to free plan
   await supabase
     .from('agency_subscriptions')
@@ -184,13 +204,46 @@ async function handleSubscriptionDeleted(
     })
     .eq('agency_id', agencyId)
 
-  // TODO: Send notification to agency about subscription cancellation
-  // await createNotification({
-  //   type: 'subscription_canceled',
-  //   organization_id: agencyId,
-  //   title: 'Subscription Canceled',
-  //   message: 'Your subscription has been canceled. You have been downgraded to the Free plan.',
-  // })
+  // Send notification to agency about subscription cancellation
+  if (isResendConfigured()) {
+    try {
+      // Get agency admin(s) to notify
+      const { data: admins } = await supabase
+        .from('users')
+        .select('email, full_name')
+        .eq('agency_id', agencyId)
+        .eq('user_type', 'admin')
+
+      // Also get agency name for the email
+      const { data: agency } = await supabase
+        .from('organizations')
+        .select('name')
+        .eq('id', agencyId)
+        .single()
+
+      if (admins && admins.length > 0) {
+        await Promise.all(
+          admins.map(async (admin) => {
+            const emailData = subscriptionCancelledEmail({
+              contactName: admin.full_name || 'Team',
+              companyName: agency?.name || undefined,
+              planName,
+              endDate,
+            })
+
+            await sendEmail({
+              to: admin.email,
+              subject: emailData.subject,
+              html: emailData.html,
+              text: emailData.text,
+            })
+          })
+        )
+      }
+    } catch (emailError) {
+      console.error('Failed to send subscription cancelled notification:', emailError)
+    }
+  }
 }
 
 /**
@@ -219,14 +272,53 @@ async function handleSubscriptionPaymentFailed(
     .update({ status: 'past_due' })
     .eq('agency_id', agencyId)
 
-  // TODO: Send notification to agency about payment failure
-  // await createNotification({
-  //   type: 'payment_failed',
-  //   organization_id: agencyId,
-  //   title: 'Payment Failed',
-  //   message: 'We were unable to process your payment. Please update your payment method.',
-  //   priority: 'high',
-  // })
+  // Send notification to agency about payment failure
+  if (isResendConfigured()) {
+    try {
+      // Get agency admin(s) to notify
+      const { data: admins } = await supabase
+        .from('users')
+        .select('email, full_name')
+        .eq('agency_id', agencyId)
+        .eq('user_type', 'admin')
+
+      // Get agency name
+      const { data: agency } = await supabase
+        .from('organizations')
+        .select('name')
+        .eq('id', agencyId)
+        .single()
+
+      const amount = (invoice.amount_due / 100).toFixed(2)
+      const currency = invoice.currency?.toUpperCase() || 'EUR'
+      const failureReason = invoice.last_finalization_error?.message || undefined
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://lighthouse-careers.com'
+
+      if (admins && admins.length > 0) {
+        await Promise.all(
+          admins.map(async (admin) => {
+            const emailData = paymentFailedEmail({
+              contactName: admin.full_name || 'Team',
+              companyName: agency?.name || undefined,
+              amount,
+              currency,
+              failureReason,
+              updatePaymentLink: `${baseUrl}/admin/settings/billing`,
+            })
+
+            await sendEmail({
+              to: admin.email,
+              subject: emailData.subject,
+              html: emailData.html,
+              text: emailData.text,
+            })
+          })
+        )
+      }
+    } catch (emailError) {
+      console.error('Failed to send payment failed notification:', emailError)
+    }
+  }
 }
 
 /**
@@ -280,7 +372,53 @@ async function handlePaymentFailed(
       paymentIntent.last_payment_error?.message || 'Payment failed',
   })
 
-  // TODO: Send notification about payment failure
+  // Send notification about payment failure
+  if (isResendConfigured()) {
+    try {
+      // Get agency admin(s) to notify
+      const { data: admins } = await supabase
+        .from('users')
+        .select('email, full_name')
+        .eq('agency_id', agencyId)
+        .eq('user_type', 'admin')
+
+      // Get agency name
+      const { data: agency } = await supabase
+        .from('organizations')
+        .select('name')
+        .eq('id', agencyId)
+        .single()
+
+      const amount = (paymentIntent.amount / 100).toFixed(2)
+      const currency = paymentIntent.currency.toUpperCase()
+      const failureReason = paymentIntent.last_payment_error?.message || undefined
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://lighthouse-careers.com'
+
+      if (admins && admins.length > 0) {
+        await Promise.all(
+          admins.map(async (admin) => {
+            const emailData = paymentFailedEmail({
+              contactName: admin.full_name || 'Team',
+              companyName: agency?.name || undefined,
+              amount,
+              currency,
+              failureReason,
+              updatePaymentLink: `${baseUrl}/admin/settings/billing`,
+            })
+
+            await sendEmail({
+              to: admin.email,
+              subject: emailData.subject,
+              html: emailData.html,
+              text: emailData.text,
+            })
+          })
+        )
+      }
+    } catch (emailError) {
+      console.error('Failed to send payment failed notification:', emailError)
+    }
+  }
 }
 
 // Disable body parsing since we need raw body for signature verification

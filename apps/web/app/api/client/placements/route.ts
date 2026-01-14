@@ -4,6 +4,8 @@ import { getClientSessionFromCookie } from "@/lib/auth/client-session";
 import { createPlacementFee } from "@/lib/stripe/placement-fees";
 import { trackReferralPlacement } from "@/lib/referrals";
 import { z } from "zod";
+import { sendEmail, isResendConfigured } from "@/lib/email/client";
+import { placementNotificationEmail } from "@/lib/email/templates";
 
 const confirmPlacementSchema = z.object({
   submissionId: z.string().uuid(),
@@ -308,7 +310,73 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // TODO: Trigger notification to recruiter
+    // Send notification to agency recruiters
+    if (isResendConfigured() && job.agency_id) {
+      try {
+        // Get job details with client and candidate info
+        const { data: jobDetails } = await supabase
+          .from("jobs")
+          .select(`
+            title,
+            vessel_name,
+            clients (
+              name,
+              contact_name
+            )
+          `)
+          .eq("id", jobId)
+          .single();
+
+        // Get candidate name
+        const { data: candidate } = await supabase
+          .from("candidates")
+          .select("first_name, last_name")
+          .eq("id", submission.candidate_id)
+          .single();
+
+        const clientData = jobDetails?.clients as unknown as { name?: string; contact_name?: string } | null;
+        const clientName = clientData?.name || clientData?.contact_name || "Client";
+        const candidateName = candidate ? `${candidate.first_name} ${candidate.last_name}` : "Candidate";
+
+        // Get agency recruiters
+        const { data: recruiters } = await supabase
+          .from("users")
+          .select("email, full_name")
+          .eq("agency_id", job.agency_id)
+          .in("user_type", ["recruiter", "admin"]);
+
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://lighthouse-careers.com";
+
+        if (recruiters && recruiters.length > 0) {
+          await Promise.all(
+            recruiters.map(async (recruiter) => {
+              const emailData = placementNotificationEmail({
+                recruiterName: recruiter.full_name || "Team",
+                clientName,
+                candidateName,
+                position: jobDetails?.title || "Position",
+                vesselName: jobDetails?.vessel_name || undefined,
+                startDate: startDate || undefined,
+                salary: salary || undefined,
+                salaryCurrency: salaryCurrency || undefined,
+                salaryPeriod: salaryPeriod || undefined,
+                dashboardLink: `${baseUrl}/admin/placements/${placement.id}`,
+              });
+
+              await sendEmail({
+                to: recruiter.email,
+                subject: emailData.subject,
+                html: emailData.html,
+                text: emailData.text,
+              });
+            })
+          );
+        }
+      } catch (emailError) {
+        // Log but don't fail the request
+        console.error("Failed to send placement notification:", emailError);
+      }
+    }
 
     return NextResponse.json(
       {

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
+import { sendEmail, isResendConfigured } from "@/lib/email/client";
+import { employerMagicLinkEmail } from "@/lib/email/templates";
 
 const sendLinkSchema = z.object({
   email: z.string().email("Valid email is required"),
@@ -55,12 +57,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: Send email with magic link
-    // For now, log the token (in production, this would send an email)
-    console.log(`Magic link for ${email}: /employer/auth/verify?token=${token}`);
+    // Send email with magic link
+    const magicLink = `${process.env.NEXT_PUBLIC_APP_URL || "https://lighthouse-careers.com"}/employer/auth/verify?token=${token}`;
 
-    // In production, send email here:
-    // await sendEmployerMagicLinkEmail(email, account.contact_name, token);
+    if (isResendConfigured()) {
+      const emailData = employerMagicLinkEmail({
+        contactName: account.contact_name,
+        magicLink,
+        expiresIn: "1 hour",
+      });
+
+      const emailResult = await sendEmail({
+        to: email,
+        subject: emailData.subject,
+        html: emailData.html,
+        text: emailData.text,
+      });
+
+      if (!emailResult.success) {
+        console.error("Failed to send employer magic link email:", emailResult.error);
+      }
+    } else {
+      // Log for development
+      console.log(`[DEV] Magic link for ${email}: ${magicLink}`);
+    }
 
     return NextResponse.json({
       success: true,

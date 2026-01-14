@@ -32,7 +32,8 @@ function getTierConfig(score: number): TierConfig {
       textOpacity: 'text-white',
     };
   }
-  if (score >= 70) {
+  // Raised from 70 to 75 for more accurate labeling
+  if (score >= 75) {
     return {
       tier: 'strong',
       label: 'Strong Fit',
@@ -42,19 +43,21 @@ function getTierConfig(score: number): TierConfig {
       textOpacity: 'text-white',
     };
   }
-  if (score >= 55) {
+  // Raised from 55 to 60 for more accurate labeling
+  if (score >= 60) {
     return {
       tier: 'moderate',
-      label: 'Partial Fit',
+      label: 'Potential Fit',
       Icon: TrendingUp,
       gradient: 'from-warning-400 to-warning-500',
       iconColor: 'text-amber-200',
       textOpacity: 'text-white',
     };
   }
+  // 55-59% range - still shown but labeled appropriately
   return {
     tier: 'limited',
-    label: 'Worth Exploring',
+    label: 'Consider',
     Icon: Search,
     gradient: 'from-navy-400 to-navy-500',
     iconColor: 'text-navy-200',
@@ -133,8 +136,8 @@ export function MatchQualityBadge({
 // Export helper for use in conditional rendering
 export function getMatchTier(score: number): MatchTier {
   if (score >= 85) return 'excellent';
-  if (score >= 70) return 'strong';
-  if (score >= 55) return 'moderate';
+  if (score >= 75) return 'strong';
+  if (score >= 60) return 'moderate';
   return 'limited';
 }
 

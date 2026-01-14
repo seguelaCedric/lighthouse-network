@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { rejectDocument, getDocumentById } from "@/lib/services/document-service";
 import { documentRejectionSchema } from "@/lib/validations/documents";
 import { logVerificationEvent, calculateVerificationTier } from "@/lib/verification";
+import { sendEmail, isResendConfigured } from "@/lib/email/client";
+import { documentRejectionEmail } from "@/lib/email/templates";
 
 interface RouteParams {
   params: Promise<{
@@ -130,8 +132,47 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       await calculateVerificationTier(document.entityId);
     }
 
-    // TODO: Send notification to candidate about rejection
-    // await sendDocumentRejectionNotification(document.entityId, document.documentType, reason);
+    // Send notification to candidate about rejection
+    if (isResendConfigured() && document.entityType === "candidate") {
+      try {
+        // Get candidate details
+        const { data: candidate } = await supabase
+          .from("candidates")
+          .select("user_id")
+          .eq("id", document.entityId)
+          .single();
+
+        if (candidate?.user_id) {
+          // Get user email
+          const { data: candidateUser } = await supabase
+            .from("users")
+            .select("email, full_name")
+            .eq("id", candidate.user_id)
+            .single();
+
+          if (candidateUser?.email) {
+            const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://lighthouse-careers.com";
+            const emailData = documentRejectionEmail({
+              candidateName: candidateUser.full_name || "Candidate",
+              documentType: document.documentType,
+              documentName: document.name,
+              rejectionReason: reason,
+              dashboardLink: `${baseUrl}/candidate/documents`,
+            });
+
+            await sendEmail({
+              to: candidateUser.email,
+              subject: emailData.subject,
+              html: emailData.html,
+              text: emailData.text,
+            });
+          }
+        }
+      } catch (emailError) {
+        // Log but don't fail the request
+        console.error("Failed to send rejection notification:", emailError);
+      }
+    }
 
     return NextResponse.json({
       success: true,
