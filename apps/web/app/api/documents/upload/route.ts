@@ -6,6 +6,7 @@ import { documentUploadSchema, validateFile, sanitizeFilename } from "@/lib/vali
 import { logVerificationEvent, calculateVerificationTier } from "@/lib/verification";
 import { syncDocumentUpload } from "@/lib/vincere/sync-service";
 import { extractText, isExtractable } from "@/lib/services/text-extraction";
+import { sendEmail, newCandidateRegistrationAdminEmail } from "@/lib/email";
 
 const BUCKET_NAME = "documents";
 const serviceSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -374,6 +375,38 @@ export async function POST(request: NextRequest) {
 
       // Recalculate verification tier
       await calculateVerificationTier(entityId);
+
+      // Send admin notification for new candidate registration with CV (fire-and-forget)
+      // Only send for first CV upload (version 1) from self-registered candidates
+      if (version === 1 && !replaceDocumentId) {
+        // Get candidate details to include in admin email
+        const { data: candidateData } = await supabase
+          .from("candidates")
+          .select("first_name, last_name, email, phone, primary_position, nationality, candidate_type, source")
+          .eq("id", entityId)
+          .single();
+
+        if (candidateData && candidateData.source === "self_registration") {
+          const adminEmail = newCandidateRegistrationAdminEmail({
+            firstName: candidateData.first_name || "",
+            lastName: candidateData.last_name || "",
+            email: candidateData.email || "",
+            phone: candidateData.phone || undefined,
+            primaryPosition: candidateData.primary_position || undefined,
+            nationality: candidateData.nationality || undefined,
+            candidateType: candidateData.candidate_type || undefined,
+            cvUrl: publicUrl,
+          });
+          sendEmail({
+            to: "admin@lighthouse-careers.com",
+            subject: adminEmail.subject,
+            html: adminEmail.html,
+            text: adminEmail.text,
+          }).catch((err) =>
+            console.error("Failed to send admin notification email:", err)
+          );
+        }
+      }
     }
 
     // Sync document to Vincere for candidate uploads (fire-and-forget)
