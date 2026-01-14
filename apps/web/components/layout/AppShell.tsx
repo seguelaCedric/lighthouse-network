@@ -16,11 +16,8 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  User,
   Shield,
-  Globe,
   BookOpen,
-  Mail,
   BarChart3,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
@@ -46,7 +43,6 @@ const mainNavItems: NavItem[] = [
   { id: "candidates", label: "Candidates", icon: <Users className="size-5" />, href: "/candidates" },
   { id: "clients", label: "Clients", icon: <Building2 className="size-5" />, href: "/clients" },
   { id: "content", label: "Content", icon: <BookOpen className="size-5" />, href: "/dashboard/seo-pages/blog" },
-  { id: "inquiries", label: "Inquiries", icon: <Mail className="size-5" />, href: "/dashboard/seo-pages/inquiries" },
 ];
 
 const bottomNavItems: NavItem[] = [
@@ -83,10 +79,6 @@ export function AppShell({ children }: AppShellProps) {
         pathname.startsWith("/dashboard/seo-pages/blog") ||
         pathname.startsWith("/dashboard/seo-pages/landing-pages")
       );
-    }
-    // Inquiries should only match inquiries path
-    if (href === "/dashboard/seo-pages/inquiries") {
-      return pathname.startsWith("/dashboard/seo-pages/inquiries");
     }
     return pathname.startsWith(href);
   };
