@@ -574,13 +574,69 @@ export default function PrivateStaffPage() {
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-20 sm:py-28 bg-white">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+      <section className="relative overflow-hidden bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 py-20 sm:py-28">
+        {/* Diamond pattern background - matching testimonials component */}
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          {/* Warm champagne/gold glow from top */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_120%_50%_at_50%_0%,rgba(195,165,120,0.12),transparent_70%)]" aria-hidden="true" />
+
+          {/* Secondary glow from bottom corners */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_0%_100%,rgba(195,165,120,0.06),transparent_50%)]" aria-hidden="true" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_100%_100%,rgba(195,165,120,0.06),transparent_50%)]" aria-hidden="true" />
+
+          {/* Geometric diamond pattern - layered for depth */}
+          <div className="absolute inset-0" aria-hidden="true">
+            <svg className="absolute inset-0 h-full w-full" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                {/* Primary diamond pattern */}
+                <pattern id="staff-testimonial-diamond-primary" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
+                  {/* Outer diamond */}
+                  <path
+                    d="M40 4L76 40L40 76L4 40Z"
+                    fill="none"
+                    stroke="rgba(195, 165, 120, 0.12)"
+                    strokeWidth="0.75"
+                  />
+                  {/* Inner diamond */}
+                  <path
+                    d="M40 16L64 40L40 64L16 40Z"
+                    fill="none"
+                    stroke="rgba(195, 165, 120, 0.08)"
+                    strokeWidth="0.5"
+                  />
+                  {/* Center accent dot */}
+                  <circle cx="40" cy="40" r="1.5" fill="rgba(195, 165, 120, 0.15)" />
+                  {/* Corner accent dots */}
+                  <circle cx="40" cy="4" r="1" fill="rgba(195, 165, 120, 0.1)" />
+                  <circle cx="76" cy="40" r="1" fill="rgba(195, 165, 120, 0.1)" />
+                  <circle cx="40" cy="76" r="1" fill="rgba(195, 165, 120, 0.1)" />
+                  <circle cx="4" cy="40" r="1" fill="rgba(195, 165, 120, 0.1)" />
+                </pattern>
+                {/* Secondary offset pattern for depth */}
+                <pattern id="staff-testimonial-diamond-secondary" x="40" y="40" width="80" height="80" patternUnits="userSpaceOnUse">
+                  <path
+                    d="M40 20L60 40L40 60L20 40Z"
+                    fill="none"
+                    stroke="rgba(195, 165, 120, 0.05)"
+                    strokeWidth="0.5"
+                  />
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#staff-testimonial-diamond-primary)" />
+              <rect width="100%" height="100%" fill="url(#staff-testimonial-diamond-secondary)" />
+            </svg>
+          </div>
+
+          {/* Refined vignette with softer edges */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,transparent_40%,rgba(10,20,35,0.35)_100%)]" aria-hidden="true" />
+        </div>
+
+        <div className="relative mx-auto max-w-6xl px-4 sm:px-6 z-10">
           <div className="mb-16 text-center">
-            <h2 className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl">
+            <h2 className="font-serif text-3xl font-semibold text-white sm:text-4xl">
               What Our Clients Say
             </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-gray-600">
+            <p className="mx-auto mt-4 max-w-2xl text-gray-400">
               Trusted by household managers and principals worldwide.
             </p>
           </div>
@@ -589,11 +645,11 @@ export default function PrivateStaffPage() {
             {testimonials.map((testimonial, index) => (
               <div
                 key={index}
-                className="relative rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-lg"
+                className="relative rounded-2xl border border-white/10 bg-navy-800/95 p-6 backdrop-blur-sm transition-all duration-300 hover:border-gold-500/30 hover:shadow-[0_8px_30px_-6px_rgba(195,165,120,0.25)]"
               >
-                <Quote className="absolute right-6 top-6 h-8 w-8 text-gold-200" />
+                <Quote className="absolute right-6 top-6 h-8 w-8 text-gold-500/20" />
                 <div className="flex items-start gap-4">
-                  <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-full">
+                  <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-full ring-2 ring-gold-500/30">
                     <Image
                       src={testimonial.image}
                       alt={testimonial.name}
@@ -602,11 +658,11 @@ export default function PrivateStaffPage() {
                     />
                   </div>
                   <div>
-                    <p className="font-semibold text-navy-900">{testimonial.name}</p>
-                    <p className="text-sm text-gold-600">{testimonial.role}</p>
+                    <p className="font-semibold text-white">{testimonial.name}</p>
+                    <p className="text-sm text-gold-400">{testimonial.role}</p>
                   </div>
                 </div>
-                <p className="mt-4 text-gray-600 leading-relaxed">
+                <p className="mt-4 text-gray-300 leading-relaxed">
                   "{testimonial.quote}"
                 </p>
               </div>

@@ -290,64 +290,63 @@ export default async function AboutPage() {
 
       {/* Why We're Different */}
       <section className="relative overflow-hidden bg-gradient-to-br from-navy-900 via-navy-800 to-navy-900 py-20 sm:py-28">
-        {/* Luxurious background pattern */}
-        <div className="absolute inset-0 opacity-30">
-          <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
-            <defs>
-              <pattern id="luxury-damask" x="0" y="0" width="120" height="120" patternUnits="userSpaceOnUse">
-                {/* Central decorative element */}
-                <circle cx="60" cy="60" r="3" fill="#C3A578" opacity="0.6"/>
-                <circle cx="60" cy="60" r="8" fill="none" stroke="#C3A578" strokeWidth="0.8" opacity="0.4"/>
-                <circle cx="60" cy="60" r="15" fill="none" stroke="#C3A578" strokeWidth="0.6" opacity="0.3"/>
-                
-                {/* Corner decorative elements */}
-                <circle cx="20" cy="20" r="2" fill="#C3A578" opacity="0.5"/>
-                <circle cx="100" cy="20" r="2" fill="#C3A578" opacity="0.5"/>
-                <circle cx="20" cy="100" r="2" fill="#C3A578" opacity="0.5"/>
-                <circle cx="100" cy="100" r="2" fill="#C3A578" opacity="0.5"/>
-                
-                {/* Ornate decorative curves */}
-                <path d="M 60 20 Q 80 30 60 40 Q 40 30 60 20" fill="none" stroke="#C3A578" strokeWidth="1" opacity="0.4"/>
-                <path d="M 60 80 Q 80 90 60 100 Q 40 90 60 80" fill="none" stroke="#C3A578" strokeWidth="1" opacity="0.4"/>
-                <path d="M 20 60 Q 30 80 40 60 Q 30 40 20 60" fill="none" stroke="#C3A578" strokeWidth="1" opacity="0.4"/>
-                <path d="M 80 60 Q 90 80 100 60 Q 90 40 80 60" fill="none" stroke="#C3A578" strokeWidth="1" opacity="0.4"/>
-                
-                {/* Connecting lines for elegance */}
-                <line x1="60" y1="20" x2="60" y2="40" stroke="#C3A578" strokeWidth="0.5" opacity="0.3"/>
-                <line x1="60" y1="80" x2="60" y2="100" stroke="#C3A578" strokeWidth="0.5" opacity="0.3"/>
-                <line x1="20" y1="60" x2="40" y2="60" stroke="#C3A578" strokeWidth="0.5" opacity="0.3"/>
-                <line x1="80" y1="60" x2="100" y2="60" stroke="#C3A578" strokeWidth="0.5" opacity="0.3"/>
-              </pattern>
-              <radialGradient id="luxury-glow" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="#C3A578" stopOpacity="0.2"/>
-                <stop offset="50%" stopColor="#C3A578" stopOpacity="0.08"/>
-                <stop offset="100%" stopColor="#C3A578" stopOpacity="0"/>
-              </radialGradient>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#luxury-damask)"/>
-            <rect width="100%" height="100%" fill="url(#luxury-glow)"/>
-          </svg>
-        </div>
-        
-        {/* Enhanced ambient lighting */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(195,165,120,0.15),transparent_70%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_80%_at_0%_50%,rgba(195,165,120,0.1),transparent_60%)]" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_80%_at_100%_50%,rgba(195,165,120,0.1),transparent_60%)]" />
-        
-        {/* Visible texture overlay */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="h-full w-full" style={{
-            backgroundImage: `repeating-linear-gradient(
-              45deg,
-              transparent,
-              transparent 8px,
-              rgba(195,165,120,0.15) 8px,
-              rgba(195,165,120,0.15) 16px
-            )`
-          }} />
+        {/* Diamond pattern background - matching testimonials */}
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          {/* Warm champagne/gold glow from top */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_120%_50%_at_50%_0%,rgba(195,165,120,0.12),transparent_70%)]" aria-hidden="true" />
+
+          {/* Secondary glow from bottom corners */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_0%_100%,rgba(195,165,120,0.06),transparent_50%)]" aria-hidden="true" />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_100%_100%,rgba(195,165,120,0.06),transparent_50%)]" aria-hidden="true" />
+
+          {/* Geometric diamond pattern - layered for depth */}
+          <div className="absolute inset-0" aria-hidden="true">
+            <svg className="absolute inset-0 h-full w-full" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                {/* Primary diamond pattern */}
+                <pattern id="about-diamond-primary" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
+                  {/* Outer diamond */}
+                  <path
+                    d="M40 4L76 40L40 76L4 40Z"
+                    fill="none"
+                    stroke="rgba(195, 165, 120, 0.12)"
+                    strokeWidth="0.75"
+                  />
+                  {/* Inner diamond */}
+                  <path
+                    d="M40 16L64 40L40 64L16 40Z"
+                    fill="none"
+                    stroke="rgba(195, 165, 120, 0.08)"
+                    strokeWidth="0.5"
+                  />
+                  {/* Center accent dot */}
+                  <circle cx="40" cy="40" r="1.5" fill="rgba(195, 165, 120, 0.15)" />
+                  {/* Corner accent dots */}
+                  <circle cx="40" cy="4" r="1" fill="rgba(195, 165, 120, 0.1)" />
+                  <circle cx="76" cy="40" r="1" fill="rgba(195, 165, 120, 0.1)" />
+                  <circle cx="40" cy="76" r="1" fill="rgba(195, 165, 120, 0.1)" />
+                  <circle cx="4" cy="40" r="1" fill="rgba(195, 165, 120, 0.1)" />
+                </pattern>
+                {/* Secondary offset pattern for depth */}
+                <pattern id="about-diamond-secondary" x="40" y="40" width="80" height="80" patternUnits="userSpaceOnUse">
+                  <path
+                    d="M40 20L60 40L40 60L20 40Z"
+                    fill="none"
+                    stroke="rgba(195, 165, 120, 0.05)"
+                    strokeWidth="0.5"
+                  />
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#about-diamond-primary)" />
+              <rect width="100%" height="100%" fill="url(#about-diamond-secondary)" />
+            </svg>
+          </div>
+
+          {/* Refined vignette with softer edges */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,transparent_40%,rgba(10,20,35,0.35)_100%)]" aria-hidden="true" />
         </div>
 
-        <div className="relative mx-auto max-w-6xl px-4 sm:px-6">
+        <div className="relative mx-auto max-w-6xl px-4 sm:px-6 z-10">
           <div className="mb-16 text-center">
             <h2 className="font-serif text-3xl font-semibold text-white sm:text-4xl">
               Why Clients Choose Us Over Other Agencies
@@ -358,7 +357,7 @@ export default async function AboutPage() {
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+            <div className="rounded-2xl border border-white/10 bg-navy-800/95 p-6 backdrop-blur-sm transition-all duration-300 hover:border-gold-500/30 hover:shadow-[0_8px_30px_-6px_rgba(195,165,120,0.25)]">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gold-500/20">
                 <Sparkles className="h-6 w-6 text-gold-400" />
               </div>
@@ -368,7 +367,7 @@ export default async function AboutPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+            <div className="rounded-2xl border border-white/10 bg-navy-800/95 p-6 backdrop-blur-sm transition-all duration-300 hover:border-gold-500/30 hover:shadow-[0_8px_30px_-6px_rgba(195,165,120,0.25)]">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gold-500/20">
                 <Clock className="h-6 w-6 text-gold-400" />
               </div>
@@ -378,7 +377,7 @@ export default async function AboutPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+            <div className="rounded-2xl border border-white/10 bg-navy-800/95 p-6 backdrop-blur-sm transition-all duration-300 hover:border-gold-500/30 hover:shadow-[0_8px_30px_-6px_rgba(195,165,120,0.25)]">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gold-500/20">
                 <Shield className="h-6 w-6 text-gold-400" />
               </div>
@@ -388,7 +387,7 @@ export default async function AboutPage() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+            <div className="rounded-2xl border border-white/10 bg-navy-800/95 p-6 backdrop-blur-sm transition-all duration-300 hover:border-gold-500/30 hover:shadow-[0_8px_30px_-6px_rgba(195,165,120,0.25)]">
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gold-500/20">
                 <Zap className="h-6 w-6 text-gold-400" />
               </div>
