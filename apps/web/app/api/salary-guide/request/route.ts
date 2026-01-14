@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/client";
 import { baseTemplate } from "@/lib/email/templates/base";
+import { salaryGuideLeadAdminEmail } from "@/lib/email/templates";
 
 export async function POST(request: NextRequest) {
   try {
@@ -155,6 +156,18 @@ The Lighthouse Careers Team`,
         console.log("Could not update lead record:", updateError);
       }
     }
+
+    // Send admin notification (fire-and-forget)
+    const adminEmail = salaryGuideLeadAdminEmail({
+      email: email.toLowerCase().trim(),
+      requestedAt: new Date().toISOString(),
+    });
+    sendEmail({
+      to: "admin@lighthouse-careers.com",
+      subject: adminEmail.subject,
+      html: adminEmail.html,
+      text: adminEmail.text,
+    }).catch((err) => console.error("Failed to send salary guide admin notification:", err));
 
     return NextResponse.json({
       success: true,

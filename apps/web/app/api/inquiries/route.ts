@@ -1,6 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase/server";
+import { sendEmail, isResendConfigured } from "@/lib/email/client";
+import { inquiryNotificationEmail, contactConfirmationEmail } from "@/lib/email/templates";
 
 // Use service role for inserting inquiries (anon can't insert via API without RLS bypass)
 const supabaseService = createClient(
@@ -247,13 +249,52 @@ export async function POST(request: Request) {
       );
     }
 
-    // TODO: Send notification email using Resend
-    // Include company name in notification if provided
-    // await sendInquiryNotification({
-    //   to: "admin@lighthouse-careers.com",
-    //   inquiry: data,
-    //   company: company,
-    // });
+    // Send notification email to admin
+    if (isResendConfigured()) {
+      try {
+        const adminEmail = process.env.ADMIN_EMAIL || "admin@lighthouse-careers.com";
+        const emailData = inquiryNotificationEmail({
+          name: data.name,
+          email: data.email,
+          phone: data.phone || undefined,
+          company: company?.trim() || undefined,
+          message: finalMessage || undefined,
+          sourceUrl: data.source_url || undefined,
+          position: extractedPosition || undefined,
+          location: extractedLocation || undefined,
+        });
+
+        await sendEmail({
+          to: adminEmail,
+          subject: emailData.subject,
+          html: emailData.html,
+          text: emailData.text,
+        });
+      } catch (emailError) {
+        // Log but don't fail the request
+        console.error("Failed to send inquiry notification:", emailError);
+      }
+
+      // Send confirmation email for contact form submissions
+      if (type === "contact") {
+        try {
+          const confirmationEmail = contactConfirmationEmail({
+            name: data.name,
+            message: message || undefined,
+          });
+
+          await sendEmail({
+            to: data.email,
+            subject: confirmationEmail.subject,
+            html: confirmationEmail.html,
+            text: confirmationEmail.text,
+          });
+        } catch (confirmError) {
+          // Log but don't fail the request
+          console.error("Failed to send contact confirmation:", confirmError);
+        }
+      }
+    }
 
     return NextResponse.json({ success: true, id: data.id });
   } catch (error) {

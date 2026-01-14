@@ -975,3 +975,781 @@ export function jobAlertEmail(data: JobAlertData) {
     text: generatePlainText(content),
   };
 }
+
+// ============================================
+// Inquiry Notification Email Templates
+// ============================================
+
+export interface InquiryNotificationData {
+  name: string;
+  email: string;
+  phone?: string;
+  company?: string;
+  message?: string;
+  sourceUrl?: string;
+  position?: string;
+  location?: string;
+}
+
+export function inquiryNotificationEmail(data: InquiryNotificationData) {
+  const content = `
+    <h1>New Inquiry Received</h1>
+    <p>A new lead has been submitted through the website.</p>
+
+    <div class="info-box">
+      <div class="info-row">
+        <span class="info-label">Name</span>
+        <span class="info-value">${data.name}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Email</span>
+        <span class="info-value"><a href="mailto:${data.email}">${data.email}</a></span>
+      </div>
+      ${data.phone ? `
+      <div class="info-row">
+        <span class="info-label">Phone</span>
+        <span class="info-value"><a href="tel:${data.phone}">${data.phone}</a></span>
+      </div>
+      ` : ""}
+      ${data.company ? `
+      <div class="info-row">
+        <span class="info-label">Company</span>
+        <span class="info-value">${data.company}</span>
+      </div>
+      ` : ""}
+      ${data.position ? `
+      <div class="info-row">
+        <span class="info-label">Position Needed</span>
+        <span class="info-value">${data.position}</span>
+      </div>
+      ` : ""}
+      ${data.location ? `
+      <div class="info-row">
+        <span class="info-label">Location</span>
+        <span class="info-value">${data.location}</span>
+      </div>
+      ` : ""}
+      ${data.sourceUrl ? `
+      <div class="info-row">
+        <span class="info-label">Source</span>
+        <span class="info-value">${data.sourceUrl}</span>
+      </div>
+      ` : ""}
+    </div>
+
+    ${data.message ? `
+    <h2>Message</h2>
+    <p style="background:#f8f9fa; padding:15px; border-radius:8px; white-space:pre-wrap;">${data.message}</p>
+    ` : ""}
+
+    <p><strong>Next Steps:</strong></p>
+    <ul>
+      <li>Review and qualify the lead</li>
+      <li>Respond within 24 hours</li>
+      <li>Log the interaction in the CRM</li>
+    </ul>
+
+    <p style="font-size:13px; color:#6b7280;">This is an automated notification from the Lighthouse website.</p>
+  `;
+
+  return {
+    subject: `New Inquiry: ${data.name}${data.position ? ` - ${data.position}` : ""}`,
+    html: baseTemplate(content),
+    text: generatePlainText(content),
+  };
+}
+
+// ============================================
+// Document Rejection Email Templates
+// ============================================
+
+export interface DocumentRejectionData {
+  candidateName: string;
+  documentType: string;
+  documentName: string;
+  rejectionReason: string;
+  dashboardLink: string;
+}
+
+export function documentRejectionEmail(data: DocumentRejectionData) {
+  const documentTypeLabel = {
+    cv: "CV/Resume",
+    certification: "Certification",
+    id: "ID Document",
+    reference: "Reference",
+    other: "Document",
+  }[data.documentType] || data.documentType;
+
+  const content = `
+    <h1>Document Requires Attention</h1>
+    <p>Hi ${data.candidateName},</p>
+    <p>We've reviewed your uploaded <strong>${documentTypeLabel}</strong> and unfortunately it couldn't be approved at this time.</p>
+
+    <div class="info-box">
+      <div class="info-row">
+        <span class="info-label">Document</span>
+        <span class="info-value">${data.documentName}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Type</span>
+        <span class="info-value">${documentTypeLabel}</span>
+      </div>
+    </div>
+
+    <h2>Reason for Rejection</h2>
+    <p style="background:#fef2f2; padding:15px; border-radius:8px; border-left:4px solid #ef4444;">${data.rejectionReason}</p>
+
+    <p><strong>What to do next:</strong></p>
+    <ul>
+      <li>Review the feedback above</li>
+      <li>Prepare an updated version of the document</li>
+      <li>Upload the new version through your dashboard</li>
+    </ul>
+
+    <p style="text-align:center;">
+      <a href="${data.dashboardLink}" class="button">Go to Dashboard</a>
+    </p>
+
+    <p>If you have any questions about the requirements, please reply to this email.</p>
+
+    <p>Best regards,<br>The Lighthouse Careers Team</p>
+  `;
+
+  return {
+    subject: `Action Required: ${documentTypeLabel} Needs Attention`,
+    html: baseTemplate(content),
+    text: generatePlainText(content),
+  };
+}
+
+// ============================================
+// Payment Notification Email Templates
+// ============================================
+
+export interface SubscriptionCancelledData {
+  contactName: string;
+  companyName?: string;
+  planName: string;
+  endDate: string;
+}
+
+export function subscriptionCancelledEmail(data: SubscriptionCancelledData) {
+  const content = `
+    <h1>Subscription Cancelled</h1>
+    <p>Hi ${data.contactName},</p>
+    <p>Your ${data.planName} subscription${data.companyName ? ` for ${data.companyName}` : ""} has been cancelled.</p>
+
+    <div class="info-box">
+      <div class="info-row">
+        <span class="info-label">Plan</span>
+        <span class="info-value">${data.planName}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Access Until</span>
+        <span class="info-value">${data.endDate}</span>
+      </div>
+    </div>
+
+    <p>You'll continue to have access to all features until ${data.endDate}. After that, your account will be downgraded to the free tier.</p>
+
+    <p><strong>What you'll lose access to:</strong></p>
+    <ul>
+      <li>Priority candidate matching</li>
+      <li>Advanced search filters</li>
+      <li>Dedicated support</li>
+      <li>Premium features</li>
+    </ul>
+
+    <p>Changed your mind? You can reactivate your subscription at any time before ${data.endDate} to maintain uninterrupted access.</p>
+
+    <p>We're sorry to see you go. If there's anything we could have done better, we'd love to hear your feedback.</p>
+
+    <p>Best regards,<br>The Lighthouse Careers Team</p>
+  `;
+
+  return {
+    subject: "Your Lighthouse Subscription Has Been Cancelled",
+    html: baseTemplate(content),
+    text: generatePlainText(content),
+  };
+}
+
+export interface PaymentFailedData {
+  contactName: string;
+  companyName?: string;
+  amount: string;
+  currency: string;
+  failureReason?: string;
+  retryDate?: string;
+  updatePaymentLink: string;
+}
+
+export function paymentFailedEmail(data: PaymentFailedData) {
+  const content = `
+    <h1>Payment Failed</h1>
+    <p>Hi ${data.contactName},</p>
+    <p>We were unable to process your payment of <strong>${data.currency}${data.amount}</strong>${data.companyName ? ` for ${data.companyName}` : ""}.</p>
+
+    ${data.failureReason ? `
+    <div style="background:#fef2f2; padding:15px; border-radius:8px; border-left:4px solid #ef4444; margin: 20px 0;">
+      <strong>Reason:</strong> ${data.failureReason}
+    </div>
+    ` : ""}
+
+    <p><strong>What to do:</strong></p>
+    <ul>
+      <li>Check that your card details are correct and up to date</li>
+      <li>Ensure sufficient funds are available</li>
+      <li>Contact your bank if the issue persists</li>
+    </ul>
+
+    <p style="text-align:center;">
+      <a href="${data.updatePaymentLink}" class="button">Update Payment Method</a>
+    </p>
+
+    ${data.retryDate ? `
+    <p style="font-size:13px; color:#6b7280;">We'll automatically retry the payment on ${data.retryDate}. To avoid service interruption, please update your payment method before then.</p>
+    ` : ""}
+
+    <p>If you need assistance, reply to this email or contact our support team.</p>
+
+    <p>Best regards,<br>The Lighthouse Careers Team</p>
+  `;
+
+  return {
+    subject: "Action Required: Payment Failed",
+    html: baseTemplate(content),
+    text: generatePlainText(content),
+  };
+}
+
+// ============================================
+// Client Brief Notification (for Recruiters)
+// ============================================
+
+export interface ClientBriefNotificationData {
+  recruiterName: string;
+  clientName: string;
+  position: string;
+  vesselName?: string;
+  vesselType?: string;
+  vesselSize?: number;
+  contractType?: string;
+  startDate?: string;
+  briefId: string;
+  dashboardLink: string;
+}
+
+export function clientBriefNotificationEmail(data: ClientBriefNotificationData) {
+  const vesselInfo = [
+    data.vesselName,
+    data.vesselType,
+    data.vesselSize ? `${data.vesselSize}m` : null,
+  ].filter(Boolean).join(" • ");
+
+  const formattedStartDate = data.startDate
+    ? new Date(data.startDate).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
+    : null;
+
+  const content = `
+    <h1>New Brief from Client Portal</h1>
+    <p>Hi ${data.recruiterName},</p>
+    <p>A client has submitted a new brief through the portal that needs your attention.</p>
+
+    <div class="info-box">
+      <div class="info-row">
+        <span class="info-label">Client</span>
+        <span class="info-value">${data.clientName}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Position</span>
+        <span class="info-value"><strong>${data.position}</strong></span>
+      </div>
+      ${vesselInfo ? `
+      <div class="info-row">
+        <span class="info-label">Vessel</span>
+        <span class="info-value">${vesselInfo}</span>
+      </div>
+      ` : ""}
+      ${data.contractType ? `
+      <div class="info-row">
+        <span class="info-label">Contract</span>
+        <span class="info-value">${data.contractType.charAt(0).toUpperCase() + data.contractType.slice(1)}</span>
+      </div>
+      ` : ""}
+      ${formattedStartDate ? `
+      <div class="info-row">
+        <span class="info-label">Start Date</span>
+        <span class="info-value">${formattedStartDate}</span>
+      </div>
+      ` : ""}
+    </div>
+
+    <p><strong>Next Steps:</strong></p>
+    <ul>
+      <li>Review the brief details</li>
+      <li>Identify suitable candidates</li>
+      <li>Send shortlist to client within 24 hours</li>
+    </ul>
+
+    <p style="text-align:center;">
+      <a href="${data.dashboardLink}" class="button">View Brief</a>
+    </p>
+
+    <p style="font-size:13px; color:#6b7280;">This brief was submitted via the client self-service portal.</p>
+  `;
+
+  return {
+    subject: `New Brief: ${data.position} for ${data.clientName}`,
+    html: baseTemplate(content),
+    text: generatePlainText(content),
+  };
+}
+
+// ============================================
+// Interview Request Notification (for Recruiters)
+// ============================================
+
+export interface InterviewRequestNotificationData {
+  recruiterName: string;
+  clientName: string;
+  candidateName: string;
+  position: string;
+  vesselName?: string;
+  requestedType?: string;
+  preferredDates?: Array<{ start: string; end: string }>;
+  notes?: string;
+  dashboardLink: string;
+}
+
+export function interviewRequestNotificationEmail(data: InterviewRequestNotificationData) {
+  const interviewTypeLabel = data.requestedType
+    ? { video: "Video Call", phone: "Phone Call", in_person: "In-Person" }[data.requestedType] || data.requestedType
+    : "Not specified";
+
+  const formatPreferredDates = () => {
+    if (!data.preferredDates || data.preferredDates.length === 0) {
+      return null;
+    }
+    return data.preferredDates.map(d => {
+      const start = new Date(d.start);
+      const end = new Date(d.end);
+      return `${start.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })} ${start.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })} - ${end.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}`;
+    }).join("<br>");
+  };
+
+  const preferredDatesHtml = formatPreferredDates();
+
+  const content = `
+    <h1>Interview Request from Client</h1>
+    <p>Hi ${data.recruiterName},</p>
+    <p>A client has requested an interview with a candidate. Please coordinate scheduling.</p>
+
+    <div class="info-box">
+      <div class="info-row">
+        <span class="info-label">Client</span>
+        <span class="info-value">${data.clientName}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Candidate</span>
+        <span class="info-value"><strong>${data.candidateName}</strong></span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Position</span>
+        <span class="info-value">${data.position}</span>
+      </div>
+      ${data.vesselName ? `
+      <div class="info-row">
+        <span class="info-label">Vessel</span>
+        <span class="info-value">${data.vesselName}</span>
+      </div>
+      ` : ""}
+      <div class="info-row">
+        <span class="info-label">Interview Type</span>
+        <span class="info-value">${interviewTypeLabel}</span>
+      </div>
+      ${preferredDatesHtml ? `
+      <div class="info-row">
+        <span class="info-label">Preferred Times</span>
+        <span class="info-value">${preferredDatesHtml}</span>
+      </div>
+      ` : ""}
+    </div>
+
+    ${data.notes ? `
+    <h2>Client Notes</h2>
+    <p style="background:#f8f9fa; padding:15px; border-radius:8px;">${data.notes}</p>
+    ` : ""}
+
+    <p><strong>Next Steps:</strong></p>
+    <ul>
+      <li>Contact the candidate to confirm availability</li>
+      <li>Schedule the interview in the system</li>
+      <li>Send calendar invites to both parties</li>
+    </ul>
+
+    <p style="text-align:center;">
+      <a href="${data.dashboardLink}" class="button">View Interview Request</a>
+    </p>
+
+    <p style="font-size:13px; color:#6b7280;">Please respond within 24 hours.</p>
+  `;
+
+  return {
+    subject: `Interview Request: ${data.candidateName} for ${data.position}`,
+    html: baseTemplate(content),
+    text: generatePlainText(content),
+  };
+}
+
+// ============================================
+// Placement Notification (for Recruiters)
+// ============================================
+
+export interface PlacementNotificationData {
+  recruiterName: string;
+  clientName: string;
+  candidateName: string;
+  position: string;
+  vesselName?: string;
+  startDate?: string;
+  salary?: number;
+  salaryCurrency?: string;
+  salaryPeriod?: string;
+  dashboardLink: string;
+}
+
+export function placementNotificationEmail(data: PlacementNotificationData) {
+  const formatSalary = () => {
+    if (!data.salary) return null;
+    const currency = data.salaryCurrency || "EUR";
+    const period = data.salaryPeriod || "month";
+    const currencySymbol = { EUR: "€", GBP: "£", USD: "$" }[currency] || currency;
+    return `${currencySymbol}${data.salary.toLocaleString()} per ${period}`;
+  };
+
+  const salary = formatSalary();
+  const formattedStartDate = data.startDate
+    ? new Date(data.startDate).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
+    : null;
+
+  const content = `
+    <h1 style="color:#16a34a;">Placement Confirmed!</h1>
+    <p>Hi ${data.recruiterName},</p>
+    <p>Great news! A client has confirmed a placement through the portal.</p>
+
+    <div class="info-box" style="border-left-color:#16a34a;">
+      <div class="info-row">
+        <span class="info-label">Client</span>
+        <span class="info-value">${data.clientName}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Candidate</span>
+        <span class="info-value"><strong>${data.candidateName}</strong></span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Position</span>
+        <span class="info-value">${data.position}</span>
+      </div>
+      ${data.vesselName ? `
+      <div class="info-row">
+        <span class="info-label">Vessel</span>
+        <span class="info-value">${data.vesselName}</span>
+      </div>
+      ` : ""}
+      ${formattedStartDate ? `
+      <div class="info-row">
+        <span class="info-label">Start Date</span>
+        <span class="info-value">${formattedStartDate}</span>
+      </div>
+      ` : ""}
+      ${salary ? `
+      <div class="info-row">
+        <span class="info-label">Salary</span>
+        <span class="info-value">${salary}</span>
+      </div>
+      ` : ""}
+    </div>
+
+    <p><strong>Next Steps:</strong></p>
+    <ul>
+      <li>Review and process the placement fee</li>
+      <li>Send placement confirmation to candidate</li>
+      <li>Generate and send contract documents</li>
+      <li>Update candidate availability status</li>
+    </ul>
+
+    <p style="text-align:center;">
+      <a href="${data.dashboardLink}" class="button">View Placement</a>
+    </p>
+
+    <p style="font-size:13px; color:#6b7280;">Placement confirmed via client self-service portal.</p>
+  `;
+
+  return {
+    subject: `Placement Confirmed: ${data.candidateName} for ${data.position}`,
+    html: baseTemplate(content),
+    text: generatePlainText(content),
+  };
+}
+
+// ============================================
+// New Candidate Registration Admin Notification
+// ============================================
+
+export interface NewCandidateRegistrationAdminData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  primaryPosition?: string;
+  nationality?: string;
+  candidateType?: string;
+  cvUrl?: string;
+}
+
+export function newCandidateRegistrationAdminEmail(data: NewCandidateRegistrationAdminData) {
+  const industryText = data.candidateType === "private_staff"
+    ? "Private Staff"
+    : data.candidateType === "yacht_crew"
+      ? "Yacht Crew"
+      : data.candidateType === "both"
+        ? "Yacht & Private Staff"
+        : "Not specified";
+
+  const content = `
+    <h1>New Candidate Registration</h1>
+    <p>A new candidate registered on the website:</p>
+
+    <div class="info-box">
+      <div class="info-row">
+        <span class="info-label">First Name</span>
+        <span class="info-value">${data.firstName}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Last Name</span>
+        <span class="info-value">${data.lastName}</span>
+      </div>
+      ${data.primaryPosition ? `
+      <div class="info-row">
+        <span class="info-label">Position</span>
+        <span class="info-value">${data.primaryPosition}</span>
+      </div>
+      ` : ""}
+      <div class="info-row">
+        <span class="info-label">Email</span>
+        <span class="info-value"><a href="mailto:${data.email}">${data.email}</a></span>
+      </div>
+      ${data.phone ? `
+      <div class="info-row">
+        <span class="info-label">Phone Number</span>
+        <span class="info-value"><a href="tel:${data.phone}">${data.phone}</a></span>
+      </div>
+      ` : ""}
+      ${data.nationality ? `
+      <div class="info-row">
+        <span class="info-label">Nationality</span>
+        <span class="info-value">${data.nationality}</span>
+      </div>
+      ` : ""}
+      <div class="info-row">
+        <span class="info-label">Industry</span>
+        <span class="info-value">${industryText}</span>
+      </div>
+    </div>
+
+    ${data.cvUrl ? `
+    <p style="text-align:center;">
+      <a href="${data.cvUrl}" class="button">View CV</a>
+    </p>
+    ` : ""}
+
+    <p>Please take the necessary steps to process the candidate's registration and ensure they have a smooth onboarding experience.</p>
+
+    <p>If you have any questions or need further information, feel free to reach out to the candidate at the provided email address: <a href="mailto:${data.email}">${data.email}</a></p>
+
+    <p>Best regards,<br>Lighthouse Careers.</p>
+  `;
+
+  return {
+    subject: `New Candidate Registration - ${data.firstName} ${data.lastName}`,
+    html: baseTemplate(content),
+    text: generatePlainText(content),
+  };
+}
+
+// ============================================
+// New Job Application Admin Notification
+// ============================================
+
+export interface NewApplicationAdminData {
+  candidateFirstName: string;
+  candidateLastName: string;
+  candidateEmail: string;
+  candidatePhone?: string;
+  jobTitle: string;
+  jobId: string;
+  coverLetter?: string;
+  cvUrl?: string;
+  appliedAt: string;
+}
+
+export function newApplicationAdminEmail(data: NewApplicationAdminData) {
+  const formattedDate = new Date(data.appliedAt).toLocaleString("en-GB", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
+  const content = `
+    <h1>New Job Application</h1>
+    <p>A candidate applied for a job on the website:</p>
+
+    <div class="info-box">
+      <div class="info-row">
+        <span class="info-label">Job</span>
+        <span class="info-value"><strong>${data.jobTitle}</strong></span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Candidate</span>
+        <span class="info-value">${data.candidateFirstName} ${data.candidateLastName}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Email</span>
+        <span class="info-value"><a href="mailto:${data.candidateEmail}">${data.candidateEmail}</a></span>
+      </div>
+      ${data.candidatePhone ? `
+      <div class="info-row">
+        <span class="info-label">Phone</span>
+        <span class="info-value"><a href="tel:${data.candidatePhone}">${data.candidatePhone}</a></span>
+      </div>
+      ` : ""}
+      <div class="info-row">
+        <span class="info-label">Applied At</span>
+        <span class="info-value">${formattedDate}</span>
+      </div>
+    </div>
+
+    ${data.coverLetter ? `
+    <h2>Cover Note</h2>
+    <p style="background:#f8f9fa; padding:15px; border-radius:8px; white-space:pre-wrap;">${data.coverLetter}</p>
+    ` : ""}
+
+    ${data.cvUrl ? `
+    <p style="text-align:center;">
+      <a href="${data.cvUrl}" class="button">View CV</a>
+    </p>
+    ` : ""}
+
+    <p><strong>Next Steps:</strong></p>
+    <ul>
+      <li>Review the candidate's application</li>
+      <li>Check their profile and CV</li>
+      <li>Contact them if suitable for the position</li>
+    </ul>
+
+    <p style="font-size:13px; color:#6b7280;">This is an automated notification from the Lighthouse website.</p>
+  `;
+
+  return {
+    subject: `New Application: ${data.candidateFirstName} ${data.candidateLastName} for ${data.jobTitle}`,
+    html: baseTemplate(content),
+    text: generatePlainText(content),
+  };
+}
+
+// ============================================
+// Contact Form Confirmation Email
+// ============================================
+
+export interface ContactConfirmationData {
+  name: string;
+  subject?: string;
+}
+
+export function contactConfirmationEmail(data: ContactConfirmationData) {
+  const content = `
+    <h1>Thanks for Contacting Us!</h1>
+    <p>Hi ${data.name},</p>
+    <p>Thank you for reaching out to Lighthouse Careers. We've received your message${data.subject ? ` regarding "${data.subject}"` : ""} and will get back to you as soon as possible.</p>
+
+    <div class="info-box">
+      <p style="margin:0 0 15px; font-weight:600; color:#1a2b4a;">What to expect:</p>
+      <ul style="margin:0;">
+        <li>Our team reviews all inquiries within <strong>24 hours</strong></li>
+        <li>You'll receive a personalized response from one of our specialists</li>
+        <li>For urgent matters, feel free to call us directly</li>
+      </ul>
+    </div>
+
+    <p><strong>Need immediate assistance?</strong></p>
+    <p>Call us at <a href="tel:+33676410299" style="color: #c9a962; font-weight: 600;">+33 6 76 41 02 99</a> (Mon-Fri 9am-6pm CET)</p>
+
+    <p>In the meantime, feel free to explore:</p>
+    <ul>
+      <li><a href="https://lighthouse-careers.com/job-board" style="color: #c9a962;">Browse Open Positions</a></li>
+      <li><a href="https://lighthouse-careers.com/salary-guide" style="color: #c9a962;">Download Our Salary Guide</a></li>
+      <li><a href="https://lighthouse-careers.com/about" style="color: #c9a962;">Learn More About Us</a></li>
+    </ul>
+
+    <p>We look forward to connecting with you!</p>
+
+    <p>Best regards,<br>The Lighthouse Careers Team</p>
+  `;
+
+  return {
+    subject: "We've Received Your Message - Lighthouse Careers",
+    html: baseTemplate(content),
+    text: generatePlainText(content),
+  };
+}
+
+// ============================================
+// Salary Guide Lead Admin Notification
+// ============================================
+
+export interface SalaryGuideLeadAdminData {
+  email: string;
+  requestedAt: string;
+}
+
+export function salaryGuideLeadAdminEmail(data: SalaryGuideLeadAdminData) {
+  const formattedDate = new Date(data.requestedAt).toLocaleString("en-GB", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+
+  const content = `
+    <h1>New Salary Guide Download</h1>
+    <p>Someone requested the salary guide from the website:</p>
+
+    <div class="info-box">
+      <div class="info-row">
+        <span class="info-label">Email</span>
+        <span class="info-value"><a href="mailto:${data.email}">${data.email}</a></span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Requested At</span>
+        <span class="info-value">${formattedDate}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Source</span>
+        <span class="info-value">Salary Guide Page</span>
+      </div>
+    </div>
+
+    <p><strong>This is a potential lead.</strong> Consider:</p>
+    <ul>
+      <li>Following up to understand their hiring needs</li>
+      <li>Adding them to your marketing list (if appropriate)</li>
+      <li>Checking if they're an existing contact</li>
+    </ul>
+
+    <p style="font-size:13px; color:#6b7280;">This is an automated notification from the Lighthouse website.</p>
+  `;
+
+  return {
+    subject: `Salary Guide Downloaded: ${data.email}`,
+    html: baseTemplate(content),
+    text: generatePlainText(content),
+  };
+}

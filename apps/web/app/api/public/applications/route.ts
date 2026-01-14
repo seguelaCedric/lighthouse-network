@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { sendEmail, newApplicationAdminEmail } from "@/lib/email";
 
 // Use service role client for inserting applications
 function getServiceClient() {
@@ -269,6 +270,25 @@ export async function POST(request: NextRequest) {
     }).catch((err) => {
       console.error("Failed to send confirmation email:", err);
     });
+
+    // Send admin notification email (fire and forget)
+    const adminEmail = newApplicationAdminEmail({
+      candidateFirstName: firstName,
+      candidateLastName: lastName,
+      candidateEmail: email,
+      candidatePhone: phone || undefined,
+      jobTitle: job.title,
+      jobId: jobId,
+      coverLetter: coverLetter || undefined,
+      cvUrl: cvUrl || undefined,
+      appliedAt: new Date().toISOString(),
+    });
+    sendEmail({
+      to: "admin@lighthouse-careers.com",
+      subject: adminEmail.subject,
+      html: adminEmail.html,
+      text: adminEmail.text,
+    }).catch((err) => console.error("Failed to send admin notification email:", err));
 
     return NextResponse.json(
       {

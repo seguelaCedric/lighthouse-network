@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { mapPositionToDatabaseValue, getPositionIndustry } from "@/lib/utils/position-mapping";
 import { syncCandidateCreation } from "@/lib/vincere/sync-service";
-import { sendEmail, welcomeCandidateEmail } from "@/lib/email";
+import { sendEmail, welcomeCandidateEmail, newCandidateRegistrationAdminEmail } from "@/lib/email";
 
 export type AuthResult = {
   success: boolean;
@@ -313,6 +313,25 @@ export async function signUp(
         text: welcomeEmail.text,
       }).catch((err) =>
         console.error("Failed to send welcome email:", err)
+      );
+
+      // Send admin notification email (fire-and-forget)
+      const adminEmail = newCandidateRegistrationAdminEmail({
+        firstName: metadata.first_name || "",
+        lastName: metadata.last_name || "",
+        email: email.toLowerCase(),
+        phone: metadata.phone || undefined,
+        primaryPosition: metadata.primary_position || undefined,
+        nationality: metadata.nationality || undefined,
+        candidateType: metadata.candidate_type || undefined,
+      });
+      sendEmail({
+        to: "admin@lighthouse-careers.com",
+        subject: adminEmail.subject,
+        html: adminEmail.html,
+        text: adminEmail.text,
+      }).catch((err) =>
+        console.error("Failed to send admin notification email:", err)
       );
     }
 

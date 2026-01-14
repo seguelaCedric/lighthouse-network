@@ -41,4 +41,47 @@ export async function candidateHasCV(
   return false;
 }
 
+/**
+ * Get the URL of a candidate's CV document
+ * @param supabase - Supabase client
+ * @param candidateId - Candidate ID
+ * @returns CV URL if found, null otherwise
+ */
+export async function getCandidateCVUrl(
+  supabase: SupabaseClient,
+  candidateId: string
+): Promise<string | null> {
+  // Check for CV using 'type' column (newer schema)
+  const { data: docsByType } = await supabase
+    .from("documents")
+    .select("file_url")
+    .eq("entity_type", "candidate")
+    .eq("entity_id", candidateId)
+    .eq("type", "cv")
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .single();
 
+  if (docsByType?.file_url) {
+    return docsByType.file_url;
+  }
+
+  // Fallback: Check for CV using 'document_type' column (older schema)
+  const { data: docsByDocumentType } = await supabase
+    .from("documents")
+    .select("file_url")
+    .eq("entity_type", "candidate")
+    .eq("entity_id", candidateId)
+    .eq("document_type", "cv")
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  if (docsByDocumentType?.file_url) {
+    return docsByDocumentType.file_url;
+  }
+
+  return null;
+}

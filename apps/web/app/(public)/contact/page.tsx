@@ -1,13 +1,11 @@
 import { Metadata } from "next";
 import { PublicHeader } from "@/components/pricing/PublicHeader";
 import { PublicFooter } from "@/components/pricing/PublicFooter";
-import { Button } from "@/components/ui/button";
 import {
   Mail,
   Phone,
   MapPin,
   Clock,
-  Send,
   MessageCircle,
   Facebook,
   Linkedin,
@@ -15,6 +13,7 @@ import {
   HelpCircle,
 } from "lucide-react";
 import { EmergencyLineCard } from "@/components/public/EmergencyLineCard";
+import { ContactForm } from "@/components/public/ContactForm";
 
 import { generateMetadata as genMeta } from "@/lib/seo/metadata";
 
@@ -163,107 +162,7 @@ export default function ContactPage() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="grid items-start gap-12 lg:grid-cols-2">
             {/* Form */}
-            <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-lg">
-              <h2 className="mb-2 font-serif text-2xl font-semibold text-navy-900">
-                Send Us a Message
-              </h2>
-              <p className="mb-8 text-gray-600">
-                Fill out the form below and we&apos;ll get back to you as soon as
-                possible.
-              </p>
-
-              <form className="space-y-6">
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <div>
-                    <label
-                      htmlFor="firstName"
-                      className="mb-2 block text-sm font-medium text-gray-700"
-                    >
-                      First Name
-                    </label>
-                    <input
-                      type="text"
-                      id="firstName"
-                      name="firstName"
-                      className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 transition-colors focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/20"
-                      placeholder="John"
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="lastName"
-                      className="mb-2 block text-sm font-medium text-gray-700"
-                    >
-                      Last Name
-                    </label>
-                    <input
-                      type="text"
-                      id="lastName"
-                      name="lastName"
-                      className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 transition-colors focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/20"
-                      placeholder="Doe"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="email"
-                    className="mb-2 block text-sm font-medium text-gray-700"
-                  >
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 transition-colors focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/20"
-                    placeholder="john@example.com"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="subject"
-                    className="mb-2 block text-sm font-medium text-gray-700"
-                  >
-                    Subject
-                  </label>
-                  <select
-                    id="subject"
-                    name="subject"
-                    className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 transition-colors focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/20"
-                  >
-                    <option value="">Select a subject</option>
-                    <option value="hiring">I want to hire crew/staff</option>
-                    <option value="job">I&apos;m looking for a job</option>
-                    <option value="partnership">Partnership inquiry</option>
-                    <option value="other">Other</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="message"
-                    className="mb-2 block text-sm font-medium text-gray-700"
-                  >
-                    Message
-                  </label>
-                  <textarea
-                    id="message"
-                    name="message"
-                    rows={5}
-                    className="w-full resize-none rounded-lg border border-gray-300 px-4 py-3 text-gray-900 transition-colors focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/20"
-                    placeholder="How can we help you?"
-                  />
-                </div>
-
-                <Button type="submit" size="lg" className="w-full">
-                  <Send className="mr-2 h-5 w-5" />
-                  Send Message
-                </Button>
-              </form>
-            </div>
+            <ContactForm />
 
             {/* Info Side */}
             <div className="space-y-8">

@@ -13,6 +13,11 @@ export {
   welcomeCandidateEmail,
   clientPortalInviteEmail,
   clientMagicLinkEmail,
+  inquiryNotificationEmail,
+  newCandidateRegistrationAdminEmail,
+  newApplicationAdminEmail,
+  contactConfirmationEmail,
+  salaryGuideLeadAdminEmail,
   type EmailTemplate,
   type BriefReceivedData,
   type BriefConvertedData,
@@ -26,6 +31,11 @@ export {
   type WelcomeCandidateData,
   type ClientPortalInviteData,
   type ClientMagicLinkData,
+  type InquiryNotificationData,
+  type NewCandidateRegistrationAdminData,
+  type NewApplicationAdminData,
+  type ContactConfirmationData,
+  type SalaryGuideLeadAdminData,
 } from "./templates";
 
 import { sendEmail } from "./client";
