@@ -697,26 +697,6 @@ export function HireLandingPage({
                 </div>
               ))}
             </div>
-
-            {/* Bottom Stats */}
-            <div className="mt-16 text-center">
-              <div className="inline-flex flex-wrap items-center justify-center gap-8 sm:gap-12 bg-white/[0.03] backdrop-blur-sm border border-white/10 rounded-2xl px-8 py-6">
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-gold-400 font-serif">500+</div>
-                  <div className="text-sm text-gray-400">Happy Clients</div>
-                </div>
-                <div className="hidden sm:block h-12 w-px bg-white/10" />
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-gold-400 font-serif">4.9/5</div>
-                  <div className="text-sm text-gray-400">Average Rating</div>
-                </div>
-                <div className="hidden sm:block h-12 w-px bg-white/10" />
-                <div className="text-center">
-                  <div className="text-3xl font-bold text-gold-400 font-serif">20+</div>
-                  <div className="text-sm text-gray-400">Years Experience</div>
-                </div>
-              </div>
-            </div>
           </div>
         </section>
 

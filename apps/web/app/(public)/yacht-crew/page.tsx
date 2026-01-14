@@ -654,94 +654,116 @@ export default function YachtCrewPage() {
               </div>
             ))}
           </div>
-
-          {/* Trust indicators */}
-          <div className="mt-16 flex flex-wrap items-center justify-center gap-8 border-t border-white/10 pt-12">
-            <div className="text-center">
-              <div className="font-serif text-3xl font-bold text-gold-400">4.9/5</div>
-              <div className="mt-1 flex justify-center">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="h-4 w-4 fill-gold-400 text-gold-400" />
-                ))}
-              </div>
-              <div className="mt-1 text-sm text-gray-400">Average Rating</div>
-            </div>
-            <div className="h-12 w-px bg-white/10" />
-            <div className="text-center">
-              <div className="font-serif text-3xl font-bold text-gold-400">500+</div>
-              <div className="mt-1 text-sm text-gray-400">5-Star Reviews</div>
-            </div>
-            <div className="h-12 w-px bg-white/10" />
-            <div className="text-center">
-              <div className="font-serif text-3xl font-bold text-gold-400">20+</div>
-              <div className="mt-1 text-sm text-gray-400">Years of Trust</div>
-            </div>
-          </div>
         </div>
       </section>
 
       {/* Departments Section */}
-      <section className="bg-gray-50 py-20 sm:py-28">
+      <section className="py-20 sm:py-28">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          {/* Section Header with Image */}
-          <div className="mb-16 grid gap-8 lg:grid-cols-2 lg:items-center">
-            <div>
-              <h2 className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl">
-                All Departments Covered
-              </h2>
-              <p className="mt-4 text-lg text-gray-600">
-                We place exceptional professionals across all yacht departments. From deck
-                to engineering, galley to interior—our extensive network covers every aspect of
-                superyacht crew recruitment.
-              </p>
-            </div>
-            <div className="relative aspect-[16/9] overflow-hidden rounded-2xl shadow-xl">
-              <Image
-                src="/images/yacht/deck.jpg"
-                alt="Professional yacht crew"
-                fill
-                className="object-cover"
-              />
-            </div>
+          {/* Section Header */}
+          <div className="mb-12 text-center">
+            <h2 className="font-serif text-3xl font-semibold text-navy-900 sm:text-4xl">
+              All Departments Covered
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-gray-600">
+              From deck to engineering, galley to interior—we place exceptional professionals
+              across every yacht department with expertise and precision.
+            </p>
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {departments.map((dept) => {
+          {/* Department Cards Grid */}
+          <div className="grid gap-6 md:grid-cols-2">
+            {departments.map((dept, index) => {
               const Icon = dept.icon;
+              const isEven = index % 2 === 1;
+
               return (
                 <div
                   key={dept.name}
-                  className="group rounded-2xl border border-gray-200 bg-white p-6 transition-all hover:-translate-y-1 hover:shadow-xl"
+                  className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-8 shadow-sm transition-all duration-300 hover:shadow-xl hover:border-gray-300"
                 >
-                  <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gold-100">
-                    <Icon className="h-6 w-6 text-gold-600" />
-                  </div>
-                  <h3 className="mb-4 text-xl font-semibold text-navy-900">
-                    {dept.name}
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {dept.positions.slice(0, 6).map((position) => (
-                      <span
-                        key={position}
-                        className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700"
+                  {/* Accent Bar */}
+                  <div
+                    className={`absolute ${isEven ? "right-0" : "left-0"} top-0 bottom-0 w-2 ${
+                      isEven ? "bg-gold-500" : "bg-navy-900"
+                    } transition-all duration-300 group-hover:w-3 ${
+                      isEven
+                        ? "group-hover:shadow-[-4px_0_20px_rgba(195,165,120,0.4)]"
+                        : "group-hover:shadow-[4px_0_20px_rgba(10,25,47,0.3)]"
+                    }`}
+                  />
+
+                  {/* Content */}
+                  <div className={isEven ? "pr-4 md:text-right" : "pl-4"}>
+                    {/* Header */}
+                    <div className={`flex items-center gap-4 ${isEven ? "md:flex-row-reverse" : ""}`}>
+                      <div
+                        className={`flex h-14 w-14 items-center justify-center rounded-xl ${
+                          isEven ? "bg-gold-100" : "bg-navy-100"
+                        }`}
                       >
-                        {position}
-                      </span>
-                    ))}
-                    <span className="inline-flex items-center rounded-full bg-gold-100 px-3 py-1 text-xs font-medium text-gold-700">
-                      & more
-                    </span>
+                        <Icon
+                          className={`h-7 w-7 ${isEven ? "text-gold-600" : "text-navy-900"}`}
+                        />
+                      </div>
+                      <div>
+                        <h3 className="font-serif text-xl font-semibold text-navy-900 tracking-wide">
+                          {dept.name}
+                        </h3>
+                        <p className="text-sm text-gray-500">
+                          {dept.positions.length} positions
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Positions Preview */}
+                    <div className="mt-6 space-y-2">
+                      {dept.positions.slice(0, 4).map((position) => (
+                        <div
+                          key={position}
+                          className={`flex items-center gap-2 text-gray-600 ${
+                            isEven ? "md:justify-end" : ""
+                          }`}
+                        >
+                          {!isEven && (
+                            <CheckCircle className="h-4 w-4 text-gold-500 flex-shrink-0" />
+                          )}
+                          <span className="text-sm">{position}</span>
+                          {isEven && (
+                            <CheckCircle className="h-4 w-4 text-gold-500 flex-shrink-0" />
+                          )}
+                        </div>
+                      ))}
+                      {dept.positions.length > 4 && (
+                        <p
+                          className={`text-sm font-medium text-gold-600 mt-4 group-hover:text-gold-700 transition-colors ${
+                            isEven ? "md:text-right" : ""
+                          }`}
+                        >
+                          + {dept.positions.length - 4} more positions →
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  <Link
-                    href={`/job-board?department=${dept.slug}`}
-                    className="mt-4 inline-flex items-center text-sm font-medium text-gold-600 transition-colors hover:text-gold-700"
-                  >
-                    View All {dept.name} Positions
-                    <ArrowRight className="ml-1 h-4 w-4" />
-                  </Link>
                 </div>
               );
             })}
+          </div>
+
+          {/* Bottom Trust Indicators */}
+          <div className="mt-12 flex flex-wrap items-center justify-center gap-8 text-sm text-gray-600">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-gold-500" />
+              All yacht positions
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-gold-500" />
+              Permanent & rotational
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-gold-500" />
+              Global coverage
+            </div>
           </div>
         </div>
       </section>

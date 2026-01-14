@@ -268,38 +268,6 @@ export default function TestimonialsPage() {
         </div>
       </section>
 
-      {/* Trust Indicators */}
-      <section className="bg-navy-900 py-16 sm:py-20">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="flex flex-wrap items-center justify-center gap-8 border-t border-white/10 pt-12">
-            <div className="text-center">
-              <div className="font-serif text-3xl font-bold text-gold-400">4.9/5</div>
-              <div className="mt-1 flex justify-center">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="h-4 w-4 fill-gold-400 text-gold-400" />
-                ))}
-              </div>
-              <div className="mt-1 text-sm text-gray-400">Average Rating</div>
-            </div>
-            <div className="h-12 w-px bg-white/10" />
-            <div className="text-center">
-              <div className="font-serif text-3xl font-bold text-gold-400">500+</div>
-              <div className="mt-1 text-sm text-gray-400">5-Star Reviews</div>
-            </div>
-            <div className="h-12 w-px bg-white/10" />
-            <div className="text-center">
-              <div className="font-serif text-3xl font-bold text-gold-400">20+</div>
-              <div className="mt-1 text-sm text-gray-400">Years of Trust</div>
-            </div>
-            <div className="h-12 w-px bg-white/10" />
-            <div className="text-center">
-              <div className="font-serif text-3xl font-bold text-gold-400">500+</div>
-              <div className="mt-1 text-sm text-gray-400">Satisfied Clients</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <PublicFooter />
     </div>
   );
