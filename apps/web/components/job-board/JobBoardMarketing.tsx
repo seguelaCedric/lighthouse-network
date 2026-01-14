@@ -24,7 +24,6 @@ import {
   FileText,
 } from "lucide-react";
 import { PublicHeader, PublicFooter } from "@/components/pricing";
-import { Logo } from "@/components/ui/Logo";
 import { Testimonials, type Testimonial } from "@/components/marketing/Testimonials";
 import { FAQSection, type FAQItem } from "@/components/marketing/FAQSection";
 import { ExitIntent } from "@/components/marketing/ExitIntent";
@@ -49,7 +48,7 @@ interface JobBoardMarketingProps {
 const stats = [
   { value: "300+", label: "Placements/Year" },
   { value: "500+", label: "Satisfied Clients" },
-  { value: "48hrs", label: "Avg. Response Time" },
+  { value: "24hrs", label: "Avg. Response Time" },
   { value: "2-4wks", label: "Avg. Time to Hire" },
 ];
 
@@ -381,7 +380,7 @@ const faqs: FAQItem[] = [
   {
     question: "How quickly will I hear back after applying?",
     answer:
-      "Response times vary by employer, but most respond within 48-72 hours. Our direct application system ensures your profile reaches the right people quickly, and you can track the status of all your applications in your dashboard.",
+      "Response times vary by employer, but most respond within 24-48 hours. Our direct application system ensures your profile reaches the right people quickly, and you can track the status of all your applications in your dashboard.",
   },
   {
     question: "How do I know if I'm qualified for these positions?",
@@ -391,7 +390,7 @@ const faqs: FAQItem[] = [
   {
     question: "What happens after I apply?",
     answer:
-      "Within 24-48 hours, the hiring agency will review your profile. If it's a good match, they'll reach out directly for an interview. You can track all your application statuses in your dashboard and receive email notifications for any updates.",
+      "Within 24 hours, the hiring agency will review your profile. If it's a good match, they'll reach out directly for an interview. You can track all your application statuses in your dashboard and receive email notifications for any updates.",
   },
   {
     question: "Can I browse jobs while still employed?",
@@ -401,7 +400,7 @@ const faqs: FAQItem[] = [
   {
     question: "How long does it typically take to get hired?",
     answer:
-      "Most successful placements happen within 2-4 weeks, though urgent positions can be filled in days. Our average response time from application to first interview is 48 hours. The timeline depends on the role, your availability, and the employer's needs.",
+      "Most successful placements happen within 2-4 weeks, though urgent positions can be filled in days. Our average response time from application to first interview is 24 hours. The timeline depends on the role, your availability, and the employer's needs.",
   },
 ];
 
@@ -418,29 +417,7 @@ export function JobBoardMarketing({ jobs, filterOptions, totalCount, postedToday
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       <ExitIntent />
       {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 border-b border-gray-200/80 bg-white/95 backdrop-blur-sm">
-        <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <Link href="/">
-              <Logo size="md" />
-            </Link>
-            <div className="flex items-center gap-3">
-              <Link
-                href={signInUrl}
-                className="text-sm font-medium text-navy-600 hover:text-navy-800 transition-colors"
-              >
-                Sign In
-              </Link>
-              <Link
-                href={signUpUrl}
-                className="rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 px-5 py-2.5 text-sm font-medium text-white hover:from-gold-600 hover:to-gold-700 transition-all shadow-lg hover:shadow-xl"
-              >
-                Join Now
-              </Link>
-            </div>
-          </div>
-        </div>
-      </header>
+      <PublicHeader />
 
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-28 pb-16">

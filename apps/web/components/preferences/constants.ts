@@ -22,24 +22,24 @@ export const yachtPositionLabels: Record<string, string> = {
   pwc_instructor: "PWC Instructor",
   // Engineering
   chief_engineer: "Chief Engineer",
-  second_engineer: "2nd Engineer",
-  third_engineer: "3rd Engineer",
+  second_engineer: "Second Engineer",
+  third_engineer: "Third Engineer",
   junior_engineer: "Junior Engineer",
   eto: "ETO",
   av_it_engineer: "AV/IT Engineer",
   // Interior
   purser: "Purser",
   interior_manager: "Interior Manager",
-  chief_stewardess: "Chief Stewardess",
+  chief_stewardess: "Chief Stew",
   head_of_service: "Head of Service",
   head_of_house: "Head of House",
-  second_stewardess: "2nd Stewardess",
-  third_stewardess: "3rd Stewardess", // legacy alias
-  sole_stewardess: "Sole Stewardess",
-  experienced_stewardess: "Experienced Stewardess",
-  stewardess: "Stewardess", // legacy alias
-  junior_stewardess: "Junior Stewardess",
-  laundry_stewardess: "Laundry Stewardess",
+  second_stewardess: "Second Stew",
+  third_stewardess: "Third Stew", // legacy alias
+  sole_stewardess: "Sole Stew",
+  experienced_stewardess: "Experienced Stew",
+  stewardess: "Stew", // legacy alias
+  junior_stewardess: "Junior Stew",
+  laundry_stewardess: "Laundry Stew",
   cook_stew: "Cook/Stew",
   // Wellness & Beauty
   masseuse: "Masseuse",

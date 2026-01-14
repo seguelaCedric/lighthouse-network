@@ -10,7 +10,7 @@ import type { PublicJob } from "@/components/job-board/JobBoardCard";
 export const metadata: Metadata = {
   title: "Access Elite Yacht & Private Household Jobs | Lighthouse Careers",
   description:
-    "Sign up free to browse elite positions in yachting and private households. Captain, Chef, Butler, Estate Manager, Nanny, Stewardess roles worldwide. AI-powered matching, verified employers, direct application to top agencies.",
+    "Sign up free to browse elite positions in yachting and private households. Captain, Chef, Butler, Estate Manager, Nanny, Stew roles worldwide. AI-powered matching, verified employers, direct application to top agencies.",
   keywords: [
     "yacht jobs",
     "yacht crew positions",

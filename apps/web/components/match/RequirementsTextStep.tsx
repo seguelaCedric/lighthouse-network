@@ -10,7 +10,7 @@ interface RequirementsTextStepProps {
 }
 
 const EXAMPLE_PROMPTS = [
-  "Chief Stewardess for 60m MY, Mediterranean season",
+  "Chief Stew for 60m MY, Mediterranean season",
   "Butler for private estate in London, live-in",
   "Captain with 3000GT, available immediately",
   "Nanny for UHNW family, French speaking, travel required",
@@ -49,7 +49,7 @@ export function RequirementsTextStep({
             onChange={(e) => onChange(e.target.value)}
             placeholder="Describe the role you need to fill...
 
-e.g., Chief Stewardess for a 60m motor yacht, Mediterranean season, experience with large guest parties, cocktail service expertise, available within 1 month"
+e.g., Chief Stew for a 60m motor yacht, Mediterranean season, experience with large guest parties, cocktail service expertise, available within 1 month"
             rows={8}
             className={`w-full rounded-xl border pl-12 pr-4 py-4 text-gray-900 bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 transition-all resize-none text-base placeholder:text-gray-400 ${
               error

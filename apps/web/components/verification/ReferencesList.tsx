@@ -76,7 +76,7 @@ const STATUS_CONFIG: Record<
 const RELATIONSHIP_LABELS: Record<string, string> = {
   captain: "Captain",
   chief_officer: "Chief Officer",
-  chief_stew: "Chief Stewardess",
+  chief_stew: "Chief Stew",
   head_chef: "Head Chef",
   chief_engineer: "Chief Engineer",
   bosun: "Bosun",

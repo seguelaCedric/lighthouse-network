@@ -18,7 +18,7 @@ export interface AddReferenceFormProps {
 const RELATIONSHIP_OPTIONS = [
   { value: "captain", label: "Captain / Direct Supervisor" },
   { value: "chief_officer", label: "Chief Officer" },
-  { value: "chief_stew", label: "Chief Stewardess" },
+  { value: "chief_stew", label: "Chief Stew" },
   { value: "head_chef", label: "Head Chef" },
   { value: "chief_engineer", label: "Chief Engineer" },
   { value: "bosun", label: "Bosun" },

@@ -390,7 +390,7 @@ export function LeadCaptureForm({
                     setErrors((prev) => ({ ...prev, query: undefined }));
                   }
                 }}
-                placeholder="e.g., Chief Stewardess, female, can make cocktails, Monaco, available immediately"
+                placeholder="e.g., Chief Stew, can make cocktails, Monaco, available immediately"
                 rows={6}
                 className={`w-full rounded-lg border px-4 py-3 text-gray-900 bg-gray-50/50 placeholder:text-gray-400 focus:bg-white focus:outline-none focus:ring-2 transition-all resize-none text-sm ${
                   errors.query

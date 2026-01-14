@@ -207,7 +207,7 @@ export function StructuredData({ data }: Props) {
         name: `How long does it take to hire a ${data.position}?`,
         acceptedAnswer: {
           "@type": "Answer",
-          text: `Typically 2-4 weeks from initial brief to placement, depending on specific requirements and availability. With 300+ placements per year, we can often present qualified shortlists within 48 hours.`,
+          text: `Typically 2-4 weeks from initial brief to placement, depending on specific requirements and availability. With 300+ placements per year, we can often present qualified shortlists within 24 hours.`,
         },
       },
       {
@@ -279,7 +279,7 @@ export function StructuredData({ data }: Props) {
         name: `Can you help with urgent ${data.position} hiring needs?`,
         acceptedAnswer: {
           "@type": "Answer",
-          text: `Yes, we specialize in urgent placements and can often present qualified ${data.position} candidates within 24-48 hours for immediate start positions. Our extensive network and pre-vetted candidate database enable fast turnaround times.`,
+          text: `Yes, we specialize in urgent placements and can often present qualified ${data.position} candidates within 24 hours for immediate start positions. Our extensive network and pre-vetted candidate database enable fast turnaround times.`,
         },
       },
       {
@@ -344,7 +344,7 @@ export function StructuredData({ data }: Props) {
         "@type": "HowToStep",
         position: 2,
         name: "Review Matched Candidates",
-        text: `Our AI-powered matching system searches our network of pre-vetted ${data.position} professionals. We present a shortlist of candidates matching your requirements, typically within 48 hours. Each candidate profile includes experience, qualifications, and why they're a good fit.`,
+        text: `Our AI-powered matching system searches our network of pre-vetted ${data.position} professionals. We present a shortlist of candidates matching your requirements, typically within 24 hours. Each candidate profile includes experience, qualifications, and why they're a good fit.`,
         url: `https://lighthouse-careers.com/${data.original_url_path}`,
       },
       {

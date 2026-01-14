@@ -290,7 +290,7 @@ export async function requestAccountDeletion(data: {
     .update({
       deleted_at: new Date().toISOString(),
       deletion_reason: data.reason || "User requested deletion",
-      availability_status: "unavailable",
+      availability_status: "not_looking",
       updated_at: new Date().toISOString(),
     })
     .eq("id", candidate.id);

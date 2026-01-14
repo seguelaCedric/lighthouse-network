@@ -96,7 +96,7 @@ const services = [
       "Chief Officer",
       "Chief Engineer",
       "Chef",
-      "Chief Stewardess",
+      "Chief Stew",
       "Deckhand",
     ],
     href: "/yacht-crew",

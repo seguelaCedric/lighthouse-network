@@ -70,7 +70,7 @@ const mockBrief = {
   source: "email" as BriefSource,
   rawContent: `Hi,
 
-We're looking for a Chief Stewardess for our 62m motor yacht M/Y Serenity.
+We're looking for a Chief Stew for our 62m motor yacht M/Y Serenity.
 
 The position is permanent, starting ASAP or within the next 2-3 weeks if possible.
 
@@ -150,15 +150,15 @@ const positionOptions = [
   { value: "first_officer", label: "First Officer" },
   { value: "second_officer", label: "Second Officer" },
   { value: "chief_engineer", label: "Chief Engineer" },
-  { value: "second_engineer", label: "2nd Engineer" },
+  { value: "second_engineer", label: "Second Engineer" },
   { value: "eto", label: "ETO" },
   { value: "bosun", label: "Bosun" },
   { value: "lead_deckhand", label: "Lead Deckhand" },
   { value: "deckhand", label: "Deckhand" },
-  { value: "chief_stewardess", label: "Chief Stewardess" },
-  { value: "second_stewardess", label: "2nd Stewardess" },
-  { value: "third_stewardess", label: "3rd Stewardess" },
-  { value: "stewardess", label: "Stewardess" },
+  { value: "chief_stewardess", label: "Chief Stew" },
+  { value: "second_stewardess", label: "Second Stew" },
+  { value: "third_stewardess", label: "Third Stew" },
+  { value: "stewardess", label: "Stew" },
   { value: "head_chef", label: "Head Chef" },
   { value: "sous_chef", label: "Sous Chef" },
   { value: "chef", label: "Chef" },

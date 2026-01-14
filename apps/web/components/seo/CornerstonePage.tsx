@@ -179,7 +179,7 @@ const processSteps = [
   {
     number: "02",
     title: "Receive Matched Candidates",
-    description: "We search our network and present a shortlist of pre-vetted candidates within 24-48 hours.",
+    description: "We search our network and present a shortlist of pre-vetted candidates within 24 hours.",
     icon: Users,
   },
   {
@@ -345,7 +345,7 @@ export function CornerstonePage({
         {(() => {
           const isYachtPosition = YACHT_POSITIONS.includes(data.position_slug);
           const benefits = [
-            { icon: Clock, title: "24-48 Hour Shortlist", desc: "Receive qualified candidates within 1-2 business days" },
+            { icon: Clock, title: "24 Hour Shortlist", desc: "Receive qualified candidates within 1 business day" },
             { icon: Shield, title: "Replacement Guarantee", desc: "Peace of mind with our satisfaction guarantee" },
             { icon: UserCheck, title: "Pre-Vetted Candidates", desc: "Background checked and reference verified" },
           ];

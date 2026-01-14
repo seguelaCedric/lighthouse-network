@@ -58,50 +58,57 @@ const YACHT_DECK_POSITIONS: Record<string, PositionMapping> = {
 };
 
 const YACHT_INTERIOR_POSITIONS: Record<string, PositionMapping> = {
-  // Chief Stewardess / Head of Interior
-  'chief stewardess': { standard: 'Chief Stewardess', category: 'interior' },
-  'chief stew': { standard: 'Chief Stewardess', category: 'interior' },
-  'head stewardess': { standard: 'Chief Stewardess', category: 'interior' },
-  'head stew': { standard: 'Chief Stewardess', category: 'interior' },
-  'head of interior': { standard: 'Chief Stewardess', category: 'interior' },
-  'head of housekeeping': { standard: 'Chief Stewardess', category: 'interior' },
-  'interior manager': { standard: 'Chief Stewardess', category: 'interior' },
+  // Chief Stew
+  'chief stew': { standard: 'Chief Stew', category: 'interior' },
+  'chief stewardess': { standard: 'Chief Stew', category: 'interior' },
+  'head stewardess': { standard: 'Chief Stew', category: 'interior' },
+  'head stew': { standard: 'Chief Stew', category: 'interior' },
   'chief steward': { standard: 'Chief Steward', category: 'interior' },
+
+  // Interior Management (distinct roles)
+  'interior manager': { standard: 'Interior Manager', category: 'interior' },
+  'head of interior': { standard: 'Interior Manager', category: 'interior' },
+  'head of house': { standard: 'Head of House', category: 'interior' },
+  'head of housekeeping': { standard: 'Head of House', category: 'interior' },
+  'head of service': { standard: 'Head of Service', category: 'interior' },
 
   // Purser
   'purser': { standard: 'Purser', category: 'interior' },
   'chief purser': { standard: 'Purser', category: 'interior' },
-  'purser/chief stew': { standard: 'Purser/Chief Stewardess', category: 'interior' },
-  'chief stew/purser': { standard: 'Purser/Chief Stewardess', category: 'interior' },
+  'purser/chief stew': { standard: 'Purser/Chief Stew', category: 'interior' },
+  'chief stew/purser': { standard: 'Purser/Chief Stew', category: 'interior' },
 
-  // Second Stewardess
-  'second stewardess': { standard: 'Second Stewardess', category: 'interior' },
-  '2nd stewardess': { standard: 'Second Stewardess', category: 'interior' },
-  '2nd stew': { standard: 'Second Stewardess', category: 'interior' },
-  'second stew': { standard: 'Second Stewardess', category: 'interior' },
+  // Second Stew
+  'second stew': { standard: 'Second Stew', category: 'interior' },
+  'second stewardess': { standard: 'Second Stew', category: 'interior' },
+  '2nd stewardess': { standard: 'Second Stew', category: 'interior' },
+  '2nd stew': { standard: 'Second Stew', category: 'interior' },
 
-  // Third Stewardess
-  'third stewardess': { standard: 'Third Stewardess', category: 'interior' },
-  '3rd stewardess': { standard: 'Third Stewardess', category: 'interior' },
-  '3rd stew': { standard: 'Third Stewardess', category: 'interior' },
-  'third stew': { standard: 'Third Stewardess', category: 'interior' },
+  // Third Stew
+  'third stew': { standard: 'Third Stew', category: 'interior' },
+  'third stewardess': { standard: 'Third Stew', category: 'interior' },
+  '3rd stewardess': { standard: 'Third Stew', category: 'interior' },
+  '3rd stew': { standard: 'Third Stew', category: 'interior' },
 
-  // General Stewardess
-  'stewardess': { standard: 'Stewardess', category: 'interior' },
-  'stew': { standard: 'Stewardess', category: 'interior' },
+  // General Stew
+  'stew': { standard: 'Stew', category: 'interior' },
+  'stewardess': { standard: 'Stew', category: 'interior' },
   'steward': { standard: 'Steward', category: 'interior' },
-  'junior stewardess': { standard: 'Junior Stewardess', category: 'interior' },
-  'junior stew': { standard: 'Junior Stewardess', category: 'interior' },
-  'sole stewardess': { standard: 'Sole Stewardess', category: 'interior' },
-  'sole stew': { standard: 'Sole Stewardess', category: 'interior' },
+  'junior stew': { standard: 'Junior Stew', category: 'interior' },
+  'junior stewardess': { standard: 'Junior Stew', category: 'interior' },
+  'sole stew': { standard: 'Sole Stew', category: 'interior' },
+  'sole stewardess': { standard: 'Sole Stew', category: 'interior' },
 
   // Specialized Interior
-  'laundry stewardess': { standard: 'Laundry Stewardess', category: 'interior' },
+  'laundry stew': { standard: 'Laundry Stew', category: 'interior' },
+  'laundry stewardess': { standard: 'Laundry Stew', category: 'interior' },
   'laundress': { standard: 'Laundress', category: 'interior' },
   'housekeeping': { standard: 'Housekeeping', category: 'interior' },
   'housekeeper': { standard: 'Housekeeper', category: 'interior' },
-  'cabin stewardess': { standard: 'Cabin Stewardess', category: 'interior' },
-  'service stewardess': { standard: 'Service Stewardess', category: 'interior' },
+  'cabin stew': { standard: 'Cabin Stew', category: 'interior' },
+  'cabin stewardess': { standard: 'Cabin Stew', category: 'interior' },
+  'service stew': { standard: 'Service Stew', category: 'interior' },
+  'service stewardess': { standard: 'Service Stew', category: 'interior' },
 };
 
 const YACHT_ENGINEERING_POSITIONS: Record<string, PositionMapping> = {

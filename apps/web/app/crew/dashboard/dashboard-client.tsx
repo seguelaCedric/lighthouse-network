@@ -282,7 +282,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
     
     setIsUpdating(true);
     setErrorMessage(null); // Clear any previous errors
-    const newStatus = isAvailable ? "unavailable" : "available";
+    const newStatus = isAvailable ? "not_looking" : "available";
     const newAvailableState = !isAvailable;
     
     // Optimistically update UI
@@ -303,7 +303,7 @@ export function DashboardClient({ data }: { data: DashboardData }) {
     setAvailableFrom(newDate);
     setIsUpdating(true);
     setErrorMessage(null); // Clear any previous errors
-    const result = await updateAvailability(isAvailable ? "available" : "unavailable", newDate);
+    const result = await updateAvailability(isAvailable ? "available" : "not_looking", newDate);
     if (!result.success) {
       setErrorMessage(result.error || "Failed to update availability date. Please try again.");
       console.error("Failed to update availability date:", result.error);

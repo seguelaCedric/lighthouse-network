@@ -597,21 +597,33 @@ export const POSITION_MAPPING: Record<string, { standard: string; category: stri
   'junior deckhand': { standard: 'Junior Deckhand', category: 'deck' },
 
   // Interior
-  'chief stewardess': { standard: 'Chief Stewardess', category: 'interior' },
-  'chief stew': { standard: 'Chief Stewardess', category: 'interior' },
-  'head of housekeeping': { standard: 'Chief Stewardess', category: 'interior' },
+  'chief stew': { standard: 'Chief Stew', category: 'interior' },
+  'chief stewardess': { standard: 'Chief Stew', category: 'interior' },
+  'head stew': { standard: 'Chief Stew', category: 'interior' },
+  'head stewardess': { standard: 'Chief Stew', category: 'interior' },
+  'interior manager': { standard: 'Interior Manager', category: 'interior' },
+  'head of interior': { standard: 'Interior Manager', category: 'interior' },
+  'head of house': { standard: 'Head of House', category: 'interior' },
+  'head of housekeeping': { standard: 'Head of House', category: 'interior' },
+  'head of service': { standard: 'Head of Service', category: 'interior' },
   'purser': { standard: 'Purser', category: 'interior' },
   'chief purser': { standard: 'Purser', category: 'interior' },
-  '2nd stewardess': { standard: 'Second Stewardess', category: 'interior' },
-  'second stewardess': { standard: 'Second Stewardess', category: 'interior' },
-  '2nd stew': { standard: 'Second Stewardess', category: 'interior' },
-  '3rd stewardess': { standard: 'Third Stewardess', category: 'interior' },
-  'third stewardess': { standard: 'Third Stewardess', category: 'interior' },
-  'stewardess': { standard: 'Stewardess', category: 'interior' },
-  'stew': { standard: 'Stewardess', category: 'interior' },
-  'junior stewardess': { standard: 'Junior Stewardess', category: 'interior' },
-  'sole stewardess': { standard: 'Sole Stewardess', category: 'interior' },
-  'laundry stewardess': { standard: 'Laundry Stewardess', category: 'interior' },
+  'second stew': { standard: 'Second Stew', category: 'interior' },
+  'second stewardess': { standard: 'Second Stew', category: 'interior' },
+  '2nd stewardess': { standard: 'Second Stew', category: 'interior' },
+  '2nd stew': { standard: 'Second Stew', category: 'interior' },
+  'third stew': { standard: 'Third Stew', category: 'interior' },
+  'third stewardess': { standard: 'Third Stew', category: 'interior' },
+  '3rd stewardess': { standard: 'Third Stew', category: 'interior' },
+  '3rd stew': { standard: 'Third Stew', category: 'interior' },
+  'stew': { standard: 'Stew', category: 'interior' },
+  'stewardess': { standard: 'Stew', category: 'interior' },
+  'junior stew': { standard: 'Junior Stew', category: 'interior' },
+  'junior stewardess': { standard: 'Junior Stew', category: 'interior' },
+  'sole stew': { standard: 'Sole Stew', category: 'interior' },
+  'sole stewardess': { standard: 'Sole Stew', category: 'interior' },
+  'laundry stew': { standard: 'Laundry Stew', category: 'interior' },
+  'laundry stewardess': { standard: 'Laundry Stew', category: 'interior' },
   'housekeeping': { standard: 'Housekeeping', category: 'interior' },
 
   // Engineering
@@ -765,18 +777,22 @@ export const VINCERE_FUNCTIONAL_EXPERTISE_IDS: Record<string, number> = {
   'Head of House': 3009,
   'Second Stew': 3010,
   'Second Stewardess': 3010, // Alias
+  'Third Stew': 3013, // Maps to Junior Stew ID
+  'Third Stewardess': 3013, // Alias
   'Sole Stew': 3011,
   'Sole Stewardess': 3011, // Alias
   'Cook/Stew': 3012,
   'Junior Stew': 3013,
   'Junior Stewardess': 3013, // Alias
-  'Stewardess': 3013, // Map generic stewardess to Junior Stew
+  'Stew': 3013, // Map generic stew to Junior Stew
+  'Stewardess': 3013, // Alias
   'Masseuse': 3014,
   'Beautician': 3015,
   'Hairdresser': 3018,
   'Laundry Stew': 3037,
   'Laundry Stewardess': 3037, // Alias
   'Experienced Stew': 3036,
+  'Experienced Stewardess': 3036, // Alias
 
   // === Medical ===
   'Nurse': 3016,

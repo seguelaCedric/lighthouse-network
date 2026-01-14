@@ -41,23 +41,28 @@ export const POSITION_DISPLAY_TO_VALUE: Record<string, string> = {
   // Yacht Crew - Interior
   "Purser": "purser",
   "Interior Manager": "interior_manager",
-  "Chief Stewardess": "chief_stewardess",
   "Chief Stew": "chief_stewardess",
+  "Chief Stewardess": "chief_stewardess", // legacy alias
   "Head of Service": "head_of_service",
   "Head of House": "head_of_house",
-  "Second Stewardess": "second_stewardess",
-  "2nd Stewardess": "second_stewardess",
-  "2nd Stew": "second_stewardess",
-  "Sole Stewardess": "sole_stewardess",
+  "Second Stew": "second_stewardess",
+  "Second Stewardess": "second_stewardess", // legacy alias
+  "2nd Stewardess": "second_stewardess", // legacy alias
+  "2nd Stew": "second_stewardess", // legacy alias
+  "Third Stew": "third_stewardess",
+  "Third Stewardess": "third_stewardess", // legacy alias
+  "3rd Stewardess": "third_stewardess", // legacy alias
+  "3rd Stew": "third_stewardess", // legacy alias
   "Sole Stew": "sole_stewardess",
-  "Experienced Stewardess": "experienced_stewardess",
+  "Sole Stewardess": "sole_stewardess", // legacy alias
   "Experienced Stew": "experienced_stewardess",
-  "Junior Stewardess": "junior_stewardess",
+  "Experienced Stewardess": "experienced_stewardess", // legacy alias
   "Junior Stew": "junior_stewardess",
-  "Stewardess": "junior_stewardess", // map generic to junior
-  "3rd Stewardess": "junior_stewardess", // legacy alias
-  "Laundry Stewardess": "laundry_stewardess",
+  "Junior Stewardess": "junior_stewardess", // legacy alias
+  "Stew": "stewardess",
+  "Stewardess": "stewardess", // legacy alias
   "Laundry Stew": "laundry_stewardess",
+  "Laundry Stewardess": "laundry_stewardess", // legacy alias
   "Cook/Stew": "cook_stew",
 
   // Yacht Crew - Wellness & Beauty
@@ -131,8 +136,8 @@ export const YACHT_POSITIONS = new Set([
   "chief_engineer", "second_engineer", "third_engineer", "junior_engineer", "eto", "av_it_engineer",
   // Interior
   "purser", "interior_manager", "chief_stewardess", "head_of_service", "head_of_house",
-  "second_stewardess", "sole_stewardess", "experienced_stewardess", "junior_stewardess",
-  "laundry_stewardess", "cook_stew",
+  "second_stewardess", "third_stewardess", "sole_stewardess", "experienced_stewardess",
+  "junior_stewardess", "stewardess", "laundry_stewardess", "cook_stew",
   // Wellness & Beauty
   "masseuse", "beautician", "hairdresser", "spa_manager", "yoga_instructor", "personal_trainer",
   // Medical

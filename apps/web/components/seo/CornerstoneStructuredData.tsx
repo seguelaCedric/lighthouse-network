@@ -135,7 +135,7 @@ export function CornerstoneStructuredData({ data }: Props) {
         "@type": "HowToStep",
         position: 2,
         name: "Review Matched Candidates",
-        text: `Our AI-powered matching system searches our network of pre-vetted ${data.position} professionals. We present a shortlist of candidates matching your requirements, typically within 48 hours.`,
+        text: `Our AI-powered matching system searches our network of pre-vetted ${data.position} professionals. We present a shortlist of candidates matching your requirements, typically within 24 hours.`,
         url: `https://lighthouse-careers.com/hire-a-${data.position_slug}/`,
       },
       {

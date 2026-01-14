@@ -171,7 +171,7 @@ export function briefReceivedEmail(data: BriefReceivedData) {
       <ul style="margin-top:10px;">
         <li>Our AI will analyze your requirements</li>
         <li>We'll match candidates from our verified database</li>
-        <li>You'll receive a shortlist within 24-48 hours</li>
+        <li>You'll receive a shortlist within 24 hours</li>
       </ul>
     </div>
 
@@ -426,7 +426,7 @@ export function welcomeClientEmail(data: WelcomeClientData) {
     <ul>
       <li><strong>AI-Powered Matching:</strong> Our technology analyzes your requirements to find the perfect candidates</li>
       <li><strong>Verified Candidates:</strong> All crew in our database are verified with checked references</li>
-      <li><strong>Fast Turnaround:</strong> Receive shortlists within 24-48 hours</li>
+      <li><strong>Fast Turnaround:</strong> Receive shortlists within 24 hours</li>
       <li><strong>Industry Expertise:</strong> Our team has decades of combined superyacht experience</li>
     </ul>
 
@@ -740,7 +740,7 @@ export function employerBriefReceivedEmail(data: EmployerBriefReceivedData) {
     <ul>
       <li>Our AI analyzes your requirements against our candidate database</li>
       <li>An experienced recruiter reviews the matches</li>
-      <li>You'll receive a curated shortlist within <strong>24-48 hours</strong></li>
+      <li>You'll receive a curated shortlist within <strong>24 hours</strong></li>
       <li>Review candidates and provide feedback directly in your portal</li>
     </ul>
 
@@ -769,7 +769,7 @@ export function employerEnquirySubmittedEmail(data: EmployerEnquirySubmittedData
     <div class="info-box">
       <p style="margin:0 0 15px; font-weight:600; color:#1a2b4a;">What happens next?</p>
       <ul style="margin:0;">
-        <li>Our team will review the lead within <strong>24-48 hours</strong></li>
+        <li>Our team will review the lead within <strong>24 hours</strong></li>
         <li>We'll reach out to the contact you provided</li>
         <li>If they become a client and we make a placement, you'll earn <strong class="highlight">€200</strong></li>
         <li>Plus, they get <strong>15% off</strong> their first placement as a new client!</li>

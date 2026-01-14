@@ -99,10 +99,10 @@ const AGENCY = {
 const POSITIONS = [
   { title: "Captain", category: "deck" as const },
   { title: "Chief Officer", category: "deck" as const },
-  { title: "Chief Stewardess", category: "interior" as const },
-  { title: "2nd Stewardess", category: "interior" as const },
+  { title: "Chief Stew", category: "interior" as const },
+  { title: "Second Stew", category: "interior" as const },
   { title: "Chief Engineer", category: "engineering" as const },
-  { title: "2nd Engineer", category: "engineering" as const },
+  { title: "Second Engineer", category: "engineering" as const },
   { title: "Head Chef", category: "galley" as const },
   { title: "Sous Chef", category: "galley" as const },
   { title: "Deckhand", category: "deck" as const },

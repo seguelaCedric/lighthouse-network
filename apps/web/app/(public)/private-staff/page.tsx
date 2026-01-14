@@ -47,7 +47,7 @@ const benefits = [
   {
     icon: Zap,
     title: "Fast Delivery",
-    description: "Receive qualified candidates within 48 hours of briefing us.",
+    description: "Receive qualified candidates within 24 hours of briefing us.",
   },
   {
     icon: Eye,
@@ -186,7 +186,7 @@ const faqs: FAQItem[] = [
   },
   {
     question: "How quickly can you find the right candidate?",
-    answer: "We deliver your first batch of pre-screened candidates within 48 hours. Most positions are filled within 2-4 weeks, depending on specialization required.",
+    answer: "We deliver your first batch of pre-screened candidates within 24 hours. Most positions are filled within 2-4 weeks, depending on specialization required.",
   },
   {
     question: "What vetting process do candidates go through?",
@@ -783,7 +783,7 @@ export default function PrivateStaffPage() {
                   <div className="text-sm text-gray-600">Placements/Year</div>
                 </div>
                 <div className="rounded-xl bg-white p-4 shadow-sm">
-                  <div className="text-2xl font-bold text-gold-600">48hr</div>
+                  <div className="text-2xl font-bold text-gold-600">24hr</div>
                   <div className="text-sm text-gray-600">First Candidates</div>
                 </div>
                 <div className="rounded-xl bg-white p-4 shadow-sm">
@@ -822,7 +822,7 @@ export default function PrivateStaffPage() {
             <span className="text-gold-400">Exceptional Staff?</span>
           </h2>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-300">
-            Start receiving vetted, qualified candidates within 48 hours. Complete
+            Start receiving vetted, qualified candidates within 24 hours. Complete
             discretion guaranteed.
           </p>
           <div className="mt-10 flex flex-col justify-center gap-4 sm:flex-row">

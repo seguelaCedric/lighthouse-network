@@ -157,7 +157,7 @@ export default function ClientLoginPage() {
         {/* Footer Quote */}
         <div className="rounded-xl bg-white/5 p-6 backdrop-blur-sm">
           <p className="mb-3 font-serif text-lg italic text-gray-300">
-            "Lighthouse made finding our Chief Stewardess incredibly simple.
+            "Lighthouse made finding our Chief Stew incredibly simple.
             The shortlist was spot-on and we hired within a week."
           </p>
           <div className="flex items-center gap-3">

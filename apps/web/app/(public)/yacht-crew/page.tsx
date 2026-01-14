@@ -27,20 +27,20 @@ import {
 } from "lucide-react";
 
 export const metadata: Metadata = {
-  title: "Yacht Crew Recruitment Agency | Hire Vetted Crew in 48 Hours | Lighthouse",
+  title: "Yacht Crew Recruitment Agency | Hire Vetted Crew in 24 Hours | Lighthouse",
   description:
-    "Premier yacht crew recruitment specialists with 500+ satisfied clients. We place Captains, Engineers, Chefs, and Stewardesses on superyachts worldwide. Vetted candidates delivered in 48 hours. No upfront fees.",
+    "Premier yacht crew recruitment specialists with 500+ satisfied clients. We place Captains, Engineers, Chefs, and Stews on superyachts worldwide. Vetted candidates delivered in 24 hours. No upfront fees.",
   keywords: [
     "yacht crew recruitment",
     "yacht crew agency",
     "superyacht crew",
     "captain recruitment",
-    "yacht stewardess",
+    "yacht stew",
     "yacht chef recruitment",
     "yacht engineer jobs",
   ],
   openGraph: {
-    title: "Yacht Crew Recruitment | Hire Vetted Crew in 48 Hours",
+    title: "Yacht Crew Recruitment | Hire Vetted Crew in 24 Hours",
     description:
       "Premier yacht crew recruitment specialists with 500+ satisfied clients. Captains, Engineers, Chefs, and Interior crew for superyachts worldwide.",
     type: "website",
@@ -58,7 +58,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Yacht Crew Recruitment | Lighthouse Careers",
-    description: "Hire vetted yacht crew in 48 hours. No upfront fees.",
+    description: "Hire vetted yacht crew in 24 hours. No upfront fees.",
   },
   alternates: {
     canonical: "https://lighthouse-careers.com/yacht-crew/",
@@ -76,8 +76,8 @@ const stats = [
 const benefits = [
   {
     icon: Zap,
-    title: "48-Hour Candidate Delivery",
-    description: "Receive your first batch of pre-screened, qualified candidates within 48 hours of briefing us.",
+    title: "24-Hour Candidate Delivery",
+    description: "Receive your first batch of pre-screened, qualified candidates within 24 hours of briefing us.",
     highlight: true,
   },
   {
@@ -155,7 +155,7 @@ const departments = [
     icon: Sparkles,
     color: "bg-purple-500",
     image: "/images/yacht/interior.webp",
-    positions: ["Chief Stewardess", "Purser", "Head of House", "Head of Service", "2nd Stewardess", "3rd Stewardess", "Stewardess", "Junior Stewardess", "Laundry Stewardess", "Housekeeper", "Butler", "Nanny/Stew"],
+    positions: ["Chief Stew", "Purser", "Head of House", "Head of Service", "Second Stew", "Third Stew", "Stew", "Junior Stew", "Laundry Stew", "Housekeeper", "Butler", "Nanny/Stew"],
   },
 ];
 
@@ -190,16 +190,16 @@ const testimonials = [
     type: "client" as const,
   },
   {
-    quote: "Milica placed me on my first yacht when I joined the industry, matching my land-based experience perfectly with the vessel. Since then, she has supported my career and seen me move to Chief Stewardess working within larger operations. Her experience with, and knowledge of the 100m+ market means she is the first person I call when I am looking for a role or crew.",
+    quote: "Milica placed me on my first yacht when I joined the industry, matching my land-based experience perfectly with the vessel. Since then, she has supported my career and seen me move to Chief Stew working within larger operations. Her experience with, and knowledge of the 100m+ market means she is the first person I call when I am looking for a role or crew.",
     name: "Stephanie Wells",
-    role: "Chief Stewardess 100m+ M/Y",
+    role: "Chief Stew 100m+ M/Y",
     image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Stephanie-Wells.png",
     type: "candidate" as const,
   },
   {
     quote: "Throughout my 11 years in yachting, I have found Milica to be my go-to agent for jobs. Not only because she has a great reputation in the industry and great boats in her books but also for her care, kindness and professionalism. Very grateful to Milica for my placement onboard a very successful charter yacht!",
     name: "Vesna Coklo",
-    role: "Chief Stewardess 70m+ MY",
+    role: "Chief Stew 70m+ MY",
     image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Vesna-Coklo.jpeg",
     type: "candidate" as const,
   },
@@ -212,11 +212,11 @@ const faqs: FAQItem[] = [
   },
   {
     question: "How quickly can you fill a position?",
-    answer: "We deliver your first batch of pre-screened candidates within 48 hours of briefing. Most positions are filled within 1-2 weeks, though senior roles like Captains may take slightly longer to ensure the perfect fit.",
+    answer: "We deliver your first batch of pre-screened candidates within 24 hours of briefing. Most positions are filled within 1-2 weeks, though senior roles like Captains may take slightly longer to ensure the perfect fit.",
   },
   {
     question: "Do you recruit for all yacht departments?",
-    answer: "Yes, we cover all departments: Deck (Captains to Deckhands), Engineering (Chief Engineers to ETOs), Interior (Chief Stews to Junior Stewardesses), and Galley (Head Chefs to Crew Cooks). We also place specialized roles like AV/IT Officers and Pursers.",
+    answer: "Yes, we cover all departments: Deck (Captains to Deckhands), Engineering (Chief Engineers to ETOs), Interior (Chief Stews to Junior Stews), and Galley (Head Chefs to Crew Cooks). We also place specialized roles like AV/IT Officers and Pursers.",
   },
   {
     question: "What's included in your vetting process?",
@@ -280,7 +280,7 @@ const serviceSchema = {
   "@context": "https://schema.org",
   "@type": "Service",
   name: "Yacht Crew Recruitment",
-  description: "Professional yacht crew recruitment services for superyachts worldwide. We place Captains, Engineers, Chefs, Stewardesses, and all yacht positions.",
+  description: "Professional yacht crew recruitment services for superyachts worldwide. We place Captains, Engineers, Chefs, Stews, and all yacht positions.",
   provider: {
     "@type": "Organization",
     name: "Lighthouse Careers",
@@ -386,7 +386,7 @@ export default function YachtCrewPage() {
 
           <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-300 sm:text-xl">
             Premier yacht crew recruitment trusted by 500+ yacht owners and management companies.
-            From Captains to Stewardesses, we deliver pre-screened candidates fast.
+            From Captains to Stews, we deliver pre-screened candidates fast.
           </p>
 
           <div className="mt-10 flex flex-col gap-4 sm:flex-row">
@@ -821,7 +821,7 @@ export default function YachtCrewPage() {
             <span className="text-gold-400">Perfect Crew?</span>
           </h2>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-gray-300">
-            Start receiving vetted, qualified candidates within 48 hours. No upfront
+            Start receiving vetted, qualified candidates within 24 hours. No upfront
             commitment, no risk.
           </p>
           <div className="mt-10 flex flex-col justify-center gap-4 sm:flex-row">

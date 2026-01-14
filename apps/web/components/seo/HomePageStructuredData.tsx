@@ -81,7 +81,7 @@ export function HomePageStructuredData({ testimonials }: HomePageStructuredDataP
         name: "How quickly can you find yacht crew or private staff?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "We typically present initial candidate shortlists within 48 hours of receiving your brief. The full recruitment process from brief to placement usually takes 2-4 weeks, depending on the position's requirements and availability of suitable candidates. For urgent needs, we offer expedited searches.",
+          text: "We typically present initial candidate shortlists within 24 hours of receiving your brief. The full recruitment process from brief to placement usually takes 2-4 weeks, depending on the position's requirements and availability of suitable candidates. For urgent needs, we offer expedited searches.",
         },
       },
       {
@@ -253,7 +253,7 @@ export function HomePageStructuredData({ testimonials }: HomePageStructuredDataP
         "@type": "HowToStep",
         position: 2,
         name: "Receive Candidate Shortlist",
-        text: "Within 48 hours, we present a shortlist of pre-screened, vetted candidates who match your requirements. Each candidate profile includes their CV, references, and our assessment.",
+        text: "Within 24 hours, we present a shortlist of pre-screened, vetted candidates who match your requirements. Each candidate profile includes their CV, references, and our assessment.",
       },
       {
         "@type": "HowToStep",

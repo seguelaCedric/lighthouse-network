@@ -30,7 +30,7 @@ import {
 export const metadata: Metadata = {
   title: "Free 2026 Salary Guide | Yacht Crew & Private Household Salaries | Lighthouse Careers",
   description:
-    "Comprehensive 2026 salary guide for yacht crew and private household staff. Get industry-standard salary ranges by yacht size (24m-100m+) and property type. Includes Captain, Stewardess, Chef, Butler, Estate Manager, Nanny salaries. Based on 300+ real placements.",
+    "Comprehensive 2026 salary guide for yacht crew and private household staff. Get industry-standard salary ranges by yacht size (24m-100m+) and property type. Includes Captain, Stew, Chef, Butler, Estate Manager, Nanny salaries. Based on 300+ real placements.",
   keywords: [
     "yacht crew salary",
     "yacht crew salary guide 2026",
@@ -107,56 +107,56 @@ const deckSalaries = {
   "24-30": {
     Captain: { min: 6000, max: 9500 },
     "Chief Officer / Mate": { min: 3500, max: 5500 },
-    "2nd Officer": null,
-    "3rd Officer": null,
+    "Second Officer": null,
+    "Third Officer": null,
     Bosun: { min: 3000, max: 4200 },
     Deckhand: { min: 2200, max: 3200 },
   },
   "30-40": {
     Captain: { min: 7500, max: 12000 },
     "Chief Officer / Mate": { min: 4200, max: 6500 },
-    "2nd Officer": null,
-    "3rd Officer": null,
+    "Second Officer": null,
+    "Third Officer": null,
     Bosun: { min: 3200, max: 4800 },
     Deckhand: { min: 2300, max: 3400 },
   },
   "40-50": {
     Captain: { min: 9000, max: 14000 },
     "Chief Officer / Mate": { min: 5000, max: 7500 },
-    "2nd Officer": { min: 3800, max: 5500 },
-    "3rd Officer": null,
+    "Second Officer": { min: 3800, max: 5500 },
+    "Third Officer": null,
     Bosun: { min: 3500, max: 5500 },
     Deckhand: { min: 2400, max: 3600 },
   },
   "50-70": {
     Captain: { min: 12000, max: 18000 },
     "Chief Officer / Mate": { min: 6000, max: 9000 },
-    "2nd Officer": { min: 4500, max: 6500 },
-    "3rd Officer": null,
+    "Second Officer": { min: 4500, max: 6500 },
+    "Third Officer": null,
     Bosun: { min: 4000, max: 6000 },
     Deckhand: { min: 2700, max: 4000 },
   },
   "70-80": {
     Captain: { min: 14000, max: 20000 },
     "Chief Officer / Mate": { min: 7000, max: 10000 },
-    "2nd Officer": { min: 5000, max: 7000 },
-    "3rd Officer": { min: 4000, max: 5500 },
+    "Second Officer": { min: 5000, max: 7000 },
+    "Third Officer": { min: 4000, max: 5500 },
     Bosun: { min: 4500, max: 6500 },
     Deckhand: { min: 3000, max: 4500 },
   },
   "80-100": {
     Captain: { min: 16000, max: 24000 },
     "Chief Officer / Mate": { min: 8000, max: 12000 },
-    "2nd Officer": { min: 5500, max: 8000 },
-    "3rd Officer": { min: 4500, max: 6000 },
+    "Second Officer": { min: 5500, max: 8000 },
+    "Third Officer": { min: 4500, max: 6000 },
     Bosun: { min: 5000, max: 7000 },
     Deckhand: { min: 3200, max: 4800 },
   },
   "100+": {
     Captain: { min: 20000, max: 30000 },
     "Chief Officer / Mate": { min: 10000, max: 14000 },
-    "2nd Officer": { min: 6500, max: 9000 },
-    "3rd Officer": { min: 5000, max: 7000 },
+    "Second Officer": { min: 6500, max: 9000 },
+    "Third Officer": { min: 5000, max: 7000 },
     Bosun: { min: 5500, max: 8000 },
     Deckhand: { min: 3500, max: 5200 },
   },
@@ -165,43 +165,43 @@ const deckSalaries = {
 const engineeringSalaries = {
   "30-40": {
     "Chief Engineer": { min: 5500, max: 8000 },
-    "2nd Engineer": null,
-    "3rd Engineer": null,
+    "Second Engineer": null,
+    "Third Engineer": null,
     Motorman: null,
     "ETO / AV-IT": null,
   },
   "40-50": {
     "Chief Engineer": { min: 6000, max: 9500 },
-    "2nd Engineer": { min: 4500, max: 6000 },
-    "3rd Engineer": null,
+    "Second Engineer": { min: 4500, max: 6000 },
+    "Third Engineer": null,
     Motorman: null,
     "ETO / AV-IT": null,
   },
   "50-70": {
     "Chief Engineer": { min: 7000, max: 11000 },
-    "2nd Engineer": { min: 5500, max: 6500 },
-    "3rd Engineer": null,
+    "Second Engineer": { min: 5500, max: 6500 },
+    "Third Engineer": null,
     Motorman: null,
     "ETO / AV-IT": { min: 6000, max: 9000 },
   },
   "70-80": {
     "Chief Engineer": { min: 8000, max: 12000 },
-    "2nd Engineer": { min: 6000, max: 8000 },
-    "3rd Engineer": { min: 4000, max: 5500 },
+    "Second Engineer": { min: 6000, max: 8000 },
+    "Third Engineer": { min: 4000, max: 5500 },
     Motorman: null,
     "ETO / AV-IT": { min: 6500, max: 10000 },
   },
   "80-100": {
     "Chief Engineer": { min: 9000, max: 14000 },
-    "2nd Engineer": { min: 6500, max: 9000 },
-    "3rd Engineer": { min: 4500, max: 6500 },
+    "Second Engineer": { min: 6500, max: 9000 },
+    "Third Engineer": { min: 4500, max: 6500 },
     Motorman: { min: 3500, max: 5000 },
     "ETO / AV-IT": { min: 7000, max: 11000 },
   },
   "100+": {
     "Chief Engineer": { min: 10000, max: 16000 },
-    "2nd Engineer": { min: 7000, max: 10000 },
-    "3rd Engineer": { min: 5000, max: 7000 },
+    "Second Engineer": { min: 7000, max: 10000 },
+    "Third Engineer": { min: 5000, max: 7000 },
     Motorman: { min: 4000, max: 5500 },
     "ETO / AV-IT": { min: 8000, max: 12500 },
   },
@@ -210,49 +210,49 @@ const engineeringSalaries = {
 const interiorSalaries = {
   "24-30": {
     "Chief Stew": null,
-    "2nd Stew": null,
+    "Second Stew": null,
     "Junior Stew": null,
     "Solo Stew": { min: 3000, max: 4500 },
     Purser: null,
   },
   "30-40": {
     "Chief Stew": { min: 3800, max: 5500 },
-    "2nd Stew": { min: 3200, max: 4500 },
+    "Second Stew": { min: 3200, max: 4500 },
     "Junior Stew": { min: 2400, max: 3400 },
     "Solo Stew": null,
     Purser: null,
   },
   "40-50": {
     "Chief Stew": { min: 4500, max: 6500 },
-    "2nd Stew": { min: 3800, max: 5200 },
+    "Second Stew": { min: 3800, max: 5200 },
     "Junior Stew": { min: 2600, max: 3600 },
     "Solo Stew": null,
     Purser: null,
   },
   "50-70": {
     "Chief Stew": { min: 5500, max: 8000 },
-    "2nd Stew": { min: 4500, max: 6000 },
+    "Second Stew": { min: 4500, max: 6000 },
     "Junior Stew": { min: 2800, max: 4000 },
     "Solo Stew": null,
     Purser: { min: 6000, max: 8500 },
   },
   "70-80": {
     "Chief Stew": { min: 6500, max: 9500 },
-    "2nd Stew": { min: 5000, max: 6500 },
+    "Second Stew": { min: 5000, max: 6500 },
     "Junior Stew": { min: 3000, max: 4200 },
     "Solo Stew": null,
     Purser: { min: 7000, max: 9500 },
   },
   "80-100": {
     "Chief Stew": { min: 7000, max: 10500 },
-    "2nd Stew": { min: 5500, max: 7000 },
+    "Second Stew": { min: 5500, max: 7000 },
     "Junior Stew": { min: 3200, max: 4500 },
     "Solo Stew": null,
     Purser: { min: 7500, max: 10500 },
   },
   "100+": {
     "Chief Stew": { min: 8000, max: 12000 },
-    "2nd Stew": { min: 6000, max: 8000 },
+    "Second Stew": { min: 6000, max: 8000 },
     "Junior Stew": { min: 3500, max: 5000 },
     "Solo Stew": null,
     Purser: { min: 8000, max: 12000 },
@@ -592,7 +592,7 @@ const faqSchema = {
       name: "What salary ranges are included in the 2026 salary guide?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "The guide includes comprehensive salary ranges for yacht crew positions (Captain, Officers, Engineers, Stewardesses, Chefs) organized by yacht size (24m-100m+), and private household positions (Estate Managers, Butlers, Chefs, Nannies, etc.) organized by property type and service level. All yacht crew salaries are monthly (€/month), while household salaries are annual (€/year).",
+        text: "The guide includes comprehensive salary ranges for yacht crew positions (Captain, Officers, Engineers, Stews, Chefs) organized by yacht size (24m-100m+), and private household positions (Estate Managers, Butlers, Chefs, Nannies, etc.) organized by property type and service level. All yacht crew salaries are monthly (€/month), while household salaries are annual (€/year).",
       },
     },
     {
@@ -965,20 +965,20 @@ export default function SalaryGuidePage({ searchParams }: SalaryGuidePageProps) 
             <YachtSalaryMatrixTable
               title="Bridge / Deck"
               data={deckSalaries}
-              positions={["Captain", "Chief Officer / Mate", "2nd Officer", "3rd Officer", "Bosun", "Deckhand"]}
+              positions={["Captain", "Chief Officer / Mate", "Second Officer", "Third Officer", "Bosun", "Deckhand"]}
               icon={Anchor}
               noteText="All figures = base salary €/month (2026 realistic hiring ranges). Tips, bonuses, rotation uplifts NOT included. Private & charter baseline market bands."
             />
             <YachtSalaryMatrixTable
               title="Engineering / Technical"
               data={engineeringSalaries}
-              positions={["Chief Engineer", "2nd Engineer", "3rd Engineer", "Motorman", "ETO / AV-IT"]}
+              positions={["Chief Engineer", "Second Engineer", "Third Engineer", "Motorman", "ETO / AV-IT"]}
               icon={Wrench}
             />
             <YachtSalaryMatrixTable
               title="Interior / Administration"
               data={interiorSalaries}
-              positions={["Chief Stew", "2nd Stew", "Junior Stew", "Solo Stew", "Purser"]}
+              positions={["Chief Stew", "Second Stew", "Junior Stew", "Solo Stew", "Purser"]}
               icon={Sparkles}
             />
             <YachtSalaryMatrixTable

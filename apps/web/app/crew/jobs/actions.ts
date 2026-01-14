@@ -513,8 +513,40 @@ export async function getJobsData(
     };
   });
 
+  // Apply filters
+  let filteredJobs = mappedJobs;
+
+  if (filters?.position) {
+    const searchTerm = filters.position.toLowerCase();
+    filteredJobs = filteredJobs.filter((job) => {
+      const titleMatch = job.title?.toLowerCase().includes(searchTerm);
+      const descriptionMatch = job.description?.toLowerCase().includes(searchTerm);
+      return titleMatch || descriptionMatch;
+    });
+  }
+
+  if (filters?.region) {
+    filteredJobs = filteredJobs.filter((job) => job.location === filters.region);
+  }
+
+  if (filters?.contractType) {
+    filteredJobs = filteredJobs.filter((job) => job.contractType === filters.contractType);
+  }
+
+  if (filters?.minSalary) {
+    filteredJobs = filteredJobs.filter((job) => (job.salaryMax ?? 0) >= filters.minSalary!);
+  }
+
+  if (filters?.maxSalary) {
+    filteredJobs = filteredJobs.filter((job) => (job.salaryMin ?? Infinity) <= filters.maxSalary!);
+  }
+
+  if (filters?.vesselType) {
+    filteredJobs = filteredJobs.filter((job) => job.vesselType === filters.vesselType);
+  }
+
   // Sort by match score (highest first) as primary sort, then by date posted
-  mappedJobs.sort((a, b) => {
+  filteredJobs.sort((a, b) => {
     // Primary: Match score (highest first, nulls last)
     const scoreA = a.matchScore ?? -1;
     const scoreB = b.matchScore ?? -1;
@@ -534,8 +566,8 @@ export async function getJobsData(
     candidateSoughtPositions: soughtPositions,
     candidatePreferredRegions: candidate.preferred_regions,
     hasJobPreferences: hasPreferences,
-    jobs: mappedJobs,
-    totalCount: mappedJobs.length, // Count from matched jobs
+    jobs: filteredJobs,
+    totalCount: filteredJobs.length,
     appliedJobIds,
     savedJobIds,
   };

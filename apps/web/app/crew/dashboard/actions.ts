@@ -754,7 +754,7 @@ export async function getDashboardData(): Promise<DashboardData | null> {
  * Update candidate availability status
  */
 export async function updateAvailability(
-  status: "available" | "looking" | "employed" | "unavailable",
+  status: "available" | "not_looking",
   availableFrom?: string
 ): Promise<{ success: boolean; error?: string }> {
   const supabase = await createClient();
@@ -779,8 +779,8 @@ export async function updateAvailability(
   };
 
   // Set available_from based on status
-  if (status === "unavailable") {
-    // Clear available_from when setting to unavailable
+  if (status === "not_looking") {
+    // Clear available_from when setting to not_looking
     updateData.available_from = null;
   } else if (availableFrom) {
     // Set available_from for available status

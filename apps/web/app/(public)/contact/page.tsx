@@ -20,7 +20,7 @@ import { generateMetadata as genMeta } from "@/lib/seo/metadata";
 export const metadata: Metadata = genMeta({
   title: "Contact Us | Lighthouse Careers",
   description:
-    "Get in touch with Lighthouse Careers. Contact our team for yacht crew recruitment, private household staffing, or general inquiries. Phone: +33-6-52-92-83-60, Email: admin@lighthouse-careers.com",
+    "Get in touch with Lighthouse Careers. Contact our team for yacht crew recruitment, private household staffing, or general inquiries. Phone: +33-6-76-41-02-99, Email: admin@lighthouse-careers.com",
   keywords: [
     "contact lighthouse careers",
     "yacht crew recruitment contact",
@@ -59,8 +59,8 @@ const contactMethods = [
     icon: Phone,
     title: "Call Us",
     description: "Office hours: Mon-Fri 9am-6pm CET (Paris time)",
-    value: "+33 6 52 92 83 60",
-    href: "tel:+33652928360",
+    value: "+33 6 76 41 02 99",
+    href: "tel:+33676410299",
   },
 ];
 
@@ -284,7 +284,7 @@ export default function ContactPage() {
               },
               {
                 q: "How quickly can you find candidates?",
-                a: "We typically provide qualified candidates within 48 hours of receiving your brief. Urgent placements can often be expedited.",
+                a: "We typically provide qualified candidates within 24 hours of receiving your brief. Urgent placements can often be expedited.",
               },
               {
                 q: "Do you offer a replacement guarantee?",

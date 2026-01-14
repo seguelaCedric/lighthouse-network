@@ -388,19 +388,19 @@ function Step3({
     // Yacht Crew - Deck
     "Captain",
     "Chief Officer",
-    "2nd Officer",
-    "3rd Officer",
+    "Second Officer",
+    "Third Officer",
     "Bosun",
     "Deckhand",
     // Yacht Crew - Engineering
     "Chief Engineer",
-    "2nd Engineer",
+    "Second Engineer",
     "ETO",
     // Yacht Crew - Interior
-    "Chief Stewardess",
-    "2nd Stewardess",
-    "3rd Stewardess",
-    "Stewardess",
+    "Chief Stew",
+    "Second Stew",
+    "Third Stew",
+    "Stew",
     // Culinary
     "Head Chef",
     "Sous Chef",

@@ -50,13 +50,20 @@ export const POSITION_DISPLAY_NAMES: Record<string, string> = {
   electrician: 'Electrician',
 
   // Interior
-  chief_stewardess: 'Chief Stewardess',
+  chief_stewardess: 'Chief Stew',
   chief_steward: 'Chief Steward',
-  second_stewardess: 'Second Stewardess',
+  second_stewardess: 'Second Stew',
   second_steward: 'Second Steward',
-  third_stewardess: 'Third Stewardess',
-  stewardess: 'Stewardess',
+  third_stewardess: 'Third Stew',
+  stewardess: 'Stew',
   steward: 'Steward',
+  interior_manager: 'Interior Manager',
+  head_of_service: 'Head of Service',
+  head_of_house: 'Head of House',
+  sole_stewardess: 'Sole Stew',
+  junior_stewardess: 'Junior Stew',
+  experienced_stewardess: 'Experienced Stew',
+  laundry_stewardess: 'Laundry Stew',
 
   // Culinary
   head_chef: 'Head Chef',

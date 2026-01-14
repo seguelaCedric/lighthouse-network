@@ -380,7 +380,7 @@ export default function BriefConvertPage() {
                     name="title"
                     value={formData.title}
                     onChange={handleChange}
-                    placeholder="e.g., Chief Stewardess"
+                    placeholder="e.g., Chief Stew"
                     className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/20"
                   />
                 </div>

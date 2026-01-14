@@ -53,17 +53,19 @@ interface ChatMessage {
 const positionOptions = [
   { value: "", label: "Select position..." },
   { value: "captain", label: "Captain" },
-  { value: "first_officer", label: "First Officer" },
+  { value: "chief_officer", label: "Chief Officer" },
+  { value: "second_officer", label: "Second Officer" },
+  { value: "third_officer", label: "Third Officer" },
   { value: "chief_engineer", label: "Chief Engineer" },
-  { value: "second_engineer", label: "2nd Engineer" },
+  { value: "second_engineer", label: "Second Engineer" },
   { value: "eto", label: "ETO" },
   { value: "bosun", label: "Bosun" },
   { value: "lead_deckhand", label: "Lead Deckhand" },
   { value: "deckhand", label: "Deckhand" },
-  { value: "chief_stewardess", label: "Chief Stewardess" },
-  { value: "second_stewardess", label: "2nd Stewardess" },
-  { value: "third_stewardess", label: "3rd Stewardess" },
-  { value: "stewardess", label: "Stewardess" },
+  { value: "chief_stewardess", label: "Chief Stew" },
+  { value: "second_stewardess", label: "Second Stew" },
+  { value: "third_stewardess", label: "Third Stew" },
+  { value: "stewardess", label: "Stew" },
   { value: "head_chef", label: "Head Chef" },
   { value: "sous_chef", label: "Sous Chef" },
   { value: "chef", label: "Chef" },
@@ -102,7 +104,7 @@ const initialChatMessages: ChatMessage[] = [
     id: "1",
     role: "assistant",
     content: "Hello! I'm here to help you create a crew brief. Let's start with the basics.\n\n**What position are you looking to fill?**",
-    options: ["Captain", "Chief Stewardess", "Chef", "Engineer", "Deckhand", "Other"],
+    options: ["Captain", "Chief Stew", "Chef", "Engineer", "Deckhand", "Other"],
   },
 ];
 
@@ -474,7 +476,7 @@ export default function NewBriefPage() {
     // Simulate AI parsing
     setTimeout(() => {
       setParsedFromPaste({
-        position: "Chief Stewardess",
+        position: "Chief Stew",
         yachtName: "M/Y Eclipse",
         yachtType: "Motor Yacht",
         yachtSize: "72",
@@ -485,7 +487,7 @@ export default function NewBriefPage() {
         currency: "EUR",
         location: "Mediterranean",
         requirements: ["Charter Experience", "5+ Years Experience", "STCW Certified", "ENG1 Medical"],
-        notes: "Looking for an experienced Chief Stewardess to join our team. Must have excellent leadership skills and be comfortable managing a team of 4 interior crew.",
+        notes: "Looking for an experienced Chief Stew to join our team. Must have excellent leadership skills and be comfortable managing a team of 4 interior crew.",
         confidence: 87,
       });
       setIsParsing(false);
@@ -912,7 +914,7 @@ export default function NewBriefPage() {
                     rows={10}
                     placeholder={`Example:
 
-We're looking for an experienced Chief Stewardess to join M/Y Eclipse (72m motor yacht) for the Mediterranean season.
+We're looking for an experienced Chief Stew to join M/Y Eclipse (72m motor yacht) for the Mediterranean season.
 
 Requirements:
 - 5+ years experience in a similar role

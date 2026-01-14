@@ -269,13 +269,13 @@ Write a 200-300 word explanation of our hiring process for ${position} positions
 OUR PROCESS:
 1. Initial Consultation - Client shares requirements, household culture, and expectations
 2. Candidate Search - We search our pre-vetted network of ${position} professionals
-3. Shortlist Delivery - Within 48 hours, client receives curated shortlist with detailed profiles
+3. Shortlist Delivery - Within 24 hours, client receives curated shortlist with detailed profiles
 4. Interviews - We coordinate interviews and provide guidance
 5. Placement - We handle final references and assist with onboarding
 
 CONTENT REQUIREMENTS:
 - Explain each step clearly and professionally
-- Mention our 48-hour shortlist turnaround
+- Mention our 24-hour shortlist turnaround
 - Note that most placements complete within 1-2 weeks
 - Emphasize the hands-on support throughout
 - Use "hire ${position}" and "${position} recruitment" naturally for SEO
@@ -327,7 +327,7 @@ CONTEXT:
 - Lighthouse Careers uses a success-fee model (no upfront costs)
 - We offer a replacement guarantee
 - Typical placement timeline: 1-2 weeks
-- First shortlist delivered within 48 hours
+- First shortlist delivered within 24 hours
 
 FAQ TOPICS TO COVER:
 1. Cost/pricing (success-fee model, no upfront fees)

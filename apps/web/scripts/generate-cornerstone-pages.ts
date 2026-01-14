@@ -32,16 +32,16 @@ function getContentModel() {
 const POSITIONS = [
   // Yacht Crew
   { name: 'Captain', slug: 'captain', category: 'yacht' },
-  { name: 'Chief Stewardess', slug: 'chief-stewardess', category: 'yacht' },
+  { name: 'Chief Stew', slug: 'chief-stew', category: 'yacht' },
   { name: 'Yacht Chef', slug: 'yacht-chef', category: 'yacht' },
-  { name: 'First Officer', slug: 'first-officer', category: 'yacht' },
+  { name: 'Chief Officer', slug: 'chief-officer', category: 'yacht' },
   { name: 'Chief Engineer', slug: 'chief-engineer', category: 'yacht' },
   { name: 'Bosun', slug: 'bosun', category: 'yacht' },
   { name: 'Deckhand', slug: 'deckhand', category: 'yacht' },
-  { name: 'Stewardess', slug: 'stewardess', category: 'yacht' },
+  { name: 'Stew', slug: 'stew', category: 'yacht' },
   { name: 'Second Engineer', slug: 'second-engineer', category: 'yacht' },
   { name: 'ETO', slug: 'eto', category: 'yacht' },
-  { name: 'Second Stewardess', slug: 'second-stewardess', category: 'yacht' },
+  { name: 'Second Stew', slug: 'second-stew', category: 'yacht' },
 
   // Household Staff
   { name: 'Personal Assistant', slug: 'personal-assistant', category: 'household' },
@@ -127,7 +127,7 @@ ABOUT LIGHTHOUSE CAREERS:
 - 20+ years experience in luxury staffing
 - Success-fee model (clients only pay when they hire - no upfront costs, no retainers)
 - Replacement guarantee (free replacement if placement doesn't work out)
-- 24-48 hour first shortlist delivery
+- 24 hour first shortlist delivery
 - Rigorous 7-step vetting process (background checks, reference verification, skills assessment, personality profiling, trial day coordination, document verification, ongoing support)
 - 500+ satisfied clients globally
 - 300+ successful placements annually
@@ -192,7 +192,7 @@ CONTENT SECTIONS REQUIRED:
 10. HIRING PROCESS (300-400 words, HTML):
     - Step 1: Initial consultation (15-30 mins, understand requirements)
     - Step 2: Search activation (access our network of pre-vetted candidates)
-    - Step 3: Shortlist delivery (within 24-48 hours)
+    - Step 3: Shortlist delivery (within 24 hours)
     - Step 4: Interview coordination (we handle logistics)
     - Step 5: Reference and background verification
     - Step 6: Offer and onboarding support
