@@ -108,7 +108,10 @@ function DialogContent({ children, className }: DialogContentProps) {
   return (
     <>
       <DialogOverlay />
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        onClick={() => onOpenChange(false)}
+      >
         <div
           className={cn(
             "relative w-full max-w-lg rounded-xl border border-gray-200 bg-white p-6 shadow-xl animate-in fade-in-0 zoom-in-95",
