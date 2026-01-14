@@ -20,7 +20,8 @@ export type EmailTemplate =
   | "employer_brief_received"
   | "employer_enquiry_submitted"
   | "employer_enquiry_admin_notification"
-  | "job_alert";
+  | "job_alert"
+  | "yotspot_import_notification";
 
 // Template data types
 export interface BriefReceivedData {
@@ -1749,6 +1750,123 @@ export function salaryGuideLeadAdminEmail(data: SalaryGuideLeadAdminData) {
 
   return {
     subject: `Salary Guide Downloaded: ${data.email}`,
+    html: baseTemplate(content),
+    text: generatePlainText(content),
+  };
+}
+
+// ============================================
+// Yotspot Import Notification Email Templates
+// ============================================
+
+export interface YotspotImportNotificationData {
+  candidateName: string;
+  candidatePosition: string | null;
+  candidateEmail: string | null;
+  candidatePhone: string | null;
+  jobTitle: string;
+  jobRef: string | null;
+  matchScore: number;
+  matchAssessment: string | null;
+  strengths: string[];
+  concerns: string[];
+  candidateProfileUrl: string;
+  jobUrl: string;
+  yotspotUrl: string;
+}
+
+export function yotspotImportNotificationEmail(data: YotspotImportNotificationData) {
+  // Determine match quality color and label
+  const getMatchQuality = (score: number) => {
+    if (score >= 90) return { color: "#16a34a", label: "Excellent Match", bgColor: "#dcfce7" };
+    if (score >= 80) return { color: "#22c55e", label: "Strong Match", bgColor: "#dcfce7" };
+    if (score >= 70) return { color: "#eab308", label: "Good Match", bgColor: "#fef9c3" };
+    return { color: "#6b7280", label: "Potential Match", bgColor: "#f3f4f6" };
+  };
+
+  const matchQuality = getMatchQuality(data.matchScore);
+
+  const content = `
+    <h1>New Candidate from Yotspot!</h1>
+    <p>A new candidate has been automatically imported from Yotspot and matches one of your open positions.</p>
+
+    <div style="background:${matchQuality.bgColor}; border-radius:12px; padding:20px; margin:25px 0; text-align:center; border-left:4px solid ${matchQuality.color};">
+      <p style="margin:0 0 10px; font-size:14px; color:#6b7280;">Match Score</p>
+      <p style="margin:0; font-size:48px; font-weight:700; color:${matchQuality.color};">${data.matchScore}%</p>
+      <p style="margin:10px 0 0; font-size:16px; font-weight:600; color:${matchQuality.color};">${matchQuality.label}</p>
+    </div>
+
+    <div class="info-box">
+      <div class="info-row">
+        <span class="info-label">Candidate</span>
+        <span class="info-value"><strong>${data.candidateName}</strong></span>
+      </div>
+      ${data.candidatePosition ? `
+      <div class="info-row">
+        <span class="info-label">Position</span>
+        <span class="info-value">${data.candidatePosition}</span>
+      </div>
+      ` : ""}
+      ${data.candidateEmail ? `
+      <div class="info-row">
+        <span class="info-label">Email</span>
+        <span class="info-value"><a href="mailto:${data.candidateEmail}">${data.candidateEmail}</a></span>
+      </div>
+      ` : ""}
+      ${data.candidatePhone ? `
+      <div class="info-row">
+        <span class="info-label">Phone</span>
+        <span class="info-value"><a href="tel:${data.candidatePhone}">${data.candidatePhone}</a></span>
+      </div>
+      ` : ""}
+      <div class="info-row">
+        <span class="info-label">Applied For</span>
+        <span class="info-value">${data.jobTitle}${data.jobRef ? ` (Ref: ${data.jobRef})` : ""}</span>
+      </div>
+    </div>
+
+    ${data.matchAssessment ? `
+    <h2>AI Assessment</h2>
+    <p style="background:#f8f9fa; padding:15px; border-radius:8px;">${data.matchAssessment}</p>
+    ` : ""}
+
+    ${data.strengths.length > 0 ? `
+    <h2 style="color:#16a34a;">Strengths</h2>
+    <ul>
+      ${data.strengths.map(s => `<li>${s}</li>`).join("")}
+    </ul>
+    ` : ""}
+
+    ${data.concerns.length > 0 ? `
+    <h2 style="color:#dc2626;">Potential Concerns</h2>
+    <ul>
+      ${data.concerns.map(c => `<li>${c}</li>`).join("")}
+    </ul>
+    ` : ""}
+
+    <div style="text-align:center; margin:30px 0;">
+      <a href="${data.candidateProfileUrl}" class="button" style="margin-right:10px;">View Candidate Profile</a>
+      <a href="${data.jobUrl}" class="button" style="background:#6b7280;">View Job</a>
+    </div>
+
+    <p style="font-size:13px; color:#6b7280; text-align:center;">
+      <a href="${data.yotspotUrl}" style="color:#6b7280;">View original on Yotspot</a>
+    </p>
+
+    <div class="divider"></div>
+
+    <p><strong>Next Steps:</strong></p>
+    <ul>
+      <li>Review the candidate's full profile and CV</li>
+      <li>If suitable, add to shortlist or contact directly</li>
+      <li>The candidate has also been imported to your database</li>
+    </ul>
+
+    <p style="font-size:13px; color:#6b7280;">This candidate was automatically imported from Yotspot via email notification.</p>
+  `;
+
+  return {
+    subject: `New Yotspot Application: ${data.candidateName} for ${data.jobTitle} (${data.matchScore}% match)`,
     html: baseTemplate(content),
     text: generatePlainText(content),
   };

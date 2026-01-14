@@ -2,13 +2,13 @@
   "startedAt": "2026-01-13T08:28:35.129Z",
   "csvPath": "data/bubble-candidates.csv",
   "totalWithCVs": 11921,
-  "lastProcessedRow": 43389,
-  "processedCount": 9960,
-  "uploadedCount": 9319,
-  "extractedCount": 7275,
-  "embeddedCount": 7273,
-  "skippedCount": 588,
-  "errorCount": 53,
+  "lastProcessedRow": 44671,
+  "processedCount": 11140,
+  "uploadedCount": 10490,
+  "extractedCount": 8109,
+  "embeddedCount": 8106,
+  "skippedCount": 590,
+  "errorCount": 60,
   "errors": [
     {
       "row": 33101,
@@ -274,6 +274,41 @@
       "row": 43335,
       "email": "jrodgers0327@gmail.com",
       "error": "Upload failed: Unexpected token '<', \"<html>\r\n<h\"... is not valid JSON"
+    },
+    {
+      "row": 43415,
+      "email": "ann.lysytsia@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 43486,
+      "email": "samimkhalasi@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 43555,
+      "email": "jokosuharianto67@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 43747,
+      "email": "ssrahul246@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 44051,
+      "email": "syedfaimulislam@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 44180,
+      "email": "molyneuxnichollas@gmail.com",
+      "error": "Download failed: fetch failed"
+    },
+    {
+      "row": 44462,
+      "email": "dmazibuko804@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
     }
   ]
 }
