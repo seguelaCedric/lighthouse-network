@@ -108,7 +108,7 @@ export function ToggleCard({
           checked && showCustomName && "mt-3 pt-3"
         )}>
           <label className="block text-xs font-medium text-gray-600 mb-1.5">
-            {expiryLabel}
+            {expiryLabel} <span className="text-gray-400 font-normal">(optional)</span>
           </label>
           <TextInput
             type="date"
