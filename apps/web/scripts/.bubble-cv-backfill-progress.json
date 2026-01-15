@@ -2,13 +2,13 @@
   "startedAt": "2026-01-13T08:28:35.129Z",
   "csvPath": "data/bubble-candidates.csv",
   "totalWithCVs": 11921,
-  "lastProcessedRow": 44671,
-  "processedCount": 11140,
-  "uploadedCount": 10490,
-  "extractedCount": 8109,
-  "embeddedCount": 8106,
-  "skippedCount": 590,
-  "errorCount": 60,
+  "lastProcessedRow": 45521,
+  "processedCount": 11921,
+  "uploadedCount": 11264,
+  "extractedCount": 8695,
+  "embeddedCount": 8692,
+  "skippedCount": 595,
+  "errorCount": 62,
   "errors": [
     {
       "row": 33101,
@@ -308,6 +308,16 @@
     {
       "row": 44462,
       "email": "dmazibuko804@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 44845,
+      "email": "aliborna156@gmail.com",
+      "error": "Upload failed: The object exceeded the maximum allowed size"
+    },
+    {
+      "row": 45274,
+      "email": "shreeprasadramjee@gmail.com",
       "error": "Upload failed: The object exceeded the maximum allowed size"
     }
   ]

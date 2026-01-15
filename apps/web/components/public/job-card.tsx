@@ -212,6 +212,8 @@ export function JobCard({ job, featured = false }: JobCardProps) {
                   </span>
                 </>
               )}
+              <span className="mx-1">·</span>
+              <span className="font-mono">ID: {job.id.slice(0, 8).toUpperCase()}</span>
             </div>
 
             <span className="flex items-center gap-1 text-sm font-medium text-gold-600 opacity-0 transition-opacity group-hover:opacity-100">

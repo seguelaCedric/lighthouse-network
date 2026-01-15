@@ -61,12 +61,20 @@ async function handleSNSSubscriptionConfirmation(body: Record<string, unknown>):
  */
 export async function POST(request: NextRequest) {
   try {
-    // Check for AWS SNS message type header
+    // Check for AWS SNS message type header (case-insensitive)
     const snsMessageType = request.headers.get("x-amz-sns-message-type");
 
-    // Handle SNS Subscription Confirmation
-    if (snsMessageType === "SubscriptionConfirmation") {
-      const body = await request.json();
+    // Parse body once
+    const body = await request.json();
+
+    // Log incoming request for debugging
+    console.log("[VincereCandidateWebhook] Received POST request");
+    console.log("[VincereCandidateWebhook] SNS header:", snsMessageType);
+    console.log("[VincereCandidateWebhook] Body Type field:", body.Type);
+
+    // Handle SNS Subscription Confirmation - check both header AND body Type field
+    // AWS SNS sends Type in the body as well as the header
+    if (snsMessageType === "SubscriptionConfirmation" || body.Type === "SubscriptionConfirmation") {
       console.log("[VincereCandidateWebhook] Received SNS SubscriptionConfirmation");
       const confirmed = await handleSNSSubscriptionConfirmation(body);
       return NextResponse.json({
@@ -77,11 +85,11 @@ export async function POST(request: NextRequest) {
 
     // Handle SNS Notification (actual webhook events)
     // SNS wraps the actual message in a "Message" field as a JSON string
-    let body = await request.json();
-    if (snsMessageType === "Notification" && typeof body.Message === "string") {
+    let parsedBody = body;
+    if ((snsMessageType === "Notification" || body.Type === "Notification") && typeof body.Message === "string") {
       console.log("[VincereCandidateWebhook] Parsing SNS Notification message");
       try {
-        body = JSON.parse(body.Message);
+        parsedBody = JSON.parse(body.Message);
       } catch {
         console.error("[VincereCandidateWebhook] Failed to parse SNS Message as JSON");
       }
@@ -115,7 +123,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const event: VincereCandidateWebhookEvent = body;
+    const event: VincereCandidateWebhookEvent = parsedBody;
 
     if (!event || !event.entity_type || !event.action_type || !event.data) {
       return NextResponse.json(

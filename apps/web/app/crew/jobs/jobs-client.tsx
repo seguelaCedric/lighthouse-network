@@ -257,9 +257,15 @@ function JobCard({
 
       {/* Footer */}
       <div className="mt-4 flex flex-col gap-2 border-t border-gray-100 pt-3 sm:flex-row sm:items-center sm:justify-between">
-        <span className="text-xs text-gray-400">
-          Posted {formatRelativeDate(job.createdAt)}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-gray-400">
+            Posted {formatRelativeDate(job.createdAt)}
+          </span>
+          <span className="text-xs text-gray-400">•</span>
+          <span className="text-xs font-mono text-gray-500">
+            ID: {job.id.slice(0, 8).toUpperCase()}
+          </span>
+        </div>
         <div className="flex items-center gap-1.5">
           <Button variant="secondary" size="sm" onClick={onView} className="text-xs px-2.5 py-1 h-7">
             View Details
@@ -352,6 +358,9 @@ function JobDetailModal({
             <span className="flex items-center gap-1 text-sm text-gray-500">
               <Clock className="size-4" />
               Posted {formatRelativeDate(job.createdAt)}
+            </span>
+            <span className="text-xs font-mono text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+              ID: {job.id.slice(0, 8).toUpperCase()}
             </span>
             {job.applyDeadline && (
               <span className="flex items-center gap-1 text-sm text-warning-600">
