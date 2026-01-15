@@ -16,7 +16,6 @@ interface ProfileCompletionCardProps {
   documentCount?: number;
   // Completion detail
   actions?: ProfileCompletionAction[];
-  isIdentityVerified?: boolean;
 }
 
 export function ProfileCompletionCard({
@@ -27,7 +26,6 @@ export function ProfileCompletionCard({
   jobPreferencesCount = 0,
   documentCount = 0,
   actions = [],
-  isIdentityVerified = false,
 }: ProfileCompletionCardProps) {
   const isProfileComplete = overallProgress >= 95;
   const actionableItems = actions;
@@ -44,9 +42,7 @@ export function ProfileCompletionCard({
         </h2>
         <p className="text-gray-600">
           {isProfileComplete
-            ? isIdentityVerified
-              ? "Your profile is looking excellent. You're ready to start applying for positions."
-              : "Your profile is ready. Identity verification is pending review by our team."
+            ? "Your profile is looking excellent. You're ready to start applying for positions."
             : `You've completed ${overallProgress}% of your profile. Keep going to maximize your visibility.`}
         </p>
 
@@ -152,7 +148,7 @@ export function ProfileCompletionCard({
         </a>
       </div>
 
-      {(actionableItems.length > 0 || !isIdentityVerified) && (
+      {actionableItems.length > 0 && (
         <div className="rounded-lg border border-gold-200 bg-gold-50 p-4">
           <h4 className="mb-2 text-sm font-semibold text-gold-900">
             What&apos;s left to reach 100%
@@ -171,12 +167,6 @@ export function ProfileCompletionCard({
                 </span>
               </li>
             ))}
-            {!isIdentityVerified && (
-              <li className="flex items-center gap-2 text-gold-700">
-                <span className="mt-0.5 size-1.5 rounded-full bg-gold-600" />
-                <span>Identity verification pending (reviewed by our team)</span>
-              </li>
-            )}
           </ul>
         </div>
       )}

@@ -1375,7 +1375,6 @@ export function ProfileEditClient({
           jobPreferencesCount={jobPreferencesCount}
           documentCount={documents.length}
           actions={profileCompletion.actions}
-          isIdentityVerified={profileCompletion.isIdentityVerified}
         />
       )}
             </div>
