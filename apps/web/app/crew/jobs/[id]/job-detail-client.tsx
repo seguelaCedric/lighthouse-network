@@ -29,6 +29,7 @@ import { InlineCVUpload } from "@/components/documents/InlineCVUpload";
 import { calculateProfileCompletion } from "@/lib/profile-completion";
 import { candidateHasCV } from "@/lib/utils/candidate-cv";
 import { isLandBasedJob } from "@/lib/utils/job-helpers";
+import { formatSalaryRange } from "@/lib/utils/currency";
 
 interface JobDetailClientProps {
   job: JobListing;
@@ -46,29 +47,18 @@ function formatContractType(type: string): string {
   return typeMap[type.toLowerCase()] || type.charAt(0).toUpperCase() + type.slice(1);
 }
 
-// Format salary for display
+// Format salary for display - uses centralized currency utility
 function formatSalary(
   min: number | null,
   max: number | null,
   currency: string,
   period: string
 ): string {
-  const currencySymbol = currency === "USD" ? "$" : currency === "GBP" ? "?" : "?";
-  const periodLabel = period === "yearly" ? " per year" : period === "daily" ? " per day" : " per month";
-
-  if (min && max) {
-    if (min === max) {
-      return `${currencySymbol}${min.toLocaleString("en-US")}${periodLabel}`;
-    }
-    return `${currencySymbol}${min.toLocaleString("en-US")} - ${currencySymbol}${max.toLocaleString("en-US")}${periodLabel}`;
-  }
-  if (min) {
-    return `From ${currencySymbol}${min.toLocaleString("en-US")}${periodLabel}`;
-  }
-  if (max) {
-    return `Up to ${currencySymbol}${max.toLocaleString("en-US")}${periodLabel}`;
-  }
-  return "Competitive salary";
+  const result = formatSalaryRange(min, max, currency, period, {
+    style: "full",
+    periodStyle: "long",
+  });
+  return result === "Competitive" ? "Competitive salary" : result;
 }
 
 // Format date for display

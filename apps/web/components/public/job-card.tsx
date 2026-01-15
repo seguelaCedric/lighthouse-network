@@ -11,6 +11,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatSalaryRange } from "@/lib/utils/currency";
 
 export interface PublicJob {
   id: string;
@@ -48,20 +49,15 @@ export function JobCard({ job, featured = false }: JobCardProps) {
   const formatSalary = () => {
     if (!job.salary_min && !job.salary_max) return null;
 
-    const currency = job.salary_currency || "EUR";
-    const symbol = currency === "EUR" ? "€" : currency === "GBP" ? "£" : "$";
-    const period = job.salary_period === "monthly" ? "/mo" : "/yr";
+    const result = formatSalaryRange(
+      job.salary_min,
+      job.salary_max,
+      job.salary_currency || "EUR",
+      job.salary_period || "monthly",
+      { style: "compact", periodStyle: "short" }
+    );
 
-    if (job.salary_min && job.salary_max) {
-      return `${symbol}${(job.salary_min / 1000).toFixed(0)}k - ${symbol}${(job.salary_max / 1000).toFixed(0)}k${period}`;
-    }
-    if (job.salary_min) {
-      return `From ${symbol}${(job.salary_min / 1000).toFixed(0)}k${period}`;
-    }
-    if (job.salary_max) {
-      return `Up to ${symbol}${(job.salary_max / 1000).toFixed(0)}k${period}`;
-    }
-    return null;
+    return result === "Competitive" ? null : result;
   };
 
   const formatDate = (dateString: string) => {

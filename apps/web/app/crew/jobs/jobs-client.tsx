@@ -18,9 +18,7 @@ import {
   Loader2,
   ChevronDown,
   ChevronUp,
-  Sparkles,
   CalendarClock,
-  HelpCircle,
   Bookmark,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -67,64 +65,6 @@ function formatSalary(
 function formatContractType(type: string | null): string {
   if (!type) return "Contract";
   return type.charAt(0).toUpperCase() + type.slice(1);
-}
-
-// Match score badge with match type context and tooltip
-function MatchScoreBadge({
-  score,
-  matchType,
-  showTooltip = false,
-}: {
-  score: number | null;
-  matchType: "match" | "none";
-  showTooltip?: boolean;
-}) {
-  const [tooltipOpen, setTooltipOpen] = React.useState(false);
-
-  // Don't show badge if score is null or matchType is "none"
-  if (!score || matchType === "none") return null;
-
-  // Styling for matches
-  const colorClass = "bg-success-100 text-success-700";
-  const label = `${score}% Fit`;
-
-  const tooltipContent = "This score indicates how well this job fits your profile based on your experience, certifications, and preferences.";
-
-  return (
-    <div className="relative">
-      <button
-        type="button"
-        className={cn(
-          "flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium transition-colors",
-          colorClass,
-          showTooltip && "cursor-help"
-        )}
-        onMouseEnter={() => showTooltip && setTooltipOpen(true)}
-        onMouseLeave={() => setTooltipOpen(false)}
-        onClick={(e) => {
-          if (showTooltip) {
-            e.stopPropagation();
-            setTooltipOpen(!tooltipOpen);
-          }
-        }}
-      >
-        <Sparkles className="size-3" />
-        {label}
-        {showTooltip && <HelpCircle className="size-3 opacity-60" />}
-      </button>
-
-      {/* Tooltip */}
-      {tooltipOpen && (
-        <div className="absolute left-1/2 top-full z-50 mt-2 w-64 -translate-x-1/2 rounded-lg bg-navy-900 px-3 py-2 text-xs text-white shadow-lg">
-          <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 border-[6px] border-transparent border-b-navy-900" />
-          <p className="font-medium mb-1">Fit Score</p>
-          <p className="text-gray-300 leading-relaxed">
-            {tooltipContent}
-          </p>
-        </div>
-      )}
-    </div>
-  );
 }
 
 // Contract Badge Component
@@ -204,7 +144,6 @@ function JobCard({
               <Bookmark className={cn("size-3.5", job.isSaved && "fill-current")} />
             )}
           </button>
-          <MatchScoreBadge score={job.matchScore} matchType={job.matchType} showTooltip />
         </div>
       </div>
 
@@ -328,14 +267,11 @@ function JobDetailModal({
                   {job.title}
                 </h2>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {job.isUrgent && (
-                  <span className="rounded-full bg-error-100 px-2 py-0.5 text-xs font-bold text-error-600 whitespace-nowrap">
-                    URGENT
-                  </span>
-                )}
-                <MatchScoreBadge score={job.matchScore} matchType={job.matchType} showTooltip />
-              </div>
+              {job.isUrgent && (
+                <span className="flex-shrink-0 rounded-full bg-error-100 px-2 py-0.5 text-xs font-bold text-error-600 whitespace-nowrap">
+                  URGENT
+                </span>
+              )}
             </div>
             <p className="text-sm sm:text-base text-gray-600">
               {job.vesselName || (job.vesselSize ? `${job.vesselSize}m` : "Confidential Listing")}
