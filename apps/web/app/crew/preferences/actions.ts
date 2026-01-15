@@ -7,6 +7,7 @@ import { candidateHasCV } from "@/lib/utils/candidate-cv";
 import { syncCandidateUpdate } from "@/lib/vincere/sync-service";
 import { POSITION_MAPPING } from "@/lib/vincere/constants";
 import { normalizePosition } from "@/lib/utils/position-normalization";
+import { processInitialJobMatches } from "@/lib/services/job-alert-service";
 
 export interface JobPreferencesData {
   industryPreference: "yacht" | "household" | "both" | null;
@@ -153,7 +154,7 @@ export async function updateJobPreferences(
 
 export async function markPreferencesComplete(
   candidateId: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; jobMatchResult?: { totalMatches: number; notificationsCreated: number; emailSent: boolean } }> {
   const supabase = await createClient();
 
   const {
@@ -177,10 +178,22 @@ export async function markPreferencesComplete(
     return { success: false, error: error.message };
   }
 
+  // Process initial job matches - find all open jobs matching the candidate's preferences
+  // and send notifications + summary email
+  let jobMatchResult: { totalMatches: number; notificationsCreated: number; emailSent: boolean } | undefined;
+  try {
+    jobMatchResult = await processInitialJobMatches(candidateId);
+    console.log("[markPreferencesComplete] Initial job matches processed:", jobMatchResult);
+  } catch (err) {
+    // Log but don't fail the preferences completion
+    console.error("[markPreferencesComplete] Error processing initial job matches:", err);
+  }
+
   revalidatePath("/crew/preferences");
   revalidatePath("/crew/dashboard");
+  revalidatePath("/crew/notifications");
 
-  return { success: true };
+  return { success: true, jobMatchResult };
 }
 
 // ----------------------------------------------------------------------------
@@ -450,14 +463,15 @@ export async function loadJobMatches(
     };
   });
 
-  // Sort by: relevance tier, then urgent, then date
+  // Sort by: relevance tier first, then date posted (newest first)
+  // Tier 1 = exact position match, Tier 2 = same department, Tier 3 = other
   allMatches.sort((a, b) => {
+    // Primary: Relevance tier (exact match first, then same department, then other)
     if (a.relevanceTier !== b.relevanceTier) {
       return a.relevanceTier - b.relevanceTier;
     }
-    if (a.job.isUrgent !== b.job.isUrgent) {
-      return a.job.isUrgent ? -1 : 1;
-    }
+
+    // Secondary: Date posted (newest first within each tier)
     const dateA = a.job.publishedAt ? new Date(a.job.publishedAt).getTime() : 0;
     const dateB = b.job.publishedAt ? new Date(b.job.publishedAt).getTime() : 0;
     return dateB - dateA;

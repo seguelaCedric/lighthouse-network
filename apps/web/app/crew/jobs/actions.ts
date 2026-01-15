@@ -430,12 +430,14 @@ export async function getJobsData(
   const savedJobIds = (savedJobsResult.data || []).map((s) => s.job_id);
 
   // Fetch all public jobs directly from the database
+  // Note: public_jobs is a view that excludes vessel_name for confidentiality
   const { data: jobs, error: jobsError } = await supabase
     .from("public_jobs")
     .select(`
       id,
       title,
-      vessel_name,
+      description,
+      position_category,
       vessel_type,
       vessel_size_meters,
       primary_region,
@@ -446,10 +448,7 @@ export async function getJobsData(
       salary_max,
       salary_currency,
       salary_period,
-      holiday_days,
       benefits,
-      description,
-      requirements_text,
       requirements,
       is_urgent,
       apply_deadline,
@@ -478,6 +477,7 @@ export async function getJobsData(
   });
 
   // Map jobs to JobListing[] format with relevance tiers
+  // Note: public_jobs view doesn't include vessel_name (confidential) or holiday_days
   const mappedJobs: JobListing[] = (jobs || []).map((job) => {
     // Calculate relevance tier based on position matching
     const relevanceTier = calculateRelevanceTier(job.title || "", soughtPositionsForMatching);
@@ -485,7 +485,7 @@ export async function getJobsData(
     return {
       id: job.id,
       title: job.title || "",
-      vesselName: job.vessel_name || null,
+      vesselName: null, // Not exposed in public_jobs view for confidentiality
       vesselType: job.vessel_type || null,
       vesselSize: job.vessel_size_meters || null,
       location: job.primary_region || null,
@@ -496,9 +496,9 @@ export async function getJobsData(
       salaryMax: job.salary_max || null,
       currency: job.salary_currency || "EUR",
       salaryPeriod: job.salary_period || "month",
-      holidayDays: job.holiday_days || null,
+      holidayDays: null, // Not exposed in public_jobs view
       benefits: job.benefits || null,
-      description: job.description || job.requirements_text || null,
+      description: job.description || null,
       requirements: job.requirements as Record<string, unknown> | null || null,
       isUrgent: job.is_urgent || false,
       applyDeadline: job.apply_deadline || null,
@@ -545,19 +545,15 @@ export async function getJobsData(
     filteredJobs = filteredJobs.filter((job) => job.vesselType === filters.vesselType);
   }
 
-  // Sort by: relevance tier (1 first), then urgent, then date posted
+  // Sort by: relevance tier first, then date posted (newest first)
+  // Tier 1 = exact position match, Tier 2 = same department, Tier 3 = other
   filteredJobs.sort((a, b) => {
-    // Primary: Relevance tier (1 = exact match first, then 2 = same dept, then 3 = other)
+    // Primary: Relevance tier (exact match first, then same department, then other)
     if (a.relevanceTier !== b.relevanceTier) {
       return a.relevanceTier - b.relevanceTier;
     }
 
-    // Secondary: Urgent jobs first within each tier
-    if (a.isUrgent !== b.isUrgent) {
-      return a.isUrgent ? -1 : 1;
-    }
-
-    // Tertiary: Date posted (newest first)
+    // Secondary: Date posted (newest first within each tier)
     const dateA = a.publishedAt ? new Date(a.publishedAt).getTime() : 0;
     const dateB = b.publishedAt ? new Date(b.publishedAt).getTime() : 0;
     return dateB - dateA;
