@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 import { type JobsPageData, type JobListing, applyToJob, getJobsData, type JobFilters, saveJob, unsaveJob } from "./actions";
 import { REGION_GROUPS, isLandBasedJob } from "@/lib/utils/job-helpers";
 import { formatSalaryRange } from "@/lib/utils/currency";
+import { getDepartment, YACHT_DEPARTMENTS, HOUSEHOLD_DEPARTMENTS } from "@/lib/vincere/constants";
 
 // Helper functions
 function formatDate(dateStr: string | null): string {
@@ -530,6 +531,7 @@ export function JobsClient({ data: initialData }: { data: JobsPageData }) {
   const [minSalaryFilter, setMinSalaryFilter] = React.useState("");
   const [maxSalaryFilter, setMaxSalaryFilter] = React.useState("");
   const [jobTypeFilter, setJobTypeFilter] = React.useState<"all" | "yacht" | "land-based">("all");
+  const [departmentFilter, setDepartmentFilter] = React.useState("");
 
   // Debounced search
   const searchTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -584,17 +586,64 @@ export function JobsClient({ data: initialData }: { data: JobsPageData }) {
     };
   }, [searchQuery, positionFilter, regionFilter, contractFilter, minSalaryFilter, maxSalaryFilter, fetchJobs]);
 
-  // Client-side filter for job type (yacht vs land-based)
-  const filteredJobs = React.useMemo(() => {
-    if (jobTypeFilter === "all") return jobs;
-
-    return jobs.filter(job => {
-      const isLandBased = isLandBasedJob(job.title);
-      if (jobTypeFilter === "land-based") return isLandBased;
-      if (jobTypeFilter === "yacht") return !isLandBased;
-      return true;
+  // Get available departments based on selected job type
+  const availableDepartments = React.useMemo(() => {
+    if (jobTypeFilter === "yacht") {
+      return Object.entries(YACHT_DEPARTMENTS).map(([key, label]) => ({ key, label }));
+    }
+    if (jobTypeFilter === "land-based") {
+      return Object.entries(HOUSEHOLD_DEPARTMENTS).map(([key, label]) => ({ key, label }));
+    }
+    // All jobs - combine both
+    const combinedDepts = new Map<string, { key: string; label: string }>();
+    Object.entries(YACHT_DEPARTMENTS).forEach(([key, label]) => {
+      combinedDepts.set(label, { key, label });
     });
-  }, [jobs, jobTypeFilter]);
+    Object.entries(HOUSEHOLD_DEPARTMENTS).forEach(([key, label]) => {
+      if (key.startsWith("villa_")) {
+        combinedDepts.set(`Household - ${label}`, { key, label: `Household - ${label}` });
+      } else if (!combinedDepts.has(label)) {
+        combinedDepts.set(label, { key, label });
+      }
+    });
+    return Array.from(combinedDepts.values()).sort((a, b) => a.label.localeCompare(b.label));
+  }, [jobTypeFilter]);
+
+  // Clear department if it's no longer valid when job type changes
+  React.useEffect(() => {
+    if (departmentFilter) {
+      const isValidDepartment = availableDepartments.some(d => d.key === departmentFilter);
+      if (!isValidDepartment) {
+        setDepartmentFilter("");
+      }
+    }
+  }, [jobTypeFilter, departmentFilter, availableDepartments]);
+
+  // Client-side filter for job type and department
+  const filteredJobs = React.useMemo(() => {
+    let result = jobs;
+
+    // Filter by job type
+    if (jobTypeFilter !== "all") {
+      result = result.filter(job => {
+        const isLandBased = isLandBasedJob(job.title);
+        if (jobTypeFilter === "land-based") return isLandBased;
+        if (jobTypeFilter === "yacht") return !isLandBased;
+        return true;
+      });
+    }
+
+    // Filter by department
+    if (departmentFilter) {
+      result = result.filter(job => {
+        const isLandBased = isLandBasedJob(job.title);
+        const jobDepartment = getDepartment(job.title, isLandBased);
+        return jobDepartment === departmentFilter;
+      });
+    }
+
+    return result;
+  }, [jobs, jobTypeFilter, departmentFilter]);
 
   const handleApply = async (jobId: string) => {
     setApplyingJobId(jobId);
@@ -673,9 +722,10 @@ export function JobsClient({ data: initialData }: { data: JobsPageData }) {
     setMinSalaryFilter("");
     setMaxSalaryFilter("");
     setJobTypeFilter("all");
+    setDepartmentFilter("");
   };
 
-  const hasActiveFilters = positionFilter || regionFilter || contractFilter || searchQuery || minSalaryFilter || maxSalaryFilter || jobTypeFilter !== "all";
+  const hasActiveFilters = positionFilter || regionFilter || contractFilter || searchQuery || minSalaryFilter || maxSalaryFilter || jobTypeFilter !== "all" || departmentFilter;
 
   // Get unique values for filter dropdowns from current jobs
   const contractTypes = [...new Set(jobs.map(j => j.contractType).filter(Boolean))] as string[];
@@ -809,6 +859,25 @@ export function JobsClient({ data: initialData }: { data: JobsPageData }) {
                     <option value="all">All Jobs</option>
                     <option value="yacht">Yacht-based</option>
                     <option value="land-based">Land-based</option>
+                  </select>
+                </div>
+
+                {/* Department */}
+                <div>
+                  <label className="mb-1 block text-xs text-gray-500">
+                    Department
+                  </label>
+                  <select
+                    value={departmentFilter}
+                    onChange={(e) => setDepartmentFilter(e.target.value)}
+                    className="h-9 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:border-gold-500 focus:outline-none focus:ring-1 focus:ring-gold-500"
+                  >
+                    <option value="">All Departments</option>
+                    {availableDepartments.map((dept) => (
+                      <option key={dept.key} value={dept.key}>
+                        {dept.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
