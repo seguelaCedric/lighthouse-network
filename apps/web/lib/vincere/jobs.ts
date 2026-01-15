@@ -421,8 +421,8 @@ export function mapVincereToJob(
   }
 
   // Determine if job should be public
-  // Only OPEN jobs are public on the job board
-  const isPublic = isOpen;
+  // Only OPEN jobs that are NOT marked as private are public on the job board
+  const isPublic = isOpen && !vincereData.private_job;
 
   // Get custom field values
   const yachtName = getField('yacht') as string | null;
