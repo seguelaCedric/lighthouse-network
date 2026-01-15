@@ -249,11 +249,9 @@ async function handleCandidateCreatedOrUpdated(
       .eq("vincere_id", mappedCandidate.vincere_id)
       .single();
 
-    // Prepare candidate data for database
-    // Note: Candidates are NOT directly linked to organizations via organization_id
-    // They are linked via candidate_agency_relationships table
-    // Include ALL fields from the mapping to ensure complete sync
-    const candidateInsert = {
+    // Prepare candidate data for database - PATCH mode: only include non-null values
+    // This preserves existing data in the database for fields Vincere doesn't have
+    const allFields = {
       // Core identity
       vincere_id: mappedCandidate.vincere_id,
       first_name: mappedCandidate.first_name,
@@ -315,11 +313,23 @@ async function handleCandidateCreatedOrUpdated(
       last_synced_at: mappedCandidate.last_synced_at,
     };
 
+    // Filter out null/undefined values - only update fields that have actual data from Vincere
+    const candidateUpdate: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(allFields)) {
+      if (value !== null && value !== undefined) {
+        candidateUpdate[key] = value;
+      }
+    }
+
+    // Always include vincere_id and last_synced_at for tracking
+    candidateUpdate.vincere_id = mappedCandidate.vincere_id;
+    candidateUpdate.last_synced_at = mappedCandidate.last_synced_at;
+
     if (existingCandidate) {
       // Update existing candidate
       const { error: updateError } = await supabase
         .from("candidates")
-        .update(candidateInsert)
+        .update(candidateUpdate)
         .eq("id", existingCandidate.id);
 
       if (updateError) {
@@ -360,7 +370,7 @@ async function handleCandidateCreatedOrUpdated(
       // Note: For new candidates, we may need to set default organization
       const { data: newCandidate, error: insertError } = await supabase
         .from("candidates")
-        .insert(candidateInsert)
+        .insert(candidateUpdate)
         .select("id")
         .single();
 
