@@ -127,11 +127,11 @@ export async function POST(request: NextRequest) {
     console.log("[VincereCandidateWebhook] Payload keys:", Object.keys(parsedBody));
     console.log("[VincereCandidateWebhook] Full payload:", JSON.stringify(parsedBody));
 
-    // Vincere webhook format uses entityType, actionType, and candidateId (not entity_type/action_type/data.id)
-    // Also handle SNS-wrapped messages where the format might differ
+    // Vincere webhook format:
+    // { entityType: "CANDIDATE", actionType: "UPDATE", entityId: 88836, tenant: "...", timestamp: ..., userId: ..., data: null }
     const entityType = parsedBody.entityType || parsedBody.entity_type;
     const actionType = parsedBody.actionType || parsedBody.action_type;
-    const candidateId = parsedBody.candidateId || parsedBody.candidate_id || parsedBody.data?.id || parsedBody.id;
+    const candidateId = parsedBody.entityId || parsedBody.candidateId || parsedBody.candidate_id || parsedBody.data?.id || parsedBody.id;
 
     console.log("[VincereCandidateWebhook] Extracted - entityType:", entityType, "actionType:", actionType, "candidateId:", candidateId);
 

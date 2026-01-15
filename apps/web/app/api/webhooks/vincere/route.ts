@@ -166,15 +166,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // parsedBody was set above (and potentially unwrapped from SNS Message)
-    const event: VincereWebhookEvent = parsedBody;
+    // Log the full parsed body for debugging
+    console.log("[VincereWebhook] Payload keys:", Object.keys(parsedBody));
+    console.log("[VincereWebhook] Full payload:", JSON.stringify(parsedBody));
 
-    if (!event || !event.entity_type || !event.action_type || !event.data) {
-      return NextResponse.json(
-        { error: "Invalid webhook payload" },
-        { status: 400 }
-      );
+    // Vincere webhook format:
+    // { entityType: "JOB", actionType: "UPDATE", entityId: 12345, tenant: "...", timestamp: ..., userId: ..., data: null }
+    const entityType = parsedBody.entityType || parsedBody.entity_type;
+    const actionType = parsedBody.actionType || parsedBody.action_type;
+    const jobId = parsedBody.entityId || parsedBody.jobId || parsedBody.job_id || parsedBody.data?.id || parsedBody.id;
+
+    console.log("[VincereWebhook] Extracted - entityType:", entityType, "actionType:", actionType, "jobId:", jobId);
+
+    // If we can't extract a job ID, return success but log the payload for investigation
+    if (!jobId) {
+      console.log("[VincereWebhook] No jobId found in payload, acknowledging receipt");
+      return NextResponse.json({
+        received: true,
+        message: "Webhook received but no jobId found",
+        payload_keys: Object.keys(parsedBody)
+      });
     }
+
+    // Create a normalized event object
+    const event = {
+      entity_type: entityType || "JOB",
+      action_type: actionType || "UPDATE",
+      data: { id: typeof jobId === 'number' ? jobId : parseInt(jobId, 10) }
+    };
 
     console.log(`[VincereWebhook] Received event: ${event.entity_type}.${event.action_type} for ID ${event.data.id}`);
 
