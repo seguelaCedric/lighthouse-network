@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   AlertCircle,
@@ -12,9 +13,13 @@ import {
   Calendar,
   CheckCircle,
   BellRing,
+  Check,
+  CheckCheck,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { NotificationsData, CrewNotification } from "./actions";
+import { markNotificationAsRead, markAllNotificationsAsRead } from "./actions";
 
 interface NotificationsClientProps {
   data: NotificationsData;
@@ -73,18 +78,27 @@ function formatRelativeTime(dateStr: string): string {
   return date.toLocaleDateString("en-GB", { month: "short", day: "numeric" });
 }
 
-function NotificationItem({ notification }: { notification: CrewNotification }) {
+interface NotificationItemProps {
+  notification: CrewNotification;
+  onMarkRead: (id: string) => void;
+  isMarkingRead: boolean;
+  isMarkedRead: boolean;
+}
+
+function NotificationItem({ notification, onMarkRead, isMarkingRead, isMarkedRead }: NotificationItemProps) {
   const config = notificationConfig[notification.type];
   const Icon = config.icon;
 
   const bgColor = notification.urgent ? config.urgentBgColor : config.bgColor;
   const iconColor = notification.urgent ? config.urgentColor : config.color;
+  const isRead = notification.isRead || isMarkedRead;
 
   return (
     <div
       className={cn(
         "flex gap-4 rounded-xl p-4 transition-colors",
-        notification.urgent ? "bg-amber-50/50" : "bg-white hover:bg-gray-50"
+        notification.urgent ? "bg-amber-50/50" : "bg-white hover:bg-gray-50",
+        isRead && "opacity-60"
       )}
     >
       {/* Icon */}
@@ -101,7 +115,10 @@ function NotificationItem({ notification }: { notification: CrewNotification }) 
       <div className="min-w-0 flex-1">
         <div className="mb-1 flex items-start justify-between gap-2">
           <div className="flex items-center gap-2">
-            <h4 className="text-sm font-semibold text-navy-900">
+            <h4 className={cn(
+              "text-sm font-semibold text-navy-900",
+              isRead && "font-normal"
+            )}>
               {notification.title}
             </h4>
             {notification.urgent && (
@@ -110,9 +127,30 @@ function NotificationItem({ notification }: { notification: CrewNotification }) 
               </span>
             )}
           </div>
-          <span className="shrink-0 text-xs text-gray-500">
-            {formatRelativeTime(notification.date)}
-          </span>
+          <div className="flex items-center gap-2 shrink-0">
+            {!isRead && (
+              <button
+                onClick={() => onMarkRead(notification.id)}
+                disabled={isMarkingRead}
+                className="text-xs text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50"
+                title="Mark as read"
+              >
+                {isMarkingRead ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Check className="size-4" />
+                )}
+              </button>
+            )}
+            {isRead && (
+              <span title="Read">
+                <Check className="size-4 text-green-500" />
+              </span>
+            )}
+            <span className="text-xs text-gray-500">
+              {formatRelativeTime(notification.date)}
+            </span>
+          </div>
         </div>
         <p className="text-sm text-gray-600">{notification.description}</p>
 
@@ -137,11 +175,59 @@ function NotificationItem({ notification }: { notification: CrewNotification }) 
 }
 
 export function NotificationsClient({ data }: NotificationsClientProps) {
-  const { notifications, unreadCount } = data;
+  const router = useRouter();
+  const { notifications, unreadCount: initialUnreadCount } = data;
+
+  // Track which notifications have been marked as read (optimistic UI)
+  const [markedReadIds, setMarkedReadIds] = React.useState<Set<string>>(new Set());
+  const [markingReadId, setMarkingReadId] = React.useState<string | null>(null);
+  const [isMarkingAllRead, setIsMarkingAllRead] = React.useState(false);
+
+  // Calculate actual unread count based on optimistic state
+  const actualUnreadCount = notifications.filter(
+    (n) => !n.isRead && !markedReadIds.has(n.id)
+  ).length;
 
   // Separate urgent and regular notifications
   const urgentNotifications = notifications.filter((n) => n.urgent);
   const regularNotifications = notifications.filter((n) => !n.urgent);
+
+  const handleMarkRead = async (notificationId: string) => {
+    setMarkingReadId(notificationId);
+    try {
+      const success = await markNotificationAsRead(notificationId);
+      if (success) {
+        setMarkedReadIds((prev) => new Set([...prev, notificationId]));
+      }
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    } finally {
+      setMarkingReadId(null);
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    setIsMarkingAllRead(true);
+    try {
+      // Get all unread notification IDs
+      const unreadNotifications = notifications.filter(
+        (n) => !n.isRead && !markedReadIds.has(n.id)
+      );
+      const unreadIds = unreadNotifications.map((n) => n.id);
+
+      // Pass computed notification IDs to mark them as dismissed
+      const success = await markAllNotificationsAsRead(unreadIds);
+      if (success) {
+        setMarkedReadIds((prev) => new Set([...prev, ...unreadIds]));
+      }
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+    } finally {
+      setIsMarkingAllRead(false);
+      // Refresh to get updated data
+      router.refresh();
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -152,11 +238,11 @@ export function NotificationsClient({ data }: NotificationsClientProps) {
             Notifications
           </h1>
           <p className="mt-1 text-gray-600">
-            {unreadCount > 0 ? (
+            {actualUnreadCount > 0 ? (
               <>
                 You have{" "}
                 <span className="font-medium text-gold-600">
-                  {unreadCount} new notification{unreadCount !== 1 ? "s" : ""}
+                  {actualUnreadCount} new notification{actualUnreadCount !== 1 ? "s" : ""}
                 </span>
               </>
             ) : (
@@ -164,6 +250,21 @@ export function NotificationsClient({ data }: NotificationsClientProps) {
             )}
           </p>
         </div>
+        {/* Mark All Read Button */}
+        {actualUnreadCount > 0 && (
+          <button
+            onClick={handleMarkAllRead}
+            disabled={isMarkingAllRead}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 disabled:opacity-50"
+          >
+            {isMarkingAllRead ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <CheckCheck className="size-4" />
+            )}
+            Mark All Read
+          </button>
+        )}
       </div>
 
       {/* Urgent Alerts Section */}
@@ -180,6 +281,9 @@ export function NotificationsClient({ data }: NotificationsClientProps) {
               <NotificationItem
                 key={notification.id}
                 notification={notification}
+                onMarkRead={handleMarkRead}
+                isMarkingRead={markingReadId === notification.id}
+                isMarkedRead={markedReadIds.has(notification.id)}
               />
             ))}
           </div>
@@ -250,6 +354,9 @@ export function NotificationsClient({ data }: NotificationsClientProps) {
                 <NotificationItem
                   key={notification.id}
                   notification={notification}
+                  onMarkRead={handleMarkRead}
+                  isMarkingRead={markingReadId === notification.id}
+                  isMarkedRead={markedReadIds.has(notification.id)}
                 />
               ))
             ) : (

@@ -27,6 +27,7 @@ export interface VincereJob {
   company_name?: string;
   status?: string;
   job_status?: string;
+  status_id?: number; // Numeric status: 0=Draft, 1=Open, 2=Filled, 3=On Hold, 4=Cancelled
   salary_from?: number;
   salary_to?: number;
   start_date?: string;
@@ -392,37 +393,45 @@ export function mapVincereToJob(
     getJobFieldValue(customFields, key);
 
   // Determine job status based on Vincere fields:
-  // 1. closed_job field being true means explicitly closed
-  // 2. close_date in the past means expired
-  // 3. open_date must exist for job to be considered open
-  // 4. job_status field for explicit status
-  const vincereStatus = vincereData.job_status || vincereData.status || '';
+  // 1. status_id is the primary status indicator (numeric):
+  //    0 = Draft/New, 1 = Open, 2 = Filled/Closed, 3 = On Hold, 4 = Cancelled
+  // 2. closed_job field being true means explicitly closed
+  // 3. close_date in the past means expired
+  // 4. open_date must exist for job to be considered open
+  const statusId = vincereData.status_id;
   const hasOpenDate = !!vincereData.open_date;
   const closeDate = vincereData.close_date ? new Date(vincereData.close_date) : null;
   const isPastCloseDate = closeDate && closeDate < new Date();
   const isClosedJob = vincereData.closed_job === true;
 
-  // Determine if job is actually open
-  const isOpen = hasOpenDate && !isClosedJob && !isPastCloseDate;
-
-  // Map to our status enum
+  // Map Vincere status_id to our status enum
   // Valid values: draft, open, shortlisting, interviewing, offer, filled, cancelled, on_hold
   let status: string;
-  if (vincereStatus === 'FILLED') {
-    status = 'filled';
-  } else if (isClosedJob || isPastCloseDate) {
-    status = 'cancelled'; // Closed jobs use 'cancelled' status in our DB enum
+  if (isClosedJob && statusId === 4) {
+    status = 'cancelled';
+  } else if (isClosedJob || isPastCloseDate || statusId === 2) {
+    status = 'filled'; // Closed jobs or status_id=2 (Filled)
+  } else if (statusId === 4) {
+    status = 'cancelled';
+  } else if (statusId === 3) {
+    status = 'on_hold';
   } else if (!hasOpenDate) {
     status = 'draft'; // Never opened
-  } else if (vincereStatus === 'ON_HOLD') {
-    status = 'on_hold';
   } else {
-    status = 'open';
+    status = 'open'; // status_id 0 or 1 (Draft/Open)
   }
 
+  // Determine if job is actually open (not closed, not past close date)
+  const isOpen = hasOpenDate && !isClosedJob && !isPastCloseDate && (statusId === 0 || statusId === 1);
+
+  // Determine if job is on hold (status_id = 3)
+  const isOnHold = statusId === 3 && hasOpenDate && !isClosedJob && !isPastCloseDate;
+
   // Determine if job should be public
-  // Only OPEN jobs that are NOT marked as private are public on the job board
-  const isPublic = isOpen && !vincereData.private_job;
+  // Both OPEN and ON_HOLD jobs should be visible on the job board
+  // ON_HOLD jobs can still receive applications, they're just paused internally
+  // Note: We ignore the private_job flag from Vincere as all jobs should be visible
+  const isPublic = isOpen || isOnHold;
 
   // Get custom field values
   const yachtName = getField('yacht') as string | null;

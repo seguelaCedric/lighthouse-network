@@ -199,10 +199,8 @@ async function main() {
     console.log("=".repeat(60));
 
     try {
-      // Search for jobs in yacht/villa industries
+      // Search for ALL jobs (no industry filter)
       // Note: Vincere doesn't support job_status in search query, so we filter after fetching
-      const query = `(industry_id:${INDUSTRY_IDS.yacht}# OR industry_id:${INDUSTRY_IDS.villa}#)`;
-      const encodedQuery = encodeURIComponent(query);
 
       // Vincere API paginates results - fetch all pages up to our limit
       const PAGE_SIZE = 25; // Vincere's default/max page size
@@ -224,7 +222,7 @@ async function main() {
       // Paginate through results until we hit our limit or run out of results
       while (allItems.length < limit) {
         const searchResult = await client.get<VincereSearchResult>(
-          `/position/search/fl=id,job_title,company_name,created_date,last_update?q=${encodedQuery}&start=${start}&limit=${PAGE_SIZE}`
+          `/position/search/fl=id,job_title,company_name,created_date,last_update?start=${start}&limit=${PAGE_SIZE}`
         );
 
         const pageItems = searchResult?.result?.items ?? [];
@@ -261,6 +259,11 @@ async function main() {
             closed_job: jobAny.closed_job,
             status_id: jobAny.status_id
           });
+        }
+
+        // Log ON HOLD jobs (status_id = 3)
+        if (jobAny.status_id === 3) {
+          console.log(`\n🟡 ON HOLD JOB: ${job.job_title} (ID: ${job.id})`);
         }
 
         // Vincere determines open status by:

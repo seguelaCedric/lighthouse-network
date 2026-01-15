@@ -102,16 +102,26 @@ export async function getNotificationsData(): Promise<NotificationsData | null> 
   const thirtyDaysFromNow = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
   const ninetyDaysFromNow = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
 
+  // Fetch dismissed notification keys for computed notifications
+  const { data: dismissals } = await supabase
+    .from("notification_dismissals")
+    .select("notification_key")
+    .eq("candidate_id", candidate.id);
+
+  const dismissedKeys = new Set((dismissals || []).map((d) => d.notification_key));
+
   // Check STCW expiry
   if (candidate.stcw_expiry) {
     const stcwExpiry = new Date(candidate.stcw_expiry);
     const isExpired = stcwExpiry < now;
     const isUrgent = stcwExpiry <= thirtyDaysFromNow;
     const isWarning = stcwExpiry <= ninetyDaysFromNow;
+    const notificationKey = "stcw-expiry";
+    const isDismissed = dismissedKeys.has(notificationKey);
 
     if (isExpired || isWarning) {
       notifications.push({
-        id: "stcw-expiry",
+        id: notificationKey,
         type: "certification",
         title: isExpired ? "STCW Certificate Expired" : "STCW Expiring Soon",
         description: isExpired
@@ -119,7 +129,7 @@ export async function getNotificationsData(): Promise<NotificationsData | null> 
           : `Your STCW certificate expires on ${stcwExpiry.toLocaleDateString("en-GB")}. ${isUrgent ? "Renew now to avoid gaps." : "Consider renewing soon."}`,
         date: now.toISOString(),
         urgent: isExpired || isUrgent,
-        isRead: false,
+        isRead: isDismissed,
         actionLabel: "Update Certificate",
         actionHref: "/crew/documents#certificates",
         metadata: {
@@ -136,10 +146,12 @@ export async function getNotificationsData(): Promise<NotificationsData | null> 
     const isExpired = eng1Expiry < now;
     const isUrgent = eng1Expiry <= thirtyDaysFromNow;
     const isWarning = eng1Expiry <= ninetyDaysFromNow;
+    const notificationKey = "eng1-expiry";
+    const isDismissed = dismissedKeys.has(notificationKey);
 
     if (isExpired || isWarning) {
       notifications.push({
-        id: "eng1-expiry",
+        id: notificationKey,
         type: "certification",
         title: isExpired ? "ENG1 Medical Certificate Expired" : "ENG1 Expiring Soon",
         description: isExpired
@@ -147,7 +159,7 @@ export async function getNotificationsData(): Promise<NotificationsData | null> 
           : `Your ENG1 medical certificate expires on ${eng1Expiry.toLocaleDateString("en-GB")}. ${isUrgent ? "Book your renewal appointment now." : "Consider scheduling your renewal."}`,
         date: now.toISOString(),
         urgent: isExpired || isUrgent,
-        isRead: false,
+        isRead: isDismissed,
         actionLabel: "Update Certificate",
         actionHref: "/crew/documents#certificates",
         metadata: {
@@ -181,8 +193,11 @@ export async function getNotificationsData(): Promise<NotificationsData | null> 
         continue;
       }
 
+      const notificationKey = `cert-${cert.id}`;
+      const isDismissed = dismissedKeys.has(notificationKey);
+
       notifications.push({
-        id: `cert-${cert.id}`,
+        id: notificationKey,
         type: "certification",
         title: isExpired ? `${certName} Expired` : `${certName} Expiring`,
         description: isExpired
@@ -190,7 +205,7 @@ export async function getNotificationsData(): Promise<NotificationsData | null> 
           : `Your ${certName} expires on ${expiryDate.toLocaleDateString("en-GB")}.`,
         date: now.toISOString(),
         urgent: isExpired || isUrgent,
-        isRead: false,
+        isRead: isDismissed,
         actionLabel: "Update Certificate",
         actionHref: "/crew/documents#certificates",
         metadata: {
@@ -227,14 +242,17 @@ export async function getNotificationsData(): Promise<NotificationsData | null> 
 
     // Only notify for significant stage changes
     if (app.stage === "placed") {
+      const notificationKey = `app-placed-${app.id}`;
+      const isDismissed = dismissedKeys.has(notificationKey);
+
       notifications.push({
-        id: `app-placed-${app.id}`,
+        id: notificationKey,
         type: "application",
         title: "Congratulations! You've Been Placed",
         description: `You have been placed for the ${jobData.title} position.`,
         date: app.updated_at,
         urgent: false,
-        isRead: false,
+        isRead: isDismissed,
         actionLabel: "View Details",
         actionHref: `/crew/applications/${app.id}`,
         metadata: {
@@ -243,14 +261,17 @@ export async function getNotificationsData(): Promise<NotificationsData | null> 
         },
       });
     } else if (app.stage === "rejected") {
+      const notificationKey = `app-rejected-${app.id}`;
+      const isDismissed = dismissedKeys.has(notificationKey);
+
       notifications.push({
-        id: `app-rejected-${app.id}`,
+        id: notificationKey,
         type: "application",
         title: "Application Update",
         description: `Unfortunately, your application for ${jobData.title} was not successful this time.`,
         date: app.updated_at,
         urgent: false,
-        isRead: false,
+        isRead: isDismissed,
         actionLabel: "Browse More Jobs",
         actionHref: "/crew/jobs",
         metadata: {
@@ -310,12 +331,68 @@ export async function getNotificationsData(): Promise<NotificationsData | null> 
 export async function markNotificationAsRead(notificationId: string): Promise<boolean> {
   const supabase = await createClient();
 
-  // Only mark database notifications (job alerts) as read
-  // Certification and application notifications are generated on-the-fly
-  if (!notificationId.startsWith("stcw-") &&
-      !notificationId.startsWith("eng1-") &&
-      !notificationId.startsWith("cert-") &&
-      !notificationId.startsWith("app-")) {
+  // Get authenticated user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return false;
+
+  // Check if this is a computed notification (certificates, applications)
+  const isComputedNotification =
+    notificationId.startsWith("stcw-") ||
+    notificationId.startsWith("eng1-") ||
+    notificationId.startsWith("cert-") ||
+    notificationId.startsWith("app-");
+
+  if (isComputedNotification) {
+    // For computed notifications, insert into dismissals table
+    // First get the candidate ID
+    const { data: userData } = await supabase
+      .from("users")
+      .select("id")
+      .eq("auth_id", user.id)
+      .maybeSingle();
+
+    let candidateId = null;
+
+    if (userData) {
+      const { data: candidateByUserId } = await supabase
+        .from("candidates")
+        .select("id")
+        .eq("user_id", userData.id)
+        .maybeSingle();
+      candidateId = candidateByUserId?.id;
+    }
+
+    if (!candidateId && user.email) {
+      const { data: candidateByEmail } = await supabase
+        .from("candidates")
+        .select("id")
+        .eq("email", user.email)
+        .maybeSingle();
+      candidateId = candidateByEmail?.id;
+    }
+
+    if (!candidateId) return false;
+
+    // Insert dismissal (upsert to handle duplicates)
+    const { error } = await supabase
+      .from("notification_dismissals")
+      .upsert({
+        candidate_id: candidateId,
+        notification_key: notificationId,
+        dismissed_at: new Date().toISOString(),
+      }, {
+        onConflict: "candidate_id,notification_key",
+      });
+
+    if (error) {
+      console.error("Error dismissing notification:", error);
+      return false;
+    }
+  } else {
+    // For stored notifications (job alerts), update the candidate_notifications table
     const { error } = await supabase
       .from("candidate_notifications")
       .update({
@@ -335,8 +412,9 @@ export async function markNotificationAsRead(notificationId: string): Promise<bo
 
 /**
  * Mark all notifications as read for a candidate
+ * @param computedNotificationIds - Optional list of computed notification IDs to dismiss
  */
-export async function markAllNotificationsAsRead(): Promise<boolean> {
+export async function markAllNotificationsAsRead(computedNotificationIds?: string[]): Promise<boolean> {
   const supabase = await createClient();
 
   // Get authenticated user
@@ -375,7 +453,8 @@ export async function markAllNotificationsAsRead(): Promise<boolean> {
 
   if (!candidate) return false;
 
-  const { error } = await supabase
+  // Mark all stored notifications (job alerts) as read
+  const { error: storedError } = await supabase
     .from("candidate_notifications")
     .update({
       is_read: true,
@@ -384,9 +463,38 @@ export async function markAllNotificationsAsRead(): Promise<boolean> {
     .eq("candidate_id", candidate.id)
     .eq("is_read", false);
 
-  if (error) {
-    console.error("Error marking all notifications as read:", error);
+  if (storedError) {
+    console.error("Error marking stored notifications as read:", storedError);
     return false;
+  }
+
+  // If we have computed notification IDs, dismiss them too
+  if (computedNotificationIds && computedNotificationIds.length > 0) {
+    const dismissals = computedNotificationIds
+      .filter(id =>
+        id.startsWith("stcw-") ||
+        id.startsWith("eng1-") ||
+        id.startsWith("cert-") ||
+        id.startsWith("app-")
+      )
+      .map(notificationKey => ({
+        candidate_id: candidate.id,
+        notification_key: notificationKey,
+        dismissed_at: new Date().toISOString(),
+      }));
+
+    if (dismissals.length > 0) {
+      const { error: dismissalError } = await supabase
+        .from("notification_dismissals")
+        .upsert(dismissals, {
+          onConflict: "candidate_id,notification_key",
+        });
+
+      if (dismissalError) {
+        console.error("Error dismissing computed notifications:", dismissalError);
+        // Don't fail completely, stored notifications were marked
+      }
+    }
   }
 
   return true;

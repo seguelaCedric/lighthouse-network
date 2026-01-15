@@ -7,7 +7,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/client";
-import { jobAlertEmail, type JobAlertData } from "@/lib/email/templates";
+import { jobAlertEmail, initialJobMatchEmail, type JobAlertData, type InitialJobMatchData } from "@/lib/email/templates";
 
 export interface JobAlertCandidate {
   candidate_id: string;
@@ -350,5 +350,209 @@ export async function processJobAlerts(jobId: string): Promise<{
     successfulAlerts,
     failedAlerts,
     results,
+  };
+}
+
+/**
+ * Process initial job matches when a candidate completes their preferences.
+ * This finds ALL open jobs that match the candidate's position preferences
+ * and sends a summary notification + email.
+ */
+export async function processInitialJobMatches(candidateId: string): Promise<{
+  totalMatches: number;
+  notificationsCreated: number;
+  emailSent: boolean;
+}> {
+  const supabase = await createClient();
+
+  // 1. Get candidate with preferences
+  const { data: candidate, error: candidateError } = await supabase
+    .from("candidates")
+    .select(`
+      id,
+      email,
+      first_name,
+      job_alerts_enabled,
+      yacht_primary_position,
+      yacht_secondary_positions,
+      household_primary_position,
+      household_secondary_positions,
+      primary_position,
+      secondary_positions
+    `)
+    .eq("id", candidateId)
+    .single();
+
+  if (candidateError || !candidate) {
+    console.error("Error fetching candidate for initial job matches:", candidateError);
+    return { totalMatches: 0, notificationsCreated: 0, emailSent: false };
+  }
+
+  // Check if job alerts are enabled
+  if (!candidate.job_alerts_enabled) {
+    console.log(`Job alerts disabled for candidate ${candidateId}, skipping initial match`);
+    return { totalMatches: 0, notificationsCreated: 0, emailSent: false };
+  }
+
+  // 2. Get all open public jobs
+  const { data: jobs, error: jobsError } = await supabase
+    .from("jobs")
+    .select(`
+      id,
+      title,
+      vessel_name,
+      vessel_type,
+      vessel_size_meters,
+      contract_type,
+      primary_region,
+      salary_min,
+      salary_max,
+      salary_currency,
+      salary_period,
+      start_date,
+      benefits
+    `)
+    .eq("status", "open")
+    .eq("is_public", true)
+    .is("deleted_at", null);
+
+  if (jobsError) {
+    console.error("Error fetching jobs for initial match:", jobsError);
+    return { totalMatches: 0, notificationsCreated: 0, emailSent: false };
+  }
+
+  if (!jobs || jobs.length === 0) {
+    console.log("No open jobs found for initial match");
+    return { totalMatches: 0, notificationsCreated: 0, emailSent: false };
+  }
+
+  // 3. Get already alerted job IDs (to prevent duplicates)
+  const { data: existingAlerts } = await supabase
+    .from("job_alert_log")
+    .select("job_id")
+    .eq("candidate_id", candidateId);
+
+  const alertedJobIds = new Set((existingAlerts || []).map((a) => a.job_id));
+
+  // 4. Find matching jobs
+  const positions = {
+    yachtPrimary: candidate.yacht_primary_position,
+    yachtSecondary: candidate.yacht_secondary_positions,
+    householdPrimary: candidate.household_primary_position,
+    householdSecondary: candidate.household_secondary_positions,
+    legacyPrimary: candidate.primary_position,
+    legacySecondary: candidate.secondary_positions,
+  };
+
+  const matchingJobs: Array<{
+    job: (typeof jobs)[0];
+    matchedPosition: string;
+  }> = [];
+
+  for (const job of jobs) {
+    // Skip if already alerted
+    if (alertedJobIds.has(job.id)) continue;
+
+    const { matches, matchedPosition } = jobTitleMatchesPositions(job.title, positions);
+    if (matches && matchedPosition) {
+      matchingJobs.push({ job, matchedPosition });
+    }
+  }
+
+  if (matchingJobs.length === 0) {
+    console.log(`No matching jobs found for candidate ${candidateId}`);
+    return { totalMatches: 0, notificationsCreated: 0, emailSent: false };
+  }
+
+  console.log(`Found ${matchingJobs.length} matching jobs for candidate ${candidateId}`);
+
+  // 5. Create notifications in batch
+  const notifications = matchingJobs.map(({ job, matchedPosition }) => ({
+    candidate_id: candidateId,
+    type: "job_alert" as const,
+    title: `New ${job.title} Position`,
+    description: job.vessel_name
+      ? `A new ${job.title} position on ${job.vessel_name} matches your ${matchedPosition} preference.`
+      : `A new ${job.title} position matches your ${matchedPosition} preference.`,
+    is_read: false,
+    entity_type: "job" as const,
+    entity_id: job.id,
+    action_url: `/crew/jobs/${job.id}`,
+    action_label: "View Job",
+    metadata: {
+      job_title: job.title,
+      vessel_name: job.vessel_name,
+      matched_position: matchedPosition,
+      contract_type: job.contract_type,
+      primary_region: job.primary_region,
+    },
+  }));
+
+  const { error: notificationError } = await supabase
+    .from("candidate_notifications")
+    .insert(notifications);
+
+  if (notificationError) {
+    console.error("Error creating initial match notifications:", notificationError);
+    return { totalMatches: matchingJobs.length, notificationsCreated: 0, emailSent: false };
+  }
+
+  // 6. Log all alerts to prevent duplicates on future new jobs
+  const alertLogs = matchingJobs.map(({ job }) => ({
+    candidate_id: candidateId,
+    job_id: job.id,
+    email_sent: true,
+    email_sent_at: new Date().toISOString(),
+  }));
+
+  const { error: logError } = await supabase.from("job_alert_log").insert(alertLogs);
+
+  if (logError) {
+    console.error("Error logging initial job alerts:", logError);
+    // Continue anyway, notifications were created
+  }
+
+  // 7. Send summary email if candidate has email
+  let emailSent = false;
+  if (candidate.email) {
+    const emailData: InitialJobMatchData = {
+      candidateName: candidate.first_name || "there",
+      matchedJobs: matchingJobs.map(({ job, matchedPosition }) => ({
+        id: job.id,
+        title: job.title,
+        vesselName: job.vessel_name,
+        vesselType: job.vessel_type,
+        contractType: job.contract_type,
+        primaryRegion: job.primary_region,
+        matchedPosition,
+      })),
+      totalMatches: matchingJobs.length,
+      dashboardLink: `${BASE_URL}/crew/jobs`,
+    };
+
+    const template = initialJobMatchEmail(emailData);
+
+    const result = await sendEmail({
+      to: candidate.email,
+      subject: template.subject,
+      html: template.html,
+      text: template.text,
+    });
+
+    emailSent = result.success;
+
+    if (!emailSent) {
+      console.error(`Failed to send initial match email to candidate ${candidateId}`);
+    }
+  }
+
+  console.log(
+    `Initial job matches processed for candidate ${candidateId}: ${matchingJobs.length} matches, ${notifications.length} notifications created, email sent: ${emailSent}`
+  );
+
+  return {
+    totalMatches: matchingJobs.length,
+    notificationsCreated: notifications.length,
+    emailSent,
   };
 }

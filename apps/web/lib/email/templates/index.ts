@@ -1775,6 +1775,91 @@ export interface YotspotImportNotificationData {
   yotspotUrl: string;
 }
 
+// ============================================
+// Initial Job Match Email (when preferences completed)
+// ============================================
+
+export interface InitialJobMatchData {
+  candidateName: string;
+  matchedJobs: Array<{
+    id: string;
+    title: string;
+    vesselName?: string | null;
+    vesselType?: string | null;
+    contractType?: string | null;
+    primaryRegion?: string | null;
+    matchedPosition: string;
+  }>;
+  totalMatches: number;
+  dashboardLink: string;
+}
+
+export function initialJobMatchEmail(data: InitialJobMatchData) {
+  // Show up to 5 jobs in the email, link to dashboard for more
+  const displayJobs = data.matchedJobs.slice(0, 5);
+  const hasMoreJobs = data.totalMatches > 5;
+
+  const jobListHtml = displayJobs.map(job => {
+    const vesselInfo = [job.vesselName, job.vesselType].filter(Boolean).join(" • ");
+    const locationInfo = job.primaryRegion || "";
+    const contractInfo = job.contractType ? `${job.contractType.charAt(0).toUpperCase() + job.contractType.slice(1)} Contract` : "";
+
+    return `
+      <div style="background:#f8f9fa; border-radius:8px; padding:15px; margin-bottom:12px; border-left:4px solid #c9a962;">
+        <p style="margin:0 0 8px; font-weight:600; color:#1a2b4a;">${job.title}</p>
+        ${vesselInfo ? `<p style="margin:0 0 4px; font-size:14px; color:#6b7280;">⛵ ${vesselInfo}</p>` : ""}
+        ${locationInfo ? `<p style="margin:0 0 4px; font-size:14px; color:#6b7280;">📍 ${locationInfo}</p>` : ""}
+        ${contractInfo ? `<p style="margin:0 0 4px; font-size:14px; color:#6b7280;">📋 ${contractInfo}</p>` : ""}
+        <p style="margin:8px 0 0; font-size:13px; color:#c9a962;">Matches your ${job.matchedPosition} preference</p>
+      </div>
+    `;
+  }).join("");
+
+  const content = `
+    <h1>We Found ${data.totalMatches} Job${data.totalMatches !== 1 ? "s" : ""} For You!</h1>
+    <p>Hi ${data.candidateName},</p>
+    <p>Great news! Now that you've set up your job preferences, we've found <strong class="highlight">${data.totalMatches} open position${data.totalMatches !== 1 ? "s" : ""}</strong> that match what you're looking for.</p>
+
+    <div style="margin: 25px 0;">
+      <h2 style="color:#1a2b4a; margin-bottom:15px;">Your Matching Jobs</h2>
+      ${jobListHtml}
+      ${hasMoreJobs ? `
+      <p style="text-align:center; font-size:14px; color:#6b7280; margin-top:15px;">
+        + ${data.totalMatches - 5} more matching positions
+      </p>
+      ` : ""}
+    </div>
+
+    <p style="text-align: center;">
+      <a href="${data.dashboardLink}" class="button">View All Matches</a>
+    </p>
+
+    <div class="divider"></div>
+
+    <div class="info-box">
+      <p style="margin:0 0 15px; font-weight:600; color:#1a2b4a;">What happens next?</p>
+      <ul style="margin:0;">
+        <li>Browse the jobs and apply to ones that interest you</li>
+        <li>We'll notify you when new matching jobs are posted</li>
+        <li>Update your preferences anytime to refine your matches</li>
+      </ul>
+    </div>
+
+    <p style="font-size: 14px; color: #6b7280;">
+      <strong>Managing your alerts:</strong><br>
+      You can update your job preferences or disable job alerts in your <a href="${data.dashboardLink.replace(/\/jobs.*$/, "/preferences")}" style="color: #c9a962;">candidate dashboard</a>.
+    </p>
+
+    <p>Best of luck with your job search!<br>The Lighthouse Crew Team</p>
+  `;
+
+  return {
+    subject: `We Found ${data.totalMatches} Job${data.totalMatches !== 1 ? "s" : ""} Matching Your Preferences!`,
+    html: baseTemplate(content),
+    text: generatePlainText(content),
+  };
+}
+
 export function yotspotImportNotificationEmail(data: YotspotImportNotificationData) {
   // Determine match quality color and label
   const getMatchQuality = (score: number) => {
