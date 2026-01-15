@@ -123,9 +123,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Log the full parsed body for debugging
+    console.log("[VincereCandidateWebhook] Full parsed body:", JSON.stringify(parsedBody, null, 2));
+
     const event: VincereCandidateWebhookEvent = parsedBody;
 
     if (!event || !event.entity_type || !event.action_type || !event.data) {
+      console.error("[VincereCandidateWebhook] Invalid payload - missing required fields");
+      console.error("[VincereCandidateWebhook] entity_type:", event?.entity_type);
+      console.error("[VincereCandidateWebhook] action_type:", event?.action_type);
+      console.error("[VincereCandidateWebhook] data:", event?.data);
       return NextResponse.json(
         { error: "Invalid webhook payload" },
         { status: 400 }
