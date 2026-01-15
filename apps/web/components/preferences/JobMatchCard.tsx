@@ -16,6 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { InlineCVUpload } from "@/components/documents/InlineCVUpload";
+import { isLandBasedJob } from "@/lib/utils/job-helpers";
 import type { SimpleJobMatch } from "@/app/crew/preferences/actions";
 
 // ----------------------------------------------------------------------------
@@ -73,8 +74,9 @@ export const JobMatchCard = React.forwardRef<HTMLDivElement, JobMatchCardProps>(
     // Determine if we should show the CV upload button (no CV and not yet applied)
     const needsCV = hasCV === false && !hasApplied;
 
-    // Determine if this is a yacht job (has vessel type)
-    const isYacht = !!job.vesselType;
+    // Determine if this is a yacht job
+    // A job is a yacht job if it has a vessel type OR if it's not a land-based position
+    const isYacht = !!job.vesselType || !isLandBasedJob(job.title);
 
     // Salary display
     const salaryDisplay = React.useMemo(() => {
