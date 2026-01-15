@@ -61,20 +61,75 @@ interface VincereWebhookEvent {
 }
 
 /**
+ * Handle AWS SNS subscription confirmation
+ * Vincere webhooks use AWS SNS, which requires confirming the subscription
+ * by fetching the SubscribeURL sent in the confirmation message.
+ */
+async function handleSNSSubscriptionConfirmation(body: Record<string, unknown>): Promise<boolean> {
+  const subscribeUrl = body.SubscribeURL as string;
+  if (!subscribeUrl) {
+    console.error("[VincereWebhook] SNS SubscriptionConfirmation missing SubscribeURL");
+    return false;
+  }
+
+  console.log("[VincereWebhook] Confirming SNS subscription...");
+  try {
+    const response = await fetch(subscribeUrl);
+    if (response.ok) {
+      console.log("[VincereWebhook] ✅ SNS subscription confirmed successfully!");
+      return true;
+    } else {
+      console.error("[VincereWebhook] Failed to confirm SNS subscription:", response.status);
+      return false;
+    }
+  } catch (error) {
+    console.error("[VincereWebhook] Error confirming SNS subscription:", error);
+    return false;
+  }
+}
+
+/**
  * POST /api/webhooks/vincere
- * 
+ *
  * Receives webhook events from Vincere for job updates.
- * 
+ * Also handles AWS SNS subscription confirmation (required for Vincere webhooks).
+ *
  * Expected events:
  * - job.created: New job created in Vincere
  * - job.updated: Job updated in Vincere
  * - job.deleted: Job deleted in Vincere
- * 
+ *
  * Note: This endpoint should be publicly accessible (no auth required)
  * but should verify webhook signature if Vincere provides one.
  */
 export async function POST(request: NextRequest) {
   try {
+    // Check for AWS SNS message type header
+    const snsMessageType = request.headers.get("x-amz-sns-message-type");
+
+    // Handle SNS Subscription Confirmation
+    if (snsMessageType === "SubscriptionConfirmation") {
+      const body = await request.json();
+      console.log("[VincereWebhook] Received SNS SubscriptionConfirmation");
+      const confirmed = await handleSNSSubscriptionConfirmation(body);
+      return NextResponse.json({
+        success: confirmed,
+        message: confirmed ? "Subscription confirmed" : "Failed to confirm subscription"
+      });
+    }
+
+    // Handle SNS Notification (actual webhook events)
+    // SNS wraps the actual message in a "Message" field as a JSON string
+    let body = await request.json();
+    if (snsMessageType === "Notification" && typeof body.Message === "string") {
+      console.log("[VincereWebhook] Parsing SNS Notification message");
+      try {
+        body = JSON.parse(body.Message);
+      } catch {
+        console.error("[VincereWebhook] Failed to parse SNS Message as JSON");
+      }
+    }
+
     // Verify webhook secret token (prevents unauthorized access)
     const webhookSecret = process.env.VINCERE_WEBHOOK_SECRET;
     if (webhookSecret) {
@@ -103,8 +158,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Parse webhook payload
-    const body = await request.json();
+    // body was already parsed above (and potentially unwrapped from SNS Message)
     const event: VincereWebhookEvent = body;
 
     if (!event || !event.entity_type || !event.action_type || !event.data) {
