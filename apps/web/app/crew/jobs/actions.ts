@@ -6,8 +6,7 @@ import { syncJobApplication } from "@/lib/vincere/sync-service";
 import { getPositionDisplayName } from "@/lib/utils/format-position";
 import { REGION_GROUPS } from "@/lib/utils/job-helpers";
 import { candidateHasCV } from "@/lib/utils/candidate-cv";
-import { matchJobsForCandidate } from "@lighthouse/ai/matcher";
-import type { JobIndustry, JobMatchResult } from "@lighthouse/ai/matcher";
+import { POSITION_MAPPING } from "@/lib/vincere/constants";
 
 /**
  * Job listing for crew portal
@@ -36,9 +35,8 @@ export interface JobListing {
   viewsCount: number;
   publishedAt: string | null;
   createdAt: string;
-  // Match info
-  matchScore: number | null;
-  matchType: "match" | "none";
+  // Relevance info (replaces AI matching)
+  relevanceTier: 1 | 2 | 3;  // 1 = exact position match, 2 = same department, 3 = other
   hasApplied: boolean;
   isSaved: boolean;
 }
@@ -114,6 +112,65 @@ function getPositionMatchLevel(
   }
 
   return "none";
+}
+
+/**
+ * Get the department/category for a position using the comprehensive POSITION_MAPPING
+ * from vincere/constants.ts which contains 100+ positions mapped to categories
+ *
+ * Categories: deck, interior, engineering, galley, childcare, medical, security,
+ *             management, villa, other
+ */
+function getPositionDepartment(position: string): string | null {
+  if (!position) return null;
+
+  // Normalize the position: lowercase, replace underscores with spaces
+  const posLower = position.toLowerCase().replace(/_/g, " ").trim();
+
+  // Direct lookup in POSITION_MAPPING
+  const mapping = POSITION_MAPPING[posLower];
+  if (mapping) {
+    return mapping.category;
+  }
+
+  // Try partial matching for positions with extra words (e.g., "Chief Stew for 55m yacht")
+  for (const [key, value] of Object.entries(POSITION_MAPPING)) {
+    if (posLower.includes(key) || key.includes(posLower)) {
+      return value.category;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Calculate relevance tier for a job based on candidate's sought positions
+ * Tier 1: Exact position match (job title matches candidate's sought positions)
+ * Tier 2: Same department (e.g., job is for "Deckhand" and candidate seeks "Bosun")
+ * Tier 3: Other jobs (different department or no match)
+ */
+function calculateRelevanceTier(
+  jobTitle: string,
+  candidateSoughtPositions: string[]
+): 1 | 2 | 3 {
+  // Tier 1: Check for direct position match
+  const matchLevel = getPositionMatchLevel(jobTitle, candidateSoughtPositions);
+  if (matchLevel === "match") {
+    return 1;
+  }
+
+  // Tier 2: Check if same department
+  const jobDepartment = getPositionDepartment(jobTitle);
+  if (jobDepartment) {
+    for (const pos of candidateSoughtPositions) {
+      if (getPositionDepartment(pos) === jobDepartment) {
+        return 2;
+      }
+    }
+  }
+
+  // Tier 3: Everything else
+  return 3;
 }
 
 /**
@@ -274,84 +331,6 @@ function buildSoughtPositionsForMatching(
 }
 
 /**
- * Calculate a match score based on candidate profile and job
- *
- * Scoring breakdown:
- * - Role match is the PRIMARY factor (50 points if job title contains sought position)
- * - Region match: 25 points
- * - Contract type: 15 points
- * - Salary fit: 10 points
- */
-function calculateMatchScore(
-  job: {
-    title: string;
-    primary_region: string | null;
-    contract_type: string | null;
-    salary_min: number | null;
-    salary_max: number | null;
-    requirements: Record<string, unknown> | null;
-  },
-  candidate: {
-    primary_position: string | null;
-    secondary_positions: string[] | null;
-    preferred_regions: string[] | null;
-    preferred_contract_types: string[] | null;
-    desired_salary_min: number | null;
-    desired_salary_max: number | null;
-    // Preference positions from wizard
-    yacht_primary_position?: string | null;
-    yacht_secondary_positions?: string[] | null;
-    household_primary_position?: string | null;
-    household_secondary_positions?: string[] | null;
-    industry_preference?: string | null;
-    candidate_type?: string | null;
-  }
-): { score: number; matchType: "match" | "none" } {
-  let score = 0;
-
-  // Build the list of positions they're seeking (use raw values, not display names)
-  const soughtPositions = buildSoughtPositionsForMatching(candidate, { includeSecondary: false });
-
-  // Position match - simple check: does job title contain sought position?
-  const matchType = getPositionMatchLevel(job.title, soughtPositions);
-
-  if (matchType === "match") {
-    score += 50;
-  }
-  // No match = 0 points
-
-  // Region match (25 points)
-  if (candidate.preferred_regions && job.primary_region) {
-    const jobRegion = job.primary_region.toLowerCase();
-    const matchesRegion = candidate.preferred_regions.some(
-      (r) =>
-        r.toLowerCase().includes(jobRegion) ||
-        jobRegion.includes(r.toLowerCase())
-    );
-    if (matchesRegion) {
-      score += 25;
-    }
-  }
-
-  // Contract type match (15 points)
-  if (candidate.preferred_contract_types && job.contract_type) {
-    if (candidate.preferred_contract_types.includes(job.contract_type)) {
-      score += 15;
-    }
-  }
-
-  // Salary expectations match (10 points)
-  if (candidate.desired_salary_min && job.salary_max) {
-    if (job.salary_max >= candidate.desired_salary_min) {
-      score += 10;
-    }
-  }
-
-  // Cap at 100
-  return { score: Math.min(score, 100), matchType };
-}
-
-/**
  * Get jobs data for the crew portal
  */
 export async function getJobsData(
@@ -450,36 +429,58 @@ export async function getJobsData(
   const appliedJobIds = (applicationsResult.data || []).map((a) => a.job_id);
   const savedJobIds = (savedJobsResult.data || []).map((s) => s.job_id);
 
-  // Determine industry preference for matching
-  const industryPreference = candidate.industry_preference === "yacht" || candidate.industry_preference === "household" || candidate.industry_preference === "both"
-    ? candidate.industry_preference as JobIndustry | "both"
-    : "both";
+  // Fetch all public jobs directly from the database
+  const { data: jobs, error: jobsError } = await supabase
+    .from("public_jobs")
+    .select(`
+      id,
+      title,
+      vessel_name,
+      vessel_type,
+      vessel_size_meters,
+      primary_region,
+      contract_type,
+      rotation_schedule,
+      start_date,
+      salary_min,
+      salary_max,
+      salary_currency,
+      salary_period,
+      holiday_days,
+      benefits,
+      description,
+      requirements_text,
+      requirements,
+      is_urgent,
+      apply_deadline,
+      applications_count,
+      views_count,
+      published_at,
+      created_at
+    `)
+    .limit(200);
 
-  // Use AI matcher to get jobs with match scores
-  // Use higher limit (100) and minScore 0 to get all jobs with scores
-  // Filters will be applied client-side
-  let matches: JobMatchResult[];
-  try {
-    const matchResult = await matchJobsForCandidate(supabase, {
-      candidateId: candidate.id,
-      limit: 100, // Higher limit to get comprehensive results
-      minScore: 0, // Get all jobs with scores, not just good matches
-      includeAISummary: false, // Skip AI summaries for performance
-      industry: industryPreference,
-    });
-    matches = matchResult.matches;
-  } catch (error) {
-    console.error("Error using AI matcher, falling back to empty results:", error);
-    matches = [];
+  if (jobsError) {
+    console.error("Error fetching jobs:", jobsError);
+    return null;
   }
 
-  // Map JobMatchResult[] to JobListing[] format
-  // The PublicJob from the matcher should have all fields from public_jobs view
-  const mappedJobs: JobListing[] = matches.map((match) => {
-    const job = match.job as any; // Access all fields from public_jobs view
-    
-    // Determine matchType: "match" if score > 0, "none" if score is 0 or null
-    const matchType: "match" | "none" = match.matchScore > 0 ? "match" : "none";
+  // Build the list of positions for matching (using raw position values)
+  const soughtPositionsForMatching = buildSoughtPositionsForMatching({
+    primary_position: candidate.primary_position,
+    secondary_positions: candidate.secondary_positions,
+    yacht_primary_position: candidate.yacht_primary_position,
+    yacht_secondary_positions: candidate.yacht_secondary_positions,
+    household_primary_position: candidate.household_primary_position,
+    household_secondary_positions: candidate.household_secondary_positions,
+    industry_preference: candidate.industry_preference,
+    candidate_type: candidate.candidate_type,
+  });
+
+  // Map jobs to JobListing[] format with relevance tiers
+  const mappedJobs: JobListing[] = (jobs || []).map((job) => {
+    // Calculate relevance tier based on position matching
+    const relevanceTier = calculateRelevanceTier(job.title || "", soughtPositionsForMatching);
 
     return {
       id: job.id,
@@ -489,7 +490,7 @@ export async function getJobsData(
       vesselSize: job.vessel_size_meters || null,
       location: job.primary_region || null,
       contractType: job.contract_type || null,
-      rotationSchedule: job.rotation_schedule || job.rotation || null,
+      rotationSchedule: job.rotation_schedule || null,
       startDate: job.start_date || null,
       salaryMin: job.salary_min || null,
       salaryMax: job.salary_max || null,
@@ -505,9 +506,8 @@ export async function getJobsData(
       viewsCount: job.views_count || 0,
       publishedAt: job.published_at || null,
       createdAt: job.created_at || new Date().toISOString(),
-      // Use match score from AI matcher
-      matchScore: matchType !== "none" ? match.matchScore : null,
-      matchType,
+      // Relevance tier instead of match score
+      relevanceTier,
       hasApplied: appliedJobIds.includes(job.id),
       isSaved: savedJobIds.includes(job.id),
     };
@@ -545,16 +545,19 @@ export async function getJobsData(
     filteredJobs = filteredJobs.filter((job) => job.vesselType === filters.vesselType);
   }
 
-  // Sort by match score (highest first) as primary sort, then by date posted
+  // Sort by: relevance tier (1 first), then urgent, then date posted
   filteredJobs.sort((a, b) => {
-    // Primary: Match score (highest first, nulls last)
-    const scoreA = a.matchScore ?? -1;
-    const scoreB = b.matchScore ?? -1;
-    if (scoreA !== scoreB) {
-      return scoreB - scoreA;
+    // Primary: Relevance tier (1 = exact match first, then 2 = same dept, then 3 = other)
+    if (a.relevanceTier !== b.relevanceTier) {
+      return a.relevanceTier - b.relevanceTier;
     }
-    
-    // Secondary: Date posted (newest first)
+
+    // Secondary: Urgent jobs first within each tier
+    if (a.isUrgent !== b.isUrgent) {
+      return a.isUrgent ? -1 : 1;
+    }
+
+    // Tertiary: Date posted (newest first)
     const dateA = a.publishedAt ? new Date(a.publishedAt).getTime() : 0;
     const dateB = b.publishedAt ? new Date(b.publishedAt).getTime() : 0;
     return dateB - dateA;
@@ -605,7 +608,9 @@ export async function getJobById(
     yacht_primary_position,
     yacht_secondary_positions,
     household_primary_position,
-    household_secondary_positions
+    household_secondary_positions,
+    industry_preference,
+    candidate_type
   `;
 
   // PERFORMANCE: Run user, candidate-by-email, and job lookups in parallel
@@ -688,8 +693,23 @@ export async function getJobById(
     supabase.rpc("increment_job_views", { p_job_id: jobId }),
   ]);
 
-  // Calculate match score - now returns both score and matchType
-  const { score: matchScore, matchType } = calculateMatchScore(job as any, candidate as any);
+  // Build candidate's sought positions list for relevance calculation
+  const candidateSoughtPositions: string[] = [];
+  if (candidate.yacht_primary_position) candidateSoughtPositions.push(candidate.yacht_primary_position);
+  if (candidate.household_primary_position) candidateSoughtPositions.push(candidate.household_primary_position);
+  if (Array.isArray(candidate.yacht_secondary_positions)) {
+    candidateSoughtPositions.push(...candidate.yacht_secondary_positions);
+  }
+  if (Array.isArray(candidate.household_secondary_positions)) {
+    candidateSoughtPositions.push(...candidate.household_secondary_positions);
+  }
+  if (candidate.primary_position) candidateSoughtPositions.push(candidate.primary_position);
+  if (Array.isArray(candidate.secondary_positions)) {
+    candidateSoughtPositions.push(...candidate.secondary_positions);
+  }
+
+  // Calculate relevance tier (replaces AI match score)
+  const relevanceTier = calculateRelevanceTier(job.title, candidateSoughtPositions);
 
   return {
     id: job.id,
@@ -715,9 +735,7 @@ export async function getJobById(
     viewsCount: job.views_count || 0,
     publishedAt: job.published_at,
     createdAt: job.created_at,
-    // Only set matchScore if position is relevant (not "none")
-    matchScore: matchType !== "none" ? matchScore : null,
-    matchType,
+    relevanceTier,
     hasApplied: !!applicationResult.data,
     isSaved: !!savedJobResult.data,
   };

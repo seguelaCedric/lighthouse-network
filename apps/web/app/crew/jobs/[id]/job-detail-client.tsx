@@ -94,21 +94,6 @@ function isStartingSoon(dateString: string): boolean {
   return diffDays >= 0 && diffDays <= 14;
 }
 
-// Get match score color
-function getMatchColor(score: number | null): string {
-  if (!score) return "text-gray-500";
-  if (score >= 80) return "text-green-600";
-  if (score >= 60) return "text-yellow-600";
-  return "text-orange-500";
-}
-
-function getMatchBgColor(score: number | null): string {
-  if (!score) return "bg-gray-100";
-  if (score >= 80) return "bg-green-100";
-  if (score >= 60) return "bg-yellow-100";
-  return "bg-orange-100";
-}
-
 // Format vessel type for display (capitalize first letter)
 function formatVesselTypeDisplay(vesselType: string | null): string {
   if (!vesselType) return "";
@@ -325,12 +310,6 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
                       {formatPostedDate(job.publishedAt)}
                     </span>
                   )}
-                </div>
-                {/* Match Score */}
-                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${getMatchBgColor(job.matchScore)}`}>
-                  <div className={`font-semibold ${getMatchColor(job.matchScore)}`}>
-                    {job.matchScore || 0}% Match
-                  </div>
                 </div>
               </div>
 

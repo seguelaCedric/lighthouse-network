@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Filter,
   Briefcase,
@@ -10,10 +10,16 @@ import {
   ChevronDown,
   X,
   RotateCcw,
+  Users,
 } from "lucide-react";
+import {
+  YACHT_DEPARTMENTS,
+  HOUSEHOLD_DEPARTMENTS,
+} from "@/lib/vincere/constants";
 
 export interface JobFilters {
   position: string;
+  department: string;
   jobType: string;
   contractType: string;
   minSalary: string;
@@ -56,6 +62,55 @@ export function JobBoardFilters({
   onToggleCollapse,
 }: JobBoardFiltersProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
+
+  // Get available departments based on selected job type
+  const availableDepartments = useMemo(() => {
+    if (filters.jobType === "yacht") {
+      return Object.entries(YACHT_DEPARTMENTS).map(([key, label]) => ({
+        key,
+        label,
+      }));
+    }
+    if (filters.jobType === "household") {
+      return Object.entries(HOUSEHOLD_DEPARTMENTS).map(([key, label]) => ({
+        key,
+        label,
+      }));
+    }
+    // All jobs - combine both, avoiding duplicate labels
+    const combinedDepts = new Map<string, { key: string; label: string }>();
+
+    // Add yacht departments first
+    Object.entries(YACHT_DEPARTMENTS).forEach(([key, label]) => {
+      combinedDepts.set(label, { key, label });
+    });
+
+    // Add household departments (will override yacht if same label like "Childcare")
+    Object.entries(HOUSEHOLD_DEPARTMENTS).forEach(([key, label]) => {
+      // For household-specific departments, prefix with "Household - "
+      if (key.startsWith("villa_")) {
+        combinedDepts.set(`Household - ${label}`, { key, label: `Household - ${label}` });
+      } else if (!combinedDepts.has(label)) {
+        combinedDepts.set(label, { key, label });
+      }
+    });
+
+    return Array.from(combinedDepts.values()).sort((a, b) =>
+      a.label.localeCompare(b.label)
+    );
+  }, [filters.jobType]);
+
+  // Clear department if it's no longer valid when job type changes
+  useEffect(() => {
+    if (filters.department) {
+      const isValidDepartment = availableDepartments.some(
+        (d) => d.key === filters.department
+      );
+      if (!isValidDepartment) {
+        onFiltersChange({ ...filters, department: "" });
+      }
+    }
+  }, [filters.jobType, filters.department, availableDepartments, onFiltersChange, filters]);
 
   const handleFilterChange = (key: keyof JobFilters, value: string) => {
     onFiltersChange({ ...filters, [key]: value });
@@ -134,6 +189,26 @@ export function JobBoardFilters({
             <option value="">All Jobs</option>
             <option value="yacht">Yacht Jobs</option>
             <option value="household">Household Jobs</option>
+          </select>
+        </div>
+
+        {/* Department */}
+        <div>
+          <label className="block text-sm font-semibold text-navy-900 mb-2">
+            <Users className="inline-block h-4 w-4 mr-2 text-gold-500" />
+            Department
+          </label>
+          <select
+            value={filters.department}
+            onChange={(e) => handleFilterChange("department", e.target.value)}
+            className="w-full rounded-xl border border-gray-200 px-4 py-3.5 text-gray-900 bg-gray-50/50 focus:bg-white focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 transition-all text-sm font-medium"
+          >
+            <option value="">All Departments</option>
+            {availableDepartments.map((dept) => (
+              <option key={dept.key} value={dept.key}>
+                {dept.label}
+              </option>
+            ))}
           </select>
         </div>
 
@@ -234,6 +309,15 @@ export function JobBoardFilters({
                 <FilterPill
                   label={filters.jobType === "yacht" ? "Yacht Jobs" : "Household Jobs"}
                   onRemove={() => handleFilterChange("jobType", "")}
+                />
+              )}
+              {filters.department && (
+                <FilterPill
+                  label={
+                    availableDepartments.find((d) => d.key === filters.department)
+                      ?.label || filters.department
+                  }
+                  onRemove={() => handleFilterChange("department", "")}
                 />
               )}
               {filters.contractType && (

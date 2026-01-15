@@ -31,7 +31,7 @@ import {
   JobMatchCard,
 } from "@/components/preferences";
 import { yachtPositionLabels, householdPositionLabels, regionLabels } from "@/components/preferences/constants";
-import type { JobMatchResult } from "@lighthouse/ai/matcher";
+import type { SimpleJobMatch } from "./actions";
 
 interface PreferencesClientProps {
   candidateId: string;
@@ -100,14 +100,14 @@ export default function PreferencesClient({ candidateId, initialData }: Preferen
     partnerPosition: initialData.partnerPosition,
   });
 
-  // AI Matched jobs state
-  const [matchedJobs, setMatchedJobs] = React.useState<JobMatchResult[]>([]);
+  // Matched jobs state (using simple relevance tiers instead of AI scores)
+  const [matchedJobs, setMatchedJobs] = React.useState<SimpleJobMatch[]>([]);
   const [loadingMatches, setLoadingMatches] = React.useState(false);
   const [profileStatus, setProfileStatus] = React.useState<ProfileStatus | null>(null);
   const [applyingJobId, setApplyingJobId] = React.useState<string | null>(null);
-  
+
   // Sort state for job recommendations
-  const [sortBy, setSortBy] = React.useState<"match_score" | "date_posted" | "salary_high" | "salary_low" | "urgent_first" | "alphabetical">("match_score");
+  const [sortBy, setSortBy] = React.useState<"relevance" | "date_posted" | "salary_high" | "salary_low" | "urgent_first" | "alphabetical">("relevance");
 
   // Determine initial step
   const getInitialStep = (): Step => {
@@ -178,8 +178,6 @@ export default function PreferencesClient({ candidateId, initialData }: Preferen
       const result = await loadJobMatches(candidateId, {
         industry,
         limit: 10,
-        minScore: 30,
-        includeAISummary: true,
       });
 
       if (!result.success) {
@@ -214,50 +212,48 @@ export default function PreferencesClient({ candidateId, initialData }: Preferen
   const sortedMatchedJobs = React.useMemo(() => {
     return [...matchedJobs].sort((a, b) => {
       switch (sortBy) {
-        case "match_score": {
-          // Sort by match score (highest first)
-          if (a.matchScore !== b.matchScore) {
-            return b.matchScore - a.matchScore;
+        case "relevance": {
+          // Sort by relevance tier (1 first, then 2, then 3)
+          if (a.relevanceTier !== b.relevanceTier) {
+            return a.relevanceTier - b.relevanceTier;
           }
           // Secondary: date posted (newest first)
-          const dateA = (a.job as any).published_at ? new Date((a.job as any).published_at).getTime() : 0;
-          const dateB = (b.job as any).published_at ? new Date((b.job as any).published_at).getTime() : 0;
+          const dateA = a.job.publishedAt ? new Date(a.job.publishedAt).getTime() : 0;
+          const dateB = b.job.publishedAt ? new Date(b.job.publishedAt).getTime() : 0;
           return dateB - dateA;
         }
         case "date_posted": {
           // Sort by date posted (newest first)
-          const dateA = (a.job as any).published_at ? new Date((a.job as any).published_at).getTime() : 0;
-          const dateB = (b.job as any).published_at ? new Date((b.job as any).published_at).getTime() : 0;
+          const dateA = a.job.publishedAt ? new Date(a.job.publishedAt).getTime() : 0;
+          const dateB = b.job.publishedAt ? new Date(b.job.publishedAt).getTime() : 0;
           return dateB - dateA;
         }
         case "salary_high": {
           // Sort by salary high to low
-          const maxA = a.job.salary_max ?? 0;
-          const maxB = b.job.salary_max ?? 0;
+          const maxA = a.job.salaryMax ?? 0;
+          const maxB = b.job.salaryMax ?? 0;
           if (maxA !== maxB) return maxB - maxA;
           // Secondary: min salary
-          const minA = a.job.salary_min ?? 0;
-          const minB = b.job.salary_min ?? 0;
+          const minA = a.job.salaryMin ?? 0;
+          const minB = b.job.salaryMin ?? 0;
           return minB - minA;
         }
         case "salary_low": {
           // Sort by salary low to high
-          const minA = a.job.salary_min ?? Infinity;
-          const minB = b.job.salary_min ?? Infinity;
+          const minA = a.job.salaryMin ?? Infinity;
+          const minB = b.job.salaryMin ?? Infinity;
           if (minA !== minB) return minA - minB;
           // Secondary: max salary
-          const maxA = a.job.salary_max ?? Infinity;
-          const maxB = b.job.salary_max ?? Infinity;
+          const maxA = a.job.salaryMax ?? Infinity;
+          const maxB = b.job.salaryMax ?? Infinity;
           return maxA - maxB;
         }
         case "urgent_first": {
-          // Sort by urgent first, then match score
-          const urgentA = (a.job as any).is_urgent ?? false;
-          const urgentB = (b.job as any).is_urgent ?? false;
-          if (urgentA !== urgentB) {
-            return urgentA ? -1 : 1;
+          // Sort by urgent first, then relevance tier
+          if (a.job.isUrgent !== b.job.isUrgent) {
+            return a.job.isUrgent ? -1 : 1;
           }
-          return b.matchScore - a.matchScore;
+          return a.relevanceTier - b.relevanceTier;
         }
         case "alphabetical": {
           // Sort by title A-Z
@@ -598,7 +594,7 @@ export default function PreferencesClient({ candidateId, initialData }: Preferen
                   onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
                   className="h-9 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:border-gold-500 focus:outline-none focus:ring-1 focus:ring-gold-500 sm:w-auto min-w-[160px]"
                 >
-                  <option value="match_score">Best Match</option>
+                  <option value="relevance">Most Relevant</option>
                   <option value="date_posted">Newest First</option>
                   <option value="salary_high">Salary: High to Low</option>
                   <option value="salary_low">Salary: Low to High</option>

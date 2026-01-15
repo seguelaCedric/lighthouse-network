@@ -2,14 +2,11 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import {
-  matchJobsForCandidate,
-  checkProfileCompleteness,
-  type JobIndustry,
-  type JobMatchResult,
-} from "@lighthouse/ai/matcher";
+import { checkProfileCompleteness } from "@lighthouse/ai/matcher";
 import { candidateHasCV } from "@/lib/utils/candidate-cv";
 import { syncCandidateUpdate } from "@/lib/vincere/sync-service";
+import { POSITION_MAPPING } from "@/lib/vincere/constants";
+import { normalizePosition } from "@/lib/utils/position-normalization";
 
 export interface JobPreferencesData {
   industryPreference: "yacht" | "household" | "both" | null;
@@ -187,7 +184,7 @@ export async function markPreferencesComplete(
 }
 
 // ----------------------------------------------------------------------------
-// JOB MATCHES - Direct Supabase query (no API route needed)
+// JOB MATCHES - Direct Supabase query with relevance tiers (no AI)
 // ----------------------------------------------------------------------------
 
 export interface ProfileStatus {
@@ -200,24 +197,107 @@ export interface ProfileStatus {
 
 export interface JobMatchesOptions {
   limit?: number;
-  minScore?: number;
-  industry?: JobIndustry | "both";
-  includeAISummary?: boolean;
+  industry?: "yacht" | "household" | "both";
+}
+
+// Simplified job match result (no AI scores)
+export interface SimpleJobMatch {
+  job: {
+    id: string;
+    title: string;
+    vesselName: string | null;
+    vesselType: string | null;
+    vesselSize: number | null;
+    location: string | null;
+    contractType: string | null;
+    salaryMin: number | null;
+    salaryMax: number | null;
+    currency: string;
+    startDate: string | null;
+    isUrgent: boolean;
+    publishedAt: string | null;
+  };
+  relevanceTier: 1 | 2 | 3;
+  hasApplied: boolean;
+  canQuickApply: boolean;
 }
 
 export interface JobMatchesResult {
   success: boolean;
   error?: string;
-  matches?: (JobMatchResult & { canQuickApply: boolean })[];
+  matches?: SimpleJobMatch[];
   profile?: ProfileStatus;
   metadata?: {
     totalJobsAnalyzed: number;
-    processingTimeMs: number;
     candidateId: string;
     industry: string;
     limit: number;
-    minScore: number;
   };
+}
+
+// ----------------------------------------------------------------------------
+// RELEVANCE TIER HELPERS
+// ----------------------------------------------------------------------------
+
+function getPositionDepartment(position: string): string | null {
+  if (!position) return null;
+  const posLower = position.toLowerCase().replace(/_/g, " ").trim();
+
+  const mapping = POSITION_MAPPING[posLower];
+  if (mapping) {
+    return mapping.category;
+  }
+
+  for (const [key, value] of Object.entries(POSITION_MAPPING)) {
+    if (posLower.includes(key) || key.includes(posLower)) {
+      return value.category;
+    }
+  }
+
+  return null;
+}
+
+function getPositionMatchLevel(
+  jobTitle: string,
+  candidateSoughtPositions: string[]
+): "match" | "none" {
+  const normalizedJob = normalizePosition(jobTitle);
+
+  for (const position of candidateSoughtPositions) {
+    const normalizedPos = normalizePosition(position);
+    if (!normalizedPos || normalizedPos === "other") continue;
+
+    if (normalizedJob === normalizedPos) {
+      return "match";
+    }
+
+    if (normalizedJob.includes(normalizedPos) || normalizedPos.includes(normalizedJob)) {
+      return "match";
+    }
+  }
+
+  return "none";
+}
+
+function calculateRelevanceTier(
+  jobTitle: string,
+  candidateSoughtPositions: string[]
+): 1 | 2 | 3 {
+  const matchLevel = getPositionMatchLevel(jobTitle, candidateSoughtPositions);
+  if (matchLevel === "match") {
+    return 1;
+  }
+
+  const jobDepartment = getPositionDepartment(jobTitle);
+  if (jobDepartment) {
+    for (const pos of candidateSoughtPositions) {
+      if (getPositionDepartment(pos) === jobDepartment) {
+        return 2;
+      }
+    }
+  }
+
+  return 3;
 }
 
 export async function loadJobMatches(
@@ -232,24 +312,12 @@ export async function loadJobMatches(
     error: authError,
   } = await supabase.auth.getUser();
 
-  console.log("[loadJobMatches] Auth result:", {
-    hasUser: !!user,
-    userId: user?.id,
-    userEmail: user?.email,
-    authError: authError?.message
-  });
-
   if (!user) {
     console.log("[loadJobMatches] Not authenticated");
     return { success: false, error: "Not authenticated" };
   }
 
-  const {
-    limit = 10,
-    minScore = 30,
-    industry = "both",
-    includeAISummary = true,
-  } = options;
+  const { limit = 10, industry = "both" } = options;
 
   const candidateSelectFields = `
     id, first_name, last_name, email, phone,
@@ -265,7 +333,7 @@ export async function loadJobMatches(
     has_schengen, has_b1b2, has_c1d,
     nationality, second_nationality,
     is_smoker, has_visible_tattoos, is_couple, partner_position,
-    verification_tier, embedding
+    verification_tier
   `;
 
   // PERFORMANCE: Run user, candidate-by-email, and candidate-by-id lookups in parallel
@@ -279,12 +347,6 @@ export async function loadJobMatches(
       : Promise.resolve({ data: null, error: null }),
   ]);
 
-  console.log("[loadJobMatches] Parallel lookups:", {
-    hasUserData: !!userResult.data,
-    hasCandidateByEmail: !!candidateByEmailResult.data,
-    hasCandidateById: !!candidateByIdResult.data,
-  });
-
   // Priority: email > candidateId > user_id
   let candidate = candidateByEmailResult.data || candidateByIdResult.data;
 
@@ -296,18 +358,8 @@ export async function loadJobMatches(
       .eq("user_id", userResult.data.id)
       .maybeSingle();
 
-    console.log("[loadJobMatches] Candidate lookup by user_id:", {
-      hasCandidate: !!candidateByUserId,
-      candidateId: candidateByUserId?.id,
-    });
-
     candidate = candidateByUserId;
   }
-
-  console.log("[loadJobMatches] Final candidate check:", {
-    hasCandidate: !!candidate,
-    candidateId: candidate?.id,
-  });
 
   if (!candidate) {
     console.error("[loadJobMatches] Candidate fetch error: No candidate found for user", user.id);
@@ -320,27 +372,103 @@ export async function loadJobMatches(
   // Check if candidate has CV uploaded
   const hasCV = await candidateHasCV(supabase, candidate.id);
 
-  // Run the AI matcher
-  const { matches, metadata } = await matchJobsForCandidate(supabase, {
-    candidateId,
-    limit,
-    minScore,
-    industry,
-    includeAISummary,
-  });
+  // Build candidate's sought positions list
+  const candidateSoughtPositions: string[] = [];
+  if (candidate.yacht_primary_position) candidateSoughtPositions.push(candidate.yacht_primary_position);
+  if (candidate.household_primary_position) candidateSoughtPositions.push(candidate.household_primary_position);
+  if (Array.isArray(candidate.yacht_secondary_positions)) {
+    candidateSoughtPositions.push(...candidate.yacht_secondary_positions);
+  }
+  if (Array.isArray(candidate.household_secondary_positions)) {
+    candidateSoughtPositions.push(...candidate.household_secondary_positions);
+  }
+  if (candidate.primary_position) candidateSoughtPositions.push(candidate.primary_position);
+  if (Array.isArray(candidate.secondary_positions)) {
+    candidateSoughtPositions.push(...candidate.secondary_positions);
+  }
+
+  // Fetch public jobs
+  const { data: jobs, error: jobsError } = await supabase
+    .from("public_jobs")
+    .select(`
+      id,
+      title,
+      vessel_name,
+      vessel_type,
+      vessel_size_meters,
+      primary_region,
+      contract_type,
+      salary_min,
+      salary_max,
+      salary_currency,
+      start_date,
+      is_urgent,
+      published_at
+    `)
+    .limit(100);
+
+  if (jobsError || !jobs) {
+    console.error("[loadJobMatches] Error fetching jobs:", jobsError);
+    return { success: false, error: "Could not load jobs" };
+  }
+
+  // Fetch applied job IDs
+  const { data: applications } = await supabase
+    .from("applications")
+    .select("job_id")
+    .eq("candidate_id", candidate.id);
+
+  const appliedJobIds = new Set((applications || []).map((a) => a.job_id));
 
   // Quick apply requires both profile completeness AND CV
   const canQuickApply = profileStatus.canQuickApply && hasCV;
 
-  // Add quick apply eligibility to each match
-  const matchesWithQuickApply = matches.map((match) => ({
-    ...match,
-    canQuickApply: canQuickApply && !match.hasApplied,
-  }));
+  // Calculate relevance tiers and build matches
+  const allMatches: SimpleJobMatch[] = jobs.map((job) => {
+    const relevanceTier = calculateRelevanceTier(job.title || "", candidateSoughtPositions);
+    const hasApplied = appliedJobIds.has(job.id);
+
+    return {
+      job: {
+        id: job.id,
+        title: job.title || "",
+        vesselName: job.vessel_name || null,
+        vesselType: job.vessel_type || null,
+        vesselSize: job.vessel_size_meters || null,
+        location: job.primary_region || null,
+        contractType: job.contract_type || null,
+        salaryMin: job.salary_min || null,
+        salaryMax: job.salary_max || null,
+        currency: job.salary_currency || "EUR",
+        startDate: job.start_date || null,
+        isUrgent: job.is_urgent || false,
+        publishedAt: job.published_at || null,
+      },
+      relevanceTier,
+      hasApplied,
+      canQuickApply: canQuickApply && !hasApplied,
+    };
+  });
+
+  // Sort by: relevance tier, then urgent, then date
+  allMatches.sort((a, b) => {
+    if (a.relevanceTier !== b.relevanceTier) {
+      return a.relevanceTier - b.relevanceTier;
+    }
+    if (a.job.isUrgent !== b.job.isUrgent) {
+      return a.job.isUrgent ? -1 : 1;
+    }
+    const dateA = a.job.publishedAt ? new Date(a.job.publishedAt).getTime() : 0;
+    const dateB = b.job.publishedAt ? new Date(b.job.publishedAt).getTime() : 0;
+    return dateB - dateA;
+  });
+
+  // Only return tier 1 and 2 matches (relevant jobs)
+  const relevantMatches = allMatches.filter((m) => m.relevanceTier <= 2).slice(0, limit);
 
   return {
     success: true,
-    matches: matchesWithQuickApply,
+    matches: relevantMatches,
     profile: {
       completeness: profileStatus.completeness,
       canQuickApply,
@@ -349,10 +477,10 @@ export async function loadJobMatches(
       candidateId: candidate.id,
     },
     metadata: {
-      ...metadata,
+      totalJobsAnalyzed: jobs.length,
+      candidateId: candidate.id,
       industry,
       limit,
-      minScore,
     },
   };
 }

@@ -734,6 +734,130 @@ export const POSITION_MAPPING: Record<string, { standard: string; category: stri
 };
 
 /**
+ * Department display labels for yacht positions
+ */
+export const YACHT_DEPARTMENTS: Record<string, string> = {
+  deck: 'Deck',
+  interior: 'Interior',
+  engineering: 'Engineering',
+  galley: 'Galley',
+  childcare: 'Childcare',
+  medical: 'Medical',
+  security: 'Security',
+  management: 'Management',
+  other: 'Specialist',
+};
+
+/**
+ * Department display labels for household positions
+ */
+export const HOUSEHOLD_DEPARTMENTS: Record<string, string> = {
+  villa_management: 'Management',
+  villa_service: 'Service Staff',
+  villa_housekeeping: 'Housekeeping',
+  villa_kitchen: 'Kitchen',
+  villa_outdoor: 'Outdoor & Maintenance',
+  villa_couples: 'Service Couples',
+  childcare: 'Childcare',
+};
+
+/**
+ * Maps standard household position names to their granular department
+ */
+export const HOUSEHOLD_POSITION_DEPARTMENTS: Record<string, string> = {
+  // Management
+  'Estate Manager': 'villa_management',
+  'House Manager': 'villa_management',
+  'Villa Manager': 'villa_management',
+  'Chalet Manager': 'villa_management',
+  // Service Staff
+  'Butler': 'villa_service',
+  'Head Butler': 'villa_service',
+  'Senior Butler': 'villa_service',
+  'Junior Butler': 'villa_service',
+  'Footman': 'villa_service',
+  'Valet': 'villa_service',
+  "Lady's Maid": 'villa_service',
+  // Housekeeping
+  'Head Housekeeper': 'villa_housekeeping',
+  'Housekeeper': 'villa_housekeeping',
+  'Executive Housekeeper': 'villa_housekeeping',
+  'Housemaid': 'villa_housekeeping',
+  'Laundress': 'villa_housekeeping',
+  // Kitchen
+  'Private Chef': 'villa_kitchen',
+  'Kitchen Assistant': 'villa_kitchen',
+  // Outdoor & Maintenance
+  'Chauffeur': 'villa_outdoor',
+  'Head Gardener': 'villa_outdoor',
+  'Gardener': 'villa_outdoor',
+  'Groundskeeper': 'villa_outdoor',
+  'Maintenance Manager': 'villa_outdoor',
+  'Handyman': 'villa_outdoor',
+  'Pool Technician': 'villa_outdoor',
+  'Caretaker': 'villa_outdoor',
+  // Service Couples
+  'Couple': 'villa_couples',
+  'House Couple': 'villa_couples',
+  'Estate Couple': 'villa_couples',
+  'Caretaker Couple': 'villa_couples',
+  // Childcare (shared with yacht)
+  'Nanny': 'childcare',
+  'Governess': 'childcare',
+  'Au Pair': 'childcare',
+  'Tutor': 'childcare',
+};
+
+/**
+ * Get the department for a position based on job type
+ * @param positionOrTitle - The position name or job title
+ * @param isHousehold - Whether the job is a household (land-based) job
+ * @returns The department key or null if not found
+ */
+export function getDepartment(positionOrTitle: string | null | undefined, isHousehold: boolean): string | null {
+  if (!positionOrTitle) return null;
+
+  const normalizedPosition = positionOrTitle.toLowerCase().trim();
+
+  // Try to find in POSITION_MAPPING first
+  const mapping = POSITION_MAPPING[normalizedPosition];
+
+  if (mapping) {
+    // For household jobs with 'villa' category, use granular department mapping
+    if (isHousehold && mapping.category === 'villa') {
+      return HOUSEHOLD_POSITION_DEPARTMENTS[mapping.standard] || 'villa_management';
+    }
+    // For childcare, use childcare for both yacht and household
+    if (mapping.category === 'childcare') {
+      return 'childcare';
+    }
+    // For yacht jobs or non-villa categories, use the category directly
+    return mapping.category;
+  }
+
+  // Fallback: try to match standard position name in household mapping
+  if (isHousehold) {
+    for (const [standardName, dept] of Object.entries(HOUSEHOLD_POSITION_DEPARTMENTS)) {
+      if (normalizedPosition.includes(standardName.toLowerCase())) {
+        return dept;
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Get department display name
+ */
+export function getDepartmentLabel(department: string, isHousehold: boolean): string {
+  if (isHousehold) {
+    return HOUSEHOLD_DEPARTMENTS[department] || department;
+  }
+  return YACHT_DEPARTMENTS[department] || department;
+}
+
+/**
  * Vincere Functional Expertise IDs
  *
  * Maps standardized position names to Vincere functional expertise IDs.

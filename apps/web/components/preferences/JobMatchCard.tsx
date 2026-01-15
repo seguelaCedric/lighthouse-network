@@ -7,28 +7,23 @@ import {
   MapPin,
   Calendar,
   DollarSign,
-  CheckCircle2,
-  AlertCircle,
-  Sparkles,
   ChevronDown,
   ChevronUp,
   Briefcase,
-  Clock,
   Check,
   Upload,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { ScoreBreakdown, type ScoreSegment } from "@/components/ui/score-breakdown";
 import { InlineCVUpload } from "@/components/documents/InlineCVUpload";
-import type { JobMatchResult, MatchScoreBreakdown } from "@lighthouse/ai/matcher";
+import type { SimpleJobMatch } from "@/app/crew/preferences/actions";
 
 // ----------------------------------------------------------------------------
 // TYPES
 // ----------------------------------------------------------------------------
 
 export interface JobMatchCardProps {
-  match: JobMatchResult;
+  match: SimpleJobMatch;
   onQuickApply?: (jobId: string) => Promise<void>;
   onViewJob?: (jobId: string) => void;
   className?: string;
@@ -63,76 +58,6 @@ const formatDate = (date: Date | string | null): string => {
   });
 };
 
-const getScoreColor = (score: number): string => {
-  if (score >= 80) return "text-success-600";
-  if (score >= 60) return "text-gold-600";
-  if (score >= 40) return "text-warning-600";
-  return "text-gray-500";
-};
-
-const getScoreBgColor = (score: number): string => {
-  if (score >= 80) return "bg-success-50 border-success-200";
-  if (score >= 60) return "bg-gold-50 border-gold-200";
-  if (score >= 40) return "bg-warning-50 border-warning-200";
-  return "bg-gray-50 border-gray-200";
-};
-
-const getScoreLabel = (score: number): string => {
-  if (score >= 85) return "Excellent Fit";
-  if (score >= 70) return "Great Fit";
-  if (score >= 55) return "Good Fit";
-  if (score >= 40) return "Fair Fit";
-  return "Worth Exploring";
-};
-
-// Score segment colors
-const SEGMENT_COLORS = {
-  position: "#1E3A5F",      // navy-800
-  experience: "#B49A5E",    // gold-500
-  preferences: "#059669",   // success-600
-  availability: "#7C3AED",  // purple
-  qualifications: "#0EA5E9", // sky-500
-};
-
-// Convert breakdown to score segments
-const breakdownToSegments = (breakdown: MatchScoreBreakdown): ScoreSegment[] => [
-  {
-    id: "position",
-    label: "Position",
-    value: breakdown.position,
-    maxValue: 25,
-    color: SEGMENT_COLORS.position,
-  },
-  {
-    id: "experience",
-    label: "Experience",
-    value: breakdown.experience,
-    maxValue: 20,
-    color: SEGMENT_COLORS.experience,
-  },
-  {
-    id: "preferences",
-    label: "Preferences",
-    value: breakdown.preferences,
-    maxValue: 25,
-    color: SEGMENT_COLORS.preferences,
-  },
-  {
-    id: "availability",
-    label: "Availability",
-    value: breakdown.availability,
-    maxValue: 15,
-    color: SEGMENT_COLORS.availability,
-  },
-  {
-    id: "qualifications",
-    label: "Qualifications",
-    value: breakdown.qualifications,
-    maxValue: 15,
-    color: SEGMENT_COLORS.qualifications,
-  },
-];
-
 // ----------------------------------------------------------------------------
 // COMPONENT
 // ----------------------------------------------------------------------------
@@ -143,28 +68,27 @@ export const JobMatchCard = React.forwardRef<HTMLDivElement, JobMatchCardProps>(
     const [isApplying, setIsApplying] = React.useState(false);
     const [showCVUpload, setShowCVUpload] = React.useState(false);
 
-    const { job, matchScore, breakdown, strengths, concerns, aiSummary, canQuickApply, hasApplied, industry } = match;
+    const { job, canQuickApply, hasApplied } = match;
 
     // Determine if we should show the CV upload button (no CV and not yet applied)
     const needsCV = hasCV === false && !hasApplied;
 
-    const isYacht = industry === "yacht";
-    const segments = breakdownToSegments(breakdown);
+    // Determine if this is a yacht job (has vessel type)
+    const isYacht = !!job.vesselType;
 
     // Salary display
     const salaryDisplay = React.useMemo(() => {
-      if (!job.salary_min && !job.salary_max) return null;
-      const currency = job.salary_currency || "EUR";
-      const period = job.salary_period === "monthly" ? "/mo" : "/yr";
+      if (!job.salaryMin && !job.salaryMax) return null;
+      const currency = job.currency || "EUR";
 
-      if (job.salary_min && job.salary_max) {
-        return `${formatCurrency(job.salary_min, currency)} - ${formatCurrency(job.salary_max, currency)}${period}`;
+      if (job.salaryMin && job.salaryMax) {
+        return `${formatCurrency(job.salaryMin, currency)} - ${formatCurrency(job.salaryMax, currency)}/mo`;
       }
-      if (job.salary_min) {
-        return `From ${formatCurrency(job.salary_min, currency)}${period}`;
+      if (job.salaryMin) {
+        return `From ${formatCurrency(job.salaryMin, currency)}/mo`;
       }
-      return `Up to ${formatCurrency(job.salary_max!, currency)}${period}`;
-    }, [job.salary_min, job.salary_max, job.salary_currency, job.salary_period]);
+      return `Up to ${formatCurrency(job.salaryMax!, currency)}/mo`;
+    }, [job.salaryMin, job.salaryMax, job.currency]);
 
     const handleQuickApply = async () => {
       if (!onQuickApply || isApplying || hasApplied) return;
@@ -199,30 +123,35 @@ export const JobMatchCard = React.forwardRef<HTMLDivElement, JobMatchCardProps>(
                 <span className="text-[10px] font-medium text-navy-600 uppercase tracking-wide sm:text-xs">
                   {isYacht ? "Yacht" : "Private Household"}
                 </span>
+                {job.isUrgent && (
+                  <span className="ml-1 rounded-full bg-error-100 px-2 py-0.5 text-[10px] font-bold text-error-600 sm:text-xs">
+                    URGENT
+                  </span>
+                )}
               </div>
 
               <h3 className="text-base font-semibold text-navy-900 font-cormorant line-clamp-2 sm:text-lg">
-                {job.title || job.position_category || "Untitled Position"}
+                {job.title || "Untitled Position"}
               </h3>
 
               <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-gray-600 sm:gap-3 sm:text-sm">
-                {job.vessel_type && (
+                {job.vesselType && (
                   <span className="flex items-center gap-1">
                     <Ship className="size-3.5" />
-                    {job.vessel_type}
-                    {job.vessel_size_meters && ` (${job.vessel_size_meters}m)`}
+                    {job.vesselType}
+                    {job.vesselSize && ` (${job.vesselSize}m)`}
                   </span>
                 )}
-                {job.primary_region && (
+                {job.location && (
                   <span className="flex items-center gap-1">
                     <MapPin className="size-3.5" />
-                    {job.primary_region}
+                    {job.location}
                   </span>
                 )}
-                {job.contract_type && (
+                {job.contractType && (
                   <span className="flex items-center gap-1">
                     <Briefcase className="size-3.5" />
-                    {job.contract_type.replace(/_/g, " ")}
+                    {job.contractType.replace(/_/g, " ")}
                   </span>
                 )}
               </div>
@@ -235,28 +164,13 @@ export const JobMatchCard = React.forwardRef<HTMLDivElement, JobMatchCardProps>(
                     <span className="truncate">{salaryDisplay}</span>
                   </span>
                 )}
-                {job.start_date && (
+                {job.startDate && (
                   <span className="flex items-center gap-1 text-gray-600">
                     <Calendar className="size-3 text-gray-400 sm:size-3.5" />
-                    <span className="truncate">Starts {formatDate(job.start_date)}</span>
+                    <span className="truncate">Starts {formatDate(job.startDate)}</span>
                   </span>
                 )}
               </div>
-            </div>
-
-            {/* Match Score Badge */}
-            <div
-              className={cn(
-                "flex flex-col items-center justify-center rounded-lg border px-2.5 py-2 min-w-[70px] sm:rounded-xl sm:px-4 sm:py-3 sm:min-w-[90px]",
-                getScoreBgColor(matchScore)
-              )}
-            >
-              <span className={cn("text-lg font-bold sm:text-2xl", getScoreColor(matchScore))}>
-                {matchScore}%
-              </span>
-              <span className="text-[9px] text-gray-600 font-medium text-center sm:text-xs">
-                {getScoreLabel(matchScore)}
-              </span>
             </div>
           </div>
 
@@ -336,65 +250,6 @@ export const JobMatchCard = React.forwardRef<HTMLDivElement, JobMatchCardProps>(
         {/* Expanded Details */}
         {expanded && (
           <div className="border-t border-gray-100 px-4 py-3 space-y-4 bg-gray-50/50 sm:px-5 sm:py-4 sm:space-y-5">
-            {/* Score Breakdown */}
-            <div>
-              <h4 className="text-xs font-semibold text-navy-800 mb-2 sm:text-sm sm:mb-3">Match Breakdown</h4>
-              <ScoreBreakdown
-                segments={segments}
-                totalScore={matchScore}
-                maxScore={100}
-                size="sm"
-                showValues={true}
-              />
-            </div>
-
-            {/* Strengths */}
-            {strengths.length > 0 && (
-              <div>
-                <h4 className="text-xs font-semibold text-navy-800 mb-2 flex items-center gap-1.5 sm:text-sm">
-                  <CheckCircle2 className="size-3.5 text-success-500 sm:size-4" />
-                  Strengths
-                </h4>
-                <ul className="space-y-1.5">
-                  {strengths.map((strength, idx) => (
-                    <li key={idx} className="flex items-start gap-1.5 text-xs text-gray-700 sm:gap-2 sm:text-sm">
-                      <span className="text-success-500 mt-0.5 shrink-0">+</span>
-                      <span>{strength}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Concerns */}
-            {concerns.length > 0 && (
-              <div>
-                <h4 className="text-xs font-semibold text-navy-800 mb-2 flex items-center gap-1.5 sm:text-sm">
-                  <AlertCircle className="size-3.5 text-warning-500 sm:size-4" />
-                  Considerations
-                </h4>
-                <ul className="space-y-1.5">
-                  {concerns.map((concern, idx) => (
-                    <li key={idx} className="flex items-start gap-1.5 text-xs text-gray-600 sm:gap-2 sm:text-sm">
-                      <span className="text-warning-500 mt-0.5 shrink-0">!</span>
-                      <span>{concern}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* AI Summary */}
-            {aiSummary && (
-              <div className="bg-gradient-to-r from-gold-50 to-amber-50 rounded-lg p-3 border border-gold-200/50 sm:p-4">
-                <h4 className="text-xs font-semibold text-navy-800 mb-2 flex items-center gap-1.5 sm:text-sm">
-                  <Sparkles className="size-3.5 text-gold-500 sm:size-4" />
-                  AI Analysis
-                </h4>
-                <p className="text-xs text-gray-700 leading-relaxed sm:text-sm">{aiSummary}</p>
-              </div>
-            )}
-
             {/* View Full Details */}
             <div className="pt-2">
               <Button

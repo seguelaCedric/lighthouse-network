@@ -11,6 +11,7 @@ import type { PublicJob } from "@/components/job-board/JobBoardCard";
 import { JobBoardListItem } from "@/components/job-board/JobBoardListItem";
 import { signOut } from "@/lib/auth/actions";
 import { isLandBasedJob } from "@/lib/utils/job-helpers";
+import { getDepartment } from "@/lib/vincere/constants";
 
 interface FilterOptions {
   positions: string[];
@@ -30,6 +31,7 @@ const JOBS_PER_PAGE = 20; // List view allows more items per page
 
 const initialFilters: JobFilters = {
   position: "",
+  department: "",
   jobType: "",
   contractType: "",
   minSalary: "",
@@ -53,10 +55,10 @@ export function JobBoardClient({
   const [appliedSearch, setAppliedSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(true);
-  const [matchScores, setMatchScores] = useState<Record<string, { score: number; isRelevant: boolean }>>({});
+  const [relevanceTiers, setRelevanceTiers] = useState<Record<string, { tier: 1 | 2 | 3 }>>({});
 
   useEffect(() => {
-    async function loadMatchScores() {
+    async function loadRelevanceTiers() {
       try {
         const response = await fetch("/api/public/job-match", {
           credentials: "include",
@@ -64,16 +66,16 @@ export function JobBoardClient({
 
         if (response.ok) {
           const data = await response.json();
-          if (data.authenticated && data.scores) {
-            setMatchScores(data.scores);
+          if (data.authenticated && data.tiers) {
+            setRelevanceTiers(data.tiers);
           }
         }
       } catch (error) {
-        console.error("Failed to load match scores:", error);
+        console.error("Failed to load relevance tiers:", error);
       }
     }
 
-    loadMatchScores();
+    loadRelevanceTiers();
   }, []);
 
   // Filter and search jobs
@@ -111,6 +113,13 @@ export function JobBoardClient({
         return true;
       });
     }
+    if (filters.department) {
+      result = result.filter((job) => {
+        const isHousehold = isHouseholdJob(job);
+        const jobDepartment = getDepartment(job.title || job.position_category, isHousehold);
+        return jobDepartment === filters.department;
+      });
+    }
     if (filters.contractType) {
       result = result.filter((job) => job.contract_type === filters.contractType);
     }
@@ -123,34 +132,29 @@ export function JobBoardClient({
       result = result.filter((job) => (job.salary_min || job.salary_max || Infinity) <= maxSalary);
     }
 
-    const getRelevantScore = (jobId: string) => {
-      const matchData = matchScores[jobId];
-      return matchData?.isRelevant ? matchData.score : undefined;
-    };
-
-    // Sort: urgent first, then by match score (if relevant), then by date
+    // Sort: relevance tier first, then urgent, then by date
     result.sort((a, b) => {
-      // Urgent jobs first
+      // Get relevance tiers (default to 3 if not available)
+      const tierA = relevanceTiers[a.id]?.tier ?? 3;
+      const tierB = relevanceTiers[b.id]?.tier ?? 3;
+
+      // Primary: Relevance tier (1 = exact match first, then 2 = same dept, then 3 = other)
+      if (tierA !== tierB) {
+        return tierA - tierB;
+      }
+
+      // Secondary: Urgent jobs first within each tier
       if (a.is_urgent && !b.is_urgent) return -1;
       if (!a.is_urgent && b.is_urgent) return 1;
 
-      // Then by match score if available (only relevant jobs have scores)
-      const scoreA = getRelevantScore(a.id);
-      const scoreB = getRelevantScore(b.id);
-      if (scoreA !== undefined && scoreB !== undefined) {
-        return scoreB - scoreA;
-      }
-      if (scoreA !== undefined) return -1;
-      if (scoreB !== undefined) return 1;
-
-      // Then by date
+      // Tertiary: By date (newest first)
       const dateA = new Date(a.published_at || a.created_at).getTime();
       const dateB = new Date(b.published_at || b.created_at).getTime();
       return dateB - dateA;
     });
 
     return result;
-  }, [initialJobs, appliedSearch, filters, matchScores]);
+  }, [initialJobs, appliedSearch, filters, relevanceTiers]);
 
   // Pagination
   const totalPages = Math.ceil(filteredJobs.length / JOBS_PER_PAGE);
