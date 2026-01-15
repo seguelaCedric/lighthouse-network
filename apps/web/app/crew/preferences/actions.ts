@@ -2,8 +2,8 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { checkProfileCompleteness } from "@lighthouse/ai/matcher";
 import { candidateHasCV } from "@/lib/utils/candidate-cv";
+import { calculateProfileCompletion, type ProfileCompletionInput } from "@/lib/profile-completion";
 import { syncCandidateUpdate } from "@/lib/vincere/sync-service";
 import { POSITION_MAPPING } from "@/lib/vincere/constants";
 import { normalizePosition } from "@/lib/utils/position-normalization";
@@ -346,7 +346,8 @@ export async function loadJobMatches(
     has_schengen, has_b1b2, has_c1d,
     nationality, second_nationality,
     is_smoker, has_visible_tattoos, is_couple, partner_position,
-    verification_tier
+    verification_tier,
+    date_of_birth, current_location, candidate_type, avatar_url, industry_preference
   `;
 
   // PERFORMANCE: Run user, candidate-by-email, and candidate-by-id lookups in parallel
@@ -379,11 +380,32 @@ export async function loadJobMatches(
     return { success: false, error: "Could not load candidate profile" };
   }
 
-  // Check profile completeness
-  const profileStatus = checkProfileCompleteness(candidate);
-
   // Check if candidate has CV uploaded
   const hasCV = await candidateHasCV(supabase, candidate.id);
+
+  // Build profile completion input from candidate data
+  const profileInput: ProfileCompletionInput = {
+    firstName: candidate.first_name,
+    lastName: candidate.last_name,
+    email: candidate.email,
+    phone: candidate.phone,
+    dateOfBirth: candidate.date_of_birth,
+    nationality: candidate.nationality,
+    currentLocation: candidate.current_location,
+    candidateType: candidate.candidate_type,
+    primaryPosition: candidate.primary_position,
+    yachtPrimaryPosition: candidate.yacht_primary_position,
+    householdPrimaryPosition: candidate.household_primary_position,
+    availabilityStatus: candidate.availability_status,
+    avatarUrl: candidate.avatar_url,
+    hasStcw: candidate.has_stcw,
+    hasEng1: candidate.has_eng1,
+    industryPreference: candidate.industry_preference,
+    documents: hasCV ? [{ type: "cv" }] : [],
+  };
+
+  // Check profile completeness using the same calculation as profile edit page
+  const profileResult = calculateProfileCompletion(profileInput);
 
   // Build candidate's sought positions list
   const candidateSoughtPositions: string[] = [];
@@ -433,8 +455,8 @@ export async function loadJobMatches(
 
   const appliedJobIds = new Set((applications || []).map((a) => a.job_id));
 
-  // Quick apply requires both profile completeness AND CV
-  const canQuickApply = profileStatus.canQuickApply && hasCV;
+  // Quick apply requires both profile completeness (70%+) AND CV
+  const canQuickApply = profileResult.score >= 70 && hasCV;
 
   // Calculate relevance tiers and build matches
   const allMatches: SimpleJobMatch[] = jobs.map((job) => {
@@ -484,9 +506,9 @@ export async function loadJobMatches(
     success: true,
     matches: relevantMatches,
     profile: {
-      completeness: profileStatus.completeness,
+      completeness: profileResult.score,
       canQuickApply,
-      missingFields: profileStatus.missingFields,
+      missingFields: profileResult.actions.map(a => a.label),
       hasCV,
       candidateId: candidate.id,
     },
