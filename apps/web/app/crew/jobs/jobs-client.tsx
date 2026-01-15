@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { type JobsPageData, type JobListing, applyToJob, getJobsData, type JobFilters, saveJob, unsaveJob } from "./actions";
 import { REGION_GROUPS, isLandBasedJob } from "@/lib/utils/job-helpers";
+import { formatSalaryRange } from "@/lib/utils/currency";
 
 // Helper functions
 function formatDate(dateStr: string | null): string {
@@ -57,12 +58,10 @@ function formatSalary(
   max: number | null,
   currency: string
 ): string {
-  if (!min && !max) return "Competitive";
-  if (min && max) {
-    return `${currency} ${min.toLocaleString("en-US")}-${max.toLocaleString("en-US")}`;
-  }
-  if (min) return `${currency} ${min.toLocaleString("en-US")}+`;
-  return `Up to ${currency} ${max?.toLocaleString("en-US")}`;
+  return formatSalaryRange(min, max, currency, "month", {
+    style: "full",
+    showPeriod: false,
+  });
 }
 
 function formatContractType(type: string | null): string {
@@ -220,12 +219,12 @@ function JobCard({
           </button>
         </h3>
         <p className="mt-1 text-gray-600">
-          {job.vesselName || (
+          {job.vesselName || (job.vesselSize ? `${job.vesselSize}m` : (
             <span className="flex items-center gap-1 italic text-gray-500">
               <Shield className="size-4" />
               Confidential Listing
             </span>
-          )}
+          ))}
         </p>
       </div>
 
@@ -339,7 +338,7 @@ function JobDetailModal({
               </div>
             </div>
             <p className="text-sm sm:text-base text-gray-600">
-              {job.vesselName || "Confidential Listing"}
+              {job.vesselName || (job.vesselSize ? `${job.vesselSize}m` : "Confidential Listing")}
             </p>
           </div>
           <button
