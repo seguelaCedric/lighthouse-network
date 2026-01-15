@@ -13,7 +13,7 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
-import { VincereClient, getCandidateFiles, downloadFile, getFileExtension, isPDF, VincereFile } from '../vincere';
+import { VincereClient, getCandidateFiles, getCandidatePhotoFile, downloadFile, getFileExtension, isPDF, VincereFile } from '../vincere';
 import { extractText, truncateForEmbedding, getFileTypeLabel, isExtractable } from './text-extraction';
 import { generateEmbedding } from '@lighthouse/ai';
 
@@ -211,16 +211,9 @@ export async function processCandidatePhoto(
   supabase: SupabaseClient
 ): Promise<{ success: boolean; photoUrl?: string; error?: string }> {
   try {
-    // Get candidate's files from Vincere
-    const files = await getCandidateFiles(vincereId, vincereClient);
-
-    // Find photo file by extension (Vincere doesn't have a dedicated photo flag)
-    const photoExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'];
-    const photoFile = files.find(f => {
-      const filename = f.file_name || '';
-      const ext = filename.split('.').pop()?.toLowerCase() || '';
-      return photoExtensions.includes(ext) && !f.original_cv;
-    });
+    // Get candidate's photo file using smart detection
+    // This filters out tattoos, certificates, etc. and prioritizes actual avatar photos
+    const photoFile = await getCandidatePhotoFile(vincereId, vincereClient);
     if (!photoFile) {
       return {
         success: false,
@@ -295,17 +288,12 @@ export async function listCandidateFiles(
 }> {
   const files = await getCandidateFiles(vincereId, vincereClient);
 
-  // Detect photo by extension
-  const photoExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'];
-  const hasPhoto = files.some(f => {
-    const filename = f.file_name || '';
-    const ext = filename.split('.').pop()?.toLowerCase() || '';
-    return photoExtensions.includes(ext) && !f.original_cv;
-  });
+  // Check for photo using improved detection (excludes tattoos, certs, etc.)
+  const photoFile = await getCandidatePhotoFile(vincereId, vincereClient);
 
   return {
     files,
     hasCV: files.some(f => f.original_cv === true),
-    hasPhoto,
+    hasPhoto: photoFile !== null,
   };
 }

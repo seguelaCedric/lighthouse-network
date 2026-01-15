@@ -5,6 +5,7 @@ import {
   getCandidateWithCustomFields,
   mapVincereToCandidate,
 } from "@/lib/vincere";
+import { processCandidateCV, processCandidatePhoto } from "@/lib/services/cv-processor";
 
 /**
  * Vincere webhook event payload for candidates
@@ -411,6 +412,16 @@ async function handleCandidateCreatedOrUpdated(
           `[VincereCandidateWebhook] Created agency relationship with Lighthouse Careers`
         );
       }
+
+      // Process CV and avatar for new candidates
+      // This pulls the latest CV, extracts text, generates embedding, and saves avatar
+      await processNewCandidateDocuments(
+        vincereCandidateId,
+        newCandidate.id,
+        LIGHTHOUSE_ORG_ID,
+        vincere,
+        supabase
+      );
     }
   } catch (error) {
     console.error(
@@ -419,6 +430,86 @@ async function handleCandidateCreatedOrUpdated(
     );
     throw error;
   }
+}
+
+/**
+ * Process CV and avatar for new candidates
+ *
+ * This function:
+ * 1. Downloads and processes the candidate's CV (extract text, generate embedding)
+ * 2. Downloads and saves the candidate's avatar photo
+ *
+ * Processing is done asynchronously but we await to ensure completion
+ * before the webhook response. Errors are logged but don't fail the webhook.
+ */
+async function processNewCandidateDocuments(
+  vincereId: number,
+  candidateId: string,
+  organizationId: string,
+  vincereClient: ReturnType<typeof getVincereClient>,
+  supabase: ReturnType<typeof createServiceRoleClient>
+) {
+  console.log(
+    `[VincereCandidateWebhook] Processing documents for new candidate ${vincereId}...`
+  );
+
+  // Process CV (download, upload to storage, extract text, generate embedding)
+  try {
+    console.log(`[VincereCandidateWebhook] Processing CV...`);
+    const cvResult = await processCandidateCV(
+      vincereId,
+      candidateId,
+      organizationId,
+      vincereClient,
+      supabase
+    );
+
+    if (cvResult.success) {
+      console.log(
+        `[VincereCandidateWebhook] ✅ CV processed: ${cvResult.extractedTextLength} chars extracted, embedding: ${cvResult.embeddingGenerated ? "yes" : "no"}`
+      );
+    } else {
+      console.log(
+        `[VincereCandidateWebhook] ⚠️ CV processing: ${cvResult.error || "No CV found"}`
+      );
+    }
+  } catch (cvError) {
+    console.error(
+      `[VincereCandidateWebhook] CV processing error:`,
+      cvError instanceof Error ? cvError.message : cvError
+    );
+  }
+
+  // Process avatar photo (download, upload to storage, update candidate record)
+  try {
+    console.log(`[VincereCandidateWebhook] Processing avatar photo...`);
+    const photoResult = await processCandidatePhoto(
+      vincereId,
+      candidateId,
+      organizationId,
+      vincereClient,
+      supabase
+    );
+
+    if (photoResult.success) {
+      console.log(
+        `[VincereCandidateWebhook] ✅ Avatar photo saved: ${photoResult.photoUrl}`
+      );
+    } else {
+      console.log(
+        `[VincereCandidateWebhook] ⚠️ Avatar processing: ${photoResult.error || "No avatar found"}`
+      );
+    }
+  } catch (photoError) {
+    console.error(
+      `[VincereCandidateWebhook] Avatar processing error:`,
+      photoError instanceof Error ? photoError.message : photoError
+    );
+  }
+
+  console.log(
+    `[VincereCandidateWebhook] Document processing complete for candidate ${vincereId}`
+  );
 }
 
 /**

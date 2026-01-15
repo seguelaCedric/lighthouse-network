@@ -81,10 +81,61 @@ export async function getCandidateCVFile(
 }
 
 /**
+ * Patterns that indicate an image is NOT an avatar/profile photo
+ * These are excluded from avatar selection
+ */
+const NON_AVATAR_PATTERNS = [
+  /tattoo/i,
+  /tatt/i,
+  /ink/i,
+  /body\s*art/i,
+  /certificate/i,
+  /cert/i,
+  /license/i,
+  /licence/i,
+  /passport/i,
+  /visa/i,
+  /id[_\-\s]?card/i,
+  /document/i,
+  /scan/i,
+  /screenshot/i,
+  /screen\s*shot/i,
+  /reference/i,
+  /contract/i,
+  /medical/i,
+  /eng1/i,
+  /stcw/i,
+  /yacht/i,
+  /boat/i,
+  /vessel/i,
+  /interior/i,
+  /galley/i,
+  /cabin/i,
+];
+
+/**
+ * Patterns that indicate an image IS likely an avatar/profile photo
+ * These are prioritized for avatar selection
+ */
+const AVATAR_PATTERNS = [
+  /^photo/i,
+  /profile/i,
+  /avatar/i,
+  /headshot/i,
+  /head\s*shot/i,
+  /portrait/i,
+  /face/i,
+  /picture/i,
+  /pic\./i,
+  /img\./i,
+];
+
+/**
  * Get candidate's photo file metadata
  *
  * Since Vincere doesn't have a dedicated photo flag like original_cv,
- * we detect photos by file extension.
+ * we detect photos by file extension and filter out non-avatar images
+ * (tattoos, certificates, etc.)
  */
 export async function getCandidatePhotoFile(
   vincereId: number,
@@ -92,14 +143,37 @@ export async function getCandidatePhotoFile(
 ): Promise<VincereFile | null> {
   const files = await getCandidateFiles(vincereId, client);
 
-  // Find photo by extension
   const photoExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'];
-  const photoFile = files.find(f => {
+
+  // Filter to image files that are not CVs
+  const imageFiles = files.filter(f => {
     const filename = f.file_name || '';
     const ext = filename.split('.').pop()?.toLowerCase() || '';
     return photoExtensions.includes(ext) && !f.original_cv;
   });
-  return photoFile ?? null;
+
+  if (imageFiles.length === 0) {
+    return null;
+  }
+
+  // First, try to find a file that matches avatar patterns
+  const avatarMatch = imageFiles.find(f => {
+    const filename = f.file_name || '';
+    return AVATAR_PATTERNS.some(pattern => pattern.test(filename));
+  });
+
+  if (avatarMatch) {
+    return avatarMatch;
+  }
+
+  // Next, filter out files that match non-avatar patterns (tattoos, certs, etc.)
+  const filteredFiles = imageFiles.filter(f => {
+    const filename = f.file_name || '';
+    return !NON_AVATAR_PATTERNS.some(pattern => pattern.test(filename));
+  });
+
+  // Return the first filtered file, or null if all were filtered out
+  return filteredFiles[0] ?? null;
 }
 
 /**
