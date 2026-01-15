@@ -28,8 +28,7 @@ async function main() {
   const client = getVincereClient();
 
   const webhookIds = [
-    "58fa57dc-f0cb-411d-81db-bfa7f1229b92",
-    "6789dd5b-8878-4f8a-ba98-12ce7b937c6f",
+    "dfacd91c-9804-4b1f-97d3-afe1a5e88475",
   ];
 
   for (const id of webhookIds) {

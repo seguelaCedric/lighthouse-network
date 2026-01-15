@@ -123,21 +123,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Log the full parsed body for debugging
-    console.log("[VincereCandidateWebhook] Full parsed body:", JSON.stringify(parsedBody, null, 2));
+    // Log the full parsed body for debugging - log keys and full structure
+    console.log("[VincereCandidateWebhook] Payload keys:", Object.keys(parsedBody));
+    console.log("[VincereCandidateWebhook] Full payload:", JSON.stringify(parsedBody));
 
-    const event: VincereCandidateWebhookEvent = parsedBody;
+    // Vincere webhook format uses entityType, actionType, and candidateId (not entity_type/action_type/data.id)
+    // Also handle SNS-wrapped messages where the format might differ
+    const entityType = parsedBody.entityType || parsedBody.entity_type;
+    const actionType = parsedBody.actionType || parsedBody.action_type;
+    const candidateId = parsedBody.candidateId || parsedBody.candidate_id || parsedBody.data?.id || parsedBody.id;
 
-    if (!event || !event.entity_type || !event.action_type || !event.data) {
-      console.error("[VincereCandidateWebhook] Invalid payload - missing required fields");
-      console.error("[VincereCandidateWebhook] entity_type:", event?.entity_type);
-      console.error("[VincereCandidateWebhook] action_type:", event?.action_type);
-      console.error("[VincereCandidateWebhook] data:", event?.data);
-      return NextResponse.json(
-        { error: "Invalid webhook payload" },
-        { status: 400 }
-      );
+    console.log("[VincereCandidateWebhook] Extracted - entityType:", entityType, "actionType:", actionType, "candidateId:", candidateId);
+
+    // If we can't extract a candidate ID, return success but log the payload for investigation
+    if (!candidateId) {
+      console.log("[VincereCandidateWebhook] No candidateId found in payload, acknowledging receipt");
+      return NextResponse.json({
+        received: true,
+        message: "Webhook received but no candidateId found",
+        payload_keys: Object.keys(parsedBody)
+      });
     }
+
+    // Create a normalized event object
+    const event = {
+      entity_type: entityType || "CANDIDATE",
+      action_type: actionType || "UPDATE",
+      data: { id: typeof candidateId === 'number' ? candidateId : parseInt(candidateId, 10) }
+    };
 
     console.log(
       `[VincereCandidateWebhook] Received event: ${event.entity_type}.${event.action_type} for candidate ${event.data.id}`
