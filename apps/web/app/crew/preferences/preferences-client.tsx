@@ -535,40 +535,36 @@ export default function PreferencesClient({ candidateId, initialData }: Preferen
 
         {/* AI Matched Jobs Section */}
         <div className="mt-6 sm:mt-8">
-          <div className="mb-4 space-y-3 sm:space-y-0">
-            {/* Header with title and description */}
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <Sparkles className="size-4 text-gold-500 shrink-0 sm:size-5" />
-                  <h2 className="text-lg font-semibold text-navy-900 sm:text-xl">
-                    Your Top Matches
-                  </h2>
-                </div>
-                <p className="text-xs text-gray-600 sm:text-sm">
-                  AI-powered job recommendations based on your complete profile
-                </p>
+          {/* Header row with title, View All Jobs button, and refresh */}
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <Sparkles className="size-4 text-gold-500 shrink-0 sm:size-5" />
+                <h2 className="text-lg font-semibold text-navy-900 sm:text-xl">
+                  Your Top Matches
+                </h2>
               </div>
+              <p className="text-xs text-gray-600 sm:text-sm">
+                AI-powered job recommendations based on your complete profile
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Link href="/crew/jobs">
+                <Button variant="secondary" size="sm" className="text-xs sm:text-sm">
+                  View All Jobs
+                  <ChevronRight className="ml-1.5 size-3.5 sm:size-4" />
+                </Button>
+              </Link>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={loadMatchedJobs}
                 disabled={loadingMatches}
                 title="Refresh matches"
-                className="shrink-0 p-2"
+                className="p-2"
               >
                 <RefreshCw className={cn("size-4", loadingMatches && "animate-spin")} />
               </Button>
-            </div>
-            
-            {/* View All Jobs Button - Prominent placement */}
-            <div className="flex justify-end sm:justify-start">
-              <Link href="/crew/jobs" className="w-full sm:w-auto">
-                <Button variant="secondary" size="sm" className="w-full text-xs sm:w-auto sm:text-sm">
-                  View All Jobs
-                  <ChevronRight className="ml-1.5 size-3.5 sm:size-4" />
-                </Button>
-              </Link>
             </div>
           </div>
 
@@ -583,7 +579,7 @@ export default function PreferencesClient({ candidateId, initialData }: Preferen
             </div>
           ) : matchedJobs.length > 0 ? (
             <>
-              {/* Sort Dropdown */}
+              {/* Sort Dropdown - Right aligned */}
               <div className="mb-4 flex items-center justify-end gap-2">
                 <label htmlFor="sort-select-matches" className="text-xs text-gray-600 sm:text-sm whitespace-nowrap">
                   Sort by:
@@ -592,7 +588,7 @@ export default function PreferencesClient({ candidateId, initialData }: Preferen
                   id="sort-select-matches"
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                  className="h-9 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:border-gold-500 focus:outline-none focus:ring-1 focus:ring-gold-500 sm:w-auto min-w-[160px]"
+                  className="h-9 rounded-lg border border-gray-300 bg-white px-3 text-sm focus:border-gold-500 focus:outline-none focus:ring-1 focus:ring-gold-500 min-w-[160px]"
                 >
                   <option value="relevance">Most Relevant</option>
                   <option value="date_posted">Newest First</option>
