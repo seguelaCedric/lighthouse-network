@@ -64,14 +64,35 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Get user data
-    const { data: userData, error: userError } = await supabase
+    // Get user data - use maybeSingle() to handle cases where user record doesn't exist
+    let { data: userData } = await supabase
       .from("users")
       .select("id, user_type, organization_id")
       .eq("auth_id", user.id)
-      .single();
+      .maybeSingle();
 
-    if (userError || !userData) {
+    // For candidates without a users record (e.g., Vincere/Bubble imports),
+    // fall back to email-based candidate lookup
+    let emailLookupCandidateId: string | null = null;
+
+    if (!userData && user.email) {
+      const { data: candidateByEmail } = await supabase
+        .from("candidates")
+        .select("id, user_id")
+        .eq("email", user.email)
+        .maybeSingle();
+
+      if (candidateByEmail) {
+        emailLookupCandidateId = candidateByEmail.id;
+        userData = {
+          id: candidateByEmail.user_id || `candidate-${candidateByEmail.id}`,
+          organization_id: null,
+          user_type: "candidate" as const,
+        };
+      }
+    }
+
+    if (!userData) {
       return NextResponse.json(
         { error: "User not found" },
         { status: 404 }
@@ -93,7 +114,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Recruiters can access all documents from their organization
     // Candidates can only access their own documents
     if (userData.user_type === "candidate") {
-      let candidateId: string | null = null;
+      // If we used email fallback, we already know the candidate ID
+      let candidateId: string | null = emailLookupCandidateId;
 
       const { data: candidateByUserId } = await supabase
         .from("candidates")

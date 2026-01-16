@@ -10,7 +10,7 @@ vi.mock("@supabase/supabase-js", () => ({
 }));
 
 vi.mock("@/lib/vincere/sync-service", () => ({
-  syncDocumentUpload: vi.fn(),
+  syncDocumentUpload: vi.fn().mockResolvedValue({ success: true }),
 }));
 
 vi.mock("@/lib/verification", () => ({
@@ -39,7 +39,7 @@ describe("documents upload", () => {
       user_type: "candidate",
     };
 
-    const candidateData = { id: "candidate-1" };
+    const candidateData = { id: "a1b2c3d4-e5f6-7890-abcd-ef1234567890", user_id: "user-1" };
 
     const createQuery = (table: string) => {
       const query = {
@@ -53,6 +53,18 @@ describe("documents upload", () => {
         }),
         update: vi.fn(() => query),
         single: vi.fn(async () => {
+          if (table === "users") {
+            return { data: userData, error: null };
+          }
+          if (table === "candidates") {
+            return { data: candidateData, error: null };
+          }
+          if (table === "documents") {
+            return { data: { id: "doc-1" }, error: null };
+          }
+          return { data: null, error: null };
+        }),
+        maybeSingle: vi.fn(async () => {
           if (table === "users") {
             return { data: userData, error: null };
           }

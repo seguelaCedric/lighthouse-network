@@ -45,14 +45,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get user data
-    const { data: userData, error: userError } = await supabase
+    // Get user data - use maybeSingle() to handle cases where user record doesn't exist
+    let { data: userData } = await supabase
       .from("users")
       .select("id, organization_id, user_type")
       .eq("auth_id", user.id)
-      .single();
+      .maybeSingle();
 
-    if (userError || !userData) {
+    // For candidates without a users record (e.g., Vincere/Bubble imports),
+    // fall back to email-based candidate lookup
+    // Store the candidate ID for later verification to prevent mixups
+    let emailLookupCandidateId: string | null = null;
+
+    if (!userData && user.email) {
+      const { data: candidateByEmail } = await supabase
+        .from("candidates")
+        .select("id, user_id")
+        .eq("email", user.email)
+        .maybeSingle();
+
+      if (candidateByEmail) {
+        emailLookupCandidateId = candidateByEmail.id;
+        // Create a synthetic userData object to allow the upload to proceed
+        userData = {
+          id: candidateByEmail.user_id || `candidate-${candidateByEmail.id}`,
+          organization_id: null,
+          user_type: "candidate" as const,
+        };
+      }
+    }
+
+    if (!userData) {
       return NextResponse.json(
         { error: "User not found" },
         { status: 404 }
@@ -107,6 +130,20 @@ export async function POST(request: NextRequest) {
     // Candidates can only upload to their own profile
     // Recruiters can upload to any entity
     if (userData.user_type === "candidate") {
+      // Security check: if we used email fallback to identify the candidate,
+      // the entityId must match the candidate we found - prevents mixups
+      if (emailLookupCandidateId && entityType === "candidate" && entityId !== emailLookupCandidateId) {
+        console.warn("Security: entityId mismatch for email lookup candidate", {
+          emailLookupCandidateId,
+          entityId,
+          userEmail: user.email,
+        });
+        return NextResponse.json(
+          { error: "You can only upload documents to your own profile" },
+          { status: 403 }
+        );
+      }
+
       let candidateData: { id: string; user_id?: string | null } | null = null;
 
       // Get the candidate ID for this user
@@ -134,7 +171,9 @@ export async function POST(request: NextRequest) {
             );
           }
 
-          if (!candidateByEmail.user_id) {
+          // Only attempt to link if we have a real user ID (not a synthetic one from email fallback)
+          const isSyntheticUserId = userData.id.startsWith("candidate-");
+          if (!candidateByEmail.user_id && !isSyntheticUserId) {
             const { error: linkError } = await supabase
               .from("candidates")
               .update({

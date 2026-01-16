@@ -35,14 +35,35 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Get user data
-    const { data: userData, error: userError } = await supabase
+    // Get user data - use maybeSingle() to handle cases where user record doesn't exist
+    let { data: userData } = await supabase
       .from("users")
       .select("id, user_type, organization_id")
       .eq("auth_id", user.id)
-      .single();
+      .maybeSingle();
 
-    if (userError || !userData) {
+    // For candidates without a users record (e.g., Vincere/Bubble imports),
+    // fall back to email-based candidate lookup
+    let emailLookupCandidateId: string | null = null;
+
+    if (!userData && user.email) {
+      const { data: candidateByEmail } = await supabase
+        .from("candidates")
+        .select("id, user_id")
+        .eq("email", user.email)
+        .maybeSingle();
+
+      if (candidateByEmail) {
+        emailLookupCandidateId = candidateByEmail.id;
+        userData = {
+          id: candidateByEmail.user_id || `candidate-${candidateByEmail.id}`,
+          organization_id: null,
+          user_type: "candidate" as const,
+        };
+      }
+    }
+
+    if (!userData) {
       return NextResponse.json(
         { error: "User not found" },
         { status: 404 }
@@ -65,13 +86,26 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Candidates can only access their own documents
     if (userData.user_type === "candidate") {
       // Get the candidate ID for this user
-      const { data: candidateData } = await supabase
-        .from("candidates")
-        .select("id")
-        .eq("user_id", userData.id)
-        .single();
+      let candidateId = emailLookupCandidateId;
+      if (!candidateId) {
+        const { data: candidateByUserId } = await supabase
+          .from("candidates")
+          .select("id")
+          .eq("user_id", userData.id)
+          .maybeSingle();
+        candidateId = candidateByUserId?.id || null;
 
-      if (!candidateData || document.entityType !== "candidate" || document.entityId !== candidateData.id) {
+        if (!candidateId && user.email) {
+          const { data: candidateByEmail } = await supabase
+            .from("candidates")
+            .select("id")
+            .eq("email", user.email)
+            .maybeSingle();
+          candidateId = candidateByEmail?.id || null;
+        }
+      }
+
+      if (!candidateId || document.entityType !== "candidate" || document.entityId !== candidateId) {
         return NextResponse.json(
           { error: "You can only access your own documents" },
           { status: 403 }
