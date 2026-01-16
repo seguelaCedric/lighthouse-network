@@ -28,8 +28,8 @@ import {
   HouseholdPreferencesForm,
   CoupleSection,
   StepNavigator,
-  JobMatchCard,
 } from "@/components/preferences";
+import { JobCard, JobDetailModal } from "@/components/jobs";
 import { yachtPositionLabels, householdPositionLabels, regionLabels } from "@/components/preferences/constants";
 import type { SimpleJobMatch } from "./actions";
 
@@ -105,6 +105,7 @@ export default function PreferencesClient({ candidateId, initialData }: Preferen
   const [loadingMatches, setLoadingMatches] = React.useState(false);
   const [profileStatus, setProfileStatus] = React.useState<ProfileStatus | null>(null);
   const [applyingJobId, setApplyingJobId] = React.useState<string | null>(null);
+  const [selectedJob, setSelectedJob] = React.useState<SimpleJobMatch | null>(null);
 
   // Sort state for job recommendations
   const [sortBy, setSortBy] = React.useState<"relevance" | "date_posted" | "salary_high" | "salary_low" | "urgent_first" | "alphabetical">("relevance");
@@ -287,6 +288,12 @@ export default function PreferencesClient({ candidateId, initialData }: Preferen
               : match
           )
         );
+        // Update the selected job modal if it's open
+        setSelectedJob((prev) =>
+          prev && prev.job.id === jobId
+            ? { ...prev, hasApplied: true, canQuickApply: false }
+            : prev
+        );
       } else if (result.error === "cv_required") {
         // Update profile status to show CV is missing
         setProfileStatus((prev) => prev ? {
@@ -330,10 +337,13 @@ export default function PreferencesClient({ candidateId, initialData }: Preferen
     );
   }, [profileStatus?.completeness]);
 
-  // View job handler - navigate to job details
+  // View job handler - open modal with job details
   const handleViewJob = React.useCallback((jobId: string) => {
-    router.push(`/job-board/${jobId}`);
-  }, [router]);
+    const match = matchedJobs.find(m => m.job.id === jobId);
+    if (match) {
+      setSelectedJob(match);
+    }
+  }, [matchedJobs]);
 
   // Trigger job matching when reaching complete step
   React.useEffect(() => {
@@ -601,14 +611,32 @@ export default function PreferencesClient({ candidateId, initialData }: Preferen
               
               <div className="space-y-4">
                 {sortedMatchedJobs.map((match) => (
-                  <JobMatchCard
+                  <JobCard
                     key={match.job.id}
-                    match={match}
-                    onQuickApply={handleQuickApply}
-                    onViewJob={handleViewJob}
-                    hasCV={profileStatus?.hasCV}
-                    candidateId={profileStatus?.candidateId ?? candidateId}
-                    onCVUploadSuccess={handleCVUploadSuccess}
+                    job={{
+                      id: match.job.id,
+                      title: match.job.title,
+                      vesselName: match.job.vesselName,
+                      vesselType: match.job.vesselType,
+                      vesselSize: match.job.vesselSize,
+                      location: match.job.location,
+                      contractType: match.job.contractType,
+                      salaryMin: match.job.salaryMin,
+                      salaryMax: match.job.salaryMax,
+                      currency: match.job.currency,
+                      startDate: match.job.startDate,
+                      isUrgent: match.job.isUrgent,
+                      publishedAt: match.job.publishedAt,
+                    }}
+                    hasApplied={match.hasApplied}
+                    onView={() => handleViewJob(match.job.id)}
+                    onQuickApply={
+                      match.canQuickApply && profileStatus?.hasCV
+                        ? () => handleQuickApply(match.job.id)
+                        : undefined
+                    }
+                    isApplying={applyingJobId === match.job.id}
+                    showSaveButton={false}
                   />
                 ))}
               </div>
@@ -636,6 +664,36 @@ export default function PreferencesClient({ candidateId, initialData }: Preferen
             </div>
           )}
         </div>
+
+        {/* Job Detail Modal */}
+        {selectedJob && (
+          <JobDetailModal
+            job={{
+              id: selectedJob.job.id,
+              title: selectedJob.job.title,
+              vesselName: selectedJob.job.vesselName,
+              vesselType: selectedJob.job.vesselType,
+              vesselSize: selectedJob.job.vesselSize,
+              location: selectedJob.job.location,
+              contractType: selectedJob.job.contractType,
+              salaryMin: selectedJob.job.salaryMin,
+              salaryMax: selectedJob.job.salaryMax,
+              currency: selectedJob.job.currency,
+              startDate: selectedJob.job.startDate,
+              isUrgent: selectedJob.job.isUrgent,
+              publishedAt: selectedJob.job.publishedAt,
+            }}
+            hasApplied={selectedJob.hasApplied}
+            onClose={() => setSelectedJob(null)}
+            onApply={
+              selectedJob.canQuickApply && profileStatus?.hasCV
+                ? () => handleQuickApply(selectedJob.job.id)
+                : undefined
+            }
+            isApplying={applyingJobId === selectedJob.job.id}
+            showSaveButton={false}
+          />
+        )}
       </div>
     );
   }

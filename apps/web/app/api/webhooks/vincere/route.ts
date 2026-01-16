@@ -8,6 +8,7 @@ import {
   mapPlacementStatus,
   getPlacementFee,
 } from "@/lib/vincere";
+import { scheduleJobAlert } from "@/lib/services/job-alert-service";
 
 /**
  * Vincere user ID to name mapping for job owners and placement placed_by
@@ -318,6 +319,8 @@ async function handleJobCreatedOrUpdated(
       }),
     };
 
+    let jobDbId: string;
+
     if (existingJob) {
       // Update existing job
       const { error: updateError } = await supabase
@@ -333,6 +336,7 @@ async function handleJobCreatedOrUpdated(
         throw updateError;
       }
 
+      jobDbId = existingJob.id;
       console.log(
         `[VincereWebhook] Successfully updated job ${vincereJobId} (DB ID: ${existingJob.id})`
       );
@@ -354,9 +358,22 @@ async function handleJobCreatedOrUpdated(
         throw insertError;
       }
 
+      jobDbId = newJob.id;
       console.log(
         `[VincereWebhook] Successfully created job ${vincereJobId} (DB ID: ${newJob.id})`
       );
+    }
+
+    // Schedule job alerts with debounce
+    // This ensures we wait for all custom field updates from Vincere before sending alerts
+    // If the job is updated again before the delay expires, the timer resets
+    if (mappedJob.status === "open" && mappedJob.is_public) {
+      scheduleJobAlert(jobDbId).catch((err) => {
+        console.error(
+          `[VincereWebhook] Error scheduling job alert for ${vincereJobId}:`,
+          err
+        );
+      });
     }
   } catch (error) {
     console.error(

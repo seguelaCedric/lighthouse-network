@@ -6,8 +6,13 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email/client";
 import { jobAlertEmail, initialJobMatchEmail, type JobAlertData, type InitialJobMatchData } from "@/lib/email/templates";
+
+// Default debounce delay in seconds (60 seconds = 1 minute)
+// This gives Vincere time to send all custom field updates before we send alerts
+const DEFAULT_ALERT_DELAY_SECONDS = 60;
 
 export interface JobAlertCandidate {
   candidate_id: string;
@@ -554,5 +559,168 @@ export async function processInitialJobMatches(candidateId: string): Promise<{
     totalMatches: matchingJobs.length,
     notificationsCreated: notifications.length,
     emailSent,
+  };
+}
+
+/**
+ * Schedule a job alert to be sent after a delay.
+ * This implements debouncing: if the job is updated again before the delay expires,
+ * the timer is reset. This prevents sending alerts for incomplete jobs when
+ * Vincere sends multiple webhooks (CREATE + multiple custom field UPDATEs).
+ *
+ * @param jobId - The job ID to schedule alerts for
+ * @param delaySeconds - How long to wait before sending (default: 60 seconds)
+ * @returns The pending alert ID, or null if scheduling failed
+ */
+export async function scheduleJobAlert(
+  jobId: string,
+  delaySeconds: number = DEFAULT_ALERT_DELAY_SECONDS
+): Promise<string | null> {
+  const supabase = createServiceRoleClient();
+
+  const { data, error } = await supabase.rpc("schedule_job_alert", {
+    p_job_id: jobId,
+    p_delay_seconds: delaySeconds,
+  });
+
+  if (error) {
+    console.error(`[JobAlerts] Error scheduling alert for job ${jobId}:`, error);
+    return null;
+  }
+
+  console.log(`[JobAlerts] Scheduled alert for job ${jobId} in ${delaySeconds} seconds`);
+  return data as string;
+}
+
+/**
+ * Process all pending job alerts that are due.
+ * This is called by a cron job to check for scheduled alerts whose delay has expired.
+ *
+ * @param limit - Maximum number of alerts to process in one batch
+ * @returns Summary of processing results
+ */
+export async function processPendingJobAlerts(limit: number = 50): Promise<{
+  processed: number;
+  successful: number;
+  failed: number;
+  skipped: number;
+  results: Array<{
+    jobId: string;
+    success: boolean;
+    candidatesAlerted: number;
+    error?: string;
+  }>;
+}> {
+  const supabase = createServiceRoleClient();
+
+  // Get pending alerts that are due (atomically marks them as processing)
+  const { data: pendingAlerts, error: fetchError } = await supabase.rpc(
+    "get_pending_job_alerts_for_processing",
+    { p_limit: limit }
+  );
+
+  if (fetchError) {
+    console.error("[JobAlerts] Error fetching pending alerts:", fetchError);
+    return {
+      processed: 0,
+      successful: 0,
+      failed: 0,
+      skipped: 0,
+      results: [],
+    };
+  }
+
+  if (!pendingAlerts || pendingAlerts.length === 0) {
+    return {
+      processed: 0,
+      successful: 0,
+      failed: 0,
+      skipped: 0,
+      results: [],
+    };
+  }
+
+  console.log(`[JobAlerts] Processing ${pendingAlerts.length} pending job alerts`);
+
+  const results: Array<{
+    jobId: string;
+    success: boolean;
+    candidatesAlerted: number;
+    error?: string;
+  }> = [];
+
+  let successful = 0;
+  let failed = 0;
+  let skipped = 0;
+
+  for (const alert of pendingAlerts) {
+    try {
+      // Check if the job is still open and public before sending alerts
+      const { data: job, error: jobError } = await supabase
+        .from("jobs")
+        .select("id, status, is_public, deleted_at")
+        .eq("id", alert.job_id)
+        .single();
+
+      if (jobError || !job) {
+        console.log(`[JobAlerts] Job ${alert.job_id} not found, skipping alert`);
+        skipped++;
+        results.push({
+          jobId: alert.job_id,
+          success: false,
+          candidatesAlerted: 0,
+          error: "Job not found",
+        });
+        continue;
+      }
+
+      // Skip if job is no longer open or public
+      if (job.status !== "open" || !job.is_public || job.deleted_at) {
+        console.log(`[JobAlerts] Job ${alert.job_id} is not open/public, skipping alert`);
+        skipped++;
+        results.push({
+          jobId: alert.job_id,
+          success: true,
+          candidatesAlerted: 0,
+          error: "Job not open or public",
+        });
+        continue;
+      }
+
+      // Process the job alerts
+      const alertResult = await processJobAlerts(alert.job_id);
+
+      results.push({
+        jobId: alert.job_id,
+        success: true,
+        candidatesAlerted: alertResult.successfulAlerts,
+      });
+
+      successful++;
+      console.log(
+        `[JobAlerts] Processed alerts for job ${alert.job_id}: ${alertResult.successfulAlerts} candidates notified`
+      );
+    } catch (error) {
+      console.error(`[JobAlerts] Error processing alert for job ${alert.job_id}:`, error);
+      failed++;
+      results.push({
+        jobId: alert.job_id,
+        success: false,
+        candidatesAlerted: 0,
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
+
+  console.log(
+    `[JobAlerts] Finished processing: ${successful} successful, ${failed} failed, ${skipped} skipped`
+  );
+
+  return {
+    processed: pendingAlerts.length,
+    successful,
+    failed,
+    skipped,
+    results,
   };
 }

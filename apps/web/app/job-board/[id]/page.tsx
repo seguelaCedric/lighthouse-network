@@ -15,18 +15,16 @@ import {
   Ruler,
   CheckCircle,
   ExternalLink,
-  Share2,
-  Bookmark,
   Building,
   Eye,
   Users,
-  ArrowRight,
 } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { JobPostingJsonLd, JobBreadcrumbJsonLd } from "@/components/seo/JobPostingJsonLd";
 import type { PublicJob } from "@/components/job-board/JobBoardCard";
 import { formatDescriptionFull } from "@/lib/utils/format-description";
 import { JobBoardQuickApplyButton } from "@/components/job-board/JobBoardQuickApplyButton";
+import { JobShareButtons } from "@/components/job-board/JobShareButtons";
 import { signOut } from "@/lib/auth/actions";
 
 interface PageProps {
@@ -566,15 +564,8 @@ export default async function JobDetailPage({ params }: PageProps) {
                   </div>
                 )}
 
-                <div className="flex gap-2 mt-4">
-                  <button className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
-                    <Bookmark className="h-4 w-4" />
-                    Save
-                  </button>
-                  <button className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
-                    <Share2 className="h-4 w-4" />
-                    Share
-                  </button>
+                <div className="mt-4">
+                  <JobShareButtons jobId={id} jobTitle={job.title} />
                 </div>
 
                 {job.apply_deadline && (

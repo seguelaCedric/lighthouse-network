@@ -363,7 +363,7 @@ export default function PrivateStaffPage() {
           </div>
 
           <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-            <Link href="/contact">
+            <Link href="/match">
               <Button size="lg" className="min-w-[220px]">
                 Start Receiving Applicants
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -472,6 +472,7 @@ export default function PrivateStaffPage() {
                   src="/images/private-staff/mansion-marbella.jpeg"
                   alt="Exceptional luxury mansion in Marbella"
                   fill
+                  sizes="(max-width: 1024px) 100vw, 50vw"
                   className="object-cover"
                 />
               </div>
@@ -701,6 +702,7 @@ export default function PrivateStaffPage() {
                       src={testimonial.image}
                       alt={testimonial.name}
                       fill
+                      sizes="56px"
                       className="object-cover"
                     />
                   </div>
@@ -798,6 +800,7 @@ export default function PrivateStaffPage() {
                   src="/images/private-staff/luxury-service.jpg"
                   alt="Luxury private service and hospitality"
                   fill
+                  sizes="(max-width: 1024px) 100vw, 50vw"
                   className="object-cover"
                 />
               </div>
@@ -826,7 +829,7 @@ export default function PrivateStaffPage() {
             discretion guaranteed.
           </p>
           <div className="mt-10 flex flex-col justify-center gap-4 sm:flex-row">
-            <Link href="/contact">
+            <Link href="/match">
               <Button size="lg" className="min-w-[220px]">
                 Start Receiving Applicants
                 <ArrowRight className="ml-2 h-5 w-5" />

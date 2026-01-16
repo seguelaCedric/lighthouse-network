@@ -390,7 +390,7 @@ export default function YachtCrewPage() {
           </p>
 
           <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-            <Link href="/contact">
+            <Link href="/match">
               <Button size="lg" className="min-w-[200px]">
                 Start Receiving Applicants
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -499,6 +499,7 @@ export default function YachtCrewPage() {
                   src="/images/yacht/superyacht-flyboarder.jpeg"
                   alt="Luxury superyacht with water sports activities"
                   fill
+                  sizes="(max-width: 1024px) 100vw, 50vw"
                   className="object-cover"
                 />
               </div>
@@ -643,6 +644,7 @@ export default function YachtCrewPage() {
                       src={testimonial.image}
                       alt={testimonial.name}
                       fill
+                      sizes="48px"
                       className="object-cover"
                     />
                   </div>
@@ -825,7 +827,7 @@ export default function YachtCrewPage() {
             commitment, no risk.
           </p>
           <div className="mt-10 flex flex-col justify-center gap-4 sm:flex-row">
-            <Link href="/contact">
+            <Link href="/match">
               <Button size="lg" className="min-w-[220px]">
                 Start Receiving Applicants
                 <ArrowRight className="ml-2 h-5 w-5" />
