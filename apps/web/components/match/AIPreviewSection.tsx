@@ -405,7 +405,7 @@ function WhatsNextSection() {
         </div>
       </div>
 
-      <div className="mt-5 pt-4 border-t border-gold-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="mt-5 pt-4 border-t border-gold-200 flex flex-col items-center gap-2 text-center">
         <p className="text-sm text-gray-600">
           <span className="font-semibold text-navy-900">96% placement success rate</span> • No placement, no fee
         </p>
