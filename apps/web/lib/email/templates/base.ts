@@ -197,7 +197,7 @@ export function baseTemplate(content: string): string {
   <div class="container">
     <div class="email-wrapper">
       <div style="padding: 30px; text-align: center;">
-        <img src="https://lighthouse-careers.com/logo.svg" alt="Lighthouse Careers" style="height: 48px; width: auto;" />
+        <img src="https://lighthouse-careers.com/logo-email.png" alt="Lighthouse Careers" style="height: 48px; width: auto;" />
       </div>
       <div class="content">
         ${content}
