@@ -397,11 +397,23 @@ export async function POST(request: NextRequest) {
             candidateType: candidateData.candidate_type || undefined,
             cvUrl: publicUrl,
           });
+
+          // Get CV file buffer for attachment
+          const fileBuffer = await file.arrayBuffer();
+          const cvBuffer = Buffer.from(fileBuffer);
+
           sendEmail({
             to: "admin@lighthouse-careers.com",
             subject: adminEmail.subject,
             html: adminEmail.html,
             text: adminEmail.text,
+            attachments: [
+              {
+                filename: file.name,
+                content: cvBuffer,
+                contentType: file.type,
+              },
+            ],
           }).catch((err) =>
             console.error("Failed to send admin notification email:", err)
           );

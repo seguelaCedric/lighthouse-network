@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { sendEmail, isResendConfigured } from "@/lib/email/client";
-import { inquiryNotificationEmail, contactConfirmationEmail } from "@/lib/email/templates";
+import { inquiryNotificationEmail, contactConfirmationEmail, hiringRequestConfirmationEmail } from "@/lib/email/templates";
 
 // Use service role for inserting inquiries (anon can't insert via API without RLS bypass)
 const supabaseService = createClient(
@@ -276,7 +276,7 @@ export async function POST(request: Request) {
         console.error("Failed to send inquiry notification:", emailError);
       }
 
-      // Send confirmation email for contact form submissions
+      // Send confirmation email based on inquiry type
       if (type === "contact") {
         try {
           const confirmationEmail = contactConfirmationEmail({
@@ -293,6 +293,25 @@ export async function POST(request: Request) {
         } catch (confirmError) {
           // Log but don't fail the request
           console.error("Failed to send contact confirmation:", confirmError);
+        }
+      } else if (type === "brief_match" || type === "match_funnel" || type === "inquiry") {
+        // Send hiring request confirmation for leads
+        try {
+          const confirmationEmail = hiringRequestConfirmationEmail({
+            name: data.name,
+            position: extractedPosition || undefined,
+            matchedCount: matched_count || undefined,
+          });
+
+          await sendEmail({
+            to: data.email,
+            subject: confirmationEmail.subject,
+            html: confirmationEmail.html,
+            text: confirmationEmail.text,
+          });
+        } catch (confirmError) {
+          // Log but don't fail the request
+          console.error("Failed to send hiring request confirmation:", confirmError);
         }
       }
     }
