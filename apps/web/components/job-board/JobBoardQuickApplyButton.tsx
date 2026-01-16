@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { CheckCircle, Loader2 } from "lucide-react";
+import { CheckCircle, Loader2, X } from "lucide-react";
 
 interface JobBoardQuickApplyButtonProps {
   jobId: string;
@@ -17,8 +17,20 @@ export function JobBoardQuickApplyButton({
   const [isApplied, setIsApplied] = useState(initialApplied);
   const [error, setError] = useState<string | null>(null);
   const [action, setAction] = useState<{ label: string; href: string } | null>(null);
+  const [showModal, setShowModal] = useState(false);
+  const [coverNote, setCoverNote] = useState("");
 
-  const handleQuickApply = () => {
+  const handleOpenModal = () => {
+    setError(null);
+    setAction(null);
+    setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+  };
+
+  const handleSubmitApplication = () => {
     setError(null);
     setAction(null);
     startTransition(async () => {
@@ -28,7 +40,10 @@ export function JobBoardQuickApplyButton({
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ jobId }),
+          body: JSON.stringify({
+            jobId,
+            coverNote: coverNote.trim() || undefined,
+          }),
         });
 
         const responseText = await response.text();
@@ -127,6 +142,8 @@ export function JobBoardQuickApplyButton({
         }
 
         setIsApplied(true);
+        setShowModal(false);
+        setCoverNote("");
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to submit application.");
       }
@@ -137,7 +154,7 @@ export function JobBoardQuickApplyButton({
     <div className="space-y-3">
       <button
         type="button"
-        onClick={handleQuickApply}
+        onClick={handleOpenModal}
         disabled={isPending || isApplied}
         className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 px-6 py-3.5 font-medium text-white hover:from-gold-600 hover:to-gold-700 transition-all shadow-lg hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-70"
       >
@@ -155,8 +172,8 @@ export function JobBoardQuickApplyButton({
           "Quick Apply"
         )}
       </button>
-      {error && <p className="text-sm text-error-600">{error}</p>}
-      {!isApplied && action && (
+      {error && !showModal && <p className="text-sm text-error-600">{error}</p>}
+      {!isApplied && action && !showModal && (
         <Link
           href={action.href}
           className="inline-flex items-center text-sm font-medium text-gold-600 hover:text-gold-700"
@@ -176,6 +193,92 @@ export function JobBoardQuickApplyButton({
         <p className="text-sm text-success-600">
           Application submitted. Track it from your dashboard.
         </p>
+      )}
+
+      {/* Cover Note Modal */}
+      {showModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) handleCloseModal();
+          }}
+        >
+          <div className="w-full max-w-md bg-white rounded-t-2xl sm:rounded-2xl shadow-xl animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+              <h3 className="text-lg font-semibold text-gray-900">Apply to this job</h3>
+              <button
+                type="button"
+                onClick={handleCloseModal}
+                className="rounded-full p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-4 space-y-4">
+              <div>
+                <label
+                  htmlFor="coverNote"
+                  className="block text-sm font-medium text-gray-700 mb-1.5"
+                >
+                  Cover note{" "}
+                  <span className="text-gray-400 font-normal">(optional)</span>
+                </label>
+                <textarea
+                  id="coverNote"
+                  rows={4}
+                  maxLength={2000}
+                  value={coverNote}
+                  onChange={(e) => setCoverNote(e.target.value)}
+                  placeholder="Add a brief note to introduce yourself or highlight relevant experience..."
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gold-500 focus:outline-none focus:ring-1 focus:ring-gold-500 resize-none"
+                />
+                <p className="mt-1 text-xs text-gray-400 text-right">
+                  {coverNote.length}/2000
+                </p>
+              </div>
+
+              {error && <p className="text-sm text-error-600">{error}</p>}
+              {action && (
+                <Link
+                  href={action.href}
+                  className="inline-flex items-center text-sm font-medium text-gold-600 hover:text-gold-700"
+                >
+                  {action.label}
+                </Link>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex gap-3 border-t border-gray-100 px-4 py-3">
+              <button
+                type="button"
+                onClick={handleCloseModal}
+                disabled={isPending}
+                className="flex-1 rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmitApplication}
+                disabled={isPending}
+                className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-gold-500 to-gold-600 px-4 py-2.5 text-sm font-medium text-white hover:from-gold-600 hover:to-gold-700 transition-all disabled:opacity-70"
+              >
+                {isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Applying...
+                  </>
+                ) : (
+                  "Submit Application"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

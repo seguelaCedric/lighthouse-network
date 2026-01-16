@@ -18,6 +18,7 @@ import { syncJobApplication } from "@/lib/vincere/sync-service";
 
 const requestSchema = z.object({
   jobId: z.string().uuid("Invalid job ID format"),
+  coverNote: z.string().max(2000, "Cover note must be less than 2000 characters").optional(),
 });
 
 // ----------------------------------------------------------------------------
@@ -293,7 +294,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { jobId } = parseResult.data;
+    const { jobId, coverNote } = parseResult.data;
 
     // Check if candidate has a CV (required for applications)
     const hasCV = await candidateHasCV(supabase, candidate.id);
@@ -408,7 +409,8 @@ export async function POST(request: NextRequest) {
         supabase,
         candidate,
         publicJob,
-        userId!
+        userId!,
+        coverNote
       );
     }
 
@@ -423,7 +425,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    return await createApplication(supabase, candidate, job, userId!);
+    return await createApplication(supabase, candidate, job, userId!, coverNote);
   } catch (error) {
     console.error("Quick apply error:", error);
     return NextResponse.json(
@@ -441,7 +443,8 @@ async function createApplication(
   supabase: Awaited<ReturnType<typeof createClient>>,
   candidate: { id: string },
   job: { id: string; title: string; created_by_agency_id: string | null },
-  _userId: string
+  _userId: string,
+  coverNote?: string
 ) {
   // Check for existing application
   const { data: existingApplication } = await supabase
@@ -484,6 +487,7 @@ async function createApplication(
       agency_id: agencyId,
       stage: "applied",
       source: "quick_apply",
+      internal_notes: coverNote || null,
       applied_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
