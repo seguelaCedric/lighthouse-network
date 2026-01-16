@@ -4,6 +4,10 @@ import { sendEmail } from "@/lib/email/client";
 import { baseTemplate } from "@/lib/email/templates/base";
 import { salaryGuideLeadAdminEmail } from "@/lib/email/templates";
 
+// Static PDF URL - upload the PDF to public folder as /salary-guide.pdf
+const SALARY_GUIDE_PDF_URL = "https://lighthouse-careers.com/salary-guide.pdf";
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://lighthouse-careers.com";
+
 export async function POST(request: NextRequest) {
   try {
     const { email } = await request.json();
@@ -33,7 +37,7 @@ export async function POST(request: NextRequest) {
         requested_at: new Date().toISOString(),
         source: "salary_guide_page",
       });
-      
+
       if (dbError) {
         // Table might not exist yet, log but don't fail
         console.log("Could not store lead in database (table may not exist):", dbError.message);
@@ -43,53 +47,17 @@ export async function POST(request: NextRequest) {
       console.log("Could not store lead in database:", dbError);
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL 
-      ? `https://${process.env.VERCEL_URL}` 
-      : "http://localhost:3004";
-    
-    // Get PDF URL from storage (this will generate it if it doesn't exist)
-    let pdfUrl: string;
-    try {
-      const pdfResponse = await fetch(`${baseUrl}/api/salary-guide/pdf`, {
-        headers: {
-          "User-Agent": "Lighthouse-Email-Service/1.0",
-        },
-        signal: AbortSignal.timeout(30000), // 30 second timeout
-      });
-      
-      if (pdfResponse.ok) {
-        const pdfData = await pdfResponse.json();
-        if (pdfData.url) {
-          pdfUrl = pdfData.url;
-          console.log(`PDF URL retrieved: ${pdfUrl}`);
-        } else {
-          // Fallback to direct endpoint
-          pdfUrl = `${baseUrl}/api/salary-guide/pdf`;
-        }
-      } else {
-        // Fallback to direct endpoint
-        pdfUrl = `${baseUrl}/api/salary-guide/pdf`;
-      }
-    } catch (pdfError) {
-      console.error("Failed to get PDF URL:", pdfError);
-      // Fallback to direct endpoint
-      pdfUrl = `${baseUrl}/api/salary-guide/pdf`;
-    }
-
     // Create email content
     const emailContent = `
       <h1>Your 2026 Salary Guide is Ready!</h1>
       <p>Thank you for requesting our comprehensive 2026 Salary Guide for yacht crew and private household positions.</p>
-      
-      <p style="text-align:center; margin: 30px 0;">
-        <a href="${pdfUrl}" class="button" style="display: inline-block; padding: 14px 28px; background-color: #c9a962; color: #1a2b4a; text-decoration: none; border-radius: 8px; font-weight: 600;">
-          Download Your Free Guide
-        </a>
-      </p>
-      
 
-      <div class="info-box" style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0;">
-        <p style="margin:0 0 15px; font-weight:600; color:#1a2b4a;">What's included:</p>
+      <p style="text-align:center; margin: 30px 0;">
+        <a href="${SALARY_GUIDE_PDF_URL}" class="button">Download Your Free Guide</a>
+      </p>
+
+      <div class="info-box">
+        <p style="margin:0 0 15px; font-weight:600; color:#1C2840;">What's included:</p>
         <ul style="margin:0;">
           <li><strong>Yacht Crew Salaries</strong> - Complete salary ranges by yacht size (24m-100m+)</li>
           <li><strong>Private Household Salaries</strong> - Salary ranges by property type and service level</li>
@@ -99,14 +67,14 @@ export async function POST(request: NextRequest) {
       </div>
 
       <p><strong>Ready to find your next role?</strong></p>
-      <p>Browse our <a href="${baseUrl}/job-board" style="color: #c9a962; text-decoration: underline;">open positions</a> or <a href="${baseUrl}/auth/register" style="color: #c9a962; text-decoration: underline;">create your profile</a> to get matched with opportunities that fit your experience and salary expectations.</p>
+      <p>Browse our <a href="${BASE_URL}/job-board" style="color: #B49A5E;">open positions</a> or <a href="${BASE_URL}/yacht-crew" style="color: #B49A5E;">create your profile</a> to get matched with opportunities that fit your experience and salary expectations.</p>
 
       <p>If you have any questions about salary ranges or career opportunities, feel free to reply to this email.</p>
 
       <p>Best regards,<br>The Lighthouse Careers Team</p>
     `;
 
-    // Send email with PDF attachment
+    // Send email with download link
     const emailResult = await sendEmail({
       to: email.toLowerCase().trim(),
       subject: "Your Free 2026 Salary Guide - Yacht Crew & Private Household",
@@ -115,7 +83,7 @@ export async function POST(request: NextRequest) {
 
 Thank you for requesting our comprehensive 2026 Salary Guide for yacht crew and private household positions.
 
-Download your guide: ${pdfUrl}
+Download your guide: ${SALARY_GUIDE_PDF_URL}
 
 What's included:
 - Yacht Crew Salaries - Complete salary ranges by yacht size (24m-100m+)
@@ -124,8 +92,8 @@ What's included:
 - 2026 Market Data - Based on 300+ real placements
 
 Ready to find your next role?
-Browse our open positions: ${baseUrl}/job-board
-Create your profile: ${baseUrl}/auth/register
+Browse our open positions: ${BASE_URL}/job-board
+Create your profile: ${BASE_URL}/yacht-crew
 
 If you have any questions, feel free to reply to this email.
 

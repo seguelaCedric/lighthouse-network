@@ -47,7 +47,7 @@ export interface JobAlertResult {
   error?: string;
 }
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://lighthouse.crew";
+const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "https://lighthouse-careers.com";
 
 /**
  * Check if a job title matches any of the candidate's preferred positions

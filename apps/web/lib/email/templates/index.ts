@@ -168,7 +168,7 @@ export function briefReceivedEmail(data: BriefReceivedData) {
     <p>Thank you for submitting your requirements for a <strong>${data.position}</strong> position. Our team is now reviewing your brief and will begin sourcing suitable candidates immediately.</p>
 
     <div class="info-box">
-      <p style="margin:0; font-weight:600; color:#1a2b4a;">What happens next?</p>
+      <p style="margin:0; font-weight:600; color:#1C2840;">What happens next?</p>
       <ul style="margin-top:10px;">
         <li>Our AI will analyze your requirements</li>
         <li>We'll match candidates from our verified database</li>
@@ -462,21 +462,13 @@ export function welcomeCandidateEmail(data: WelcomeCandidateData) {
     </p>
 
     <div class="info-box">
-      <p style="margin:0 0 15px; font-weight:600; color:#1a2b4a;">Get started in 3 simple steps:</p>
+      <p style="margin:0 0 15px; font-weight:600; color:#1C2840;">Get started in 3 simple steps:</p>
       <ul style="margin:0;">
         <li><strong>Complete your profile</strong>, add your experience, certifications, and a professional photo</li>
         <li><strong>Upload your documents</strong>, CV, certificates, and references help you stand out</li>
         <li><strong>Set your preferences</strong>, tell us what you're looking for so we can match you perfectly</li>
       </ul>
     </div>
-
-    <h2>Why Lighthouse Careers?</h2>
-    <ul>
-      <li><span class="highlight">AI-powered matching</span> connects you with opportunities that fit your skills${data.position ? ` as a ${data.position}` : ""}</li>
-      <li><strong>Exclusive positions</strong> from leading yachts and private households worldwide</li>
-      <li><strong>Dedicated support</strong> from recruiters who understand the industry</li>
-      <li><strong>Career resources</strong> including salary guides and professional development</li>
-    </ul>
 
     <div class="divider"></div>
 
@@ -516,7 +508,7 @@ export function clientPortalInviteEmail(data: ClientPortalInviteData) {
       <a href="${data.magicLink}" class="button">Access Portal</a>
     </p>
 
-    <p style="font-size: 13px; color: #6b7280;">This link expires in ${expiresText}. If you didn't request this access, you can safely ignore this email.</p>
+    <p style="font-size: 13px; color: #7D796F;">This link expires in ${expiresText}. If you didn't request this access, you can safely ignore this email.</p>
 
     <p>Welcome aboard,<br>The Lighthouse Crew Team</p>
   `;
@@ -540,12 +532,12 @@ export function clientMagicLinkEmail(data: ClientMagicLinkData) {
       <a href="${data.magicLink}" class="button">Sign In</a>
     </p>
 
-    <p style="font-size: 13px; color: #6b7280;">This link expires in ${expiresText}. If you didn't request this link, you can safely ignore this email.</p>
+    <p style="font-size: 13px; color: #7D796F;">This link expires in ${expiresText}. If you didn't request this link, you can safely ignore this email.</p>
 
     <div class="divider"></div>
 
-    <p style="font-size: 13px; color: #6b7280;">If the button doesn't work, copy and paste this link into your browser:</p>
-    <p style="font-size: 12px; word-break: break-all; color: #6b7280;">${data.magicLink}</p>
+    <p style="font-size: 13px; color: #7D796F;">If the button doesn't work, copy and paste this link into your browser:</p>
+    <p style="font-size: 12px; word-break: break-all; color: #7D796F;">${data.magicLink}</p>
 
     <p>Best regards,<br>The Lighthouse Crew Team</p>
   `;
@@ -634,7 +626,7 @@ export function employerWelcomeEmail(data: EmployerWelcomeData) {
     </p>
 
     <div class="info-box">
-      <p style="margin:0 0 15px; font-weight:600; color:#1a2b4a;">Here's how it works:</p>
+      <p style="margin:0 0 15px; font-weight:600; color:#1C2840;">Here's how it works:</p>
       <ul style="margin:0;">
         <li><strong>Submit a brief</strong>, tell us exactly what you're looking for</li>
         <li><strong>We match candidates</strong>, our AI and expert team find the best fits</li>
@@ -675,12 +667,12 @@ export function employerMagicLinkEmail(data: EmployerMagicLinkData) {
       <a href="${data.magicLink}" class="button">Sign In</a>
     </p>
 
-    <p style="font-size: 13px; color: #6b7280;">This link expires in ${expiresText}. If you didn't request this link, you can safely ignore this email.</p>
+    <p style="font-size: 13px; color: #7D796F;">This link expires in ${expiresText}. If you didn't request this link, you can safely ignore this email.</p>
 
     <div class="divider"></div>
 
-    <p style="font-size: 13px; color: #6b7280;">If the button doesn't work, copy and paste this link into your browser:</p>
-    <p style="font-size: 12px; word-break: break-all; color: #6b7280;">${data.magicLink}</p>
+    <p style="font-size: 13px; color: #7D796F;">If the button doesn't work, copy and paste this link into your browser:</p>
+    <p style="font-size: 12px; word-break: break-all; color: #7D796F;">${data.magicLink}</p>
 
     <p>Best regards,<br>The Lighthouse Crew Team</p>
   `;
@@ -768,7 +760,7 @@ export function employerEnquirySubmittedEmail(data: EmployerEnquirySubmittedData
     <p>We've received your employer lead for <strong>${data.companyName}</strong> (Contact: ${data.contactName}). Thank you for thinking of us!</p>
 
     <div class="info-box">
-      <p style="margin:0 0 15px; font-weight:600; color:#1a2b4a;">What happens next?</p>
+      <p style="margin:0 0 15px; font-weight:600; color:#1C2840;">What happens next?</p>
       <ul style="margin:0;">
         <li>Our team will review the lead within <strong>24 hours</strong></li>
         <li>We'll reach out to the contact you provided</li>
@@ -830,7 +822,7 @@ export function employerEnquiryAdminNotificationEmail(data: EmployerEnquiryAdmin
 
     ${data.notes ? `
     <h2>Additional Notes</h2>
-    <p style="background:#f8f9fa; padding:15px; border-radius:8px; font-style:italic;">${data.notes}</p>
+    <p style="background:#F5F4F1; padding:15px; border-radius:8px; font-style:italic;">${data.notes}</p>
     ` : ""}
 
     <p><strong>Next Steps:</strong></p>
@@ -841,7 +833,7 @@ export function employerEnquiryAdminNotificationEmail(data: EmployerEnquiryAdmin
       <li>Remember: if this becomes a client placement, the referrer earns €200!</li>
     </ul>
 
-    <p style="font-size:13px; color:#6b7280;">This is an automated notification from the Lighthouse Crew referral system.</p>
+    <p style="font-size:13px; color:#7D796F;">This is an automated notification from the Lighthouse Crew referral system.</p>
   `;
 
   return {
@@ -910,48 +902,48 @@ export function jobAlertEmail(data: JobAlertData) {
     <p>Hi ${data.candidateName},</p>
     <p>Great news! A new <strong>${data.jobTitle}</strong> position has been posted that matches your job preferences as a <strong class="highlight">${data.matchedPosition}</strong>.</p>
 
-    <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 12px; padding: 25px; margin: 25px 0; border-left: 4px solid #c9a962;">
-      <h2 style="margin: 0 0 20px; color: #1a2b4a; font-size: 20px;">${data.jobTitle}</h2>
+    <div style="background: linear-gradient(135deg, #F5F4F1 0%, #E8E6E1 100%); border-radius: 12px; padding: 25px; margin: 25px 0; border-left: 4px solid #B49A5E;">
+      <h2 style="margin: 0 0 20px; color: #1C2840; font-size: 20px;">${data.jobTitle}</h2>
 
       ${vesselInfo ? `
       <div style="display: flex; align-items: center; margin-bottom: 12px;">
-        <span style="color: #6b7280; min-width: 24px; margin-right: 10px;">⛵</span>
-        <span style="color: #374151; font-weight: 500;">${vesselInfo}</span>
+        <span style="color: #7D796F; min-width: 24px; margin-right: 10px;">⛵</span>
+        <span style="color: #433F38; font-weight: 500;">${vesselInfo}</span>
       </div>
       ` : ""}
 
       ${data.primaryRegion ? `
       <div style="display: flex; align-items: center; margin-bottom: 12px;">
-        <span style="color: #6b7280; min-width: 24px; margin-right: 10px;">📍</span>
-        <span style="color: #374151;">${data.primaryRegion}</span>
+        <span style="color: #7D796F; min-width: 24px; margin-right: 10px;">📍</span>
+        <span style="color: #433F38;">${data.primaryRegion}</span>
       </div>
       ` : ""}
 
       ${data.contractType ? `
       <div style="display: flex; align-items: center; margin-bottom: 12px;">
-        <span style="color: #6b7280; min-width: 24px; margin-right: 10px;">📋</span>
-        <span style="color: #374151;">${data.contractType.charAt(0).toUpperCase() + data.contractType.slice(1)} Contract</span>
+        <span style="color: #7D796F; min-width: 24px; margin-right: 10px;">📋</span>
+        <span style="color: #433F38;">${data.contractType.charAt(0).toUpperCase() + data.contractType.slice(1)} Contract</span>
       </div>
       ` : ""}
 
       ${formattedStartDate ? `
       <div style="display: flex; align-items: center; margin-bottom: 12px;">
-        <span style="color: #6b7280; min-width: 24px; margin-right: 10px;">📅</span>
-        <span style="color: #374151;">Start: ${formattedStartDate}</span>
+        <span style="color: #7D796F; min-width: 24px; margin-right: 10px;">📅</span>
+        <span style="color: #433F38;">Start: ${formattedStartDate}</span>
       </div>
       ` : ""}
 
       ${salary ? `
       <div style="display: flex; align-items: center; margin-bottom: 12px;">
-        <span style="color: #6b7280; min-width: 24px; margin-right: 10px;">💰</span>
-        <span style="color: #374151; font-weight: 600;">${salary}</span>
+        <span style="color: #7D796F; min-width: 24px; margin-right: 10px;">💰</span>
+        <span style="color: #433F38; font-weight: 600;">${salary}</span>
       </div>
       ` : ""}
 
       ${data.benefits ? `
       <div style="display: flex; align-items: flex-start; margin-bottom: 12px;">
-        <span style="color: #6b7280; min-width: 24px; margin-right: 10px;">✨</span>
-        <span style="color: #374151; font-size: 14px;">${data.benefits}</span>
+        <span style="color: #7D796F; min-width: 24px; margin-right: 10px;">✨</span>
+        <span style="color: #433F38; font-size: 14px;">${data.benefits}</span>
       </div>
       ` : ""}
     </div>
@@ -962,9 +954,9 @@ export function jobAlertEmail(data: JobAlertData) {
 
     <div class="divider"></div>
 
-    <p style="font-size: 14px; color: #6b7280;">
+    <p style="font-size: 14px; color: #7D796F;">
       <strong>Why did I receive this?</strong><br>
-      This job matches your ${data.matchedPosition} position preference. You can update your job preferences or disable job alerts in your <a href="${data.dashboardLink.replace(/\/jobs\/.*$/, "/preferences")}" style="color: #c9a962;">candidate dashboard</a>.
+      This job matches your ${data.matchedPosition} position preference. You can update your job preferences or disable job alerts in your <a href="${data.dashboardLink.replace(/\/jobs.*$/, "/preferences")}" style="color: #B49A5E;">candidate dashboard</a>.
     </p>
 
     <p>Good luck with your application!<br>The Lighthouse Crew Team</p>
@@ -1040,7 +1032,7 @@ export function inquiryNotificationEmail(data: InquiryNotificationData) {
 
     ${data.message ? `
     <h2>Message</h2>
-    <p style="background:#f8f9fa; padding:15px; border-radius:8px; white-space:pre-wrap;">${data.message}</p>
+    <p style="background:#F5F4F1; padding:15px; border-radius:8px; white-space:pre-wrap;">${data.message}</p>
     ` : ""}
 
     <p><strong>Next Steps:</strong></p>
@@ -1050,7 +1042,7 @@ export function inquiryNotificationEmail(data: InquiryNotificationData) {
       <li>Log the interaction in the CRM</li>
     </ul>
 
-    <p style="font-size:13px; color:#6b7280;">This is an automated notification from the Lighthouse website.</p>
+    <p style="font-size:13px; color:#7D796F;">This is an automated notification from the Lighthouse website.</p>
   `;
 
   return {
@@ -1209,7 +1201,7 @@ export function paymentFailedEmail(data: PaymentFailedData) {
     </p>
 
     ${data.retryDate ? `
-    <p style="font-size:13px; color:#6b7280;">We'll automatically retry the payment on ${data.retryDate}. To avoid service interruption, please update your payment method before then.</p>
+    <p style="font-size:13px; color:#7D796F;">We'll automatically retry the payment on ${data.retryDate}. To avoid service interruption, please update your payment method before then.</p>
     ` : ""}
 
     <p>If you need assistance, reply to this email or contact our support team.</p>
@@ -1297,7 +1289,7 @@ export function clientBriefNotificationEmail(data: ClientBriefNotificationData) 
       <a href="${data.dashboardLink}" class="button">View Brief</a>
     </p>
 
-    <p style="font-size:13px; color:#6b7280;">This brief was submitted via the client self-service portal.</p>
+    <p style="font-size:13px; color:#7D796F;">This brief was submitted via the client self-service portal.</p>
   `;
 
   return {
@@ -1379,7 +1371,7 @@ export function interviewRequestNotificationEmail(data: InterviewRequestNotifica
 
     ${data.notes ? `
     <h2>Client Notes</h2>
-    <p style="background:#f8f9fa; padding:15px; border-radius:8px;">${data.notes}</p>
+    <p style="background:#F5F4F1; padding:15px; border-radius:8px;">${data.notes}</p>
     ` : ""}
 
     <p><strong>Next Steps:</strong></p>
@@ -1393,7 +1385,7 @@ export function interviewRequestNotificationEmail(data: InterviewRequestNotifica
       <a href="${data.dashboardLink}" class="button">View Interview Request</a>
     </p>
 
-    <p style="font-size:13px; color:#6b7280;">Please respond within 24 hours.</p>
+    <p style="font-size:13px; color:#7D796F;">Please respond within 24 hours.</p>
   `;
 
   return {
@@ -1484,7 +1476,7 @@ export function placementNotificationEmail(data: PlacementNotificationData) {
       <a href="${data.dashboardLink}" class="button">View Placement</a>
     </p>
 
-    <p style="font-size:13px; color:#6b7280;">Placement confirmed via client self-service portal.</p>
+    <p style="font-size:13px; color:#7D796F;">Placement confirmed via client self-service portal.</p>
   `;
 
   return {
@@ -1632,7 +1624,7 @@ export function newApplicationAdminEmail(data: NewApplicationAdminData) {
 
     ${data.coverLetter ? `
     <h2>Cover Note</h2>
-    <p style="background:#f8f9fa; padding:15px; border-radius:8px; white-space:pre-wrap;">${data.coverLetter}</p>
+    <p style="background:#F5F4F1; padding:15px; border-radius:8px; white-space:pre-wrap;">${data.coverLetter}</p>
     ` : ""}
 
     ${data.cvUrl ? `
@@ -1648,7 +1640,7 @@ export function newApplicationAdminEmail(data: NewApplicationAdminData) {
       <li>Contact them if suitable for the position</li>
     </ul>
 
-    <p style="font-size:13px; color:#6b7280;">This is an automated notification from the Lighthouse website.</p>
+    <p style="font-size:13px; color:#7D796F;">This is an automated notification from the Lighthouse website.</p>
   `;
 
   return {
@@ -1668,13 +1660,16 @@ export interface ContactConfirmationData {
 }
 
 export function contactConfirmationEmail(data: ContactConfirmationData) {
+  // Extract first name only
+  const firstName = data.name.split(" ")[0];
+
   const content = `
     <h1>Thanks for Contacting Us!</h1>
-    <p>Hi ${data.name},</p>
-    <p>Thank you for reaching out to Lighthouse Careers. We've received your message${data.subject ? ` regarding "${data.subject}"` : ""} and will get back to you as soon as possible.</p>
+    <p>Hi ${firstName},</p>
+    <p>Thank you for reaching out to Lighthouse Careers. We've received your message and will get back to you as soon as possible.</p>
 
     <div class="info-box">
-      <p style="margin:0 0 15px; font-weight:600; color:#1a2b4a;">What to expect:</p>
+      <p style="margin:0 0 15px; font-weight:600; color:#1C2840;">What to expect:</p>
       <ul style="margin:0;">
         <li>Our team reviews all inquiries within <strong>24 hours</strong></li>
         <li>You'll receive a personalized response from one of our specialists</li>
@@ -1683,14 +1678,7 @@ export function contactConfirmationEmail(data: ContactConfirmationData) {
     </div>
 
     <p><strong>Need immediate assistance?</strong></p>
-    <p>Call us at <a href="tel:+33652928360" style="color: #c9a962; font-weight: 600;">+33 6 52 92 83 60</a> (Mon-Fri 9am-6pm CET)</p>
-
-    <p>In the meantime, feel free to explore:</p>
-    <ul>
-      <li><a href="https://lighthouse-careers.com/job-board" style="color: #c9a962;">Browse Open Positions</a></li>
-      <li><a href="https://lighthouse-careers.com/salary-guide" style="color: #c9a962;">Download Our Salary Guide</a></li>
-      <li><a href="https://lighthouse-careers.com/about" style="color: #c9a962;">Learn More About Us</a></li>
-    </ul>
+    <p>Call us at <a href="tel:+33652928360" style="color: #B49A5E; font-weight: 600;">+33 6 52 92 83 60</a></p>
 
     <p>We look forward to connecting with you!</p>
 
@@ -1699,6 +1687,53 @@ export function contactConfirmationEmail(data: ContactConfirmationData) {
 
   return {
     subject: "We've Received Your Message - Lighthouse Careers",
+    html: baseTemplate(content),
+    text: generatePlainText(content),
+  };
+}
+
+// ============================================
+// Hiring Request Confirmation Email
+// ============================================
+
+export interface HiringRequestConfirmationData {
+  name: string;
+  position?: string;
+  matchedCount?: number;
+}
+
+export function hiringRequestConfirmationEmail(data: HiringRequestConfirmationData) {
+  // Extract first name only
+  const firstName = data.name.split(" ")[0];
+
+  const content = `
+    <h1>Thanks for Your Hiring Request!</h1>
+    <p>Hi ${firstName},</p>
+    <p>Thank you for reaching out to Lighthouse Careers${data.position ? ` about your <strong>${data.position}</strong> requirements` : ""}. We've received your request and our team is already reviewing it.</p>
+
+    <div class="info-box">
+      <p style="margin:0 0 15px; font-weight:600; color:#1C2840;">What happens next:</p>
+      <ul style="margin:0;">
+        <li>We'll review your requirements and match them against our candidate database</li>
+        <li>You'll receive <strong>candidate profiles within a couple of hours</strong></li>
+        <li>A member of our team will be in touch to discuss next steps</li>
+      </ul>
+    </div>
+
+    ${data.matchedCount && data.matchedCount > 0 ? `
+    <p>Based on your requirements, we've already identified <strong class="highlight">${data.matchedCount} potential candidates</strong> who could be a great fit.</p>
+    ` : ""}
+
+    <p><strong>Need to speak with us sooner?</strong></p>
+    <p>Call us at <a href="tel:+33652928360" style="color: #B49A5E; font-weight: 600;">+33 6 52 92 83 60</a></p>
+
+    <p>We look forward to helping you find the perfect candidate!</p>
+
+    <p>Best regards,<br>The Lighthouse Careers Team</p>
+  `;
+
+  return {
+    subject: "We've Received Your Hiring Request - Lighthouse Careers",
     html: baseTemplate(content),
     text: generatePlainText(content),
   };
@@ -1745,7 +1780,7 @@ export function salaryGuideLeadAdminEmail(data: SalaryGuideLeadAdminData) {
       <li>Checking if they're an existing contact</li>
     </ul>
 
-    <p style="font-size:13px; color:#6b7280;">This is an automated notification from the Lighthouse website.</p>
+    <p style="font-size:13px; color:#7D796F;">This is an automated notification from the Lighthouse website.</p>
   `;
 
   return {
@@ -1805,12 +1840,12 @@ export function initialJobMatchEmail(data: InitialJobMatchData) {
     const contractInfo = job.contractType ? `${job.contractType.charAt(0).toUpperCase() + job.contractType.slice(1)} Contract` : "";
 
     return `
-      <div style="background:#f8f9fa; border-radius:8px; padding:15px; margin-bottom:12px; border-left:4px solid #c9a962;">
-        <p style="margin:0 0 8px; font-weight:600; color:#1a2b4a;">${job.title}</p>
-        ${vesselInfo ? `<p style="margin:0 0 4px; font-size:14px; color:#6b7280;">⛵ ${vesselInfo}</p>` : ""}
-        ${locationInfo ? `<p style="margin:0 0 4px; font-size:14px; color:#6b7280;">📍 ${locationInfo}</p>` : ""}
-        ${contractInfo ? `<p style="margin:0 0 4px; font-size:14px; color:#6b7280;">📋 ${contractInfo}</p>` : ""}
-        <p style="margin:8px 0 0; font-size:13px; color:#c9a962;">Matches your ${job.matchedPosition} preference</p>
+      <div style="background:#F5F4F1; border-radius:8px; padding:15px; margin-bottom:12px; border-left:4px solid #B49A5E;">
+        <p style="margin:0 0 8px; font-weight:600; color:#1C2840;">${job.title}</p>
+        ${vesselInfo ? `<p style="margin:0 0 4px; font-size:14px; color:#7D796F;">⛵ ${vesselInfo}</p>` : ""}
+        ${locationInfo ? `<p style="margin:0 0 4px; font-size:14px; color:#7D796F;">📍 ${locationInfo}</p>` : ""}
+        ${contractInfo ? `<p style="margin:0 0 4px; font-size:14px; color:#7D796F;">📋 ${contractInfo}</p>` : ""}
+        <p style="margin:8px 0 0; font-size:13px; color:#B49A5E;">Matches your ${job.matchedPosition} preference</p>
       </div>
     `;
   }).join("");
@@ -1821,10 +1856,10 @@ export function initialJobMatchEmail(data: InitialJobMatchData) {
     <p>Great news! Now that you've set up your job preferences, we've found <strong class="highlight">${data.totalMatches} open position${data.totalMatches !== 1 ? "s" : ""}</strong> that match what you're looking for.</p>
 
     <div style="margin: 25px 0;">
-      <h2 style="color:#1a2b4a; margin-bottom:15px;">Your Matching Jobs</h2>
+      <h2 style="color:#1C2840; margin-bottom:15px;">Your Matching Jobs</h2>
       ${jobListHtml}
       ${hasMoreJobs ? `
-      <p style="text-align:center; font-size:14px; color:#6b7280; margin-top:15px;">
+      <p style="text-align:center; font-size:14px; color:#7D796F; margin-top:15px;">
         + ${data.totalMatches - 5} more matching positions
       </p>
       ` : ""}
@@ -1837,7 +1872,7 @@ export function initialJobMatchEmail(data: InitialJobMatchData) {
     <div class="divider"></div>
 
     <div class="info-box">
-      <p style="margin:0 0 15px; font-weight:600; color:#1a2b4a;">What happens next?</p>
+      <p style="margin:0 0 15px; font-weight:600; color:#1C2840;">What happens next?</p>
       <ul style="margin:0;">
         <li>Browse the jobs and apply to ones that interest you</li>
         <li>We'll notify you when new matching jobs are posted</li>
@@ -1845,9 +1880,9 @@ export function initialJobMatchEmail(data: InitialJobMatchData) {
       </ul>
     </div>
 
-    <p style="font-size: 14px; color: #6b7280;">
+    <p style="font-size: 14px; color: #7D796F;">
       <strong>Managing your alerts:</strong><br>
-      You can update your job preferences or disable job alerts in your <a href="${data.dashboardLink.replace(/\/jobs.*$/, "/preferences")}" style="color: #c9a962;">candidate dashboard</a>.
+      You can update your job preferences or disable job alerts in your <a href="${data.dashboardLink.replace(/\/jobs.*$/, "/preferences")}" style="color: #B49A5E;">candidate dashboard</a>.
     </p>
 
     <p>Best of luck with your job search!<br>The Lighthouse Crew Team</p>
@@ -1866,7 +1901,7 @@ export function yotspotImportNotificationEmail(data: YotspotImportNotificationDa
     if (score >= 90) return { color: "#16a34a", label: "Excellent Match", bgColor: "#dcfce7" };
     if (score >= 80) return { color: "#22c55e", label: "Strong Match", bgColor: "#dcfce7" };
     if (score >= 70) return { color: "#eab308", label: "Good Match", bgColor: "#fef9c3" };
-    return { color: "#6b7280", label: "Potential Match", bgColor: "#f3f4f6" };
+    return { color: "#7D796F", label: "Potential Match", bgColor: "#f3f4f6" };
   };
 
   const matchQuality = getMatchQuality(data.matchScore);
@@ -1876,7 +1911,7 @@ export function yotspotImportNotificationEmail(data: YotspotImportNotificationDa
     <p>A new candidate has been automatically imported from Yotspot and matches one of your open positions.</p>
 
     <div style="background:${matchQuality.bgColor}; border-radius:12px; padding:20px; margin:25px 0; text-align:center; border-left:4px solid ${matchQuality.color};">
-      <p style="margin:0 0 10px; font-size:14px; color:#6b7280;">Match Score</p>
+      <p style="margin:0 0 10px; font-size:14px; color:#7D796F;">Match Score</p>
       <p style="margin:0; font-size:48px; font-weight:700; color:${matchQuality.color};">${data.matchScore}%</p>
       <p style="margin:10px 0 0; font-size:16px; font-weight:600; color:${matchQuality.color};">${matchQuality.label}</p>
     </div>
@@ -1912,7 +1947,7 @@ export function yotspotImportNotificationEmail(data: YotspotImportNotificationDa
 
     ${data.matchAssessment ? `
     <h2>AI Assessment</h2>
-    <p style="background:#f8f9fa; padding:15px; border-radius:8px;">${data.matchAssessment}</p>
+    <p style="background:#F5F4F1; padding:15px; border-radius:8px;">${data.matchAssessment}</p>
     ` : ""}
 
     ${data.strengths.length > 0 ? `
@@ -1931,11 +1966,11 @@ export function yotspotImportNotificationEmail(data: YotspotImportNotificationDa
 
     <div style="text-align:center; margin:30px 0;">
       <a href="${data.candidateProfileUrl}" class="button" style="margin-right:10px;">View Candidate Profile</a>
-      <a href="${data.jobUrl}" class="button" style="background:#6b7280;">View Job</a>
+      <a href="${data.jobUrl}" class="button" style="background:#7D796F;">View Job</a>
     </div>
 
-    <p style="font-size:13px; color:#6b7280; text-align:center;">
-      <a href="${data.yotspotUrl}" style="color:#6b7280;">View original on Yotspot</a>
+    <p style="font-size:13px; color:#7D796F; text-align:center;">
+      <a href="${data.yotspotUrl}" style="color:#7D796F;">View original on Yotspot</a>
     </p>
 
     <div class="divider"></div>
@@ -1947,7 +1982,7 @@ export function yotspotImportNotificationEmail(data: YotspotImportNotificationDa
       <li>The candidate has also been imported to your database</li>
     </ul>
 
-    <p style="font-size:13px; color:#6b7280;">This candidate was automatically imported from Yotspot via email notification.</p>
+    <p style="font-size:13px; color:#7D796F;">This candidate was automatically imported from Yotspot via email notification.</p>
   `;
 
   return {
