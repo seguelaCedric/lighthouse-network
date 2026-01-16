@@ -178,7 +178,7 @@ export function briefReceivedEmail(data: BriefReceivedData) {
 
     <p>If you have any additional requirements or questions, simply reply to this email.</p>
 
-    <p>Best regards,<br>The Lighthouse Crew Team</p>
+    <p>Best regards,<br>The Lighthouse Careers Team</p>
   `;
 
   return {
@@ -211,7 +211,7 @@ export function briefConvertedEmail(data: BriefConvertedData) {
 
     <p>Our team is now working on creating a shortlist of the best candidates for you.</p>
 
-    <p>Best regards,<br>The Lighthouse Crew Team</p>
+    <p>Best regards,<br>The Lighthouse Careers Team</p>
   `;
 
   return {
@@ -241,7 +241,7 @@ export function candidateShortlistedEmail(data: CandidateShortlistedData) {
 
     <p>Review the profiles and let us know which candidates you'd like to interview.</p>
 
-    <p>Best regards,<br>The Lighthouse Crew Team</p>
+    <p>Best regards,<br>The Lighthouse Careers Team</p>
   `;
 
   return {
@@ -281,7 +281,7 @@ export function candidateSubmittedEmail(data: CandidateSubmittedData) {
 
     <p>Make sure your profile is up to date and your phone is on!</p>
 
-    <p>Best of luck,<br>The Lighthouse Crew Team</p>
+    <p>Best of luck,<br>The Lighthouse Careers Team</p>
   `;
 
   return {
@@ -332,7 +332,7 @@ export function interviewScheduledEmail(data: InterviewScheduledData) {
 
     <p>Please confirm your attendance by replying to this email.</p>
 
-    <p>Good luck!<br>The Lighthouse Crew Team</p>
+    <p>Good luck!<br>The Lighthouse Careers Team</p>
   `;
 
   return {
@@ -380,7 +380,7 @@ export function placementConfirmedEmail(data: PlacementConfirmedData) {
 
     <p>Congratulations again, and thank you for choosing Lighthouse Crew!</p>
 
-    <p>Best regards,<br>The Lighthouse Crew Team</p>
+    <p>Best regards,<br>The Lighthouse Careers Team</p>
   `;
 
   return {
@@ -406,7 +406,7 @@ export function referenceRequestEmail(data: ReferenceRequestData) {
 
     <p>Your reference will be kept confidential and used solely for the purpose of this application.</p>
 
-    <p>Thank you for your time,<br>The Lighthouse Crew Team</p>
+    <p>Thank you for your time,<br>The Lighthouse Careers Team</p>
   `;
 
   return {
@@ -434,7 +434,7 @@ export function welcomeClientEmail(data: WelcomeClientData) {
     <p><strong>Ready to get started?</strong></p>
     <p>Simply send us your requirements via email, WhatsApp, or our platform, and we'll handle the rest.</p>
 
-    <p>Welcome aboard,<br>The Lighthouse Crew Team</p>
+    <p>Welcome aboard,<br>The Lighthouse Careers Team</p>
   `;
 
   return {
@@ -510,7 +510,7 @@ export function clientPortalInviteEmail(data: ClientPortalInviteData) {
 
     <p style="font-size: 13px; color: #7D796F;">This link expires in ${expiresText}. If you didn't request this access, you can safely ignore this email.</p>
 
-    <p>Welcome aboard,<br>The Lighthouse Crew Team</p>
+    <p>Welcome aboard,<br>The Lighthouse Careers Team</p>
   `;
 
   return {
@@ -539,7 +539,7 @@ export function clientMagicLinkEmail(data: ClientMagicLinkData) {
     <p style="font-size: 13px; color: #7D796F;">If the button doesn't work, copy and paste this link into your browser:</p>
     <p style="font-size: 12px; word-break: break-all; color: #7D796F;">${data.magicLink}</p>
 
-    <p>Best regards,<br>The Lighthouse Crew Team</p>
+    <p>Best regards,<br>The Lighthouse Careers Team</p>
   `;
 
   return {
@@ -594,7 +594,7 @@ export function interviewScheduledClientEmail(data: InterviewScheduledClientData
 
     <p>The candidate has been notified and will be prepared for the interview. If you need to reschedule, please let us know as soon as possible.</p>
 
-    <p>Best regards,<br>The Lighthouse Crew Team</p>
+    <p>Best regards,<br>The Lighthouse Careers Team</p>
   `;
 
   return {
@@ -645,7 +645,7 @@ export function employerWelcomeEmail(data: EmployerWelcomeData) {
 
     <p>Questions? Simply reply to this email, we're here to help.</p>
 
-    <p>Welcome aboard,<br>The Lighthouse Crew Team</p>
+    <p>Welcome aboard,<br>The Lighthouse Careers Team</p>
   `;
 
   return {
@@ -674,7 +674,7 @@ export function employerMagicLinkEmail(data: EmployerMagicLinkData) {
     <p style="font-size: 13px; color: #7D796F;">If the button doesn't work, copy and paste this link into your browser:</p>
     <p style="font-size: 12px; word-break: break-all; color: #7D796F;">${data.magicLink}</p>
 
-    <p>Best regards,<br>The Lighthouse Crew Team</p>
+    <p>Best regards,<br>The Lighthouse Careers Team</p>
   `;
 
   return {
@@ -739,7 +739,7 @@ export function employerBriefReceivedEmail(data: EmployerBriefReceivedData) {
 
     <p>We'll notify you as soon as your shortlist is ready. In the meantime, you can track progress in your portal.</p>
 
-    <p>Best regards,<br>The Lighthouse Crew Team</p>
+    <p>Best regards,<br>The Lighthouse Careers Team</p>
   `;
 
   return {
@@ -771,7 +771,7 @@ export function employerEnquirySubmittedEmail(data: EmployerEnquirySubmittedData
 
     <p>We'll keep you updated on the status of this lead. In the meantime, keep the referrals coming, there's no limit!</p>
 
-    <p>Thank you for being part of the Lighthouse network,<br>The Lighthouse Crew Team</p>
+    <p>Thank you for being part of the Lighthouse network,<br>The Lighthouse Careers Team</p>
   `;
 
   return {
@@ -959,7 +959,7 @@ export function jobAlertEmail(data: JobAlertData) {
       This job matches your ${data.matchedPosition} position preference. You can update your job preferences or disable job alerts in your <a href="${data.dashboardLink.replace(/\/jobs.*$/, "/preferences")}" style="color: #B49A5E;">candidate dashboard</a>.
     </p>
 
-    <p>Good luck with your application!<br>The Lighthouse Crew Team</p>
+    <p>Good luck with your application!<br>The Lighthouse Careers Team</p>
   `;
 
   return {
@@ -1885,7 +1885,7 @@ export function initialJobMatchEmail(data: InitialJobMatchData) {
       You can update your job preferences or disable job alerts in your <a href="${data.dashboardLink.replace(/\/jobs.*$/, "/preferences")}" style="color: #B49A5E;">candidate dashboard</a>.
     </p>
 
-    <p>Best of luck with your job search!<br>The Lighthouse Crew Team</p>
+    <p>Best of luck with your job search!<br>The Lighthouse Careers Team</p>
   `;
 
   return {
