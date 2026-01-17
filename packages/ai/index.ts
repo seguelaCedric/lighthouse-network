@@ -488,6 +488,10 @@ export {
   deriveBooleanFlags,
   buildSearchKeywords,
   calculateTotalExperienceMonths,
+  // License normalization (for database cleanup and filtering)
+  normalizeLicenseValue,
+  normalizeExtractionLicenses,
+  determineHighestLicense,
   // Position taxonomy
   normalizePosition,
   getAllStandardPositions,
@@ -597,3 +601,17 @@ export {
   type LandingPageContentParams,
   type GeneratedLandingPageContent,
 } from './blog-generation/generate-landing-page-content';
+
+// ----------------------------------------------------------------------------
+// LICENSE DISPLAY (Human-readable names for frontend display)
+// ----------------------------------------------------------------------------
+export {
+  // Display name mapping
+  LICENSE_DISPLAY_NAMES,
+  // Main function for getting human-readable names
+  getLicenseDisplayName,
+  // Helper functions for building dropdowns/select inputs
+  getAllLicensesWithDisplayNames,
+  getDeckLicenses,
+  getEngineeringLicenses,
+} from './matcher/license-display';

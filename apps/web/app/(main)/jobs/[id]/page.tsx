@@ -464,11 +464,6 @@ export default function JobDetailPage() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-2">
-                  <Link href={`/jobs/match?jobId=${job.id}`}>
-                    <Button variant="primary" leftIcon={<Sparkles className="size-4" />}>
-                      Run AI Match
-                    </Button>
-                  </Link>
                   <Button variant="secondary" leftIcon={<Edit3 className="size-4" />}>
                     Edit
                   </Button>

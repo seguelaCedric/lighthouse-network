@@ -22,6 +22,11 @@ import {
   Globe2,
   Filter,
   Settings2,
+  CheckCheck,
+  Trophy,
+  Calendar,
+  Trash2,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -724,6 +729,29 @@ export function AIMatchTab({ jobId, jobTitle }: AIMatchTabProps) {
     new Set()
   );
 
+  // Bulk action state
+  const [bulkActionInProgress, setBulkActionInProgress] = React.useState(false);
+  const [bulkActionProgress, setBulkActionProgress] = React.useState({ current: 0, total: 0 });
+  const [bulkActionSuccess, setBulkActionSuccess] = React.useState<number | null>(null);
+
+  // Smart selection state (must be before any early returns)
+  const [showSelectMenu, setShowSelectMenu] = React.useState(false);
+  const selectMenuRef = React.useRef<HTMLDivElement>(null);
+
+  // Close menu on click outside
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        selectMenuRef.current &&
+        !selectMenuRef.current.contains(event.target as Node)
+      ) {
+        setShowSelectMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   // Run AI match
   const runMatch = React.useCallback(async () => {
     setIsLoading(true);
@@ -913,10 +941,66 @@ export function AIMatchTab({ jobId, jobTitle }: AIMatchTabProps) {
 
   const handleBulkAddToShortlist = async () => {
     const selectedCandidates = candidates.filter((c) => selectedIds.has(c.id));
+    const total = selectedCandidates.length;
 
-    for (const candidate of selectedCandidates) {
-      await handleAddToShortlist(candidate);
+    setBulkActionInProgress(true);
+    setBulkActionProgress({ current: 0, total });
+    setBulkActionSuccess(null);
+
+    let successCount = 0;
+
+    for (let i = 0; i < selectedCandidates.length; i++) {
+      const candidate = selectedCandidates[i];
+      setBulkActionProgress({ current: i + 1, total });
+
+      try {
+        const response = await fetch(`/api/jobs/${jobId}/shortlist`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            candidates: [
+              {
+                candidateId:
+                  candidate.source === "internal"
+                    ? candidate.id
+                    : candidate.id.replace("yotspot-", ""),
+                source: candidate.source,
+                yotspotUrl: candidate.yotspotUrl,
+                matchScore: candidate.overallScore,
+                matchReasoning: candidate.aiSummary,
+              },
+            ],
+          }),
+        });
+
+        if (response.ok) {
+          successCount++;
+          // Remove from list after adding
+          setCandidates((prev) => prev.filter((c) => c.id !== candidate.id));
+          setSelectedIds((prev) => {
+            const next = new Set(prev);
+            next.delete(candidate.id);
+            return next;
+          });
+        }
+      } catch (err) {
+        console.error("Failed to add to shortlist:", err);
+      }
     }
+
+    setBulkActionInProgress(false);
+    setBulkActionSuccess(successCount);
+
+    // Clear success message after 3 seconds
+    setTimeout(() => {
+      setBulkActionSuccess(null);
+    }, 3000);
+  };
+
+  const handleBulkReject = () => {
+    const selectedCandidateIds = Array.from(selectedIds);
+    setCandidates((prev) => prev.filter((c) => !selectedIds.has(c.id)));
+    setSelectedIds(new Set());
   };
 
   const handleViewProfile = (candidate: MatchedCandidate) => {
@@ -940,32 +1024,118 @@ export function AIMatchTab({ jobId, jobTitle }: AIMatchTabProps) {
   if (!hasSearched && !isLoading) {
     return (
       <div className="space-y-6">
-        {/* Search Sources */}
-        <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <h3 className="font-medium text-navy-900 mb-4">Search Sources</h3>
-          <div className="flex items-center gap-6">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={searchInternal}
-                onChange={(e) => setSearchInternal(e.target.checked)}
-                className="rounded border-gray-300 text-gold-500 focus:ring-gold-500"
-              />
-              <Database className="size-4 text-navy-600" />
-              <span className="text-sm text-gray-700">Internal Database</span>
-            </label>
+        {/* Hero Section */}
+        <div className="text-center py-6">
+          <div className="inline-flex items-center justify-center size-16 rounded-full bg-gradient-to-br from-gold-100 to-gold-200 mb-4">
+            <Sparkles className="size-8 text-gold-600" />
+          </div>
+          <h2 className="text-xl font-semibold text-navy-900 mb-2">
+            Find Your Perfect Candidates
+          </h2>
+          <p className="text-gray-600 max-w-md mx-auto">
+            Our AI analyzes your job requirements and matches them against
+            candidate profiles, qualifications, and experience.
+          </p>
+        </div>
 
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={searchYotSpot}
-                onChange={(e) => setSearchYotSpot(e.target.checked)}
-                className="rounded border-gray-300 text-gold-500 focus:ring-gold-500"
-              />
-              <Globe2 className="size-4 text-purple-600" />
-              <span className="text-sm text-gray-700">YotSpot</span>
-              <span className="text-xs text-gray-400">(preview only)</span>
-            </label>
+        {/* Source Selection Cards */}
+        <div>
+          <h3 className="text-sm font-medium text-gray-700 mb-3">
+            Search Sources
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Internal Database Card */}
+            <button
+              onClick={() => setSearchInternal(!searchInternal)}
+              className={cn(
+                "relative flex flex-col p-4 rounded-xl border-2 text-left transition-all",
+                searchInternal
+                  ? "border-navy-500 bg-navy-50 ring-2 ring-navy-500/20"
+                  : "border-gray-200 bg-white hover:border-gray-300"
+              )}
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <div
+                  className={cn(
+                    "flex items-center justify-center size-10 rounded-lg",
+                    searchInternal ? "bg-navy-100" : "bg-gray-100"
+                  )}
+                >
+                  <Database
+                    className={cn(
+                      "size-5",
+                      searchInternal ? "text-navy-600" : "text-gray-500"
+                    )}
+                  />
+                </div>
+                <div>
+                  <h4 className="font-medium text-navy-900">Internal Database</h4>
+                  <p className="text-xs text-gray-500">Your registered candidates</p>
+                </div>
+                <div
+                  className={cn(
+                    "absolute top-4 right-4 size-5 rounded-full border-2 flex items-center justify-center",
+                    searchInternal
+                      ? "border-navy-500 bg-navy-500"
+                      : "border-gray-300"
+                  )}
+                >
+                  {searchInternal && <Check className="size-3 text-white" />}
+                </div>
+              </div>
+              <p className="text-sm text-gray-600">
+                Search through candidates already in your system with full profile
+                access.
+              </p>
+            </button>
+
+            {/* YotSpot Card */}
+            <button
+              onClick={() => setSearchYotSpot(!searchYotSpot)}
+              className={cn(
+                "relative flex flex-col p-4 rounded-xl border-2 text-left transition-all",
+                searchYotSpot
+                  ? "border-purple-500 bg-purple-50 ring-2 ring-purple-500/20"
+                  : "border-gray-200 bg-white hover:border-gray-300"
+              )}
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <div
+                  className={cn(
+                    "flex items-center justify-center size-10 rounded-lg",
+                    searchYotSpot ? "bg-purple-100" : "bg-gray-100"
+                  )}
+                >
+                  <Globe2
+                    className={cn(
+                      "size-5",
+                      searchYotSpot ? "text-purple-600" : "text-gray-500"
+                    )}
+                  />
+                </div>
+                <div>
+                  <h4 className="font-medium text-navy-900">YotSpot</h4>
+                  <p className="text-xs text-gray-500">External talent pool</p>
+                </div>
+                <div
+                  className={cn(
+                    "absolute top-4 right-4 size-5 rounded-full border-2 flex items-center justify-center",
+                    searchYotSpot
+                      ? "border-purple-500 bg-purple-500"
+                      : "border-gray-300"
+                  )}
+                >
+                  {searchYotSpot && <Check className="size-3 text-white" />}
+                </div>
+              </div>
+              <p className="text-sm text-gray-600 mb-2">
+                Discover candidates from YotSpot&apos;s yacht crew network.
+              </p>
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-purple-700 bg-purple-100 rounded-full px-2 py-0.5 w-fit">
+                <Sparkles className="size-3" />
+                Great for hard-to-fill positions
+              </span>
+            </button>
           </div>
         </div>
 
@@ -977,8 +1147,8 @@ export function AIMatchTab({ jobId, jobTitle }: AIMatchTabProps) {
           onToggle={() => setShowFilters(!showFilters)}
         />
 
-        {/* Run Match Button */}
-        <div className="flex justify-center">
+        {/* CTA */}
+        <div className="flex flex-col items-center gap-2 pt-2">
           <Button
             variant="primary"
             size="lg"
@@ -988,6 +1158,7 @@ export function AIMatchTab({ jobId, jobTitle }: AIMatchTabProps) {
           >
             Run AI Match
           </Button>
+          <p className="text-xs text-gray-500">Typically finds 15-30 matches</p>
         </div>
       </div>
     );
@@ -1031,16 +1202,51 @@ export function AIMatchTab({ jobId, jobTitle }: AIMatchTabProps) {
     candidates.length > 0 && selectedIds.size === candidates.length;
   const someSelected = selectedIds.size > 0 && !allSelected;
 
+  // Smart selection handlers
+  const selectBySource = (source: "internal" | "yotspot") => {
+    const ids = candidates
+      .filter((c) => c.source === source)
+      .map((c) => c.id);
+    setSelectedIds(new Set(ids));
+    setShowSelectMenu(false);
+  };
+
+  const selectTopByScore = (count: number) => {
+    const sorted = [...candidates].sort((a, b) => b.overallScore - a.overallScore);
+    const ids = sorted.slice(0, count).map((c) => c.id);
+    setSelectedIds(new Set(ids));
+    setShowSelectMenu(false);
+  };
+
+  const selectAvailable = () => {
+    const ids = candidates
+      .filter((c) => c.availability === "available")
+      .map((c) => c.id);
+    setSelectedIds(new Set(ids));
+    setShowSelectMenu(false);
+  };
+
+  const internalCount = candidates.filter((c) => c.source === "internal").length;
+  const yotspotCount = candidates.filter((c) => c.source === "yotspot").length;
+  const availableCount = candidates.filter((c) => c.availability === "available").length;
+
   return (
     <div className="space-y-4">
       {/* Toolbar */}
       <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-3">
         <div className="flex items-center gap-4">
+          {/* Candidate count with selection badge */}
           <div className="flex items-center gap-2">
             <Users className="size-5 text-navy-600" />
             <span className="font-medium text-navy-900">
               {candidates.length} candidates
             </span>
+            {selectedIds.size > 0 && (
+              <span className="flex items-center gap-1 rounded-full bg-gold-100 px-2 py-0.5 text-xs font-semibold text-gold-700">
+                <Check className="size-3" />
+                {selectedIds.size} selected
+              </span>
+            )}
           </div>
 
           {stats.internalMatched > 0 && (
@@ -1066,32 +1272,126 @@ export function AIMatchTab({ jobId, jobTitle }: AIMatchTabProps) {
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            onClick={selectAll}
-            className={cn(
-              "flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-              allSelected || someSelected
-                ? "bg-gold-100 text-gold-800"
-                : "text-gray-600 hover:bg-gray-100"
-            )}
-          >
-            <span
+          {/* Smart Select Dropdown */}
+          <div className="relative" ref={selectMenuRef}>
+            <button
+              onClick={() => setShowSelectMenu(!showSelectMenu)}
               className={cn(
-                "flex size-4 items-center justify-center rounded border",
-                allSelected
-                  ? "border-gold-500 bg-gold-500 text-white"
-                  : someSelected
-                    ? "border-gold-500 bg-gold-100"
-                    : "border-gray-300"
+                "flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                allSelected || someSelected
+                  ? "bg-gold-100 text-gold-800"
+                  : "text-gray-600 hover:bg-gray-100"
               )}
             >
-              {allSelected && <Check className="size-3" />}
-              {someSelected && (
-                <div className="size-1.5 rounded-sm bg-gold-500" />
-              )}
-            </span>
-            Select All
-          </button>
+              <span
+                className={cn(
+                  "flex size-4 items-center justify-center rounded border",
+                  allSelected
+                    ? "border-gold-500 bg-gold-500 text-white"
+                    : someSelected
+                      ? "border-gold-500 bg-gold-100"
+                      : "border-gray-300"
+                )}
+              >
+                {allSelected && <Check className="size-3" />}
+                {someSelected && (
+                  <div className="size-1.5 rounded-sm bg-gold-500" />
+                )}
+              </span>
+              Select
+              <ChevronDown className="size-3" />
+            </button>
+
+            {/* Dropdown Menu */}
+            {showSelectMenu && (
+              <div className="absolute right-0 top-full z-20 mt-1 w-56 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+                <button
+                  onClick={() => {
+                    selectAll();
+                    setShowSelectMenu(false);
+                  }}
+                  className="flex w-full items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  <CheckCheck className="size-4 text-gray-500" />
+                  <span>Select All ({candidates.length})</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedIds(new Set());
+                    setShowSelectMenu(false);
+                  }}
+                  className="flex w-full items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  <X className="size-4 text-gray-500" />
+                  <span>Clear Selection</span>
+                </button>
+
+                <div className="my-1 border-t border-gray-100" />
+
+                <div className="px-3 py-1">
+                  <span className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                    Smart Select
+                  </span>
+                </div>
+
+                <button
+                  onClick={() => selectTopByScore(5)}
+                  className="flex w-full items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  <Trophy className="size-4 text-gold-500" />
+                  <span>Top 5 by Score</span>
+                </button>
+                <button
+                  onClick={() => selectTopByScore(10)}
+                  className="flex w-full items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                >
+                  <Trophy className="size-4 text-gold-500" />
+                  <span>Top 10 by Score</span>
+                </button>
+
+                {availableCount > 0 && (
+                  <button
+                    onClick={selectAvailable}
+                    className="flex w-full items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    <Calendar className="size-4 text-success-500" />
+                    <span>Available Now ({availableCount})</span>
+                  </button>
+                )}
+
+                {internalCount > 0 && yotspotCount > 0 && (
+                  <>
+                    <div className="my-1 border-t border-gray-100" />
+                    <div className="px-3 py-1">
+                      <span className="text-xs font-medium uppercase tracking-wide text-gray-400">
+                        By Source
+                      </span>
+                    </div>
+                  </>
+                )}
+
+                {internalCount > 0 && (
+                  <button
+                    onClick={() => selectBySource("internal")}
+                    className="flex w-full items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    <Database className="size-4 text-navy-500" />
+                    <span>Internal Only ({internalCount})</span>
+                  </button>
+                )}
+
+                {yotspotCount > 0 && (
+                  <button
+                    onClick={() => selectBySource("yotspot")}
+                    className="flex w-full items-center gap-3 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    <Globe2 className="size-4 text-purple-500" />
+                    <span>YotSpot Only ({yotspotCount})</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
 
           <Button
             variant="ghost"
@@ -1158,37 +1458,110 @@ export function AIMatchTab({ jobId, jobTitle }: AIMatchTabProps) {
         </div>
       )}
 
-      {/* Bulk Actions */}
-      {selectedIds.size > 0 && (
-        <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4 -mx-4 -mb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-gray-600">
-                <span className="font-semibold text-navy-900">
-                  {selectedIds.size}
-                </span>{" "}
-                candidate{selectedIds.size !== 1 ? "s" : ""} selected
-              </span>
-              <button
-                onClick={() => setSelectedIds(new Set())}
-                className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
-              >
-                <X className="size-4" />
-                Clear
-              </button>
-            </div>
-            <div className="flex items-center gap-3">
-              <Button variant="secondary" leftIcon={<Download className="size-4" />}>
-                Export
-              </Button>
-              <Button
-                variant="primary"
-                leftIcon={<Star className="size-4" />}
-                onClick={handleBulkAddToShortlist}
-              >
-                Add to Shortlist ({selectedIds.size})
-              </Button>
-            </div>
+      {/* Floating Action Bar */}
+      {(selectedIds.size > 0 || bulkActionSuccess !== null) && (
+        <div className="fixed bottom-6 left-1/2 z-30 -translate-x-1/2">
+          <div
+            className={cn(
+              "flex items-center gap-4 rounded-2xl border px-5 py-3 shadow-xl transition-all",
+              bulkActionSuccess !== null
+                ? "border-success-200 bg-success-50"
+                : "border-gray-200 bg-white"
+            )}
+          >
+            {/* Success State */}
+            {bulkActionSuccess !== null && (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center size-8 rounded-full bg-success-100">
+                  <CheckCircle2 className="size-5 text-success-600" />
+                </div>
+                <span className="text-sm font-medium text-success-700">
+                  {bulkActionSuccess} candidate{bulkActionSuccess !== 1 ? "s" : ""} added to shortlist
+                </span>
+              </div>
+            )}
+
+            {/* Loading State */}
+            {bulkActionInProgress && (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center size-8 rounded-full bg-gold-100">
+                  <Loader2 className="size-5 text-gold-600 animate-spin" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-navy-900">
+                    Adding to shortlist...
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    {bulkActionProgress.current} of {bulkActionProgress.total}
+                  </span>
+                </div>
+                {/* Progress bar */}
+                <div className="w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gold-500 transition-all duration-300"
+                    style={{
+                      width: `${(bulkActionProgress.current / bulkActionProgress.total) * 100}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Selection State */}
+            {!bulkActionInProgress && bulkActionSuccess === null && selectedIds.size > 0 && (
+              <>
+                {/* Selected count */}
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center size-8 rounded-full bg-gold-100">
+                    <span className="text-sm font-bold text-gold-700">
+                      {selectedIds.size}
+                    </span>
+                  </div>
+                  <span className="text-sm text-gray-600">
+                    selected
+                  </span>
+                </div>
+
+                <div className="h-6 w-px bg-gray-200" />
+
+                {/* Actions */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleBulkReject}
+                    className="text-gray-500 hover:text-error-600 hover:bg-error-50"
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    leftIcon={<Download className="size-4" />}
+                  >
+                    Export
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    leftIcon={<Star className="size-4" />}
+                    onClick={handleBulkAddToShortlist}
+                  >
+                    Add to Shortlist
+                  </Button>
+                </div>
+
+                <div className="h-6 w-px bg-gray-200" />
+
+                {/* Clear */}
+                <button
+                  onClick={() => setSelectedIds(new Set())}
+                  className="flex items-center justify-center size-7 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                >
+                  <X className="size-4" />
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
