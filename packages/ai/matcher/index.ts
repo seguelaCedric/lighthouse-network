@@ -1293,11 +1293,12 @@ Return AI assessment for each candidate.`,
 /**
  * Main matching function - matchCandidatesForJob
  *
- * Four-stage pipeline:
- * 1. Query candidates from Supabase (available, position match, limit 100)
- * 2. Hard filters (certifications, visas, experience)
- * 3. Scoring (100 points total across 6 categories)
- * 4. AI re-ranking for top 10
+ * Five-stage pipeline (optimal for large candidate pools):
+ * 1. SEMANTIC SEARCH: Vector search using job embedding (top 300 similar candidates)
+ * 2. METADATA FALLBACK: For candidates without embeddings, use metadata filters
+ * 3. HARD FILTERS: Certifications, visas, experience (binary pass/fail)
+ * 4. SCORING: 100 points across 6 weighted categories
+ * 5. AI RE-RANKING: GPT-4o-mini evaluates top 15 for nuanced assessment
  */
 export async function matchCandidatesForJob(
   supabase: SupabaseClient,
@@ -1306,6 +1307,8 @@ export async function matchCandidatesForJob(
 ): Promise<MatchResult[]> {
   const limit = options?.limit ?? 10;
   const { privateNotes, hardFilterOverrides } = options || {};
+
+  console.log(`[Matcher] Starting 5-stage pipeline for job ${jobId}`);
 
   // ============ FETCH JOB ============
   // Note: private_notes is fetched but ONLY used internally for AI matching
@@ -1323,32 +1326,79 @@ export async function matchCandidatesForJob(
   // Use private notes from options if provided, otherwise use job.private_notes
   const effectivePrivateNotes = privateNotes ?? job.private_notes;
 
-  // ============ STAGE 1: QUERY CANDIDATES ============
-  // Filter by availability_status = 'available', match position if specified, limit 100
-  // Note: Database enum only has 'available' and 'not_looking'
-  let query = supabase
+  // ============ STAGE 1: SEMANTIC SEARCH (Vector) ============
+  // Use job embedding to find semantically similar candidates
+  // This is the most efficient way to search 17,000+ candidates
+  let vectorCandidates: Candidate[] = [];
+  let metadataCandidates: Candidate[] = [];
+
+  if (job.embedding) {
+    console.log(`[Stage 1] Running vector search with job embedding...`);
+
+    const { data: vectorResults, error: vectorError } = await supabase.rpc(
+      'search_candidates_vector',
+      {
+        p_query_embedding: job.embedding,
+        p_limit: 300,  // Get top 300 by semantic similarity
+        p_threshold: 0.25,  // Low threshold = broader search, we filter later
+        p_position_category: job.position_category || null,
+      }
+    );
+
+    if (vectorError) {
+      console.warn(`[Stage 1] Vector search failed, falling back to metadata: ${vectorError.message}`);
+    } else {
+      vectorCandidates = vectorResults || [];
+      console.log(`[Stage 1] Vector search returned ${vectorCandidates.length} candidates`);
+    }
+  } else {
+    console.log(`[Stage 1] Job has no embedding, skipping vector search`);
+  }
+
+  // ============ STAGE 2: METADATA FALLBACK ============
+  // For candidates without embeddings or if vector search failed
+  // Also ensures we don't miss any good candidates
+  const vectorCandidateIds = new Set(vectorCandidates.map(c => c.id));
+
+  console.log(`[Stage 2] Fetching metadata candidates...`);
+  let metadataQuery = supabase
     .from('candidates')
     .select('*')
     .is('deleted_at', null)
-    .eq('availability_status', 'available')
-    .limit(100);
+    .eq('availability_status', 'available');
 
   // Match position category if job has one
   if (job.position_category) {
-    query = query.eq('position_category', job.position_category);
+    metadataQuery = metadataQuery.eq('position_category', job.position_category);
   }
 
-  const { data: candidates, error: candidatesError } = await query;
+  // If we have vector results, only fetch candidates not already found
+  // Use a reasonable limit to avoid fetching everything
+  const metadataLimit = vectorCandidates.length > 0 ? 500 : 1000;
+  metadataQuery = metadataQuery.limit(metadataLimit);
 
-  if (candidatesError) {
-    throw new Error(`Failed to fetch candidates: ${candidatesError.message}`);
+  const { data: metadataResults, error: metadataError } = await metadataQuery;
+
+  if (metadataError) {
+    console.warn(`[Stage 2] Metadata search failed: ${metadataError.message}`);
+  } else {
+    // Dedupe with vector results
+    metadataCandidates = (metadataResults || []).filter(
+      (c: Candidate) => !vectorCandidateIds.has(c.id)
+    );
+    console.log(`[Stage 2] Metadata search added ${metadataCandidates.length} unique candidates`);
   }
 
-  if (!candidates || candidates.length === 0) {
+  // Combine results: vector candidates first (higher quality), then metadata
+  const candidates = [...vectorCandidates, ...metadataCandidates];
+
+  console.log(`[Stage 1+2] Total candidates before filtering: ${candidates.length}`);
+
+  if (candidates.length === 0) {
     return [];
   }
 
-  // ============ STAGE 2: HARD FILTERS ============
+  // ============ STAGE 3: HARD FILTERS ============
   // Merge job requirements with overrides (overrides take precedence)
   const req = job.requirements || {};
   const regionVisas = getVisasForRegion(job.primary_region);
@@ -1410,11 +1460,14 @@ export async function matchCandidatesForJob(
     return true;
   });
 
+  console.log(`[Stage 3] ${passedHardFilters.length} candidates passed hard filters (from ${candidates.length})`);
+
   if (passedHardFilters.length === 0) {
     return [];
   }
 
-  // ============ STAGE 3: SCORING (100 points total) ============
+  // ============ STAGE 4: SCORING (100 points total) ============
+  console.log(`[Stage 4] Scoring ${passedHardFilters.length} candidates...`);
   const scoredCandidates = passedHardFilters.map((candidate: Candidate) => {
     const breakdown = {
       qualifications: 0,  // 25 pts
@@ -1586,8 +1639,12 @@ export async function matchCandidatesForJob(
   // Sort by preliminary score
   scoredCandidates.sort((a, b) => b.preliminaryScore - a.preliminaryScore);
 
-  // ============ STAGE 4: AI RE-RANKING FOR TOP 10 ============
-  const topForAI = scoredCandidates.slice(0, 10);
+  console.log(`[Stage 4] Top score: ${scoredCandidates[0]?.preliminaryScore || 0}/90`);
+
+  // ============ STAGE 5: AI RE-RANKING FOR TOP 15 ============
+  const topForAI = scoredCandidates.slice(0, 15);
+
+  console.log(`[Stage 5] AI re-ranking top ${topForAI.length} candidates...`);
 
   // Pass private notes to AI for context (used internally, never exposed in response)
   const aiResults = await aiRerankTopCandidates(
