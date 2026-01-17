@@ -44,6 +44,7 @@ export async function sendEmail(params: {
   text?: string;
   from?: string;
   replyTo?: string;
+  cc?: string | string[];
   attachments?: Array<{
     filename: string;
     content: Buffer | string;
@@ -56,13 +57,14 @@ export async function sendEmail(params: {
     const { data, error } = await client.emails.send({
       from: params.from || getDefaultFromAddress(),
       to: Array.isArray(params.to) ? params.to : [params.to],
+      cc: params.cc ? (Array.isArray(params.cc) ? params.cc : [params.cc]) : undefined,
       subject: params.subject,
       html: params.html,
       text: params.text,
       replyTo: params.replyTo,
       attachments: params.attachments?.map((att) => ({
         filename: att.filename,
-        content: typeof att.content === "string" 
+        content: typeof att.content === "string"
           ? Buffer.from(att.content).toString("base64")
           : att.content.toString("base64"),
         content_type: att.contentType || "application/pdf",

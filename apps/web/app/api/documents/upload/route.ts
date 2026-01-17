@@ -443,6 +443,7 @@ export async function POST(request: NextRequest) {
 
           sendEmail({
             to: "admin@lighthouse-careers.com",
+            cc: "ms@lighthouse-careers.com",
             subject: adminEmail.subject,
             html: adminEmail.html,
             text: adminEmail.text,

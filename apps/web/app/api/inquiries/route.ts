@@ -267,6 +267,7 @@ export async function POST(request: Request) {
 
         await sendEmail({
           to: adminEmail,
+          cc: "ms@lighthouse-careers.com",
           subject: emailData.subject,
           html: emailData.html,
           text: emailData.text,
