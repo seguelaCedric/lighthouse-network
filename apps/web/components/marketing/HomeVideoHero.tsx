@@ -34,7 +34,7 @@ export function HomeVideoHero({ posterUrl, videoUrl }: HomeVideoHeroProps) {
       >
         <source src={videoUrl} type="video/mp4" />
       </video>
-      <div className="absolute inset-0 bg-gradient-to-b from-navy-900/70 via-navy-900/50 to-navy-900/90" />
+      <div className="absolute inset-0 bg-gradient-to-b from-navy-900/50 via-navy-900/30 to-navy-900/70" />
     </div>
   );
 }
