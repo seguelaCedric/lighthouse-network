@@ -195,6 +195,17 @@ export {
 
 export type { VincereCompany } from './companies';
 
+// Owners API
+export {
+  getJobOwners,
+  extractOwnerDataForDb,
+} from './owners';
+
+export type {
+  VincereOwner,
+  JobOwners,
+} from './owners';
+
 // Placements API
 export {
   getPlacementById,

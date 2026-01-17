@@ -7,6 +7,8 @@ import {
   getPlacementWithContext,
   mapPlacementStatus,
   getPlacementFee,
+  getJobOwners,
+  extractOwnerDataForDb,
 } from "@/lib/vincere";
 import { scheduleJobAlert } from "@/lib/services/job-alert-service";
 
@@ -270,6 +272,17 @@ async function handleJobCreatedOrUpdated(
     // Map Vincere job to our format
     const mappedJob = mapVincereToJob(jobData.job, jobData.customFields);
 
+    // Fetch job owners from Vincere (primary = BD, secondary = assigned recruiter)
+    const owners = await getJobOwners(vincereJobId, vincere);
+    const ownerData = extractOwnerDataForDb(owners);
+
+    if (owners.primary) {
+      console.log(`[VincereWebhook] Job ${vincereJobId} - Primary Owner: ${owners.primary.full_name}`);
+    }
+    if (owners.secondary) {
+      console.log(`[VincereWebhook] Job ${vincereJobId} - Assigned Recruiter: ${owners.secondary.full_name} (${owners.secondary.email})`);
+    }
+
     // Find existing job by external_id
     const { data: existingJob } = await supabase
       .from("jobs")
@@ -312,6 +325,8 @@ async function handleJobCreatedOrUpdated(
       public_description: mappedJob.public_description,
       // Always set Lighthouse Careers as the creating agency for Vincere jobs
       created_by_agency_id: LIGHTHOUSE_ORG_ID,
+      // Job owners from Vincere
+      ...ownerData,
       // Preserve existing relationships if updating
       ...(existingJob && {
         client_id: existingJob.client_id,

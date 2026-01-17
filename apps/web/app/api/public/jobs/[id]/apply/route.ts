@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { applyToJobSchema } from "@/lib/validations/public-job";
-import { candidateHasCV, getCandidateCVUrl } from "@/lib/utils/candidate-cv";
+import { candidateHasCV } from "@/lib/utils/candidate-cv";
 import { syncJobApplication } from "@/lib/vincere/sync-service";
-import { sendEmail, newApplicationAdminEmail } from "@/lib/email";
 
 /**
  * POST /api/public/jobs/[id]/apply
@@ -218,28 +217,7 @@ export async function POST(
         .then(() => {}, (err) => console.error("Failed to create alerts:", err));
     }
 
-    // Send admin notification email (fire and forget)
-    getCandidateCVUrl(supabase, candidate.id)
-      .then((cvUrl) => {
-        const adminEmail = newApplicationAdminEmail({
-          candidateFirstName: candidate.first_name || "",
-          candidateLastName: candidate.last_name || "",
-          candidateEmail: candidate.email || "",
-          candidatePhone: candidate.phone || undefined,
-          jobTitle: job.title,
-          jobId: jobId,
-          coverLetter: cover_letter || undefined,
-          cvUrl: cvUrl || undefined,
-          appliedAt: new Date().toISOString(),
-        });
-        return sendEmail({
-          to: "admin@lighthouse-careers.com",
-          subject: adminEmail.subject,
-          html: adminEmail.html,
-          text: adminEmail.text,
-        });
-      })
-      .catch((err) => console.error("Failed to send admin notification email:", err));
+    // Note: Team notification emails disabled - applications visible in dashboard and alerts
 
     return NextResponse.json(
       {

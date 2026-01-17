@@ -40,6 +40,9 @@ import {
   getFunctionalExpertises,
   getCurrentLocation,
   getCandidateStatus,
+  // Job owners
+  getJobOwners,
+  extractOwnerDataForDb,
 } from "../lib/vincere";
 import { syncCandidateDocuments, printSyncSummary } from "../lib/services/document-sync";
 import { generateEmbedding, buildCandidateEmbeddingText } from "@lighthouse/ai";
@@ -300,6 +303,17 @@ async function main() {
         const customFieldCount = Object.keys(customFields).length;
         console.log(`  Custom fields found: ${customFieldCount}`);
 
+        // Fetch job owners (primary = BD, secondary = assigned recruiter)
+        console.log(`  Fetching owners...`);
+        const owners = await getJobOwners(job.id, client);
+        const ownerData = extractOwnerDataForDb(owners);
+        if (owners.primary) {
+          console.log(`  → Primary Owner: ${owners.primary.full_name}`);
+        }
+        if (owners.secondary) {
+          console.log(`  → Assigned Recruiter: ${owners.secondary.full_name} (${owners.secondary.email})`);
+        }
+
         // Sync to database if --sync flag
         if (shouldSync) {
           try {
@@ -346,6 +360,7 @@ async function main() {
             // Prepare data for upsert
             const upsertData = {
               ...jobData,
+              ...ownerData,
               submissions_count: 0,
               views_count: 0,
               applications_count: 0,
@@ -365,6 +380,7 @@ async function main() {
                 .from("jobs")
                 .update({
                   ...jobData,
+                  ...ownerData,
                   // Don't reset counts on update
                 })
                 .eq("id", existing.id);
