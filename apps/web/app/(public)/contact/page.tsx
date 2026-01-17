@@ -50,16 +50,17 @@ export const metadata: Metadata = genMeta({
 const contactMethods = [
   {
     icon: Mail,
-    title: "Email Us",
-    description: "For general inquiries and recruitment",
+    title: "Looking for Work?",
+    description: "Submit your CV and find your next opportunity",
     value: "admin@lighthouse-careers.com",
     href: "mailto:admin@lighthouse-careers.com",
   },
   {
     icon: Phone,
-    title: "Call Us",
+    title: "Looking to Hire Crew or Staff?",
     description: "Office hours: Mon-Fri 9am-6pm CET (Paris time)",
     value: "+33 6 76 41 02 99",
+    secondaryValue: "ms@lighthouse-careers.com",
     href: "tel:+33676410299",
   },
 ];
@@ -134,9 +135,8 @@ export default function ContactPage() {
             {contactMethods.map((method) => {
               const Icon = method.icon;
               return (
-                <a
+                <div
                   key={method.title}
-                  href={method.href}
                   className="group rounded-xl border border-gray-200 bg-white p-6 shadow-lg transition-all hover:-translate-y-1 hover:shadow-xl"
                 >
                   <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-gold-100 transition-colors group-hover:bg-gold-200">
@@ -146,10 +146,15 @@ export default function ContactPage() {
                     {method.title}
                   </h3>
                   <p className="mb-3 text-sm text-gray-500">{method.description}</p>
-                  <p className="font-medium text-gold-600 group-hover:text-gold-700">
+                  <a href={method.href} className="block font-medium text-gold-600 hover:text-gold-700">
                     {method.value}
-                  </p>
-                </a>
+                  </a>
+                  {method.secondaryValue && (
+                    <a href={`mailto:${method.secondaryValue}`} className="block font-medium text-gold-600 hover:text-gold-700 mt-1">
+                      {method.secondaryValue}
+                    </a>
+                  )}
+                </div>
               );
             })}
             <EmergencyLineCard />
