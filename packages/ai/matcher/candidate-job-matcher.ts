@@ -53,7 +53,7 @@ export interface CandidateProfile {
   salary_currency?: string;
 
   // Availability
-  availability_status?: 'available' | 'looking' | 'employed' | 'unavailable';
+  availability_status?: 'available' | 'not_looking';
   available_from?: string;
 
   // Certifications
@@ -653,14 +653,9 @@ function scoreAvailability(candidate: CandidateProfile, job: PublicJob): { score
   if (status === 'available') {
     score += 10;
     details.push('Immediately available');
-  } else if (status === 'looking') {
-    score += 8;
-    details.push('Actively looking');
-  } else if (status === 'employed') {
-    score += 4;
-    details.push('Currently employed but open');
   } else {
-    details.push('Not currently available');
+    // 'not_looking' - they're not actively seeking
+    details.push('Not currently looking');
   }
 
   // Start date alignment (5 points)

@@ -139,7 +139,7 @@ CREATE INDEX idx_yotspot_search_expires
 CREATE TRIGGER trg_yotspot_search_results_updated_at
   BEFORE UPDATE ON yotspot_search_results
   FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
+  EXECUTE FUNCTION update_updated_at();
 
 -- =============================================================================
 -- RLS Policies

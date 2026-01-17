@@ -76,7 +76,7 @@ interface Candidate {
   other_visas?: string[];
   
   // Availability
-  availability_status: 'available' | 'looking' | 'employed' | 'unavailable';
+  availability_status: 'available' | 'not_looking';
   available_from?: string;
   
   // Preferences
@@ -459,8 +459,8 @@ function applyHardFilters(candidate: Candidate, job: Job): FilterResult {
   }
   
   // 8. Availability status
-  if (candidate.availability_status === 'unavailable') {
-    failed_reasons.push('Candidate marked as unavailable');
+  if (candidate.availability_status === 'not_looking') {
+    failed_reasons.push('Candidate not currently looking');
   }
   
   return {
@@ -597,14 +597,11 @@ function calculateScores(candidate: Candidate, job: Job): ScoringResult {
   const availDetails: string[] = [];
 
   // Availability status
-  // Note: 'looking' is treated the same as 'available' per requirements
-  if (candidate.availability_status === 'available' || candidate.availability_status === 'looking') {
+  if (candidate.availability_status === 'available') {
     availScore += 10;
-    availDetails.push(candidate.availability_status === 'looking' ? 'Actively looking' : 'Available now');
-  } else if (candidate.availability_status === 'employed') {
-    availScore += 3;
-    availDetails.push('Currently employed');
+    availDetails.push('Available now');
   }
+  // 'not_looking' gets 0 points - they're not actively seeking
   
   // Start date alignment (up to 5 points)
   if (job.start_date && candidate.available_from) {
@@ -620,7 +617,7 @@ function calculateScores(candidate: Candidate, job: Job): ScoringResult {
       availScore += 3;
       availDetails.push('Available within 2 weeks of start');
     }
-  } else if (candidate.availability_status === 'available' || candidate.availability_status === 'looking') {
+  } else if (candidate.availability_status === 'available') {
     availScore += 5;
     availDetails.push('Immediately available');
   }
@@ -1327,12 +1324,13 @@ export async function matchCandidatesForJob(
   const effectivePrivateNotes = privateNotes ?? job.private_notes;
 
   // ============ STAGE 1: QUERY CANDIDATES ============
-  // Filter by availability_status = 'available' or 'looking', match position if specified, limit 100
+  // Filter by availability_status = 'available', match position if specified, limit 100
+  // Note: Database enum only has 'available' and 'not_looking'
   let query = supabase
     .from('candidates')
     .select('*')
     .is('deleted_at', null)
-    .in('availability_status', ['available', 'looking'])
+    .eq('availability_status', 'available')
     .limit(100);
 
   // Match position category if job has one
@@ -1487,13 +1485,12 @@ export async function matchCandidatesForJob(
     }
 
     // ---- AVAILABILITY (15 points) ----
-    // Note: 'looking' is treated the same as 'available' per requirements
-    if (candidate.availability_status === 'available' || candidate.availability_status === 'looking') {
+    if (candidate.availability_status === 'available') {
       breakdown.availability += 10;
-      strengths.push(candidate.availability_status === 'looking' ? 'Actively looking' : 'Immediately available');
+      strengths.push('Immediately available');
     } else {
       breakdown.availability += 2;
-      concerns.push(`Availability: ${candidate.availability_status}`);
+      concerns.push('Not currently looking');
     }
 
     // Start date alignment (5 pts)

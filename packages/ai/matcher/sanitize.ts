@@ -204,16 +204,18 @@ function getReferenceRating(
 
 function formatAvailability(status: string, from?: string): string {
   if (status === 'available') {
+    if (from) {
+      const date = new Date(from);
+      const now = new Date();
+      if (date <= now) {
+        return 'Immediately available';
+      }
+      return `Available from ${date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`;
+    }
     return 'Immediately available';
   }
-  if (status === 'looking' && from) {
-    const date = new Date(from);
-    return `Available from ${date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`;
-  }
-  if (status === 'looking') {
-    return 'Actively looking';
-  }
-  return 'Currently employed';
+  // 'not_looking' status
+  return 'Not currently looking';
 }
 
 function getGeneralRegion(regions?: string[]): string | undefined {

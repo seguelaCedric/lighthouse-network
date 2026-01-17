@@ -56,7 +56,7 @@ export interface CandidateData {
   other_visas?: string[];
 
   // Availability
-  availability_status: 'available' | 'looking' | 'employed' | 'unavailable';
+  availability_status: 'available' | 'not_looking';
   available_from?: string;
 
   // Preferences
