@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import {
+  syncCandidateCreation,
+  syncCandidateUpdate,
+  syncDocumentUpload,
+  syncJobApplication,
+} from "@/lib/vincere/sync-service";
 
 // Use service role client for inserting applications
 function getServiceClient() {
@@ -106,6 +112,16 @@ export async function POST(request: NextRequest) {
           updated_at: new Date().toISOString(),
         })
         .eq("id", candidateId);
+
+      // Sync updated candidate to Vincere (fire-and-forget)
+      syncCandidateUpdate(candidateId, {
+        first_name: firstName,
+        last_name: lastName,
+        phone: phone,
+        current_location: currentLocation || null,
+        primary_position: primaryPosition,
+        available_from: availableFrom || null,
+      }).catch((err) => console.error("[VincereSync] Failed to sync existing candidate update:", err));
     } else {
       // Create new candidate
       const { data: newCandidate, error: candidateError } = await supabase
@@ -134,6 +150,11 @@ export async function POST(request: NextRequest) {
       }
 
       candidateId = newCandidate.id;
+
+      // Sync new candidate to Vincere (fire-and-forget)
+      syncCandidateCreation(candidateId).catch((err) =>
+        console.error("[VincereSync] Failed to sync new candidate to Vincere:", err)
+      );
     }
 
     // Check for duplicate application
@@ -185,12 +206,12 @@ export async function POST(request: NextRequest) {
     const { error: docError } = await supabase.from("documents").insert({
       entity_type: "candidate",
       entity_id: candidateId,
-      file_name: cv.name,
+      name: cv.name,
       file_path: cvPath,
       file_url: cvUrl,
       file_size: cv.size,
       mime_type: cv.type,
-      document_type: "cv",
+      type: "cv",
       organization_id: job.created_by_agency_id,
     });
 
@@ -198,6 +219,11 @@ export async function POST(request: NextRequest) {
       console.error("Failed to save CV document record:", docError);
       // Continue with application even if document record fails
     }
+
+    // Sync CV to Vincere (fire-and-forget)
+    syncDocumentUpload(candidateId, cvUrl, cv.name, cv.type, "cv").catch((err) =>
+      console.error("[VincereSync] Failed to sync CV to Vincere:", err)
+    );
 
     // Create application
     const { data: application, error: appError } = await supabase
@@ -221,6 +247,12 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+
+    // Sync job application to Vincere (fire-and-forget)
+    // This adds the candidate to the job's shortlist in Vincere
+    syncJobApplication(candidateId, jobId).catch((err) =>
+      console.error("[VincereSync] Failed to sync job application to Vincere:", err)
+    );
 
     // Create activity log
     await supabase.from("activity_logs").insert({

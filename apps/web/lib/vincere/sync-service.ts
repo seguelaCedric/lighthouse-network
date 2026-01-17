@@ -210,9 +210,41 @@ export async function syncCandidateCreation(
       return { success: false, error: 'Candidate not found' };
     }
 
-    // If already has vincere_id, nothing to do
+    // If already has vincere_id, still sync functional expertise and custom fields
+    // This handles cases where candidate was imported from Vincere but later self-registers
     if (candidate.vincere_id) {
-      return { success: true, vincereId: parseInt(candidate.vincere_id) };
+      const vincereId = parseInt(candidate.vincere_id);
+      const vincere = getVincereClient();
+
+      try {
+        // Sync functional expertise even for existing candidates
+        const expertiseId = getVincereFunctionalExpertiseId(candidate.primary_position);
+        if (expertiseId) {
+          await setFunctionalExpertises(vincereId, [expertiseId], vincere);
+          console.log(`[VincereSync] Set functional expertise ${expertiseId} for existing candidate ${vincereId} (position: ${candidate.primary_position})`);
+        } else if (candidate.primary_position) {
+          // CRITICAL: Position exists but couldn't be mapped - this needs attention!
+          console.warn(`[VincereSync] WARNING: Could not map position "${candidate.primary_position}" to Vincere expertise ID for existing candidate ${vincereId}. Please add this position to VINCERE_FUNCTIONAL_EXPERTISE_IDS in constants.ts`);
+        }
+
+        // Sync custom fields for existing candidates
+        const { customFields } = mapCandidateToVincere(candidate);
+        if (customFields.length > 0) {
+          await updateCustomFields(vincereId, customFields, vincere);
+          console.log(`[VincereSync] Updated ${customFields.length} custom fields for existing candidate ${vincereId}`);
+        }
+
+        // Update last_synced_at
+        await supabase
+          .from('candidates')
+          .update({ last_synced_at: new Date().toISOString() })
+          .eq('id', candidateId);
+      } catch (err) {
+        // Log but don't fail - the candidate already exists in Vincere
+        console.error(`[VincereSync] Failed to sync data for existing candidate ${vincereId}:`, err);
+      }
+
+      return { success: true, vincereId };
     }
 
     const vincere = getVincereClient();
@@ -297,6 +329,9 @@ export async function syncCandidateCreation(
         // Log but don't fail the whole sync for functional expertise errors
         console.error(`[VincereSync] Failed to set functional expertise for candidate ${vincereId}:`, err);
       }
+    } else if (candidate.primary_position) {
+      // CRITICAL: Position exists but couldn't be mapped - this needs attention!
+      console.warn(`[VincereSync] WARNING: Could not map position "${candidate.primary_position}" to Vincere expertise ID for candidate ${vincereId}. Please add this position to VINCERE_FUNCTIONAL_EXPERTISE_IDS in constants.ts`);
     }
 
     // Update our database with vincere_id

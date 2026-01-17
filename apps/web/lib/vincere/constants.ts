@@ -975,17 +975,19 @@ export function getVincereFunctionalExpertiseId(position: string | null | undefi
   const directMatch = VINCERE_FUNCTIONAL_EXPERTISE_IDS[position];
   if (directMatch) return directMatch;
 
+  // Normalize: lowercase, trim, and replace underscores with spaces
+  // This handles positions stored as "chief_officer" -> "chief officer"
+  const normalized = position.toLowerCase().trim().replace(/_/g, ' ');
+
   // Try to find via position mapping (converts aliases to standard names)
-  const normalized = position.toLowerCase().trim();
   const mapping = POSITION_MAPPING[normalized];
   if (mapping) {
     return VINCERE_FUNCTIONAL_EXPERTISE_IDS[mapping.standard];
   }
 
-  // Try case-insensitive match on expertise IDs
-  const lowerPosition = position.toLowerCase();
+  // Try case-insensitive match on expertise IDs (also with underscores replaced)
   for (const [key, id] of Object.entries(VINCERE_FUNCTIONAL_EXPERTISE_IDS)) {
-    if (key.toLowerCase() === lowerPosition) {
+    if (key.toLowerCase() === normalized) {
       return id;
     }
   }

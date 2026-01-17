@@ -208,26 +208,26 @@ export async function registerCandidate(
     await supabase.from("documents").insert({
       entity_type: "candidate",
       entity_id: candidateId,
-      file_name: cvFile.name,
+      name: cvFile.name,
       file_path: cvFile.path,
       file_url: cvFile.url,
       file_size: cvFile.size,
       mime_type: cvFile.type,
-      document_type: "cv",
+      type: "cv",
     });
   }
 
-  // Sync candidate to Vincere (fire-and-forget)
-  syncCandidateCreation(candidateId).catch((err) =>
-    console.error("Vincere sync failed for candidate creation:", err)
-  );
-
-  // Sync CV to Vincere if provided (fire-and-forget)
-  if (cvFile?.url) {
-    syncDocumentUpload(candidateId, cvFile.url, cvFile.name, cvFile.type, "cv").catch((err) =>
-      console.error("Vincere sync failed for CV upload:", err)
-    );
-  }
+  // Sync candidate to Vincere, then CV if provided (fire-and-forget)
+  // IMPORTANT: CV sync must wait for candidate sync to complete to avoid race condition
+  // that could cause duplicate candidates in Vincere or CV on wrong candidate
+  syncCandidateCreation(candidateId)
+    .then((result) => {
+      // Only sync CV after candidate creation succeeds and we have vincere_id
+      if (result.success && cvFile?.url) {
+        return syncDocumentUpload(candidateId, cvFile.url, cvFile.name, cvFile.type, "cv");
+      }
+    })
+    .catch((err) => console.error("Vincere sync failed for candidate/CV:", err));
 
   // If applying for a job, create the application
   let applicationId: string | undefined;

@@ -127,7 +127,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       .from("briefs")
       .update({
         status: finalStatus,
-        parsed_data: parsedData,
+        parsed_requirements: parsedData,
         parsing_confidence: confidenceScore,
         parsing_ambiguities: parsedData.ambiguities.map((a) => a.issue),
         parsed_at: new Date().toISOString(),
