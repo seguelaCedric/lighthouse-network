@@ -575,12 +575,14 @@ export async function syncDocumentUpload(
 
     // Upload to Vincere based on document type using URL-based upload
     // Vincere will fetch the file from the provided signed URL
+    let uploadResult: { id: number } | undefined;
+
     if (documentType === 'cv') {
-      await uploadCandidateCVByUrl(vincereId, signedUrl, fileName, vincere);
-      console.log(`[VincereSync] Uploaded CV for candidate ${vincereId} via URL`);
+      uploadResult = await uploadCandidateCVByUrl(vincereId, signedUrl, fileName, vincere);
+      console.log(`[VincereSync] Uploaded CV for candidate ${vincereId} via URL, file_id: ${uploadResult?.id}`);
     } else if (documentType === 'certificate' || documentType === 'certification') {
-      await uploadCandidateCertificateByUrl(vincereId, signedUrl, fileName, VINCERE_DOCUMENT_TYPES.CERTIFICATE, vincere);
-      console.log(`[VincereSync] Uploaded certificate for candidate ${vincereId} via URL`);
+      uploadResult = await uploadCandidateCertificateByUrl(vincereId, signedUrl, fileName, VINCERE_DOCUMENT_TYPES.CERTIFICATE, vincere);
+      console.log(`[VincereSync] Uploaded certificate for candidate ${vincereId} via URL, file_id: ${uploadResult?.id}`);
     } else if (documentType === 'photo') {
       // Vincere photo endpoint uses URL reference
       // Max size: 800KB - if photo is larger, Vincere will reject it
@@ -588,8 +590,34 @@ export async function syncDocumentUpload(
       console.log(`[VincereSync] Uploaded photo for candidate ${vincereId}`);
     } else {
       // Generic document upload - use document_type_id: 3 (same as CV for other docs)
-      await uploadCandidateDocumentByUrl(vincereId, signedUrl, fileName, { documentTypeId: VINCERE_DOCUMENT_TYPES.CV }, vincere);
-      console.log(`[VincereSync] Uploaded document for candidate ${vincereId} via URL`);
+      uploadResult = await uploadCandidateDocumentByUrl(vincereId, signedUrl, fileName, { documentTypeId: VINCERE_DOCUMENT_TYPES.CV }, vincere);
+      console.log(`[VincereSync] Uploaded document for candidate ${vincereId} via URL, file_id: ${uploadResult?.id}`);
+    }
+
+    // Update document metadata with Vincere file ID if we got one
+    if (uploadResult?.id) {
+      // Find the document by matching the URL and update its metadata
+      // We use the documentUrl (before signing) to match since that's the stored file_url
+      const { error: updateError } = await supabase
+        .from('documents')
+        .update({
+          metadata: {
+            vincere_file_id: uploadResult.id,
+            vincere_candidate_id: vincereId,
+            original_filename: fileName,
+          },
+        })
+        .eq('entity_id', candidateId)
+        .eq('entity_type', 'candidate')
+        .eq('type', documentType)
+        .eq('file_url', documentUrl);
+
+      if (updateError) {
+        console.error(`[VincereSync] Failed to update document metadata:`, updateError);
+        // Don't fail the sync - the file was uploaded to Vincere successfully
+      } else {
+        console.log(`[VincereSync] Updated document metadata with vincere_file_id: ${uploadResult.id}`);
+      }
     }
 
     return { success: true, vincereId };
