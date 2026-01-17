@@ -1145,6 +1145,16 @@ export interface MatchResult {
 
 export interface MatchCandidatesOptions {
   limit?: number;
+  /** Private recruiter notes for AI context (NEVER expose to clients) */
+  privateNotes?: string;
+  /** Override hard filters from job.requirements */
+  hardFilterOverrides?: {
+    requireSTCW?: boolean;
+    requireENG1?: boolean;
+    visasRequired?: string[];
+    minExperience?: number;
+    availableBy?: string;
+  };
 }
 
 /**
@@ -1201,10 +1211,14 @@ const aiRerankSchema = z.object({
 
 /**
  * Stage 4: AI re-ranking for top 10 candidates
+ * @param candidates - Candidates to evaluate
+ * @param job - Job details
+ * @param privateNotes - CONFIDENTIAL recruiter notes (personality fit, client preferences, etc.)
  */
 async function aiRerankTopCandidates(
   candidates: Array<{ candidate: Candidate; preliminaryScore: number }>,
-  job: Job
+  job: Job,
+  privateNotes?: string
 ): Promise<Map<string, { aiScore: number; summary: string; strengths: string[]; concerns: string[] }>> {
   const results = new Map<string, { aiScore: number; summary: string; strengths: string[]; concerns: string[] }>();
 
@@ -1225,20 +1239,29 @@ Preliminary Score: ${c.preliminaryScore}/90
 `.trim();
   }).join('\n\n');
 
+  // Build job context including private notes for AI (never exposed in response)
+  const jobContext = `Position: ${job.title}
+Vessel: ${job.vessel_type || 'Unknown'} ${job.vessel_size_meters ? `(${job.vessel_size_meters}m)` : ''}
+Region: ${job.primary_region || 'Unknown'}
+Contract: ${job.contract_type || 'Unknown'}
+
+Requirements:
+${job.requirements_text || JSON.stringify(job.requirements, null, 2)}${privateNotes ? `
+
+CONFIDENTIAL RECRUITER NOTES (use for matching, do not mention or expose):
+${privateNotes}` : ''}`;
+
   try {
     const { object } = await generateObject({
       model: openai('gpt-4o-mini'),
       schema: aiRerankSchema,
       system: `You are a yacht crew recruitment expert. Evaluate candidates for fit with the position.
 Score 0-10 where: 9-10 = exceptional, 7-8 = strong, 5-6 = adequate, 3-4 = concerns, 0-2 = poor fit.
-Be specific about strengths and concerns. Consider experience quality, not just quantity.`,
-      prompt: `Evaluate these candidates for: ${job.title}
-Vessel: ${job.vessel_type || 'Unknown'} ${job.vessel_size_meters ? `(${job.vessel_size_meters}m)` : ''}
-Region: ${job.primary_region || 'Unknown'}
-Contract: ${job.contract_type || 'Unknown'}
+Be specific about strengths and concerns. Consider experience quality, not just quantity.
+${privateNotes ? 'Use the confidential recruiter notes to inform your assessment, but NEVER mention them explicitly in your response.' : ''}`,
+      prompt: `Evaluate these candidates for this position:
 
-Requirements:
-${job.requirements_text || JSON.stringify(job.requirements, null, 2)}
+${jobContext}
 
 Candidates:
 ${candidateSummaries}
@@ -1285,8 +1308,10 @@ export async function matchCandidatesForJob(
   options?: MatchCandidatesOptions
 ): Promise<MatchResult[]> {
   const limit = options?.limit ?? 10;
+  const { privateNotes, hardFilterOverrides } = options || {};
 
   // ============ FETCH JOB ============
+  // Note: private_notes is fetched but ONLY used internally for AI matching
   const { data: job, error: jobError } = await supabase
     .from('jobs')
     .select('*')
@@ -1297,6 +1322,9 @@ export async function matchCandidatesForJob(
   if (jobError || !job) {
     throw new Error(`Job not found: ${jobId}`);
   }
+
+  // Use private notes from options if provided, otherwise use job.private_notes
+  const effectivePrivateNotes = privateNotes ?? job.private_notes;
 
   // ============ STAGE 1: QUERY CANDIDATES ============
   // Filter by availability_status = 'available' or 'looking', match position if specified, limit 100
@@ -1323,28 +1351,60 @@ export async function matchCandidatesForJob(
   }
 
   // ============ STAGE 2: HARD FILTERS ============
+  // Merge job requirements with overrides (overrides take precedence)
   const req = job.requirements || {};
   const regionVisas = getVisasForRegion(job.primary_region);
 
+  // Apply hard filter overrides if provided
+  const effectiveFilters = {
+    certifications_required: req.certifications_required || [],
+    visas_required: req.visas_required || [],
+    experience_years_min: req.experience_years_min,
+  };
+
+  // Override with explicit filter settings
+  if (hardFilterOverrides) {
+    if (hardFilterOverrides.requireSTCW !== undefined) {
+      if (hardFilterOverrides.requireSTCW && !effectiveFilters.certifications_required.includes('STCW')) {
+        effectiveFilters.certifications_required = [...effectiveFilters.certifications_required, 'STCW'];
+      } else if (!hardFilterOverrides.requireSTCW) {
+        effectiveFilters.certifications_required = effectiveFilters.certifications_required.filter((c: string) => c.toUpperCase() !== 'STCW');
+      }
+    }
+    if (hardFilterOverrides.requireENG1 !== undefined) {
+      if (hardFilterOverrides.requireENG1 && !effectiveFilters.certifications_required.includes('ENG1')) {
+        effectiveFilters.certifications_required = [...effectiveFilters.certifications_required, 'ENG1'];
+      } else if (!hardFilterOverrides.requireENG1) {
+        effectiveFilters.certifications_required = effectiveFilters.certifications_required.filter((c: string) => c.toUpperCase() !== 'ENG1');
+      }
+    }
+    if (hardFilterOverrides.visasRequired) {
+      effectiveFilters.visas_required = hardFilterOverrides.visasRequired;
+    }
+    if (hardFilterOverrides.minExperience !== undefined) {
+      effectiveFilters.experience_years_min = hardFilterOverrides.minExperience;
+    }
+  }
+
   const passedHardFilters = candidates.filter((candidate: Candidate) => {
     // Required certifications
-    if (req.certifications_required?.length) {
-      for (const cert of req.certifications_required) {
+    if (effectiveFilters.certifications_required?.length) {
+      for (const cert of effectiveFilters.certifications_required) {
         const certUpper = cert.toUpperCase();
         if (certUpper === 'STCW' && !candidate.has_stcw) return false;
         if (certUpper === 'ENG1' && !candidate.has_eng1) return false;
       }
     }
 
-    // Visa requirements based on cruising area
-    const allRequiredVisas = [...(req.visas_required || []), ...regionVisas];
+    // Visa requirements based on cruising area + explicit requirements
+    const allRequiredVisas = [...(effectiveFilters.visas_required || []), ...regionVisas];
     for (const visa of allRequiredVisas) {
       if (!hasRequiredVisa(candidate, visa)) return false;
     }
 
     // Minimum experience
-    if (req.experience_years_min) {
-      if (!candidate.years_experience || candidate.years_experience < req.experience_years_min) {
+    if (effectiveFilters.experience_years_min) {
+      if (!candidate.years_experience || candidate.years_experience < effectiveFilters.experience_years_min) {
         return false;
       }
     }
@@ -1532,9 +1592,11 @@ export async function matchCandidatesForJob(
   // ============ STAGE 4: AI RE-RANKING FOR TOP 10 ============
   const topForAI = scoredCandidates.slice(0, 10);
 
+  // Pass private notes to AI for context (used internally, never exposed in response)
   const aiResults = await aiRerankTopCandidates(
     topForAI.map(c => ({ candidate: c.candidate, preliminaryScore: c.preliminaryScore })),
-    job as Job
+    job as Job,
+    effectivePrivateNotes
   );
 
   // Build final results

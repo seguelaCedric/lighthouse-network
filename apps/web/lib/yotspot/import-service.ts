@@ -140,6 +140,140 @@ export class YotspotImportService {
   }
 
   /**
+   * Import a candidate on-demand from a YotSpot profile URL
+   * Used when a recruiter adds a YotSpot candidate to a shortlist
+   */
+  async importFromUrl(
+    profileUrl: string,
+    options: {
+      jobId?: string;
+      immediate?: boolean;
+    } = {}
+  ): Promise<ImportResult> {
+    console.log(`[YotspotImportService] On-demand import from URL: ${profileUrl}`);
+
+    const { jobId, immediate = true } = options;
+
+    // Check if this URL was already imported
+    const { data: existingImport } = await this.supabase
+      .from('yotspot_import_queue')
+      .select('id, candidate_id, status')
+      .eq('applicant_url', profileUrl)
+      .eq('status', 'completed')
+      .single();
+
+    if (existingImport?.candidate_id) {
+      console.log(
+        `[YotspotImportService] URL already imported as candidate ${existingImport.candidate_id}`
+      );
+      return {
+        success: true,
+        queueId: existingImport.id,
+        candidateId: existingImport.candidate_id,
+        isDuplicate: true,
+      };
+    }
+
+    // Also check applications table for existing yotspot_profile_url
+    const { data: existingApp } = await this.supabase
+      .from('applications')
+      .select('candidate_id')
+      .eq('yotspot_profile_url', profileUrl)
+      .not('candidate_id', 'is', null)
+      .single();
+
+    if (existingApp?.candidate_id) {
+      console.log(
+        `[YotspotImportService] URL already linked to candidate ${existingApp.candidate_id}`
+      );
+      return {
+        success: true,
+        queueId: '',
+        candidateId: existingApp.candidate_id,
+        isDuplicate: true,
+      };
+    }
+
+    // Create queue entry
+    const { data: queueItem, error: queueError } = await this.supabase
+      .from('yotspot_import_queue')
+      .insert({
+        applicant_url: profileUrl,
+        job_id: jobId || null,
+        status: 'pending',
+        attempts: 0,
+        next_retry_at: new Date().toISOString(),
+      })
+      .select('*')
+      .single();
+
+    if (queueError || !queueItem) {
+      console.error('[YotspotImportService] Failed to create queue entry:', queueError);
+      return {
+        success: false,
+        queueId: '',
+        error: 'Failed to create import queue entry',
+        errorCode: 'UNKNOWN_ERROR',
+      };
+    }
+
+    // If immediate processing requested, process now
+    if (immediate) {
+      return this.processSingleImportById(queueItem.id);
+    }
+
+    // Otherwise return the queue ID for later processing
+    return {
+      success: true,
+      queueId: queueItem.id,
+    };
+  }
+
+  /**
+   * Get or create a candidate from a YotSpot URL
+   * Returns the candidate ID, importing if necessary
+   */
+  async getOrImportCandidate(
+    profileUrl: string,
+    jobId?: string
+  ): Promise<{ candidateId: string; isNew: boolean } | null> {
+    // Try to find existing candidate by yotspot URL in applications
+    const { data: existingApp } = await this.supabase
+      .from('applications')
+      .select('candidate_id')
+      .eq('yotspot_profile_url', profileUrl)
+      .not('candidate_id', 'is', null)
+      .single();
+
+    if (existingApp?.candidate_id) {
+      return { candidateId: existingApp.candidate_id, isNew: false };
+    }
+
+    // Try to find in completed imports
+    const { data: existingImport } = await this.supabase
+      .from('yotspot_import_queue')
+      .select('candidate_id')
+      .eq('applicant_url', profileUrl)
+      .eq('status', 'completed')
+      .not('candidate_id', 'is', null)
+      .single();
+
+    if (existingImport?.candidate_id) {
+      return { candidateId: existingImport.candidate_id, isNew: false };
+    }
+
+    // Import the candidate
+    const result = await this.importFromUrl(profileUrl, { jobId, immediate: true });
+
+    if (result.success && result.candidateId) {
+      return { candidateId: result.candidateId, isNew: !result.isDuplicate };
+    }
+
+    console.error('[YotspotImportService] Failed to import candidate:', result.error);
+    return null;
+  }
+
+  /**
    * Process a single import from the queue
    */
   async processImport(item: YotspotImportQueueItem): Promise<ImportResult> {
@@ -710,4 +844,31 @@ export async function processYotspotImportById(
 ): Promise<ImportResult> {
   const service = new YotspotImportService();
   return service.processSingleImportById(queueId);
+}
+
+/**
+ * Import a candidate on-demand from a YotSpot profile URL
+ * Used when a recruiter adds a YotSpot candidate to a shortlist
+ */
+export async function importYotspotCandidateFromUrl(
+  profileUrl: string,
+  options: {
+    jobId?: string;
+    immediate?: boolean;
+  } = {}
+): Promise<ImportResult> {
+  const service = new YotspotImportService();
+  return service.importFromUrl(profileUrl, options);
+}
+
+/**
+ * Get or create a candidate from a YotSpot URL
+ * Returns the candidate ID, importing if necessary
+ */
+export async function getOrImportYotspotCandidate(
+  profileUrl: string,
+  jobId?: string
+): Promise<{ candidateId: string; isNew: boolean } | null> {
+  const service = new YotspotImportService();
+  return service.getOrImportCandidate(profileUrl, jobId);
 }

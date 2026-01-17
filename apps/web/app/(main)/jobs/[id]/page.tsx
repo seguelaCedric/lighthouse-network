@@ -22,11 +22,15 @@ import {
   UserPlus,
   Inbox,
   Globe,
+  Star,
+  Wand2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { VerificationBadge, type VerificationTier } from "@/components/ui/verification-badge";
 import { AvailabilityBadge, type AvailabilityStatus } from "@/components/ui/availability-badge";
 import { cn } from "@/lib/utils";
+import { AIMatchTab } from "@/components/jobs/AIMatchTab";
+import { ShortlistTab } from "@/components/jobs/ShortlistTab";
 import type {
   JobWithStats,
   JobStatus,
@@ -308,7 +312,7 @@ export default function JobDetailPage() {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [activeStageFilter, setActiveStageFilter] = React.useState<ApplicationStage | "all">("all");
-  const [activeTab, setActiveTab] = React.useState<"all" | "applicants" | "matches">("all");
+  const [activeTab, setActiveTab] = React.useState<"pipeline" | "ai_match" | "shortlist">("pipeline");
 
   // Fetch job data
   const fetchJob = React.useCallback(async () => {
@@ -346,24 +350,13 @@ export default function JobDetailPage() {
     }
   }, [jobId, fetchJob]);
 
-  // Filter applications by tab and stage
-  const applicationsForTab = React.useMemo(() => {
-    if (activeTab === "applicants") {
-      return applications.filter((app) => app.source === "job_board");
-    }
-    if (activeTab === "matches") {
-      return applications.filter((app) => app.source !== "job_board");
-    }
-    return applications;
-  }, [applications, activeTab]);
-
+  // Filter applications by stage for pipeline tab
   const filteredApplications = activeStageFilter === "all"
-    ? applicationsForTab
-    : applicationsForTab.filter((app) => app.stage === activeStageFilter);
+    ? applications
+    : applications.filter((app) => app.stage === activeStageFilter);
 
-  // Count applicants from job board for badge
-  const applicantsCount = applications.filter((app) => app.source === "job_board").length;
-  const matchesCount = applications.filter((app) => app.source !== "job_board").length;
+  // Count shortlisted candidates for badge
+  const shortlistedCount = applications.filter((app) => app.stage === "shortlisted").length;
 
   // Loading state
   if (loading) {
@@ -525,16 +518,15 @@ export default function JobDetailPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Main Content - Candidates */}
               <div className="lg:col-span-2 space-y-6">
-                {/* Candidates Section */}
+                {/* Main Tabs: Pipeline / AI Match / Shortlist */}
                 <div className="rounded-xl border border-gray-200 bg-white">
-                  {/* Main Tabs: All / Applicants / Matches */}
                   <div className="border-b border-gray-200">
                     <div className="flex">
                       <button
-                        onClick={() => { setActiveTab("all"); setActiveStageFilter("all"); }}
+                        onClick={() => { setActiveTab("pipeline"); setActiveStageFilter("all"); }}
                         className={cn(
                           "flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors",
-                          activeTab === "all"
+                          activeTab === "pipeline"
                             ? "border-navy-600 text-navy-900"
                             : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                         )}
@@ -546,133 +538,139 @@ export default function JobDetailPage() {
                         </span>
                       </button>
                       <button
-                        onClick={() => { setActiveTab("applicants"); setActiveStageFilter("all"); }}
+                        onClick={() => setActiveTab("ai_match")}
                         className={cn(
                           "flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors",
-                          activeTab === "applicants"
+                          activeTab === "ai_match"
                             ? "border-navy-600 text-navy-900"
                             : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                         )}
                       >
-                        <Globe className="size-4" />
-                        Applicants
-                        {applicantsCount > 0 && (
-                          <span className="rounded-full bg-success-100 text-success-700 px-2 py-0.5 text-xs font-semibold">
-                            {applicantsCount}
-                          </span>
-                        )}
+                        <Wand2 className="size-4" />
+                        AI Match
                       </button>
                       <button
-                        onClick={() => { setActiveTab("matches"); setActiveStageFilter("all"); }}
+                        onClick={() => setActiveTab("shortlist")}
                         className={cn(
                           "flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors",
-                          activeTab === "matches"
+                          activeTab === "shortlist"
                             ? "border-navy-600 text-navy-900"
                             : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                         )}
                       >
-                        <Sparkles className="size-4" />
-                        AI Matches
-                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs">
-                          {matchesCount}
-                        </span>
+                        <Star className="size-4" />
+                        Shortlist
+                        {shortlistedCount > 0 && (
+                          <span className="rounded-full bg-gold-100 text-gold-700 px-2 py-0.5 text-xs font-semibold">
+                            {shortlistedCount}
+                          </span>
+                        )}
                       </button>
                     </div>
                   </div>
 
-                  <div className="border-b border-gray-100 p-4">
-                    <div className="flex items-center justify-between">
-                      <h2 className="text-lg font-semibold text-navy-900">
-                        {activeTab === "applicants" ? "Job Board Applicants" :
-                         activeTab === "matches" ? "AI Matched Candidates" : "All Candidates"}
-                      </h2>
-                      <Link href={`/jobs/match?jobId=${job.id}`}>
-                        <Button variant="ghost" size="sm" leftIcon={<Sparkles className="size-4" />}>
-                          Find More
-                        </Button>
-                      </Link>
-                    </div>
+                  {/* Tab Content */}
+                  {activeTab === "pipeline" && (
+                    <>
+                      <div className="border-b border-gray-100 p-4">
+                        <div className="flex items-center justify-between">
+                          <h2 className="text-lg font-semibold text-navy-900">All Candidates</h2>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            leftIcon={<Sparkles className="size-4" />}
+                            onClick={() => setActiveTab("ai_match")}
+                          >
+                            Find More
+                          </Button>
+                        </div>
 
-                    {/* Stage Filter Tabs */}
-                    <div className="mt-3 flex gap-2 overflow-x-auto">
-                      <button
-                        onClick={() => setActiveStageFilter("all")}
-                        className={cn(
-                          "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors whitespace-nowrap",
-                          activeStageFilter === "all"
-                            ? "bg-navy-100 text-navy-800"
-                            : "text-gray-600 hover:bg-gray-100"
-                        )}
-                      >
-                        All
-                        <span className="rounded-full bg-gray-200 px-1.5 py-0.5 text-xs">
-                          {applicationsForTab.length}
-                        </span>
-                      </button>
-                      {(["applied", "shortlisted", "interview", "offer", "placed"] as ApplicationStage[]).map((stage) => {
-                        const count = applicationsForTab.filter((a) => a.stage === stage).length;
-                        if (count === 0) return null;
-                        const config = stageConfig[stage];
-                        return (
+                        {/* Stage Filter Tabs */}
+                        <div className="mt-3 flex gap-2 overflow-x-auto">
                           <button
-                            key={stage}
-                            onClick={() => setActiveStageFilter(stage)}
+                            onClick={() => setActiveStageFilter("all")}
                             className={cn(
                               "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors whitespace-nowrap",
-                              activeStageFilter === stage
+                              activeStageFilter === "all"
                                 ? "bg-navy-100 text-navy-800"
                                 : "text-gray-600 hover:bg-gray-100"
                             )}
                           >
-                            {config.label}
+                            All
                             <span className="rounded-full bg-gray-200 px-1.5 py-0.5 text-xs">
-                              {count}
+                              {applications.length}
                             </span>
                           </button>
-                        );
-                      })}
-                    </div>
-                  </div>
+                          {(["applied", "shortlisted", "interview", "offer", "placed"] as ApplicationStage[]).map((stage) => {
+                            const count = applications.filter((a) => a.stage === stage).length;
+                            if (count === 0) return null;
+                            const config = stageConfig[stage];
+                            return (
+                              <button
+                                key={stage}
+                                onClick={() => setActiveStageFilter(stage)}
+                                className={cn(
+                                  "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-colors whitespace-nowrap",
+                                  activeStageFilter === stage
+                                    ? "bg-navy-100 text-navy-800"
+                                    : "text-gray-600 hover:bg-gray-100"
+                                )}
+                              >
+                                {config.label}
+                                <span className="rounded-full bg-gray-200 px-1.5 py-0.5 text-xs">
+                                  {count}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
 
-                  {/* Candidates List */}
-                  <div className="p-4">
-                    {filteredApplications.length === 0 ? (
-                      <div className="py-12 text-center">
-                        {activeTab === "applicants" ? (
-                          <>
-                            <Globe className="mx-auto mb-4 size-12 text-gray-300" />
-                            <h3 className="text-lg font-medium text-navy-900 mb-2">No applicants yet</h3>
-                            <p className="text-gray-600 mb-6">
-                              Candidates who apply via the public job board will appear here
-                            </p>
-                          </>
-                        ) : (
-                          <>
+                      {/* Candidates List */}
+                      <div className="p-4">
+                        {filteredApplications.length === 0 ? (
+                          <div className="py-12 text-center">
                             <Users className="mx-auto mb-4 size-12 text-gray-300" />
                             <h3 className="text-lg font-medium text-navy-900 mb-2">No candidates yet</h3>
                             <p className="text-gray-600 mb-6">
                               Run AI matching to find candidates for this position
                             </p>
-                            <Link href={`/jobs/match?jobId=${job.id}`}>
-                              <Button variant="primary" leftIcon={<Sparkles className="size-4" />}>
-                                Run AI Match
-                              </Button>
-                            </Link>
-                          </>
+                            <Button
+                              variant="primary"
+                              leftIcon={<Sparkles className="size-4" />}
+                              onClick={() => setActiveTab("ai_match")}
+                            >
+                              Run AI Match
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="space-y-3">
+                            {filteredApplications.map((application) => (
+                              <ApplicationCard
+                                key={application.id}
+                                application={application}
+                                onViewProfile={() => router.push(`/candidates/${application.candidate_id}`)}
+                              />
+                        ))}
+                          </div>
                         )}
                       </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {filteredApplications.map((application) => (
-                          <ApplicationCard
-                            key={application.id}
-                            application={application}
-                            onViewProfile={() => router.push(`/candidates/${application.candidate_id}`)}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                    </>
+                  )}
+
+                  {/* AI Match Tab */}
+                  {activeTab === "ai_match" && (
+                    <div className="p-4">
+                      <AIMatchTab jobId={job.id} jobTitle={job.title} />
+                    </div>
+                  )}
+
+                  {/* Shortlist Tab */}
+                  {activeTab === "shortlist" && (
+                    <div className="p-4">
+                      <ShortlistTab jobId={job.id} jobTitle={job.title} />
+                    </div>
+                  )}
                 </div>
               </div>
 
