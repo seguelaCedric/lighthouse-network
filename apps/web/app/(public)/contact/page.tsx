@@ -12,7 +12,6 @@ import {
   Instagram,
   HelpCircle,
 } from "lucide-react";
-import { EmergencyLineCard } from "@/components/public/EmergencyLineCard";
 import { ContactForm } from "@/components/public/ContactForm";
 
 import { generateMetadata as genMeta } from "@/lib/seo/metadata";
@@ -157,7 +156,6 @@ export default function ContactPage() {
                 </div>
               );
             })}
-            <EmergencyLineCard />
           </div>
         </div>
       </section>

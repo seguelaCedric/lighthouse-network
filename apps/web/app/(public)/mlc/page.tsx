@@ -14,6 +14,7 @@ import {
   Award,
 } from "lucide-react";
 import Link from "next/link";
+import { EmergencyLineCard } from "@/components/public/EmergencyLineCard";
 
 export const metadata: Metadata = {
   title: "Maritime Labour Convention (MLC) | Lighthouse Careers",
@@ -178,6 +179,10 @@ export default function MLCPage() {
                   </li>
                 ))}
               </ul>
+            </div>
+
+            <div className="mt-8">
+              <EmergencyLineCard />
             </div>
           </div>
         </div>

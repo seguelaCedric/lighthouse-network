@@ -132,7 +132,7 @@ const testimonials = [
     name: "Mark Sinnatt",
     role: "Captain M/Y GLOBAL",
     image:
-      "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Mark-Sinnatt.png",
+      "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/Mark-Sinnatt.png",
   },
   {
     quote:
@@ -140,7 +140,7 @@ const testimonials = [
     name: "Carl Westerlund",
     role: "Captain 101m M/Y",
     image:
-      "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Carl-Westerlund.png",
+      "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/Carl-Westerlund.png",
   },
   {
     quote:
@@ -148,7 +148,7 @@ const testimonials = [
     name: "Alina C.",
     role: "Owner's Fleet Representative",
     image:
-      "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Alina-C.png",
+      "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/Alina-C.png",
   },
   {
     quote:
@@ -156,7 +156,7 @@ const testimonials = [
     name: "Dùghall MacLachlainn",
     role: "Captain",
     image:
-      "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/dughall.png",
+      "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/Capture-decran-2020-02-23-a-12.27.53-150x150-1.png",
   },
   {
     quote:
@@ -164,7 +164,7 @@ const testimonials = [
     name: "James Richardson",
     role: "Chief Officer",
     image:
-      "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/james-r.png",
+      "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/Carl-Westerlund.png",
   },
   {
     quote:
@@ -172,7 +172,7 @@ const testimonials = [
     name: "Meeli Lepik",
     role: "Interior Manager",
     image:
-      "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/meeli.png",
+      "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/Meeli-Lepik.png",
   },
 ];
 

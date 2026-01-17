@@ -94,25 +94,25 @@ const testimonials = [
     quote: "I wanted to say a few words of thanks for your all your time and efforts over the past few years, working on behalf of Axioma and indeed the other vessels I have worked on. You and your team has always been a massive help in trying to help find us the right candidate for the right job in this ever expanding and delicate industry.",
     name: "Tom Filby",
     role: "Captain M/Y Axioma",
-    image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Capture-decran-2020-02-23-a-12.27.53-150x150-1.png",
+    image: "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/Capture-decran-2020-02-23-a-12.27.53-150x150-1.png",
   },
   {
     quote: "I've had the pleasure of knowing Milica, and using Milica's services as a crew agent for many years at two different agencies. Her attention to what I'm looking for in a crew member, fast response and flexibility and understanding of feedback has always impressed me, and I look forward to continuing working with her also now when branching out on her own.",
     name: "Carl Westerlund",
     role: "Captain 101m M/Y",
-    image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Carl-Westerlund.png",
+    image: "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/Carl-Westerlund.png",
   },
   {
     quote: "Milica is always my first call when looking for new crew. Milica helped me get my first command 3 years ago and ever since has supplied me with great candidates for all positions onboard. I can always rely on her judgement and honesty on potential crew and to act fast when I need. I wish her luck with this new venture and look forward to a continued professional affiliation.",
     name: "Mark Sinnatt",
     role: "Captain M/Y GLOBAL",
-    image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Mark-Sinnatt.png",
+    image: "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/Mark-Sinnatt.png",
   },
   {
     quote: "Due to her industry knowledge, great candidates she has provided over the years and great sense of urgency and limitations a yacht can have, I decided to reintroduce and appoint Milica's agency to represent our fleet of yachts in the yacht recruitment world. In no time she gained a thorough understanding of our new management structure and fleet needs.",
     name: "Alina C.",
     role: "Owner's Fleet Representative",
-    image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Alina-C.png",
+    image: "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/Alina-C.png",
   },
 ];
 

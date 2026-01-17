@@ -152,25 +152,25 @@ const testimonials = [
     quote: "Thank you for thinking of us for the position as private island managers. We were very pleased when we got offered the position as it's been a long time dream of ours!",
     name: "Dean And Jen",
     role: "Private Island Managers",
-    image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Capture-decran-2019-12-12-a-07.26.59-150x150-1.png",
+    image: "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/Capture-decran-2019-12-12-a-07.26.59-150x150-1.png",
   },
   {
     quote: "Milica and I go back for nearly 7 years to the times when I started my journey in the yachting industry. During this time, we have been able to assist each other on various cases and tables have turned few times, depending on me looking for a new challenge or recruiting my own team. Milica has always treated my staff requests with uttermost confidence and care.",
     name: "Meeli Lepik",
     role: "Interior Manager, Project ENZO",
-    image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Meeli-Lepik.png",
+    image: "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/Meeli-Lepik.png",
   },
   {
     quote: "I would like to express mine at most gratitude for the placement of my current position as Interior Manager on a 100+ m yacht. All was well organised and monitored from your side. Great communication between the yacht, yourself and me. Everything was handled with confidentiality on every level.",
     name: "Mathieu Barbe",
     role: "Interior Manager, Project ENZO",
-    image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Mathieu-Barbe.png",
+    image: "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/Mathieu-Barbe.png",
   },
   {
     quote: "I have known Milica for over a decade. In that time I have come to value her judgement and advice on Crew Recruitment. She has placed a number of candidates on my commands and she has also helped me secure my dream job! I feel that she is discreet, honest and professional.",
     name: "Dughall MacLachlainn",
     role: "Captain",
-    image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Milica.jpeg",
+    image: "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/Milica.jpeg",
   },
 ];
 

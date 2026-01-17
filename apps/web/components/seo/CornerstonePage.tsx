@@ -60,15 +60,15 @@ const SECTION_LAYOUTS: Record<string, 'icon-strip' | 'card' | 'two-column'> = {
 // Lifestyle images from Lighthouse website (verified working)
 const HERO_IMAGES = {
   // Yacht images
-  yacht: "https://www.lighthouse-careers.com/wp-content/uploads/2023/08/Somnio-3-COPYRIGHT.jpeg",
-  yachtCrew: "https://www.lighthouse-careers.com/wp-content/uploads/2023/08/Yanira-cenida-puig-2013_20160116221345-1024x683.jpg",
-  yachtDeck: "https://www.lighthouse-careers.com/wp-content/uploads/2023/08/shutterstock_156742031-1024x683.jpg",
-  yachtPage: "https://www.lighthouse-careers.com/wp-content/uploads/2023/08/376.jpg",
-  superyacht: "https://www.lighthouse-careers.com/wp-content/uploads/2024/02/superyacht-2.jpg",
-  caribbeanYacht: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/CARIBBEAN-YACHT-CHARTER-1600x1210-1.jpg",
-  yachtSunset: "https://www.lighthouse-careers.com/wp-content/uploads/2023/08/pexels-pixabay-289319.jpg",
+  yacht: "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/Somnio-3-COPYRIGHT.jpeg",
+  yachtCrew: "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/Yanira-cenida-puig-2013_20160116221345-1024x683.jpg",
+  yachtDeck: "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/shutterstock_156742031-1024x683.jpg",
+  yachtPage: "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/376.jpg",
+  superyacht: "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/superyacht-2.jpg",
+  caribbeanYacht: "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/CARIBBEAN-YACHT-CHARTER-1600x1210-1.jpg",
+  yachtSunset: "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/pexels-pixabay-289319.jpg",
   // Household/Estate images (using about page hero - verified working)
-  household: "https://www.lighthouse-careers.com/wp-content/uploads/2023/08/e658ea1f70b7ee9432a60d64b2f7085b.jpg",
+  household: "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/e658ea1f70b7ee9432a60d64b2f7085b.jpg",
 };
 
 const TESTIMONIALS = [
@@ -76,21 +76,21 @@ const TESTIMONIALS = [
     quote: "I wanted to say a few words of thanks for your all your time and efforts over the past few years. You and your team has always been a massive help in trying to help find us the right candidate for the right job in this ever expanding and delicate industry.",
     author: "Tom Filby",
     role: "Captain M/Y Axioma",
-    image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Capture-decran-2020-02-23-a-12.27.53-150x150-1.png",
+    image: "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/Capture-decran-2020-02-23-a-12.27.53-150x150-1.png",
     rating: 5,
   },
   {
     quote: "I've had the pleasure of knowing Milica, and using her recruitment services for many years. Her attention to what I'm looking for in a crew member, fast response and flexibility and understanding of feedback has always impressed me.",
     author: "Carl Westerlund",
     role: "Captain 101m M/Y",
-    image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Carl-Westerlund.png",
+    image: "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/Carl-Westerlund.png",
     rating: 5,
   },
   {
     quote: "Milica is always my first call when looking for new crew. She helped me get my first command 3 years ago and ever since has supplied me with great candidates for all positions onboard.",
     author: "Mark Sinnatt",
     role: "Captain M/Y GLOBAL",
-    image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Mark-Sinnatt.png",
+    image: "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/Mark-Sinnatt.png",
     rating: 5,
   },
   {

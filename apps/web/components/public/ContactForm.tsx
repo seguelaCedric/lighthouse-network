@@ -8,6 +8,7 @@ interface FormData {
   firstName: string;
   lastName: string;
   email: string;
+  phone: string;
   subject: string;
   message: string;
 }
@@ -16,6 +17,7 @@ interface FormErrors {
   firstName?: string;
   lastName?: string;
   email?: string;
+  phone?: string;
   subject?: string;
   message?: string;
 }
@@ -25,6 +27,7 @@ export function ContactForm() {
     firstName: "",
     lastName: "",
     email: "",
+    phone: "",
     subject: "",
     message: "",
   });
@@ -80,6 +83,7 @@ export function ContactForm() {
           type: "contact",
           name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
           email: formData.email.trim(),
+          phone: formData.phone.trim() || undefined,
           subject: formData.subject,
           message: formData.message.trim(),
           source_url: window.location.href,
@@ -131,6 +135,7 @@ export function ContactForm() {
                 firstName: "",
                 lastName: "",
                 email: "",
+                phone: "",
                 subject: "",
                 message: "",
               });
@@ -229,6 +234,24 @@ export function ContactForm() {
           {errors.email && (
             <p className="mt-1.5 text-sm text-red-600">{errors.email}</p>
           )}
+        </div>
+
+        <div>
+          <label
+            htmlFor="phone"
+            className="mb-2 block text-sm font-medium text-gray-700"
+          >
+            Phone Number
+          </label>
+          <input
+            type="tel"
+            id="phone"
+            name="phone"
+            value={formData.phone}
+            onChange={handleChange("phone")}
+            className="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 transition-colors focus:border-gold-500 focus:outline-none focus:ring-2 focus:ring-gold-500/20"
+            placeholder="+33 6 12 34 56 78"
+          />
         </div>
 
         <div>

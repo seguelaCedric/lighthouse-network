@@ -35,12 +35,12 @@ import {
 
 // Lifestyle images for visual appeal
 const HERO_IMAGES = {
-  mansion: "https://www.lighthouse-careers.com/wp-content/uploads/2023/08/exceptional_luxury_mansion_marbella.jpeg",
-  yacht: "https://www.lighthouse-careers.com/wp-content/uploads/2023/08/istockphoto-1164197131-170667a.jpeg",
-  service: "https://www.lighthouse-careers.com/wp-content/uploads/2023/08/QFY5VVSAKUBMNTKQKVSGC6RYXI.jpg",
-  meeting: "https://www.lighthouse-careers.com/wp-content/uploads/2023/08/smiling-business-people-having-meeting-cafe.jpg",
-  luxury: "https://www.lighthouse-careers.com/wp-content/uploads/2023/08/globeair_couple_2207-42.jpg",
-  professional: "https://www.lighthouse-careers.com/wp-content/uploads/2023/08/istockphoto-79339690-1024x1024-transformed-e1693403052699.jpeg",
+  mansion: "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/exceptional_luxury_mansion_marbella.jpeg",
+  yacht: "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/istockphoto-1164197131-170667a.jpeg",
+  service: "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/QFY5VVSAKUBMNTKQKVSGC6RYXI.jpg",
+  meeting: "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/smiling-business-people-having-meeting-cafe.jpg",
+  luxury: "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/globeair_couple_2207-42.jpg",
+  professional: "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/istockphoto-79339690-1024x1024-transformed-e1693403052699.jpeg",
 };
 
 // Real testimonials from clients and candidates
@@ -49,42 +49,42 @@ const TESTIMONIALS = [
     quote: "I wanted to say a few words of thanks for your all your time and efforts over the past few years. You and your team has always been a massive help in trying to help find us the right candidate for the right job in this ever expanding and delicate industry.",
     name: "Tom Filby",
     role: "Captain M/Y Axioma",
-    image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Capture-decran-2020-02-23-a-12.27.53-150x150-1.png",
+    image: "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/Capture-decran-2020-02-23-a-12.27.53-150x150-1.png",
     type: "client",
   },
   {
     quote: "I've had the pleasure of knowing Milica, and using her recruitment services for many years. Her attention to what I'm looking for in a crew member, fast response and flexibility and understanding of feedback has always impressed me.",
     name: "Carl Westerlund",
     role: "Captain 101m M/Y",
-    image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Carl-Westerlund.png",
+    image: "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/Carl-Westerlund.png",
     type: "client",
   },
   {
     quote: "Milica is always my first call when looking for new crew. She helped me get my first command 3 years ago and ever since has supplied me with great candidates for all positions onboard.",
     name: "Mark Sinnatt",
     role: "Captain M/Y GLOBAL",
-    image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Mark-Sinnatt.png",
+    image: "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/Mark-Sinnatt.png",
     type: "client",
   },
   {
     quote: "Due to her industry knowledge, great candidates she has provided over the years and great sense of urgency, I decided to appoint Milica's agency to represent our fleet of yachts. It has certainly proved to be a great partnership.",
     name: "Alina C.",
     role: "Owner's Fleet Representative",
-    image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Alina-C.png",
+    image: "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/Alina-C.png",
     type: "client",
   },
   {
     quote: "I have known Milica for over a decade. In that time I have come to value her judgement and advice on Crew Recruitment. She has placed a number of candidates on my commands and she has also helped me secure my dream job!",
     name: "Dùghall MacLachlainn",
     role: "Captain",
-    image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Milica.jpeg",
+    image: "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/Milica.jpeg",
     type: "client",
   },
   {
     quote: "Throughout my 11 years in yachting, I have found Milica to be my go-to agent for jobs. Not only because she has a great reputation in the industry and great boats in her books but also for her care, kindness and professionalism.",
     name: "Vesna Coklo",
     role: "Chief Stewardess 70m+ MY",
-    image: "https://www.lighthouse-careers.com/wp-content/uploads/2023/09/Vesna-Coklo.jpeg",
+    image: "https://ozcuponldhepkdjmemvm.supabase.co/storage/v1/object/public/marketing/wp-uploads/Vesna-Coklo.jpeg",
     type: "candidate",
   },
 ];
