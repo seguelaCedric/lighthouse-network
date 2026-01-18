@@ -4,7 +4,7 @@ import { createClient, createServiceRoleClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { mapPositionToDatabaseValue, getPositionIndustry } from "@/lib/utils/position-mapping";
-import { syncCandidateCreation } from "@/lib/vincere/sync-service";
+import { syncNewRegistration } from "@/lib/vincere/sync-service";
 import { sendEmail, welcomeCandidateEmail } from "@/lib/email";
 
 export type AuthResult = {
@@ -295,8 +295,8 @@ export async function signUp(
         }
       }
 
-      // Sync candidate to Vincere (fire-and-forget)
-      syncCandidateCreation(candidateId).catch((err) =>
+      // Sync candidate to Vincere with hybrid approach (timeout + queue fallback)
+      syncNewRegistration(candidateId, undefined, undefined, 5000).catch((err) =>
         console.error("Vincere sync failed for candidate creation:", err)
       );
 

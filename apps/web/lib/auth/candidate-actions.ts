@@ -3,11 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import {
-  syncCandidateCreation,
-  syncDocumentUpload,
-  syncJobApplication,
-} from "@/lib/vincere/sync-service";
+import { syncNewRegistration } from "@/lib/vincere/sync-service";
 import { triggerHydrationIfNeeded } from "@/lib/vincere/on-login-hydration";
 import { mapPositionToDatabaseValue } from "@/lib/utils/position-mapping";
 
@@ -217,17 +213,16 @@ export async function registerCandidate(
     });
   }
 
-  // Sync candidate to Vincere, then CV if provided (fire-and-forget)
-  // IMPORTANT: CV sync must wait for candidate sync to complete to avoid race condition
-  // that could cause duplicate candidates in Vincere or CV on wrong candidate
-  syncCandidateCreation(candidateId)
-    .then((result) => {
-      // Only sync CV after candidate creation succeeds and we have vincere_id
-      if (result.success && cvFile?.url) {
-        return syncDocumentUpload(candidateId, cvFile.url, cvFile.name, cvFile.type, "cv");
-      }
-    })
-    .catch((err) => console.error("Vincere sync failed for candidate/CV:", err));
+  // Sync candidate to Vincere with hybrid approach:
+  // - Tries immediate sync with 5-second timeout
+  // - If timeout/failure, queues for background retry via cron job
+  // - CV and job application are synced together to avoid race conditions
+  syncNewRegistration(
+    candidateId,
+    cvFile ? { url: cvFile.url, name: cvFile.name, type: cvFile.type } : undefined,
+    data.jobId,
+    5000 // 5 second timeout
+  ).catch((err) => console.error("Vincere registration sync failed:", err));
 
   // If applying for a job, create the application
   let applicationId: string | undefined;
@@ -266,10 +261,8 @@ export async function registerCandidate(
         if (application) {
           applicationId = application.id;
 
-          // Sync job application to Vincere (fire-and-forget)
-          syncJobApplication(candidateId, data.jobId).catch((err) =>
-            console.error("Vincere sync failed for job application:", err)
-          );
+          // Note: Job application is now synced to Vincere via syncNewRegistration above
+          // which handles candidate creation, CV upload, and application in one flow
 
           // Create activity log
           await supabase.from("activity_logs").insert({

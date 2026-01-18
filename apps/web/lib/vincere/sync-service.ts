@@ -150,17 +150,22 @@ function logSyncError(
 }
 
 /**
- * Queue a failed sync operation for retry
+ * Queue a sync operation for processing (either immediate or for retry)
  */
-async function queueForRetry(
+async function queueForSync(
   candidateId: string,
   syncType: SyncType,
   payload: Record<string, unknown>,
-  error: string
+  error?: string,
+  immediate: boolean = false
 ): Promise<void> {
   const supabase = getSupabaseClient();
 
-  const nextRetryAt = new Date(Date.now() + RETRY_DELAYS[0]).toISOString();
+  // For immediate queuing (new syncs), process right away
+  // For retries, use the delay schedule
+  const nextRetryAt = immediate
+    ? new Date().toISOString()
+    : new Date(Date.now() + RETRY_DELAYS[0]).toISOString();
 
   try {
     await supabase.from('vincere_sync_queue').insert({
@@ -168,20 +173,69 @@ async function queueForRetry(
       sync_type: syncType,
       payload,
       status: 'pending',
-      attempts: 1,
-      last_error: error,
+      attempts: error ? 1 : 0, // 0 attempts for new syncs, 1 for retries
+      last_error: error || null,
       next_retry_at: nextRetryAt,
     });
-    
-    logSyncError(syncType, candidateId, new Error(error), { queued: true, nextRetryAt });
+
+    if (error) {
+      logSyncError(syncType, candidateId, new Error(error), { queued: true, nextRetryAt });
+    } else {
+      console.log(`[VincereSync] Queued ${syncType} for candidate ${candidateId} (immediate: ${immediate})`);
+    }
   } catch (queueError) {
     // If we can't even queue the retry, log it as a critical error
-    console.error('[VincereSync] CRITICAL: Failed to queue retry:', {
+    console.error('[VincereSync] CRITICAL: Failed to queue sync:', {
       candidateId,
       syncType,
       originalError: error,
       queueError: queueError instanceof Error ? queueError.message : 'Unknown error',
     });
+  }
+}
+
+/**
+ * Queue a failed sync operation for retry (backwards compatible alias)
+ */
+async function queueForRetry(
+  candidateId: string,
+  syncType: SyncType,
+  payload: Record<string, unknown>,
+  error: string
+): Promise<void> {
+  return queueForSync(candidateId, syncType, payload, error, false);
+}
+
+/**
+ * Execute a sync with timeout, queuing for retry if it fails or times out
+ * This provides a hybrid approach: try immediately but don't block indefinitely
+ */
+async function syncWithTimeout<T extends SyncResult>(
+  syncFn: () => Promise<T>,
+  candidateId: string,
+  syncType: SyncType,
+  payload: Record<string, unknown>,
+  timeoutMs: number = 5000
+): Promise<T> {
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    setTimeout(() => reject(new Error('Sync timeout')), timeoutMs);
+  });
+
+  try {
+    const result = await Promise.race([syncFn(), timeoutPromise]);
+    return result;
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    // Queue for retry since the immediate sync failed or timed out
+    await queueForSync(candidateId, syncType, payload, errorMessage, true);
+
+    // Return a failed result but don't throw - the caller can continue
+    return {
+      success: false,
+      error: errorMessage,
+      queued: true
+    } as T;
   }
 }
 
@@ -1002,4 +1056,91 @@ export async function processRetryQueue(limit: number = 10): Promise<{
     failed,
     abandoned,
   };
+}
+
+// ============================================================================
+// REGISTRATION SYNC (HYBRID APPROACH)
+// ============================================================================
+
+/**
+ * Sync a newly registered candidate to Vincere with hybrid approach:
+ * - Tries immediate sync with timeout
+ * - If timeout or failure, queues for background retry
+ * - Returns quickly to not block user registration
+ *
+ * Use this for registration flows where we want best-effort immediate sync
+ * but can't afford to block the user experience.
+ *
+ * @param candidateId - The candidate ID to sync
+ * @param cvFile - Optional CV file info to sync after candidate creation
+ * @param jobId - Optional job ID if the candidate applied during registration
+ * @param timeoutMs - Max time to wait for sync (default 5 seconds)
+ */
+export async function syncNewRegistration(
+  candidateId: string,
+  cvFile?: { url: string; name: string; type: string },
+  jobId?: string,
+  timeoutMs: number = 5000
+): Promise<SyncResult> {
+  if (!isVincereConfigured()) {
+    console.log('[VincereSync] Skipping registration sync - Vincere not configured');
+    return { success: true };
+  }
+
+  console.log(`[VincereSync] Starting registration sync for candidate ${candidateId} (timeout: ${timeoutMs}ms)`);
+
+  // Try candidate creation with timeout
+  const candidateResult = await syncWithTimeout(
+    () => syncCandidateCreation(candidateId),
+    candidateId,
+    'create',
+    {},
+    timeoutMs
+  );
+
+  // If candidate sync failed or was queued, also queue CV and application for later
+  if (!candidateResult.success) {
+    console.log(`[VincereSync] Candidate sync failed/queued, queuing CV and application for later`);
+
+    if (cvFile) {
+      await queueForSync(candidateId, 'document', {
+        documentUrl: cvFile.url,
+        fileName: cvFile.name,
+        mimeType: cvFile.type,
+        documentType: 'cv'
+      }, undefined, true);
+    }
+
+    if (jobId) {
+      await queueForSync(candidateId, 'application', { jobId }, undefined, true);
+    }
+
+    return candidateResult;
+  }
+
+  // Candidate sync succeeded, now try CV and application (also with timeout but shorter)
+  const followUpTimeout = Math.max(timeoutMs - 2000, 2000); // Leave some time for follow-ups
+
+  if (cvFile) {
+    await syncWithTimeout(
+      () => syncDocumentUpload(candidateId, cvFile.url, cvFile.name, cvFile.type, 'cv'),
+      candidateId,
+      'document',
+      { documentUrl: cvFile.url, fileName: cvFile.name, mimeType: cvFile.type, documentType: 'cv' },
+      followUpTimeout
+    );
+  }
+
+  if (jobId) {
+    await syncWithTimeout(
+      () => syncJobApplication(candidateId, jobId),
+      candidateId,
+      'application',
+      { jobId },
+      followUpTimeout
+    );
+  }
+
+  console.log(`[VincereSync] Registration sync completed for candidate ${candidateId}`);
+  return candidateResult;
 }
