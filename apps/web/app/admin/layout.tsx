@@ -10,11 +10,13 @@ import {
   ArrowLeft,
   Shield,
   MessageSquare,
+  AlertTriangle,
 } from "lucide-react";
 
 const navItems = [
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/enquiries", label: "Enquiries", icon: MessageSquare },
+  { href: "/admin/error-logs", label: "Error Logs", icon: AlertTriangle },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ];

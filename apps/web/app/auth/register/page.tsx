@@ -982,7 +982,9 @@ function RegisterContent() {
               await new Promise(resolve => setTimeout(resolve, 500 * retries));
             }
 
-            const candidateResponse = await fetch("/api/crew/profile/");
+            const candidateResponse = await fetch("/api/crew/profile/", {
+              credentials: 'include',
+            });
             if (candidateResponse.ok) {
               const candidateData = await candidateResponse.json();
               if (candidateData.data?.id) {
