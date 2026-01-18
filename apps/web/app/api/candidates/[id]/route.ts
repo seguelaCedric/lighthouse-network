@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { updateCandidateSchema } from "@/lib/validations/candidate";
 import type { CandidateWithRelations } from "@lighthouse/database";
+import { createErrorLogger, extractRequestContext } from "@/lib/error-logger";
 
 const stripFileExtension = (name: string) => name.replace(/\.[^/.]+$/, "");
 
@@ -13,6 +14,8 @@ interface RouteParams {
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
+  const logger = createErrorLogger(extractRequestContext(request));
+
   try {
     const { id } = await params;
     const supabase = await createClient();
@@ -189,6 +192,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ data: response });
   } catch (error) {
+    await logger.error(error instanceof Error ? error : new Error(String(error)), {
+      statusCode: 500,
+      metadata: { route: "candidates/[id]", operation: "get" },
+    });
     console.error("Unexpected error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
@@ -198,6 +205,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 }
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
+  const logger = createErrorLogger(extractRequestContext(request));
+
   try {
     const { id } = await params;
     const supabase = await createClient();
@@ -283,6 +292,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ data });
   } catch (error) {
+    await logger.error(error instanceof Error ? error : new Error(String(error)), {
+      statusCode: 500,
+      metadata: { route: "candidates/[id]", operation: "update" },
+    });
     console.error("Unexpected error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
@@ -292,6 +305,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 }
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  const logger = createErrorLogger(extractRequestContext(request));
+
   try {
     const { id } = await params;
     const supabase = await createClient();
@@ -360,6 +375,10 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       { status: 200 }
     );
   } catch (error) {
+    await logger.error(error instanceof Error ? error : new Error(String(error)), {
+      statusCode: 500,
+      metadata: { route: "candidates/[id]", operation: "delete" },
+    });
     console.error("Unexpected error:", error);
     return NextResponse.json(
       { error: "Internal server error" },

@@ -970,29 +970,8 @@ function RegisterContent() {
       let cvUploadSuccess = false;
       if (step4Data.cvFile) {
         try {
-          // Get the candidate ID for the newly registered user
-          // Retry with backoff since the session/records might take a moment to be fully established
-          let candidateId: string | null = null;
-          let retries = 0;
-          const maxRetries = 3;
-
-          while (!candidateId && retries < maxRetries) {
-            if (retries > 0) {
-              // Wait before retrying (500ms, 1000ms, 1500ms)
-              await new Promise(resolve => setTimeout(resolve, 500 * retries));
-            }
-
-            const candidateResponse = await fetch("/api/crew/profile/", {
-              credentials: 'include',
-            });
-            if (candidateResponse.ok) {
-              const candidateData = await candidateResponse.json();
-              if (candidateData.data?.id) {
-                candidateId = candidateData.data.id;
-              }
-            }
-            retries++;
-          }
+          // Use candidate ID from signUp response (more reliable than API fetch)
+          const candidateId = result.candidateId;
 
           if (candidateId) {
             const formData = new FormData();
@@ -1001,9 +980,10 @@ function RegisterContent() {
             formData.append("entityId", candidateId);
             formData.append("documentType", "cv");
 
-            const uploadResponse = await fetch("/api/documents/upload", {
+            const uploadResponse = await fetch("/api/documents/upload/", {
               method: "POST",
               body: formData,
+              credentials: 'include',
             });
 
             if (uploadResponse.ok) {

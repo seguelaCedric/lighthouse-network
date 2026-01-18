@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
+import { createErrorLogger, extractRequestContext } from "@/lib/error-logger";
 
 // Schema for updating profile
 const updateProfileSchema = z.object({
@@ -35,7 +36,9 @@ const updateProfileSchema = z.object({
  *
  * Get the authenticated candidate's profile.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const logger = createErrorLogger(extractRequestContext(request));
+
   try {
     const supabase = await createClient();
 
@@ -135,6 +138,10 @@ export async function GET() {
       },
     });
   } catch (error) {
+    await logger.error(error instanceof Error ? error : new Error(String(error)), {
+      statusCode: 500,
+      metadata: { route: "crew/profile", operation: "get" },
+    });
     console.error("Unexpected error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
@@ -149,6 +156,8 @@ export async function GET() {
  * Update the authenticated candidate's profile.
  */
 export async function PATCH(request: NextRequest) {
+  const logger = createErrorLogger(extractRequestContext(request));
+
   try {
     const supabase = await createClient();
 
@@ -245,6 +254,10 @@ export async function PATCH(request: NextRequest) {
       message: "Profile updated successfully",
     });
   } catch (error) {
+    await logger.error(error instanceof Error ? error : new Error(String(error)), {
+      statusCode: 500,
+      metadata: { route: "crew/profile", operation: "update" },
+    });
     console.error("Unexpected error:", error);
     return NextResponse.json(
       { error: "Internal server error" },

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
+import { createErrorLogger, extractRequestContext } from "@/lib/error-logger";
 
 // Query params schema for listing applications
 const querySchema = z.object({
@@ -18,6 +19,8 @@ const querySchema = z.object({
  * Requires the user to be logged in and have a linked candidate profile.
  */
 export async function GET(request: NextRequest) {
+  const logger = createErrorLogger(extractRequestContext(request));
+
   try {
     const supabase = await createClient();
 
@@ -163,6 +166,10 @@ export async function GET(request: NextRequest) {
       counts,
     });
   } catch (error) {
+    await logger.error(error instanceof Error ? error : new Error(String(error)), {
+      statusCode: 500,
+      metadata: { route: "crew/applications", operation: "list" },
+    });
     console.error("Unexpected error:", error);
     return NextResponse.json(
       { error: "Internal server error" },

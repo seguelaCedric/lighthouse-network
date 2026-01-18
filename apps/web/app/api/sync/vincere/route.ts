@@ -7,6 +7,7 @@ import {
 } from "@/lib/vincere/candidates";
 import { mapVincereToCandidate, getInterviewNotes } from "@/lib/vincere/sync";
 import { z } from "zod";
+import { createErrorLogger, extractRequestContext } from "@/lib/error-logger";
 
 const syncRequestSchema = z.object({
   sinceDate: z.string().datetime().optional(),
@@ -15,6 +16,8 @@ const syncRequestSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
+  const logger = createErrorLogger(extractRequestContext(request));
+
   try {
     const supabase = await createClient();
 
@@ -227,6 +230,10 @@ export async function POST(request: NextRequest) {
       results,
     });
   } catch (error) {
+    await logger.error(error instanceof Error ? error : new Error(String(error)), {
+      statusCode: 500,
+      metadata: { route: "sync/vincere", operation: "sync" },
+    });
     console.error("Unexpected error during Vincere sync:", error);
     return NextResponse.json(
       { error: "Internal server error" },
@@ -236,7 +243,9 @@ export async function POST(request: NextRequest) {
 }
 
 // GET endpoint to check sync status
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const logger = createErrorLogger(extractRequestContext(request));
+
   try {
     const supabase = await createClient();
 
@@ -291,6 +300,10 @@ export async function GET() {
       syncedCandidates: syncedCount || 0,
     });
   } catch (error) {
+    await logger.error(error instanceof Error ? error : new Error(String(error)), {
+      statusCode: 500,
+      metadata: { route: "sync/vincere", operation: "status" },
+    });
     console.error("Unexpected error:", error);
     return NextResponse.json(
       { error: "Internal server error" },

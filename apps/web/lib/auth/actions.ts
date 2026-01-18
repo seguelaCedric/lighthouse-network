@@ -11,6 +11,7 @@ export type AuthResult = {
   success: boolean;
   error?: string;
   redirectTo?: string;
+  candidateId?: string;
 };
 
 export async function signIn(
@@ -329,7 +330,7 @@ export async function signUp(
     }
 
     revalidatePath("/", "layout");
-    return { success: true, redirectTo: "/crew/dashboard" };
+    return { success: true, redirectTo: "/crew/dashboard", candidateId: candidateId || undefined };
   }
 
   revalidatePath("/", "layout");

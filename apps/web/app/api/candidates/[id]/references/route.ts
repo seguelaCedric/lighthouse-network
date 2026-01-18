@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createReferenceSchema } from "@/lib/validations/verification";
 import { addReference, logVerificationEvent } from "@/lib/verification";
+import { createErrorLogger, extractRequestContext } from "@/lib/error-logger";
 
 interface RouteParams {
   params: Promise<{ id: string }>;

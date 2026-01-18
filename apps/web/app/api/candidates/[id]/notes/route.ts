@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
+import { createErrorLogger, extractRequestContext } from "@/lib/error-logger";
 
 interface RouteParams {
   params: Promise<{ id: string }>;

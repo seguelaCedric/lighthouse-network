@@ -7,6 +7,7 @@ import { logVerificationEvent, calculateVerificationTier } from "@/lib/verificat
 import { syncDocumentUpload } from "@/lib/vincere/sync-service";
 import { extractText, isExtractable } from "@/lib/services/text-extraction";
 import { sendEmail, newCandidateRegistrationAdminEmail } from "@/lib/email";
+import { createErrorLogger, extractRequestContext } from "@/lib/error-logger";
 
 const BUCKET_NAME = "documents";
 const serviceSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -27,6 +28,8 @@ function getServiceClient() {
  * Upload a document with versioning support
  */
 export async function POST(request: NextRequest) {
+  const logger = createErrorLogger(extractRequestContext(request));
+
   try {
     const supabase = await createClient();
     const serviceClient = getServiceClient();
@@ -479,6 +482,10 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
+    await logger.error(error instanceof Error ? error : new Error(String(error)), {
+      statusCode: 500,
+      metadata: { route: "documents/upload", operation: "upload" },
+    });
     console.error("Upload error:", error);
     return NextResponse.json(
       { error: "An unexpected error occurred" },

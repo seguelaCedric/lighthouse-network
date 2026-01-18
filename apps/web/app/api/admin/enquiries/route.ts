@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createErrorLogger, extractRequestContext } from '@/lib/error-logger'
 import {
   enquiriesQuerySchema,
   type UnifiedEnquiry,
@@ -441,6 +442,9 @@ async function calculateStats(
 // ============================================================================
 
 export async function GET(request: Request) {
+  const requestContext = extractRequestContext(request)
+  const logger = createErrorLogger(requestContext)
+
   try {
     const supabase = await createClient()
 
@@ -554,6 +558,11 @@ export async function GET(request: Request) {
       offset,
     })
   } catch (error) {
+    // Log the error to the database
+    await logger.error(error instanceof Error ? error : new Error(String(error)), {
+      statusCode: 500,
+      metadata: { route: 'admin/enquiries' }
+    })
     console.error('Admin enquiries API error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

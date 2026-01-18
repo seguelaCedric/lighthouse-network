@@ -6,6 +6,7 @@ import {
 } from "@/lib/validations/candidate";
 import { generateEmbedding } from "@lighthouse/ai";
 import type { Candidate, PaginatedResponse } from "@lighthouse/database";
+import { createErrorLogger, extractRequestContext } from "@/lib/error-logger";
 
 /**
  * Hybrid Search Implementation
@@ -21,6 +22,8 @@ import type { Candidate, PaginatedResponse } from "@lighthouse/database";
  */
 
 export async function GET(request: NextRequest) {
+  const logger = createErrorLogger(extractRequestContext(request));
+
   try {
     // Use regular client for authentication check
     const authClient = await createClient();
@@ -162,6 +165,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(response);
   } catch (error) {
+    await logger.error(error instanceof Error ? error : new Error(String(error)), {
+      statusCode: 500,
+      metadata: { route: "candidates", operation: "list" },
+    });
     console.error("Unexpected error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
@@ -379,6 +386,8 @@ async function performHybridSearch(
 }
 
 export async function POST(request: NextRequest) {
+  const logger = createErrorLogger(extractRequestContext(request));
+
   try {
     // Use regular client for authentication check
     const authClient = await createClient();
@@ -446,6 +455,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ data }, { status: 201 });
   } catch (error) {
+    await logger.error(error instanceof Error ? error : new Error(String(error)), {
+      statusCode: 500,
+      metadata: { route: "candidates", operation: "create" },
+    });
     console.error("Unexpected error:", error);
     return NextResponse.json(
       { error: "Internal server error" },

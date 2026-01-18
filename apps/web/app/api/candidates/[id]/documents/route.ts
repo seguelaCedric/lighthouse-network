@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getEntityDocuments } from "@/lib/services/document-service";
 import type { DocumentType } from "@/lib/validations/documents";
+import { createErrorLogger, extractRequestContext } from "@/lib/error-logger";
 
 interface RouteParams {
   params: Promise<{
