@@ -142,7 +142,7 @@ export function JobDetailClient({ job }: JobDetailClientProps) {
   useEffect(() => {
     async function fetchCandidateData() {
       try {
-        const response = await fetch("/api/crew/profile");
+        const response = await fetch("/api/crew/profile/");
         if (response.ok) {
           const data = await response.json();
           const candidate = data.data;
