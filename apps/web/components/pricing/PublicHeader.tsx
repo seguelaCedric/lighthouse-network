@@ -81,9 +81,10 @@ export function PublicHeader() {
         {/* Mobile Menu Button */}
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 sm:hidden"
+          className="relative z-10 -mr-2 rounded-lg p-3 text-gray-500 hover:bg-gray-100 sm:hidden"
+          aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
         >
-          {mobileMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+          {mobileMenuOpen ? <X className="size-6" /> : <Menu className="size-6" />}
         </button>
       </div>
 
