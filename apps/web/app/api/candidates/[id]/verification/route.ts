@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getVerificationStatus } from "@/lib/verification";
 import type { VerificationStatusResponse } from "@/lib/validations/verification";
+import { createErrorLogger, extractRequestContext } from "@/lib/error-logger";
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -12,6 +13,8 @@ interface RouteParams {
  * Get verification status for a candidate
  */
 export async function GET(request: NextRequest, { params }: RouteParams) {
+  const logger = createErrorLogger(extractRequestContext(request));
+
   try {
     const { id: candidateId } = await params;
     const supabase = await createClient();
@@ -103,6 +106,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ data: response });
   } catch (error) {
+    await logger.error(error instanceof Error ? error : new Error(String(error)), {
+      statusCode: 500,
+      metadata: { route: "candidates/[id]/verification", operation: "get" },
+    });
     console.error("Error getting verification status:", error);
     return NextResponse.json(
       { error: "Internal server error" },

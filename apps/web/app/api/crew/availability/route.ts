@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { z } from "zod";
 import { syncAvailabilityUpdate } from "@/lib/vincere/sync-service";
+import { createErrorLogger, extractRequestContext } from "@/lib/error-logger";
 
 // Schema for updating availability
 const updateAvailabilitySchema = z.object({
@@ -19,6 +20,8 @@ const updateAvailabilitySchema = z.object({
  * This is a simplified endpoint for updating just availability.
  */
 export async function PATCH(request: NextRequest) {
+  const logger = createErrorLogger(extractRequestContext(request));
+
   try {
     const supabase = await createClient();
 
@@ -121,6 +124,10 @@ export async function PATCH(request: NextRequest) {
       message: `Availability updated to ${availability_status}`,
     });
   } catch (error) {
+    await logger.error(error instanceof Error ? error : new Error(String(error)), {
+      statusCode: 500,
+      metadata: { route: "crew/availability", operation: "update" },
+    });
     console.error("Unexpected error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
@@ -134,7 +141,9 @@ export async function PATCH(request: NextRequest) {
  *
  * Get the authenticated candidate's current availability status.
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const logger = createErrorLogger(extractRequestContext(request));
+
   try {
     const supabase = await createClient();
 
@@ -186,6 +195,10 @@ export async function GET() {
       },
     });
   } catch (error) {
+    await logger.error(error instanceof Error ? error : new Error(String(error)), {
+      statusCode: 500,
+      metadata: { route: "crew/availability", operation: "get" },
+    });
     console.error("Unexpected error:", error);
     return NextResponse.json(
       { error: "Internal server error" },

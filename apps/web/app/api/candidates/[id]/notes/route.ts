@@ -13,6 +13,8 @@ const createNoteSchema = z.object({
 });
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
+  const logger = createErrorLogger(extractRequestContext(request));
+
   try {
     const { id: candidateId } = await params;
     const supabase = await createClient();
@@ -61,6 +63,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ data: data || [] });
   } catch (error) {
+    await logger.error(error instanceof Error ? error : new Error(String(error)), {
+      statusCode: 500,
+      metadata: { route: "candidates/[id]/notes", operation: "list" },
+    });
     console.error("Unexpected error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
@@ -70,6 +76,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 }
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
+  const logger = createErrorLogger(extractRequestContext(request));
+
   try {
     const { id: candidateId } = await params;
     const supabase = await createClient();
@@ -173,6 +181,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     return NextResponse.json({ data }, { status: 201 });
   } catch (error) {
+    await logger.error(error instanceof Error ? error : new Error(String(error)), {
+      statusCode: 500,
+      metadata: { route: "candidates/[id]/notes", operation: "create" },
+    });
     console.error("Unexpected error:", error);
     return NextResponse.json(
       { error: "Internal server error" },

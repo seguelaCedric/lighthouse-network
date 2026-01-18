@@ -8,6 +8,8 @@ interface RouteParams {
 }
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
+  const logger = createErrorLogger(extractRequestContext(request));
+
   try {
     const { id: candidateId } = await params;
     const supabase = await createClient();
@@ -78,6 +80,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       })),
     });
   } catch (error) {
+    await logger.error(error instanceof Error ? error : new Error(String(error)), {
+      statusCode: 500,
+      metadata: { route: "candidates/[id]/certifications", operation: "list" },
+    });
     console.error("Unexpected error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
@@ -87,6 +93,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 }
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
+  const logger = createErrorLogger(extractRequestContext(request));
+
   try {
     const { id: candidateId } = await params;
     const supabase = await createClient();
@@ -188,6 +196,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       { status: 201 }
     );
   } catch (error) {
+    await logger.error(error instanceof Error ? error : new Error(String(error)), {
+      statusCode: 500,
+      metadata: { route: "candidates/[id]/certifications", operation: "create" },
+    });
     console.error("Unexpected error:", error);
     return NextResponse.json(
       { error: "Internal server error" },

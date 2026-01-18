@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { applyToJobSchema } from "@/lib/validations/public-job";
 import { candidateHasCV } from "@/lib/utils/candidate-cv";
 import { syncJobApplication } from "@/lib/vincere/sync-service";
+import { createErrorLogger, extractRequestContext } from "@/lib/error-logger";
 
 /**
  * POST /api/public/jobs/[id]/apply
@@ -14,6 +15,8 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const logger = createErrorLogger(extractRequestContext(request));
+
   try {
     const { id: jobId } = await params;
     const supabase = await createClient();
@@ -228,6 +231,10 @@ export async function POST(
       { status: 201 }
     );
   } catch (error) {
+    await logger.error(error instanceof Error ? error : new Error(String(error)), {
+      statusCode: 500,
+      metadata: { route: "public/jobs/[id]/apply", operation: "apply" },
+    });
     console.error("Unexpected error:", error);
     return NextResponse.json(
       { error: "Internal server error" },

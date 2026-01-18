@@ -9,8 +9,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { processJobAlerts } from "@/lib/services/job-alert-service";
+import { createErrorLogger, extractRequestContext } from "@/lib/error-logger";
 
 export async function POST(request: NextRequest) {
+  const logger = createErrorLogger(extractRequestContext(request));
+
   try {
     const supabase = await createClient();
 
@@ -93,6 +96,10 @@ export async function POST(request: NextRequest) {
       ...result,
     });
   } catch (error) {
+    await logger.error(error instanceof Error ? error : new Error(String(error)), {
+      statusCode: 500,
+      metadata: { route: "crew/job-alerts", operation: "process" },
+    });
     console.error("Error processing job alerts:", error);
     return NextResponse.json(
       { error: "Internal server error" },
@@ -105,7 +112,9 @@ export async function POST(request: NextRequest) {
  * GET /api/crew/job-alerts
  * Get the job alert settings for the current candidate
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const logger = createErrorLogger(extractRequestContext(request));
+
   try {
     const supabase = await createClient();
 
@@ -158,6 +167,10 @@ export async function GET() {
       jobAlertsEnabled: candidate.job_alerts_enabled ?? true,
     });
   } catch (error) {
+    await logger.error(error instanceof Error ? error : new Error(String(error)), {
+      statusCode: 500,
+      metadata: { route: "crew/job-alerts", operation: "get" },
+    });
     console.error("Error getting job alert settings:", error);
     return NextResponse.json(
       { error: "Internal server error" },
@@ -171,6 +184,8 @@ export async function GET() {
  * Update job alert settings for the current candidate
  */
 export async function PATCH(request: NextRequest) {
+  const logger = createErrorLogger(extractRequestContext(request));
+
   try {
     const supabase = await createClient();
 
@@ -248,6 +263,10 @@ export async function PATCH(request: NextRequest) {
       jobAlertsEnabled,
     });
   } catch (error) {
+    await logger.error(error instanceof Error ? error : new Error(String(error)), {
+      statusCode: 500,
+      metadata: { route: "crew/job-alerts", operation: "update" },
+    });
     console.error("Error updating job alert settings:", error);
     return NextResponse.json(
       { error: "Internal server error" },

@@ -11,6 +11,7 @@ import { z } from "zod";
 import { calculateProfileCompletion } from "@/lib/profile-completion";
 import { candidateHasCV } from "@/lib/utils/candidate-cv";
 import { syncJobApplication } from "@/lib/vincere/sync-service";
+import { createErrorLogger, extractRequestContext } from "@/lib/error-logger";
 
 // ----------------------------------------------------------------------------
 // REQUEST SCHEMA
@@ -44,6 +45,8 @@ const requestSchema = z.object({
  * - Job not found/closed: { error: "job_not_available" }
  */
 export async function POST(request: NextRequest) {
+  const logger = createErrorLogger(extractRequestContext(request));
+
   try {
     const supabase = await createClient();
     const DEFAULT_LIGHTHOUSE_ORG_ID = "00000000-0000-0000-0000-000000000001";
@@ -427,6 +430,10 @@ export async function POST(request: NextRequest) {
 
     return await createApplication(supabase, candidate, job, userId!, coverNote);
   } catch (error) {
+    await logger.error(error instanceof Error ? error : new Error(String(error)), {
+      statusCode: 500,
+      metadata: { route: "crew/applications/quick-apply", operation: "apply" },
+    });
     console.error("Quick apply error:", error);
     return NextResponse.json(
       { error: "Internal server error" },

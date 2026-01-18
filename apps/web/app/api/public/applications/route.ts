@@ -6,6 +6,7 @@ import {
   syncDocumentUpload,
   syncJobApplication,
 } from "@/lib/vincere/sync-service";
+import { createErrorLogger, extractRequestContext } from "@/lib/error-logger";
 
 // Use service role client for inserting applications
 function getServiceClient() {
@@ -20,6 +21,8 @@ function getServiceClient() {
 }
 
 export async function POST(request: NextRequest) {
+  const logger = createErrorLogger(extractRequestContext(request));
+
   try {
     const supabase = getServiceClient();
 
@@ -312,6 +315,10 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
+    await logger.error(error instanceof Error ? error : new Error(String(error)), {
+      statusCode: 500,
+      metadata: { route: "public/applications", operation: "apply" },
+    });
     console.error("Unexpected error:", error);
     return NextResponse.json(
       { error: "Internal server error" },

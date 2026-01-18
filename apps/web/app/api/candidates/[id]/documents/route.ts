@@ -15,6 +15,8 @@ interface RouteParams {
  * Get all documents for a candidate
  */
 export async function GET(request: NextRequest, { params }: RouteParams) {
+  const logger = createErrorLogger(extractRequestContext(request));
+
   try {
     const { id: candidateId } = await params;
     const { searchParams } = new URL(request.url);
@@ -105,6 +107,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       totalCount: documents.length,
     });
   } catch (error) {
+    await logger.error(error instanceof Error ? error : new Error(String(error)), {
+      statusCode: 500,
+      metadata: { route: "candidates/[id]/documents", operation: "list" },
+    });
     console.error("Error fetching candidate documents:", error);
     return NextResponse.json(
       { error: "An unexpected error occurred" },
