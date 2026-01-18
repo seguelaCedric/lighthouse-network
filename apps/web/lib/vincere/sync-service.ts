@@ -66,6 +66,16 @@ const RETRY_DELAYS = [
 ];
 
 /**
+ * Sanitize phone number for Vincere API
+ * Vincere requires phone numbers without spaces
+ */
+function sanitizePhone(phone: string | null | undefined): string | undefined {
+  if (!phone) return undefined;
+  // Remove all spaces, dashes, and parentheses, keep + and digits
+  return phone.replace(/[\s\-\(\)]/g, '') || undefined;
+}
+
+/**
  * Check if Vincere is configured (used to skip sync in dev environments)
  */
 function isVincereConfigured(): boolean {
@@ -257,8 +267,8 @@ export async function syncCandidateCreation(
         firstName: candidate.first_name,
         lastName: candidate.last_name,
         email: candidate.email,
-        phone: candidate.phone || undefined,
-        mobile: candidate.whatsapp || undefined,
+        phone: sanitizePhone(candidate.phone),
+        mobile: sanitizePhone(candidate.whatsapp),
         dateOfBirth: candidate.date_of_birth || undefined,
         gender: candidate.gender || undefined,
         nationality: candidate.nationality || undefined,
@@ -276,22 +286,51 @@ export async function syncCandidateCreation(
       console.log(`[VincereSync] Found existing Vincere candidate ${vincereId} for email ${candidate.email}`);
 
       // Update existing candidate with latest data from our database
-      await updateCandidate(
-        vincereId,
-        {
-          firstName: candidate.first_name,
-          lastName: candidate.last_name,
-          email: candidate.email,
-          phone: candidate.phone || undefined,
-          mobile: candidate.whatsapp || undefined,
-          dateOfBirth: candidate.date_of_birth || undefined,
-          gender: candidate.gender || undefined,
-          nationality: candidate.nationality || undefined,
-          summary: candidate.profile_summary || undefined,
-        },
-        vincere
-      );
-      console.log(`[VincereSync] Updated existing candidate ${vincereId} with latest data`);
+      // Try with phone first, then without if validation fails
+      try {
+        await updateCandidate(
+          vincereId,
+          {
+            firstName: candidate.first_name,
+            lastName: candidate.last_name,
+            email: candidate.email,
+            phone: sanitizePhone(candidate.phone),
+            mobile: sanitizePhone(candidate.whatsapp),
+            dateOfBirth: candidate.date_of_birth || undefined,
+            gender: candidate.gender || undefined,
+            nationality: candidate.nationality || undefined,
+            summary: candidate.profile_summary || undefined,
+          },
+          vincere
+        );
+        console.log(`[VincereSync] Updated existing candidate ${vincereId} with latest data`);
+      } catch (updateError) {
+        // If update fails due to validation, retry with minimal fields
+        const errorMsg = updateError instanceof Error ? updateError.message : String(updateError);
+        if (errorMsg.includes('is not valid') || errorMsg.includes('could not be parsed')) {
+          console.log(`[VincereSync] Validation failed, retrying update with minimal fields...`);
+          try {
+            await updateCandidate(
+              vincereId,
+              {
+                firstName: candidate.first_name,
+                lastName: candidate.last_name,
+                email: candidate.email,
+                // Skip problematic fields (phone, date_of_birth) that may have validation issues
+                summary: candidate.profile_summary || undefined,
+              },
+              vincere
+            );
+            console.log(`[VincereSync] Updated existing candidate ${vincereId} (minimal fields)`);
+          } catch (minimalError) {
+            // Even minimal update failed - log but continue so we can save vincere_id
+            console.error(`[VincereSync] Minimal update also failed, continuing anyway:`, minimalError);
+          }
+        } else {
+          // Non-validation error - log but continue to save vincere_id
+          console.error(`[VincereSync] Update failed (non-validation), continuing anyway:`, updateError);
+        }
+      }
     } else {
       console.log(`[VincereSync] Created new Vincere candidate ${vincereId} for ${candidate.email}`);
     }

@@ -329,7 +329,14 @@ export async function updateCandidate(
     payload.mobile = data.mobile;
   }
   if (data.dateOfBirth !== undefined) {
-    payload.date_of_birth = data.dateOfBirth;
+    // Vincere requires ISO datetime format (with time component)
+    // Input may be YYYY-MM-DD or already full ISO format
+    const dob = data.dateOfBirth;
+    if (dob && !dob.includes('T')) {
+      payload.date_of_birth = `${dob}T00:00:00Z`;
+    } else {
+      payload.date_of_birth = dob;
+    }
   }
   if (data.gender !== undefined) {
     payload.gender = data.gender;
