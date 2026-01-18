@@ -260,9 +260,9 @@ export async function getDocumentsData(): Promise<DocumentsPageData | null> {
     (cert) => !matchedDocumentIds.has(cert.id)
   );
 
-  // Filter out CV from general documents
+  // Filter out CV from general documents (keep certifications - they appear in both sections)
   const otherDocuments = (documents || []).filter(
-    (doc) => doc.type !== "cv" && doc.type !== "certification"
+    (doc) => doc.type !== "cv"
   );
 
   return {

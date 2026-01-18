@@ -4,6 +4,8 @@ import {
   getVincereClient,
   getCandidateWithCustomFields,
   mapVincereToCandidate,
+  getCandidateFiles,
+  getCandidateCVFile,
 } from "@/lib/vincere";
 import { processCandidateCV, processCandidatePhoto } from "@/lib/services/cv-processor";
 
@@ -243,10 +245,10 @@ async function handleCandidateCreatedOrUpdated(
     // Lighthouse Careers organization ID (from seed data)
     const LIGHTHOUSE_ORG_ID = "00000000-0000-0000-0000-000000000001";
 
-    // Find existing candidate by vincere_id
+    // Find existing candidate by vincere_id (include cv_document_id to check for CV changes)
     const { data: existingCandidate } = await supabase
       .from("candidates")
-      .select("id")
+      .select("id, cv_document_id")
       .eq("vincere_id", mappedCandidate.vincere_id)
       .single();
 
@@ -366,6 +368,16 @@ async function handleCandidateCreatedOrUpdated(
           `[VincereCandidateWebhook] Failed to ensure agency relationship: ${relError.message}`
         );
       }
+
+      // Check if CV has changed in Vincere and re-process if needed
+      await checkAndUpdateCVIfChanged(
+        vincereCandidateId,
+        existingCandidate.id,
+        existingCandidate.cv_document_id,
+        LIGHTHOUSE_ORG_ID,
+        vincere,
+        supabase
+      );
     } else {
       // Create new candidate
       // Note: For new candidates, we may need to set default organization
@@ -429,6 +441,133 @@ async function handleCandidateCreatedOrUpdated(
       error
     );
     throw error;
+  }
+}
+
+/**
+ * Check if CV has changed in Vincere and re-process if needed
+ *
+ * Compares the vincere_file_id stored in our document metadata with the
+ * current CV file ID from Vincere. If different, deletes old document
+ * data and re-processes the new CV.
+ */
+async function checkAndUpdateCVIfChanged(
+  vincereId: number,
+  candidateId: string,
+  currentCvDocumentId: string | null,
+  organizationId: string,
+  vincereClient: ReturnType<typeof getVincereClient>,
+  supabase: ReturnType<typeof createServiceRoleClient>
+) {
+  try {
+    // Get the current CV file from Vincere (original_cv = true)
+    const vincereCvFile = await getCandidateCVFile(vincereId, vincereClient);
+
+    if (!vincereCvFile) {
+      console.log(
+        `[VincereCandidateWebhook] No CV found in Vincere for candidate ${vincereId}`
+      );
+      return;
+    }
+
+    // If we don't have a CV document yet, process it
+    if (!currentCvDocumentId) {
+      console.log(
+        `[VincereCandidateWebhook] Candidate ${vincereId} has no CV in our system, processing...`
+      );
+      await processCandidateCV(
+        vincereId,
+        candidateId,
+        organizationId,
+        vincereClient,
+        supabase
+      );
+      return;
+    }
+
+    // Get our current document to check vincere_file_id
+    const { data: currentDoc } = await supabase
+      .from("documents")
+      .select("id, metadata")
+      .eq("id", currentCvDocumentId)
+      .single();
+
+    if (!currentDoc) {
+      console.log(
+        `[VincereCandidateWebhook] CV document ${currentCvDocumentId} not found, re-processing...`
+      );
+      await processCandidateCV(
+        vincereId,
+        candidateId,
+        organizationId,
+        vincereClient,
+        supabase
+      );
+      return;
+    }
+
+    // Compare vincere_file_id to detect changes
+    const storedVincereFileId = (currentDoc.metadata as Record<string, unknown>)?.vincere_file_id;
+
+    if (storedVincereFileId === vincereCvFile.id) {
+      console.log(
+        `[VincereCandidateWebhook] CV unchanged for candidate ${vincereId} (vincere_file_id: ${vincereCvFile.id})`
+      );
+      return;
+    }
+
+    // CV has changed! Delete old document and re-process
+    console.log(
+      `[VincereCandidateWebhook] CV changed for candidate ${vincereId}: old vincere_file_id=${storedVincereFileId}, new=${vincereCvFile.id}`
+    );
+
+    // Delete old document record (this also clears embedding/extracted_text)
+    const { error: deleteError } = await supabase
+      .from("documents")
+      .delete()
+      .eq("id", currentCvDocumentId);
+
+    if (deleteError) {
+      console.error(
+        `[VincereCandidateWebhook] Failed to delete old CV document: ${deleteError.message}`
+      );
+      // Continue anyway - we'll create a new document
+    } else {
+      console.log(
+        `[VincereCandidateWebhook] Deleted old CV document ${currentCvDocumentId}`
+      );
+    }
+
+    // Clear CV reference on candidate before re-processing
+    await supabase
+      .from("candidates")
+      .update({ cv_document_id: null, cv_url: null })
+      .eq("id", candidateId);
+
+    // Process new CV
+    console.log(`[VincereCandidateWebhook] Processing new CV...`);
+    const cvResult = await processCandidateCV(
+      vincereId,
+      candidateId,
+      organizationId,
+      vincereClient,
+      supabase
+    );
+
+    if (cvResult.success) {
+      console.log(
+        `[VincereCandidateWebhook] ✅ New CV processed: ${cvResult.extractedTextLength} chars extracted, embedding: ${cvResult.embeddingGenerated ? "yes" : "no"}`
+      );
+    } else {
+      console.log(
+        `[VincereCandidateWebhook] ⚠️ New CV processing failed: ${cvResult.error}`
+      );
+    }
+  } catch (error) {
+    console.error(
+      `[VincereCandidateWebhook] Error checking/updating CV:`,
+      error instanceof Error ? error.message : error
+    );
   }
 }
 

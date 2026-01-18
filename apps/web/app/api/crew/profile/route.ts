@@ -67,32 +67,54 @@ export async function GET() {
     }
 
     // Get candidate linked to this user
-    const { data: candidate, error: candidateError } = await supabase
-      .from("candidates")
-      .select(
-        `
-        *,
-        documents:documents!documents_entity_id_fkey (
-          id,
-          document_type,
-          file_url,
-          file_name,
-          created_at
-        ),
-        certifications (
-          id,
-          certification_type,
-          name,
-          issuing_authority,
-          certificate_number,
-          issue_date,
-          expiry_date,
-          document_url
-        )
-      `
+    // Try by user_id first, then fall back to email for newly registered candidates
+    // where RLS might not yet see the user_id due to timing
+    let candidate;
+    let candidateError;
+
+    const selectQuery = `
+      *,
+      documents:documents!documents_entity_id_fkey (
+        id,
+        document_type,
+        file_url,
+        file_name,
+        created_at
+      ),
+      certifications (
+        id,
+        certification_type,
+        name,
+        issuing_authority,
+        certificate_number,
+        issue_date,
+        expiry_date,
+        document_url
       )
+    `;
+
+    // Try by user_id first
+    const { data: candidateByUserId, error: userIdError } = await supabase
+      .from("candidates")
+      .select(selectQuery)
       .eq("user_id", userData.id)
       .single();
+
+    if (candidateByUserId) {
+      candidate = candidateByUserId;
+    } else if (user.email) {
+      // Fall back to email lookup for newly registered candidates
+      const { data: candidateByEmail, error: emailError } = await supabase
+        .from("candidates")
+        .select(selectQuery)
+        .eq("email", user.email)
+        .single();
+
+      candidate = candidateByEmail;
+      candidateError = emailError;
+    } else {
+      candidateError = userIdError;
+    }
 
     if (candidateError || !candidate) {
       return NextResponse.json(
@@ -158,11 +180,26 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Get candidate linked to this user
-    const { data: candidate } = await supabase
+    // Try by user_id first, then fall back to email
+    let candidate;
+
+    const { data: candidateByUserId } = await supabase
       .from("candidates")
       .select("id")
       .eq("user_id", userData.id)
       .single();
+
+    if (candidateByUserId) {
+      candidate = candidateByUserId;
+    } else if (user.email) {
+      const { data: candidateByEmail } = await supabase
+        .from("candidates")
+        .select("id")
+        .eq("email", user.email)
+        .single();
+
+      candidate = candidateByEmail;
+    }
 
     if (!candidate) {
       return NextResponse.json(

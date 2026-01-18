@@ -966,18 +966,37 @@ function RegisterContent() {
         return;
       }
 
-      // Upload CV after successful registration
+      // Upload CV after successful registration - wait for completion before redirect
+      let cvUploadSuccess = false;
       if (step4Data.cvFile) {
         try {
           // Get the candidate ID for the newly registered user
-          const candidateResponse = await fetch("/api/crew/profile");
-          const candidateData = await candidateResponse.json();
+          // Retry with backoff since the session/records might take a moment to be fully established
+          let candidateId: string | null = null;
+          let retries = 0;
+          const maxRetries = 3;
 
-          if (candidateData.data?.id) {
+          while (!candidateId && retries < maxRetries) {
+            if (retries > 0) {
+              // Wait before retrying (500ms, 1000ms, 1500ms)
+              await new Promise(resolve => setTimeout(resolve, 500 * retries));
+            }
+
+            const candidateResponse = await fetch("/api/crew/profile");
+            if (candidateResponse.ok) {
+              const candidateData = await candidateResponse.json();
+              if (candidateData.data?.id) {
+                candidateId = candidateData.data.id;
+              }
+            }
+            retries++;
+          }
+
+          if (candidateId) {
             const formData = new FormData();
             formData.append("file", step4Data.cvFile);
             formData.append("entityType", "candidate");
-            formData.append("entityId", candidateData.data.id);
+            formData.append("entityId", candidateId);
             formData.append("documentType", "cv");
 
             const uploadResponse = await fetch("/api/documents/upload", {
@@ -985,19 +1004,32 @@ function RegisterContent() {
               body: formData,
             });
 
-            if (!uploadResponse.ok) {
+            if (uploadResponse.ok) {
+              cvUploadSuccess = true;
+            } else {
               console.error("CV upload failed, but registration succeeded");
-              // Don't block registration, user can upload CV later
+              toast.error("CV upload failed. You can upload it later from your profile.");
             }
+          } else {
+            console.error("Could not get candidate ID after registration");
+            toast.error("CV upload failed. You can upload it later from your profile.");
           }
         } catch (uploadError) {
           console.error("CV upload error:", uploadError);
-          // Don't block registration, user can upload CV later
+          toast.error("CV upload failed. You can upload it later from your profile.");
         }
       }
 
       setIsLoading(false);
-      toast.success("Account created! Welcome to Lighthouse Network.");
+
+      if (step4Data.cvFile && cvUploadSuccess) {
+        toast.success("Account created and CV uploaded! Welcome to Lighthouse Network.");
+      } else if (step4Data.cvFile) {
+        // CV was provided but upload failed - message already shown above
+        toast.success("Account created! Welcome to Lighthouse Network.");
+      } else {
+        toast.success("Account created! Welcome to Lighthouse Network.");
+      }
 
       // Redirect to dashboard (user is now signed in)
       if (result.redirectTo) {

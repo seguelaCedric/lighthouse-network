@@ -133,9 +133,9 @@ const AVATAR_PATTERNS = [
 /**
  * Get candidate's photo file metadata
  *
- * Since Vincere doesn't have a dedicated photo flag like original_cv,
- * we detect photos by file extension and filter out non-avatar images
- * (tattoos, certificates, etc.)
+ * Vincere stores profile photos as image files with document_type_id = null.
+ * All other documents (certificates, CVs, references) have a document_type_id assigned.
+ * This is the most reliable way to identify the actual profile photo.
  */
 export async function getCandidatePhotoFile(
   vincereId: number,
@@ -156,7 +156,17 @@ export async function getCandidatePhotoFile(
     return null;
   }
 
-  // First, try to find a file that matches avatar patterns
+  // Priority 1: Profile photos have document_type_id = null/undefined
+  // This is how Vincere distinguishes profile photos from documents
+  const profilePhoto = imageFiles.find(f =>
+    f.document_type_id === null || f.document_type_id === undefined
+  );
+
+  if (profilePhoto) {
+    return profilePhoto;
+  }
+
+  // Priority 2: Try to find a file that matches avatar patterns in filename
   const avatarMatch = imageFiles.find(f => {
     const filename = f.file_name || '';
     return AVATAR_PATTERNS.some(pattern => pattern.test(filename));
@@ -166,7 +176,7 @@ export async function getCandidatePhotoFile(
     return avatarMatch;
   }
 
-  // Next, filter out files that match non-avatar patterns (tattoos, certs, etc.)
+  // Priority 3: Filter out files that match non-avatar patterns (tattoos, certs, etc.)
   const filteredFiles = imageFiles.filter(f => {
     const filename = f.file_name || '';
     return !NON_AVATAR_PATTERNS.some(pattern => pattern.test(filename));
